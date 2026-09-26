@@ -16,6 +16,12 @@ whole groups -- and the 5 fastest of a union are among the 5 fastest of each gro
 it. The true count rides along per group, so the site can still say how many laps a
 car really has under the current filter.
 
+Each kept lap also carries the PI it was driven at (`lpi`, aligned with `lms` and
+`lrank`), when the screen showed one and it fits the board's class. It is display only:
+it never decides which laps are kept, so the guarantee above is untouched. A board
+without a single read PI leaves `lpi` out entirely rather than shipping a column of
+nulls.
+
 Boards are merged across the sweep's several passes (each covers a different rank
 span) and deduplicated by rank.
 
@@ -55,8 +61,37 @@ FLAGS = [
 # no car at all and was dropped -- Hokubu A contributed 81 laps out of 9,078 rows, and
 # those 81 came from its 149-row memory scan. A whole night of screen scanning sat in
 # the files and never reached the site.
-COLUMNS = ["rank", "lap_time_seconds", "car_id", "car_codename", "car_name"] + \
+COLUMNS = ["rank", "lap_time_seconds", "car_id", "car_codename", "car_name", "pi"] + \
           [source for _, source in FLAGS]
+
+# Klassenobergrenzen fuer den PI je Runde, dieselben wie PI_CAPS und PI_FLOOR in
+# ocr_leaderboard_frames. Hier als eigene Kopie, weil dieser Bau auch im Server-Image
+# laeuft, und dort gibt es kein OpenCV, das jenes Modul beim Import braucht. Wer eine
+# Grenze aendert, aendert beide. D beginnt bei 100 einschliesslich: PI 100 gibt es
+# wirklich (Reliant Supervan, BMW Isetta).
+PI_CAPS = {"D": 400, "C": 500, "B": 600, "A": 700, "S1": 800, "S2": 900, "R": 998}
+PI_ORDER = ["D", "C", "B", "A", "S1", "S2", "R"]
+PI_FLOOR = 99
+
+
+def lap_pi(value, klass: str) -> int | None:
+    """Der PI einer Zeile, wenn er auf ein Board dieser Klasse passt, sonst None.
+
+    Nochmals geprueft, obwohl der Scanner schon prueft: Beitraege anderer Rechner
+    kommen hier ungesehen an, und aeltere Laeufe koennen einen Wert tragen, der vor
+    der Pruefung geschrieben wurde. Fehlt die Spalte, steht dort None oder NaN.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if value != value or int(value) != value:
+        return None
+    name = str(klass or "").upper()
+    if name not in PI_CAPS:
+        return None
+    index = PI_ORDER.index(name)
+    low = PI_CAPS[PI_ORDER[index - 1]] if index else PI_FLOOR
+    return int(value) if low < int(value) <= PI_CAPS[name] else None
+
 
 LAPS_PER_GROUP = 5
 
@@ -641,7 +676,15 @@ def build(root: Path, *, drop_invalid: bool = False,
                 continue
             if not isinstance(lap, (int, float)) or not 1.0 <= lap <= 86400.0:
                 continue
-            merged[key].setdefault(rank, row)
+            kept = merged[key].setdefault(rank, row)
+            # Derselbe Rang aus einem zweiten Lauf mit derselben Zeit ist dieselbe
+            # Runde. Hat nur dieser zweite ihren PI gelesen, geht er nicht verloren,
+            # bloss weil der erste Lauf zuerst gefunden wurde.
+            if (kept is not row and lap_pi(kept.get("pi"), key[2]) is None
+                    and lap_pi(row.get("pi"), key[2]) is not None
+                    and round(float(kept["lap_time_seconds"]) * 1000)
+                    == round(float(lap) * 1000)):
+                kept["pi"] = row["pi"]
 
     categories: list[str] = []
     tracks: list[str] = []
@@ -656,7 +699,7 @@ def build(root: Path, *, drop_invalid: bool = False,
         return bucket.index(value)
 
     boards = []
-    total_raw = total_invalid = total_kept = total_placeholder = 0
+    total_raw = total_invalid = total_kept = total_placeholder = total_pi = 0
     for (category, track, klass), rows in sorted(merged.items()):
         valid, invalid = split_invalid(list(rows.values()))
         valid, dropped = drop_placeholder_times(valid)
@@ -679,7 +722,7 @@ def build(root: Path, *, drop_invalid: bool = False,
             groups[(car_slot[car_id], signature(row))].append(row)
 
         gcar, gsig, gcount = [], [], []
-        lgrp, lms, lrank = [], [], []
+        lgrp, lms, lrank, lpi = [], [], [], []
         for (car_index, sig), laps in sorted(groups.items()):
             laps.sort(key=lambda row: row["lap_time_seconds"])
             group_index = len(gcar)
@@ -690,7 +733,10 @@ def build(root: Path, *, drop_invalid: bool = False,
                 lgrp.append(group_index)
                 lms.append(int(round(float(row["lap_time_seconds"]) * 1000)))
                 lrank.append(int(row["rank"]))
+                lpi.append(lap_pi(row.get("pi"), klass))
         total_kept += len(lgrp)
+        with_pi = sum(1 for value in lpi if value is not None)
+        total_pi += with_pi
 
         boards.append({
             "c": slot(categories, category),
@@ -708,6 +754,10 @@ def build(root: Path, *, drop_invalid: bool = False,
             "lgrp": lgrp, "lms": lms, "lrank": lrank,
             "dist": distribution(valid),
         })
+        # Nur wenn es etwas zu zeigen gibt: bei 1,46 Mio. Runden waere eine Spalte
+        # aus lauter null gut 7 MB mehr fuer die Seite, ohne eine einzige Angabe.
+        if with_pi:
+            boards[-1]["lpi"] = lpi
 
     # A name read off the screen and matched to the public roster beats a codename
     # guessed from a partial memory dump, so it wins where both exist.
@@ -741,6 +791,7 @@ def build(root: Path, *, drop_invalid: bool = False,
         "meta": {
             "raw_rows": total_raw,
             "kept_laps": total_kept,
+            "laps_with_pi": total_pi,
             "invalid_rows": total_invalid,
             "scans": scans,
             "known_routes": known_routes(),

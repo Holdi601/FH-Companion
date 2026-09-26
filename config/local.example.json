@@ -3,5 +3,6 @@
   "server": "https://your-server.example.org:8787",
   "public_host": "your-server.example.org",
   "contact_email": "you@example.org",
-  "site_title": "Your Site Name"
+  "site_title": "Your Site Name",
+  "source_url": "https://github.com/you/your-fork"
 }

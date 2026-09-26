@@ -123,6 +123,13 @@ header.top p.ways a { color: var(--accent, #cbff2f); text-decoration: none;
                       border-bottom: 1px solid rgba(203,255,47,.35); }
 header.top p.ways a:hover { border-bottom-color: var(--accent, #cbff2f); }
 header.top p.ways .sep { color: var(--muted); margin: 0 8px; }
+/* Ein Weg bricht nicht mitten im Namen um ("Source / code on GitHub"). */
+header.top p.ways a { white-space: nowrap; }
+/* Der Sprung zur Regel und die Links unten: in der Linkfarbe der Seite, nicht im
+   Browser-Blau, das in beiden Farbschemata fremd wirkt. */
+header.top p a.jump, footer.notes a { color: var(--link); text-decoration: none;
+  border-bottom: 1px solid transparent; }
+header.top p a.jump:hover, footer.notes a:hover { border-bottom-color: var(--link); }
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 18px 0 20px; }
 .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; }
@@ -251,6 +258,9 @@ td.car button:hover { text-decoration: underline; }
 footer.notes { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13.5px; display: flex; flex-direction: column; gap: 9px; }
 footer.notes h2 { font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; text-transform: uppercase; letter-spacing: .09em; font-size: 13px; color: var(--ink); margin: 0; }
 footer.notes p { margin: 0; max-width: 84ch; }
+footer.notes ol.steps { margin: 0; padding-left: 22px; max-width: 82ch; display: flex; flex-direction: column; gap: 5px; }
+[dir="rtl"] footer.notes ol.steps { padding-left: 0; padding-right: 22px; }
+footer.notes .endnote { margin-top: 10px; }
 .caveat { color: var(--note); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 680px) {
@@ -277,7 +287,7 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
   <header class="top">
     <span class="label">Forza Horizon 6 &middot; Rivals &middot; read straight out of game memory</span>
     <h1 class="marke"><img class="logo logo-hell" src="/brand/logo-light.png" alt="" width="68" height="68"><img class="logo logo-dunkel" src="/brand/logo-dark.png" alt="" width="68" height="68"><span>__SITE_TITLE__ <span class="thin">Rivals car ratings by performance class</span></span></h1>
-    <p>Two rankings over the same laps: points by finishing position per track, and the sum of the chosen lap times. Every filter applies <em>before</em> the lap is chosen, so it decides which lap represents a car &mdash; and with it the whole order.</p>
+    <p>Two rankings over the same laps: points by finishing position per track, and the sum of the chosen lap times. Every filter applies <em>before</em> the lap is chosen, so it decides which lap represents a car &mdash; and with it the whole order. <a class="jump" href="#lap-rule">How the lap for each car is chosen &darr;</a></p>
     <!-- Die Wege, die es serverseitig schon gab und auf die nichts zeigte: die
          App, das Hochladen fremder Laeufe und die Verwaltung. Das Scan-Werkzeug
          steht hier NICHT mehr: es haengt seit dem Passwort-Tor an der Seite zum
@@ -287,7 +297,7 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
       <span class="sep">&middot;</span>
       <a href="/contribute">Contribute &mdash; scan and share</a>
       <span class="sep">&middot;</span>
-      <a href="/admin">Admin</a>
+      <a href="/admin">Admin</a>__SOURCE_WAY__
     </p>
   </header>
 
@@ -332,7 +342,44 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
 
   <footer class="notes">
     <h2>How the ranking works</h2>
-    <p><b>Choosing the lap:</b> if a car's best lap sits in the board's top 100, its <b>5th fastest</b> lap counts; in the top 1000, its <b>2nd fastest</b>; otherwise its fastest. With fewer laps than the rule asks for, the slowest one it has counts &mdash; flagged <span class="flag">thin</span>.</p>
+    <!-- DIE AUSWAHL DER RUNDE, Schritt fuer Schritt (2026-09-26 neu gefasst). Vorher
+         stand hier ein einziger Satz mit der Regel -- richtig, aber ohne das, was man
+         braucht, um ihn zu lesen: dass zuerst gefiltert wird, dass jeder Spieler nur
+         eine Runde je Board hat, dass der Rang die Position im Spiel ist und warum
+         die Regel ueberhaupt tiefer greift. Die Schritte folgen pickCarsRivals. -->
+    <p id="lap-rule"><b>Which lap stands for a car.</b> Every leaderboard in the game is one
+    track in one performance class. On each of them, one lap is chosen for every car, in
+    this order:</p>
+    <ol class="steps">
+      <li><b>Filters first.</b> Only laps that pass every filter above take part &mdash;
+      valid or invalid, gearbox, and each assist (ABS, TCS, STM and the rest). Everything
+      below works on what is left.</li>
+      <li><b>One lap per player.</b> The game keeps only each player's best lap on a board.
+      A car's laps are therefore the best laps of the different players who drove it
+      there.</li>
+      <li><b>Where does the car's best lap sit?</b> Its best position on the board is
+      looked up &mdash; the rank as the game shows it. Filters do not renumber it: a lap at
+      rank 250 stays rank 250.</li>
+      <li><b>The better that position, the deeper the reach.</b> Best lap in the
+      <b>top 100</b>: the car's <b>5th fastest</b> lap counts. In the <b>top 1,000</b>:
+      its <b>2nd fastest</b>. Anywhere else: its <b>fastest</b>.</li>
+      <li><b>Too few laps.</b> If the car has fewer laps than step 4 asks for, its slowest
+      one counts, and the row is marked <span class="flag">thin</span>.</li>
+    </ol>
+    <p><b>Why not simply the fastest lap?</b> The top of a board belongs to a handful of
+    exceptional drivers, and a single one of them in a car says more about the driver than
+    about the car. Reaching down to the 5th fastest lap measures what the car does for a
+    strong driver, not for the single best one. Further down a board fewer players drive
+    each car, so the reach gets shorter and there it is simply the fastest lap.</p>
+    <p><b>Example.</b> A car with laps at ranks 37, 58, 140, 391, 802 and 1,450: its best
+    lap is in the top 100, so the 5th fastest counts &mdash; the lap at rank 802. A car whose
+    best lap is at rank 450 is represented by its 2nd fastest; a car whose best is at
+    rank 3,200 by that lap itself. In <b>Single boards</b>, the column <b>Chosen</b> says
+    which one it was (&ldquo;5th fastest&rdquo;), and <b>PI</b> shows the performance index
+    the chosen lap was driven at, where the screen showed it.</p>
+    <p><b>Times submitted from the app</b> come in after this choice: where one is faster
+    than the lap chosen from the leaderboard for that car, track and class, it takes its
+    place, marked as submitted, and the replaced leaderboard time stays visible.</p>
     <p><b>Points:</b> on each track, first place scores as many points as there are cars in that ranking, and last place scores 1. A car missing from a track scores 0 there. Highest total wins.</p>
     <p><b>Several performance classes at once:</b> the class chips take more than one.
     Each board still ranks only its own field &mdash; a D car never races an S2 car for
@@ -417,6 +464,7 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     anyone. There is a gamertag and a peppered hash, nothing else. So a deletion
     request has to name <i>which gamertag</i>; there is nothing else to search by.
     That is the situation Art.&nbsp;11(2) GDPR describes.</p>
+    <p class="endnote"><a href="/app">FH Companion</a> &middot; <a href="https://discord.gg/A9ssnMXPZf" rel="noopener noreferrer">Discord</a>__SOURCE_END__</p>
   </footer>
 </div>
 
@@ -547,7 +595,10 @@ function anyFilterActive() {
    unten -- so bekommen BEIDE Ansichten (Wertung und Bretter) die
    eingereichten Zeiten, und keine Stelle kann sie vergessen. */
 function pickCarsRivals(board, need, forbid) {
-  const perCar = new Map();   // carIdx -> { laps: [{ms, rank}], count }
+  const perCar = new Map();   // carIdx -> { laps: [{ms, rank, pi}], count }
+  // Der PI je Runde steht nur in Brettern, auf denen er gelesen wurde; aeltere
+  // Datensaetze und Bretter ohne einen einzigen gelesenen PI haben kein `lpi`.
+  const lpi = board.lpi || null;
   const ok = [];
   for (let g = 0; g < board.gsig.length; g++) {
     const sig = board.gsig[g];
@@ -561,7 +612,8 @@ function pickCarsRivals(board, need, forbid) {
   for (let i = 0; i < board.lgrp.length; i++) {
     const g = board.lgrp[i];
     if (!ok[g]) continue;
-    perCar.get(board.gcar[g]).laps.push({ ms: board.lms[i], rank: board.lrank[i] });
+    perCar.get(board.gcar[g]).laps.push({ ms: board.lms[i], rank: board.lrank[i],
+                                          pi: lpi ? lpi[i] : null });
   }
 
   const out = new Map();
@@ -578,6 +630,9 @@ function pickCarsRivals(board, need, forbid) {
       ms: chosen.ms, rank: chosen.rank, bestRank: bestRank,
       took: have, wanted: wanted, count: bucket.count,
       thin: bucket.count < wanted,
+      // Der PI GENAU DIESER Runde, nicht der des Autos: dasselbe Auto faehrt auf
+      // einem Brett mit verschiedenen Abstimmungen, jede mit ihrem eigenen PI.
+      pi: chosen.pi == null ? null : chosen.pi,
     });
   });
   return out;
@@ -680,7 +735,8 @@ function scoreTable(classes) {
       if (pick.thin) agg.thin += 1;
       agg.per.set(entry.key, { ms: pick.ms, points: points, pos: index + 1, of: n,
                                 took: pick.took, count: pick.count, thin: pick.thin,
-                                rank: pick.rank, bestRank: pick.bestRank, substituted: false });
+                                rank: pick.rank, bestRank: pick.bestRank, substituted: false,
+                                pi: pick.pi == null ? null : pick.pi });
     });
   });
 
@@ -1086,6 +1142,7 @@ function renderBoards(host) {
     car: r => carLabel(r.car),
     track: r => r.track,
     klass: r => CLASS_ORDER.indexOf(r.klass),
+    pi: r => (r.pick.pi == null ? -1 : r.pick.pi),
     ms: r => r.pick.ms,
     rank: r => r.pick.rank,
     count: r => r.pick.count,
@@ -1106,6 +1163,7 @@ function renderBoards(host) {
     { head: "Car", key: "car" },
     { head: "Track", key: "track" },
     { head: "Class", key: "klass" },
+    { head: "PI", key: "pi", num: true, desc: true },
     { head: "Time", key: "ms", num: true },
     { head: "Gap" },
     { head: "Rank", key: "rank", num: true },
@@ -1126,6 +1184,11 @@ function renderBoards(host) {
     tr.appendChild(carCell(row.car));
     tr.appendChild(el("td", null, row.track));
     tr.appendChild(el("td", "m", row.klass));
+    const pi = el("td", "num", row.pick.pi == null ? "—" : String(row.pick.pi));
+    pi.title = row.pick.pi == null
+      ? "PI of this lap not read off the leaderboard"
+      : "PI the car had on this lap, as the leaderboard shows it";
+    tr.appendChild(pi);
     const zeit = el("td", "num", lapText(row.pick.ms));
     if (row.pick.submitted) {
       // SICHTBAR ANDERS. Eine eingereichte Zeit ist keine Rivals-Zeit: sie ist
@@ -1270,11 +1333,14 @@ function renderCar(host) {
         line.appendChild(value);
       } else {
         const suffix = own.outOfTimeSum ? "  ·  not in the time sum" : "";
-        const value = el("span", null, lapText(own.ms) + "  ·  " + own.pos + "/" + own.of
+        const value = el("span", null, lapText(own.ms)
+          + (own.pi == null ? "" : "  ·  PI " + own.pi)
+          + "  ·  " + own.pos + "/" + own.of
           + "  ·  " + num(own.points) + " P  ·  " + num(own.count)
           + (own.count === 1 ? " entry" : " entries") + suffix);
         value.title = nth(own.took) + " fastest of " + own.count + " laps, best position "
-          + num(own.bestRank);
+          + num(own.bestRank)
+          + (own.pi == null ? "" : ". PI " + own.pi + " is the PI the car had on that lap");
         line.appendChild(value);
       }
       card.appendChild(line);
@@ -2044,6 +2110,16 @@ def main(argv: list[str] | None = None) -> int:
     seite = seite.replace("__SITE_TITLE__", _html.escape(local_settings.site_title()))
     kontakt = local_settings.contact_email()
     seite = seite.replace("__CONTACT__", f' Contact: <a href="mailto:{kontakt}">{kontakt}</a>.' if kontakt else "")
+    # Der Quelltext, oben bei den Wegen und unten am Ende -- nur mit Eintrag
+    # ("source_url" in config/local.json): ein privates Repository zeigt Besuchern
+    # eine 404, und dann ist kein Link besser als einer.
+    quelle = local_settings.source_url()
+    q = _html.escape(quelle, quote=True)
+    seite = seite.replace("__SOURCE_WAY__", (
+        f'\n      <span class="sep">&middot;</span>\n      <a href="{q}" rel="noopener noreferrer">'
+        'Source code on GitHub</a>') if quelle else "")
+    seite = seite.replace("__SOURCE_END__", (
+        f' &middot; <a href="{q}" rel="noopener noreferrer">Source code on GitHub</a>') if quelle else "")
     args.out.write_text(seite.replace("__PAYLOAD__", packed), encoding="utf-8")
 
     meta = payload["meta"]

@@ -104,10 +104,18 @@ process.exit(bad ? 1 : 0);
 FALLBACK = {
     "tracks": ["Satta Sprint"], "classes": ["A"], "categories": ["Road Racing"],
     "carNames": ["Test Car"], "carIds": [300], "carMeta": [None],
+    # Die Seite liest die Bitfolge aus `flags` (wie build_analytics_dataset.FLAGS).
+    # Hier stand nur das alte `bits`, und die Ersatzdaten brachen darum schon beim
+    # Laden ab -- aufgefallen erst, als sie zum ersten Mal wirklich gebraucht wurden.
+    "flags": ["clean", "tcs", "abs", "stm", "friction", "autobrake", "autoshift",
+              "clutch", "supereasy"],
     "bits": {"clean": 1}, "classPI": {},
     "boards": [{"t": 0, "k": 0, "c": 0, "rows": 4, "valid": 4, "invalid": 0,
                 "maxRank": 4, "gcar": [0], "gsig": [1], "gcount": [4],
-                "lgrp": [0], "lms": [70000], "lrank": [1]}],
+                "lgrp": [0], "lms": [70000], "lrank": [1],
+                # PI je Runde; aeltere Datensaetze haben das Feld nicht, und der echte
+                # Bestand prueft genau diesen Fall mit.
+                "lpi": [692]}],
     "meta": {"cars": 1, "named_cars": 1, "raw_rows": 4, "kept_laps": 4,
              "invalid_rows": 0, "laps_per_group": 5, "scans": []},
 }

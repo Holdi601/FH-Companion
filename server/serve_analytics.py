@@ -236,6 +236,21 @@ def _rebuild(root: Path, page: Path, builder: Path, log) -> None:
                 f"{(result.stderr or result.stdout or '').strip()[-400:]}")
 
 
+def quelltext_link() -> bytes:
+    """Der Link zum Quelltext fuer die Fusszeilen -- oder nichts, ohne Eintrag.
+
+    Aus config/local.json ("source_url"), wie Name und Kontakt: solange das Repository
+    privat ist, bleibt der Eintrag leer, und keine Seite zeigt Besuchern eine 404.
+    """
+    import html as _html
+    import local_settings
+    url = local_settings.source_url()
+    if not url:
+        return b""
+    return (' &middot; <a href="' + _html.escape(url, quote=True)
+            + '" rel="noopener noreferrer" target="_blank">GitHub</a>').encode("utf-8")
+
+
 def make_handler(root: Path, page: Path, builder: Path):
     # Genau die Dateien, die statisch herausgehen duerfen. Der Rest des Verzeichnisses
     # bleibt drinnen, auch wenn spaeter etwas dazukommt.
@@ -542,6 +557,7 @@ def make_handler(root: Path, page: Path, builder: Path):
                 import local_settings
                 seite = app_file.read_bytes().replace(
                     b"__SITE_TITLE__", _html.escape(local_settings.site_title()).encode("utf-8"))
+                seite = seite.replace(b"__SOURCE_LINK__", quelltext_link())
                 self.send_api(200, "text/html; charset=utf-8", seite)
                 return
             if self.path in ("/mitmachen", "/mitmachen/", "/contribute",
@@ -554,7 +570,8 @@ def make_handler(root: Path, page: Path, builder: Path):
                 if not page_file.exists():
                     self.send_error(404, "contribute_page.html is missing")
                     return
-                self.send_api(200, "text/html; charset=utf-8", page_file.read_bytes())
+                self.send_api(200, "text/html; charset=utf-8",
+                              page_file.read_bytes().replace(b"__SOURCE_LINK__", quelltext_link()))
                 return
             if self.path in ("/", "/index.html"):
                 rebuild_if_stale(root, page, builder, self.note)

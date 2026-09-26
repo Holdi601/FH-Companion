@@ -62,6 +62,17 @@ def site_title() -> str:
     return get("site_title", "FH Companion")
 
 
+def source_url() -> str:
+    """Wo der Quelltext liegt (seit 2026-09-26) -- oder leer, dann zeigt keine Seite einen Link.
+
+    In local.json und nicht im Quelltext, wie Name und Kontakt: eine Abspaltung
+    verweist auf IHR Repository, und solange eines privat ist, laesst man den Eintrag
+    leer -- ein Link, der Besuchern eine 404 zeigt, ist schlechter als keiner.
+    """
+    url = get("source_url")
+    return url if url.startswith("https://") else ""
+
+
 def app_data() -> Path:
     """Der Datenordner der App: FHCompanion, vor dem 2026-09-26 ForzaGripHaptics.
 

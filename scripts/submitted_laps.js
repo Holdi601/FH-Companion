@@ -91,13 +91,20 @@ function buildSubmitted(D, laps) {
     // neu erschienenes Auto hat noch keine Bestenliste, aber eine Zeit, und die
     // gehoert in die Tabelle. Den Namen bringt die Einreichung mit, wenn sie ihn
     // kennt; sonst gilt dieselbe Schreibweise wie fuer jedes unbenannte Auto hier.
+    // Der PI, mit dem DIESE Runde gefahren wurde. Er gehoert zur Runde, nicht zum
+    // Auto: bis 2026-09-26 landete er als `stockPi` in den Autodaten -- dort steht
+    // aber der Serien-PI, und ein getuntes Auto hat mit seinem Serienwert nichts zu
+    // tun. Jetzt reist er mit der Runde, wie der PI je Runde aus den Bestenlisten.
+    var pi = Math.round(Number(lap.performanceIndex));
+    if (!(pi > 0)) pi = null;
+
     var car = carIdx.get(ordinal);
     if (car === undefined) {
       car = D.carIds.length;
       D.carIds.push(ordinal);
       D.carNames.push(lap.carName ? String(lap.carName) : "Car #" + ordinal);
       D.carMeta.push({ make: "", year: null, country: "", type: "Submitted",
-                       stockClass: klasse, stockPi: Number(lap.performanceIndex) || 0 });
+                       stockClass: klasse, stockPi: null });
       carIdx.set(ordinal, car);
       newCars += 1;
     }
@@ -110,7 +117,7 @@ function buildSubmitted(D, laps) {
     // Je Auto und Board nur die SCHNELLSTE eingereichte Runde.
     if (!da || ms < da.ms) {
       karte.set(car, { ms: ms, gamertag: eintrag.gamertag || "",
-                       received: eintrag.received || "", id: id });
+                       received: eintrag.received || "", id: id, pi: pi });
     }
     placed += 1;
   });
@@ -131,11 +138,14 @@ function applySubmitted(D, board, picks, submitted) {
     var p = picks.get(car);
     if (!p) {
       picks.set(car, { ms: s.ms, rank: 0, bestRank: 0, took: 1, wanted: 1,
-                       count: 1, thin: true, submitted: s });
+                       count: 1, thin: true, submitted: s,
+                       pi: s.pi == null ? null : s.pi });
     } else if (s.ms < p.ms) {
       p.rivalsMs = p.ms;          // die abgeloeste Zeit bleibt sichtbar
       p.ms = s.ms;
       p.submitted = s;
+      // Gezeigt wird jetzt die eingereichte Runde, also auch ihr PI.
+      p.pi = s.pi == null ? null : s.pi;
     }
   });
   return picks;

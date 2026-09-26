@@ -48,6 +48,7 @@ SCRIPTS = WORKSPACE / "scripts"
 
 sys.path.insert(0, str(SCRIPTS))
 import local_target  # noqa: E402
+from ocr_leaderboard_frames import pi_fits_class  # noqa: E402
 
 # Der Navigator reicht OCR-Text durch, und der enthaelt alles Moegliche. Landet stdout
 # in einer umgeleiteten Datei, waehlt Python unter Windows cp1252 -- ein einziges
@@ -499,7 +500,8 @@ def capture_chunk(vm: str, seconds: int, out_zip: Path) -> int:
 
 def ocr_zip(archive: Path, workers: int, keep_last_frame: Path | None = None,
             board_root: Path | None = None,
-            log_path: Path | None = None) -> list[dict]:
+            log_path: Path | None = None,
+            klass: str | None = None) -> list[dict]:
     """Unpack, read, delete. The frames are the bulky part and nothing needs them after.
 
     One frame is worth keeping: the LAST one, because the scrollbar in it is the only
@@ -513,11 +515,15 @@ def ocr_zip(archive: Path, workers: int, keep_last_frame: Path | None = None,
     rows_path = folder / "rows.jsonl"
 
     def read_frames(with_workers: int) -> subprocess.CompletedProcess:
-        return subprocess.run(
-            [sys.executable, str(SCRIPTS / "ocr_leaderboard_frames.py"),
-             "--frames", str(folder), "--out", str(rows_path),
-             "--batch", "40", "--workers", str(with_workers), "--offset-x", "78"],
-            capture_output=True, text=True)
+        command = [sys.executable, str(SCRIPTS / "ocr_leaderboard_frames.py"),
+                   "--frames", str(folder), "--out", str(rows_path),
+                   "--batch", "40", "--workers", str(with_workers), "--offset-x", "78"]
+        # Die Klasse des Boards, damit ein PI ausserhalb ihres Bandes schon bei der
+        # Abstimmung je Rang nicht mitzaehlt -- sonst kann eine Fehllesung, die in
+        # zwei Bildern gleich falsch ist, eine richtige einzelne ueberstimmen.
+        if klass:
+            command += ["--pi-class", str(klass)]
+        return subprocess.run(command, capture_output=True, text=True)
 
     result = read_frames(workers)
     # Stuerzt die OCR ab, fehlt rows.jsonl und der Chunk liefert lautlos nichts -- was
@@ -721,6 +727,21 @@ def write_board(run_root: Path, rows: dict[int, dict], meta: dict) -> dict:
     run_root.mkdir(parents=True, exist_ok=True)
     (run_root / "combined").mkdir(exist_ok=True)
     ordered = [rows[rank] for rank in sorted(rows)]
+    # DER PI JE RUNDE, gegen die Klasse des Boards geprueft. Die OCR stimmt schon mit
+    # dem Band ab, aber nur wenn sie die Klasse kennt; hier ist sie immer bekannt, und
+    # jede Zeile bekommt das Feld -- leer statt falsch. Ein PI ausserhalb des Bandes
+    # ist eine Fehllesung und keine Auskunft: ein Auto ueber der Obergrenze darf auf
+    # diesem Board gar nicht fahren, eines darunter gehoert in die Klasse darunter.
+    klass = meta.get("performance_class")
+    pi_rejected = 0
+    for row in ordered:
+        pi = row.get("pi")
+        if pi is not None and not pi_fits_class(pi, klass):
+            pi = None
+            pi_rejected += 1
+        row["pi"] = int(pi) if pi is not None else None
+        if row["pi"] is None:
+            row["pi_agreement"] = 0
     with (run_root / "rows.jsonl").open("w", encoding="utf-8") as handle:
         for row in ordered:
             handle.write(json.dumps(row, separators=(",", ":")) + "\n")
@@ -730,6 +751,8 @@ def write_board(run_root: Path, rows: dict[int, dict], meta: dict) -> dict:
     missing = (high - low + 1) - len(ordered)
     report = {"rows": len(ordered), "minimum_rank": low, "maximum_rank": high,
               "missing_rank_count": missing, "stragglers_dropped": dropped,
+              "pi_read": sum(1 for row in ordered if row["pi"] is not None),
+              "pi_out_of_class": pi_rejected,
               "source": "ocr"}
     (run_root / "combined" / "merge_report.json").write_text(
         json.dumps(report, indent=2), encoding="utf-8")
@@ -752,8 +775,14 @@ def write_board(run_root: Path, rows: dict[int, dict], meta: dict) -> dict:
     try:
         import pandas
 
-        pandas.DataFrame(ordered).to_parquet(run_root / "leaderboard_entries.parquet",
-                                             index=False)
+        frame = pandas.DataFrame(ordered)
+        # Ganzzahl MIT Luecke. Ohne das macht pandas aus einer Spalte mit einem
+        # einzigen None lauter Kommazahlen (487.0), und eine ganz leere Spalte wird
+        # zum Objekttyp ohne Zahlen darin.
+        for column in ("pi", "pi_agreement"):
+            if column in frame.columns:
+                frame[column] = frame[column].astype("Int64")
+        frame.to_parquet(run_root / "leaderboard_entries.parquet", index=False)
     except Exception as error:
         log(f"  parquet skipped ({error})")
     return report
@@ -982,7 +1011,7 @@ def scan_board(vm: str, category: str, route_index: int, klass: str, track: str,
         # the game sat idle for all of it -- which is also when it dies.
         ceiling = highest + MAX_CHUNK_ADVANCE
         ocr_queue.append((chunk, pool.submit(ocr_zip, archive, workers, None,
-                                            run_root, log_path), ceiling))
+                                            run_root, log_path, klass), ceiling))
 
         # Fold in whatever finished while we were filming. The invalid-tail test runs
         # on these, so it lags one chunk -- the same lag the old rule already had, since
@@ -1201,8 +1230,9 @@ def scan_board(vm: str, category: str, route_index: int, klass: str, track: str,
     report["implied_total"] = implied
     report["run_root"] = str(run_root)
     log(f"  board written: {report['rows']} rows, {report['minimum_rank']}.."
-        f"{report['maximum_rank']}, {report['missing_rank_count']} missing "
-        f"[{end_status}]", log_path)
+        f"{report['maximum_rank']}, {report['missing_rank_count']} missing, "
+        f"{report['pi_read']} with PI ({report['pi_out_of_class']} outside {klass} "
+        f"dropped) [{end_status}]", log_path)
     return report
 
 
