@@ -1,6 +1,19 @@
-# Forza Automation Wiki
+# FH Companion documentation
 
-This folder is the operator wiki for the Forza Rivals leaderboard scanner.
+Notes on every part of the project: the app, the website and the leaderboard
+scanner behind the car ratings.
+
+## The app
+
+- [The app, tab by tab](app_guide.md): every tab and every overlay feature, and what each one is for.
+- [Play overlay](play_overlay.md): the in-game panels -- what to drive on the three offered routes, and where the car you are in places per class -- and how the screen is read.
+- [Time attack in the free world](free_roam_time_attack.md): the app's own clock outside a race.
+- [Tuning inspector](tuning_inspector.md): every part and slider of the current car, from the game's in-memory database.
+- [Shipping the app](haptics_package.md): the one-command package, and what the build proves before it zips.
+- [Submitting your own laps](lap_submissions.md) (German): the handshake, the signature, the anti-cheat checks.
+- [Defender false positive](defender-false-positive.md) (German): why the version resource does not say "Forza".
+
+## The leaderboard scanner and the website
 
 Start here:
 
@@ -10,12 +23,8 @@ Start here:
 - [Network probe](network_probe.md): passive VM packet capture and TLS-flow analysis.
 - [Extraction speed plan](extraction_speed_plan.md): current speed measurements, why the memory path is slow, and the phased plan to make full-catalogue extraction viable.
 - [Leaderboard protocol research](network_protocol_research.md): verified `GetRows` endpoint, binary-body evidence, response fields, and direct-extraction research.
-- [Play overlay](play_overlay.md): the in-game panels in the haptics app -- what to drive on the three offered routes, and where the car you are in places per class.
 - **`python scripts/resolve_name_ties.py`** — ambiguous screen names resolved from evidence: if a variant appears elsewhere under its own name, it is not the one meant. 23 of 39 decided, 22 of them confirming what the builder already chooses.
 - **`python scripts/status.py`** — does everything still work? One call: the public address, the page, the package the updater would fetch, board coverage, the scan, the VM, and the free-world start lines.
-- [Tuning inspector](tuning_inspector.md): every part and every slider on the car you are driving, read out of the game's own in-memory database -- and what the numbers do and do not say.
-- [Time attack in the free world](free_roam_time_attack.md): the app's own clock outside a race -- where the start lines come from, why a crossing is the closest approach, and why free-roam times are kept apart.
-- [Shipping the haptics app](haptics_package.md): the one-command package -- runtime and records inside one folder, and what the build proves before it zips.
 - [Tune, share code and tuner](tune_investigation.md): what is measured about the tune behind a lap -- the leaderboard row does not carry it, paging does not expose it, and what a rival-by-rival collection would cost.
 - [Contributions](contributions.md): let friends scan boards on their own machine and send the rows back -- the package, the two signatures, the admin view.
 - [Submitting your own laps](lap_submissions.md) (German): the handshake, what the signature covers, what the anti-cheat checks find and what it openly does not -- built and tested, not yet switched on.

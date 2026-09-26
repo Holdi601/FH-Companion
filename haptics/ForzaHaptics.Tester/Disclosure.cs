@@ -49,7 +49,11 @@ internal static class Disclosure
     /// </remarks>
     // 3 seit 2026-09-24: die App reicht jetzt beste Runden ein (LapAutoSubmit),
     // voreingestellt AN. Wer Fassung 2 zugestimmt hat, stimmte "sendet nichts" zu.
-    public const int Fassung = 3;
+    // 4 seit 2026-09-26: der Text sagte, der Spielspeicher werde nur im Reiter
+    // Tuning gelesen -- inzwischen auch in "Tunes" und "Car notes" (je auf Knopf).
+    // Neu genannt: das Lesen des Spielbilds (Anmeldeschirm, Automenue), das Lesen
+    // des Spielstand-Ordners (Tunes) und das Loeschen, das Tasten ans Spiel schickt.
+    public const int Fassung = 4;
 
     private const string Titel = "What " + AppInfo.Name + " does";
 
@@ -64,17 +68,35 @@ WHAT IT DOES ON YOUR PC
       Forza Horizon 6 can send its own telemetry to your own machine over UDP.
       You switch that on yourself in the game under Settings > HUD and Gameplay.
       The program listens on 127.0.0.1 -- your own computer, not the network --
-      and turns tyre grip into controller vibration.
+      and uses it for the lap delta, the live map, your lap records and the
+      controller vibration.
 
-  Reads the memory of the running game -- for the tuning inspector only.
-      The list of parts fitted to your car is not in the telemetry. It sits in a
-      small database the game keeps in its own memory. To show your tune, the
-      program opens the Forza process read-only and searches that memory.
+  Reads the memory of the running game -- only when you press a button.
+      The list of parts fitted to your car, and which tune sits on which car, are
+      not in the telemetry. They sit in a small database the game keeps in its
+      own memory. To show them, the program opens the Forza process read-only and
+      searches that memory.
 
-      It only READS. It never writes to the game, never changes anything in it,
-      and it does this only while you are on the Tuning tab and have pressed the
-      button. Close the tab and it stops. If you never open that tab, the game's
-      memory is never touched.
+      It only READS. It never writes to the game and never changes anything in
+      it. It does this only when you press the button for it on the Tuning,
+      Tunes or Car notes tab. If you never press one, the game's memory is never
+      touched.
+
+  Reads what the game shows on screen.
+      To know which routes the Event Sign Up screen offers and which car is
+      highlighted in the car menu, the program takes pictures of the game window
+      and reads the text with the text recognition built into Windows. This
+      happens on your PC; the pictures are not sent anywhere.
+
+  Reads your downloaded tunes from the game's save folder -- read-only.
+      The Tunes tab counts them and shows which ones no car uses. The save folder
+      is never changed by this.
+
+  Deletes tunes in the game -- only when you start it.
+      On the Tunes tab you can let the program delete unused tunes through the
+      game's own menus. It then switches to the game and presses the keys itself.
+      It asks first, offers a test run that deletes nothing, never deletes a
+      tune that is on a car, and stops on Alt+Tab or the Pause key.
 
       This is also the single biggest reason antivirus software distrusts the
       program: reading another process's memory is what a cheat or a password
@@ -87,7 +109,8 @@ WHAT IT DOES ON YOUR PC
       type and there is no keystroke log anywhere.
 
   Draws an overlay on top of the game.
-      The lap delta and the rivals panels are separate windows drawn over Forza.
+      The lap delta, the maps, the car notes and the rivals panels are separate
+      windows drawn over Forza.
 
   Records your laps -- on your disk.
       Times, positions and speeds are written into the program's own folder so it

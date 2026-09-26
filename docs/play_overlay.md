@@ -22,7 +22,7 @@ dotnet build
 `--overlay` opens straight on the tab and starts watching; without it, press
 **Start overlay**.
 
-## Why it is in the haptics app and not beside it
+## Why it is in the app and not beside it
 
 Because it cannot be beside it. Forza sends its telemetry to exactly one endpoint,
 and a UDP port takes exactly one listener — measured, not assumed: with the

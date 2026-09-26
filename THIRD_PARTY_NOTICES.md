@@ -40,7 +40,7 @@ These ship inside `fh-companion.zip` and are therefore redistributed.
 | **SDL** (`SDL3.dll`) | 3.4.10 | zlib | Version resource: "Simple DirectMedia Layer", © 2026 Sam Lantinga |
 | **HidSharp** | 2.1.0 | Apache-2.0 | The licence file the `.nuspec` links to (`zer7.com/files/oss/hidsharp/LICENSE.txt`), read 2026-09-26: © 2010-2025 James F. Bellinger, Apache License 2.0 |
 | **Microsoft.Data.Sqlite** / `.Core` | 10.0.12 | MIT | SPDX expression in the `.nuspec` |
-| **SQLitePCLRaw** (`core`, `bundle_e_sqlite3`, `lib.e_sqlite3`, `provider.e_sqlite3`) | 2.1.12 | Apache-2.0 | SPDX expression in the `.nuspec` |
+| **SQLitePCLRaw** (`core`, `bundle_e_sqlite3`, `lib.e_sqlite3`, `provider.e_sqlite3`) | 2.1.12 | Apache-2.0 | SPDX expression in the `.nuspec`; © 2014-2024 SourceGear, LLC |
 | **SQLite** (inside `e_sqlite3.dll`) | bundled by SQLitePCLRaw | public domain | SQLite's own terms |
 | **System.Memory** | 4.5.3 | MIT | `licenseUrl` points at the .NET Core `LICENSE.TXT` |
 
@@ -174,17 +174,11 @@ measured to trigger a malware classifier.
 
 ## 8. This project's own licence
 
-**There is none yet.** There is no `LICENSE` file in the repository.
+**MIT** (since 2026-09-26), see [LICENSE](LICENSE). Every component the download
+ships is under a permissive licence (MIT, Apache-2.0, zlib, public domain), so the
+MIT licence fits without conflict. The only copyleft package anywhere in the
+project, `scapy` (GPL-2.0), is optional research tooling that is installed with
+pip, never bundled.
 
-Without one, the default applies: everyone else holds no rights to the code at
-all — not to use it, not to modify it, not to redistribute it. That is almost
-certainly not the intention for something published on GitHub and handed to
-friends.
-
-The in-app disclosure and the download page say "Free to use. No warranty.", which
-states an intent but is not a licence. A `LICENSE` file has to be added and named
-here. MIT fits that intent most closely; Apache-2.0 adds an explicit patent grant;
-GPL-3.0 would additionally require anyone distributing a modified version to
-publish their source.
-
-**This is a decision for the author, not for the tooling.**
+The full licence texts of the bundled components are in [licenses/](licenses/),
+and the app download carries them in its `licenses` folder next to `LICENSE.txt`.

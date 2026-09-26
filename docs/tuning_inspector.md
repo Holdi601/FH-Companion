@@ -5,7 +5,7 @@ slider — read out of the game's own database.
 
 | | |
 | --- | --- |
-| **Where it lives** | *Tuning inspector* tab in the haptics app |
+| **Where it lives** | *Tuning inspector* tab in FH Companion |
 | **What it needs** | Forza running; the button does the rest |
 | **Without the game** | `"FH Companion.exe" --tuning-report <file.db>` against an earlier dump |
 

@@ -1,4 +1,4 @@
-# Shipping the haptics app
+# Shipping the app
 
 One folder, one zip, no install, and the records already inside it. Built by:
 

@@ -84,6 +84,11 @@ TEXTENDUNGEN = {".py", ".ps1", ".cmd", ".sh", ".cs", ".json", ".html", ".md",
 PRIVAT_DATEI = WORKSPACE / "config" / "private_words.txt"
 
 
+# "wort | README.md, docs/x.md" erlaubt das Wort in genau diesen Dateien (Pfade wie
+# git sie nennt) und nirgends sonst.
+FREIGABEN: dict[int, set[str]] = {}
+
+
 def private_muster() -> list[re.Pattern[str]]:
     muster: list[re.Pattern[str]] = []
     try:
@@ -91,17 +96,22 @@ def private_muster() -> list[re.Pattern[str]]:
             zeile = zeile.strip()
             if not zeile or zeile.startswith("#"):
                 continue
-            if zeile.startswith("re:"):
-                muster.append(re.compile(zeile[3:], re.IGNORECASE))
+            wort, _, erlaubt = zeile.partition(" | ")
+            wort = wort.strip()
+            if erlaubt.strip():
+                FREIGABEN[len(muster) + 1] = {e.strip() for e in erlaubt.split(",") if e.strip()}
+            if wort.startswith("re:"):
+                muster.append(re.compile(wort[3:], re.IGNORECASE))
             else:
-                muster.append(re.compile(re.escape(zeile), re.IGNORECASE))
+                muster.append(re.compile(re.escape(wort), re.IGNORECASE))
     except OSError:
         pass
     sys.path.insert(0, str(WORKSPACE / "server"))
     try:
         import local_settings
         for wert in (local_settings.public_host(), local_settings.contact_email()):
-            if wert and len(wert) >= 4:
+            # Deckt schon ein Wort der Liste den Wert ab, gilt dessen Freigabe.
+            if wert and len(wert) >= 4 and not any(m.search(wert) for m in muster):
                 muster.append(re.compile(re.escape(wert), re.IGNORECASE))
     except Exception:
         pass
@@ -158,6 +168,8 @@ def main(argv: list[str] | None = None) -> int:
             if pfad.stat().st_size <= 20_000_000 and ist_text(pfad):
                 inhalt = pfad.read_text(encoding="utf-8", errors="replace")
                 for nr, m in enumerate(privat, 1):
+                    if rel in FREIGABEN.get(nr, set()):
+                        continue
                     treffer = m.search(inhalt)
                     if treffer:
                         zeile = inhalt.count("\n", 0, treffer.start()) + 1

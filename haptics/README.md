@@ -63,7 +63,11 @@ Build and launch the main Windows application:
 dotnet run --project .\ForzaHaptics.Tester
 ```
 
-The same program now contains:
+The feature list of the app as it is today is in the repository
+[README](../README.md) and in [docs/app_guide.md](../docs/app_guide.md). What
+follows is the history of the haptics part, which the app grew out of.
+
+The haptics part contains:
 
 - A permanent vibration-test tab with `0%` through `100%`, both/left/right
   output, a ten-second test, and an immediate Stop button.

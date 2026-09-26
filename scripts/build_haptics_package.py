@@ -89,6 +89,8 @@ APP_README = WORKSPACE / "haptics" / "README.md"
 # AM WURZELVERZEICHNIS, nicht unter haptics/: auf GitHub wird die Datei dort
 # erwartet, und sie gilt fuer das ganze Projekt, nicht nur fuer die App.
 NOTICES = WORKSPACE / "THIRD_PARTY_NOTICES.md"
+LICENSE_FILE = WORKSPACE / "LICENSE"
+LICENSES_DIR = WORKSPACE / "licenses"
 DEFAULT_OUT = WORKSPACE / "dist" / "fh-companion"
 # HTTPS seit 2026-09-25. Die App faellt nur bei einem gescheiterten TLS-Handschlag
 # auf HTTP zurueck (Rivals/ServerHttp.cs) und hebt die alte http-Vorgabe beim Laden an.
@@ -534,9 +536,10 @@ start "" "app\\{exe}" %*
 """
 
 READ_ME = """FH Companion
-==================
+============
 
-Lap-time overlay and controller haptics for Forza Horizon 6.
+Companion app for Forza Horizon 6: rivals overlay, lap delta, maps, car notes,
+lap records, tuning and tune tools, and controller haptics.
 Double-click START.cmd. Nothing is installed{install_note}.
 
 To start it from the desktop or the taskbar, use the two buttons at the top
@@ -555,18 +558,25 @@ internet connection to work.
 What it does
 ------------
 
-* Haptics: tyre grip becomes vibration -- on the side the car is sliding. For the
-  2026 Steam Controller (four actuators), DualSense (including the adaptive
-  triggers), and Xbox, PlayStation and 8BitDo pads.
 * Rivals overlay: two panels over the game. Which of the offered routes suits
   your car best, and which car is worth driving in this class -- computed from
   the laps of real players.
-* Lap delta: your time against your own best, measured at the place you are
-  standing, not after the same number of seconds.
+* Maps: an outline of each route offered on the Event Sign Up screen (from your
+  own laps or the game's Rivals map), and a live map of the lap as you drive.
+* Lap delta: your time against a reference lap -- your own best, the same car,
+  the same PI class -- measured at the place you are standing, not after the
+  same number of seconds.
+* Car notes: your own note and the applied tune, next to the car highlighted in
+  the car menu.
+* My times: every lap recorded on your PC, best per car and course, standings.
 * Time attack in free roam: Forza runs no clock outside a race. This does.
 * Tuning inspector: what the tune on your car is made of.
-* Signal editor: map telemetry to haptics yourself, as a node graph rather than a
-  fixed program. Saved and loaded as .fhgraph.json.
+* Tunes: how many downloaded tunes you keep against the game's limit, which ones
+  no car uses, and whose tunes you drive.
+* Haptics: tyre grip becomes vibration -- on the side the car is sliding. For the
+  2026 Steam Controller (four actuators), DualSense (including the adaptive
+  triggers), and Xbox, PlayStation and 8BitDo pads. The signal editor maps
+  telemetry to haptics as a node graph (saved as .fhgraph.json).
 
 
 So that telemetry arrives (once, in the game)
@@ -698,7 +708,9 @@ written next to each lap. The file explains itself in its first line.
 Read more
 ---------
 
+LICENSE.txt              this program's licence (MIT)
 THIRD_PARTY_NOTICES.md   what others wrote and under which terms
+licenses/               the full licence texts of the bundled components
 
 From the command line:
 
@@ -754,6 +766,16 @@ def write_docs(root: Path, facts: dict, self_contained: bool, server: str) -> No
     # nicht fuer den Leser gedacht war. Sie bleibt im Projekt, wo sie hingehoert.
     if NOTICES.exists():
         shutil.copy2(NOTICES, root / "THIRD_PARTY_NOTICES.md")
+    # DIE LIZENZTEXTE (seit 2026-09-26). MIT und Apache-2.0 verlangen, dass der
+    # volle Text mit den Binaerdateien reist -- die Zusammenfassung allein genuegt
+    # nicht. Dazu die eigene Lizenz der App.
+    if LICENSE_FILE.exists():
+        shutil.copy2(LICENSE_FILE, root / "LICENSE.txt")
+    if LICENSES_DIR.is_dir():
+        ziel = root / "licenses"
+        if ziel.exists():
+            shutil.rmtree(ziel)
+        shutil.copytree(LICENSES_DIR, ziel)
 
 
 # --------------------------------------------------------------------------- #
