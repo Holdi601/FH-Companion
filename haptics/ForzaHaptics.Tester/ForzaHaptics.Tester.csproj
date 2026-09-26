@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Pro Bildschirm DPI-bewusst: Overlays und Bildschirmleser rechnen in echten
+         Bildpunkten. Mit dem Standard (SystemAware) waere ein Spiel auf einem zweiten
+         Schirm mit anderer Skalierung verschoben und falsch vergroessert. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>FH Companion</AssemblyName>
+    <!-- VERSIONSRESSOURCE, UND WARUM HIER NIRGENDS "FORZA" STEHT.
+
+         Am 2026-09-15 im kontrollierten Versuch gemessen: vier Bauten, nur diese
+         Felder verschieden, jeder einzeln von Defender gescannt.
+
+           Company/Product = "Forza Grip Haptics"      Trojan:Win32/Bearfoos.A!ml
+           gar keine Versionsressource                 sauber
+           ein Personenname, Product "Grip Haptics"    sauber
+           nur die Version, sonst keine Felder         sauber
+
+         Es ist also der MARKENNAME in den Herstellerangaben einer UNSIGNIERTEN
+         Datei, der den Klassifikator ausloest. Das sieht nach Nachahmung aus, und
+         genau darauf ist er trainiert. Der Dateiname (damals "Forza Grip
+         Haptics.exe") und der Fenstertitel sind unbedenklich, nur diese Felder
+         nicht. Seit 2026-09-26 heisst die App "FH Companion".
+
+         Wer hier wieder "Forza" hineinschreibt, holt den Fehlalarm zurueck.
+         Nachzulesen in docs/defender-false-positive.md. -->
+    <Version>2026.9.15.0</Version>
+    <Company>FH Companion</Company>
+    <Product>FH Companion</Product>
+    <AssemblyTitle>FH Companion</AssemblyTitle>
+    <Description>Controller haptics and lap telemetry overlay.</Description>
+    <Copyright>Free to use. No warranty.</Copyright>
+    <NeutralLanguage>en</NeutralLanguage>
+    <ApplicationIcon>assets\steam-controller.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- DER SERVER STEHT NICHT IM QUELLTEXT. Er kommt aus config/local.json ("server"),
+       die nie ins Repository geht; AppInfo.DefaultServer liest ihn zur Laufzeit aus
+       den Assembly-Metadaten. Ohne die Datei ist er leer, und die App fragt keinen
+       Server, bis jemand einen einstellt. Von aussen setzbar: -p:FhServer=... -->
+  <PropertyGroup>
+    <FhLocalConfig>$(MSBuildThisFileDirectory)..\..\config\local.json</FhLocalConfig>
+    <FhLocalJson Condition="Exists('$(FhLocalConfig)')">$([System.IO.File]::ReadAllText('$(FhLocalConfig)'))</FhLocalJson>
+    <FhServer Condition="'$(FhServer)' == '' and '$(FhLocalJson)' != ''">$([System.Text.RegularExpressions.Regex]::Replace($([System.Text.RegularExpressions.Regex]::Match($(FhLocalJson), '"server"\s*:\s*"[^"]*"').Value), '^"server"\s*:\s*"|"$', ''))</FhServer>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="DefaultServer" Value="$(FhServer)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\ForzaHaptics.Probe\native\SDL3.dll" Link="SDL3.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HidSharp" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+  </ItemGroup>
+</Project>

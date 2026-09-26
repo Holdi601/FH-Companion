@@ -1,0 +1,211 @@
+{
+  "rivals_mode": "Cross-Country",
+  "route_count": 19,
+  "routes": [
+    {
+      "route_index": 0,
+      "name": "1 sland Cross-Country Circuit Legend Is",
+      "pieces": [
+        "1 sland Cross-Country Circui",
+        "Ind Cross-Country Circuit Le",
+        "Cross-Country Circuit Legen",
+        "s-Country Circuit Legend Is"
+      ],
+      "stitched": true
+    },
+    {
+      "route_index": 1,
+      "name": "Naruo Cross-Country Circuit",
+      "pieces": [
+        "Naruo Cross-Country Circuit",
+        "Naruo Cross-Country Circuit",
+        "Naruo Cross-Country Circuit",
+        "Naruo Cross-Country Circuit"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 2,
+      "name": "st Cross-Country Circuit Snc",
+      "pieces": [
+        "Forest Cross-Country Cir MC",
+        "orest Cross Country Circuit",
+        "st Cross-Country Circuit Snc",
+        "ross-Country Circuit SnowF"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 3,
+      "name": "Oka Cross-Country Circuit",
+      "pieces": [
+        "Oka Cross-Country Circuit",
+        "Oka Cross-Country Circuit",
+        "Oka Cross-Country Circuit",
+        "Oka Cross-Country Circuit"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 4,
+      "name": "va Cross-Country Circuit Edi",
+      "pieces": [
+        "va Cross-Country Circuit Edi",
+        "ross-Country Circuit Edogal",
+        "s-Country Circuit Edogawa"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 5,
+      "name": "Docks Cross-Country Circuit City Dock",
+      "pieces": [
+        "Docks Cross-Country Circu",
+        "cks Cross-Country Circuit C",
+        "Cross-Country Circuit City",
+        "ss-Country Circuit City Dock"
+      ],
+      "stitched": true
+    },
+    {
+      "route_index": 6,
+      "name": "n Cross-Country Circuit Star",
+      "pieces": [
+        "dium Cross-Country Circuit",
+        "n Cross-Country Circuit Star",
+        "oss-Country Circuit Stadium",
+        "-Country Circuit Stadium Cr"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 7,
+      "name": "-Country Circuit Nangan Cross-Country Circuit Nan!",
+      "pieces": [
+        "ngan Cross-Country Circuit",
+        "n Cross-Country Circuit Nan!",
+        "oss-Country Circuit Nangan",
+        "-Country Circuit Nangan Cro"
+      ],
+      "stitched": true
+    },
+    {
+      "route_index": 8,
+      "name": "lighlands Cross-Country Sor",
+      "pieces": [
+        "ni Highlands Cross-Country",
+        "lighlands Cross-Country Sor",
+        "lands Cross-Country Soni Hi",
+        "ds Cross-Country Soni Highl"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 9,
+      "name": "Ruriko-ji Cross-Country",
+      "pieces": [
+        "Ruriko-ji Cross-Country",
+        "Ruriko-ji Cross-Country",
+        "Ruriko-ji Cross-Country",
+        "Ruriko-ji Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 10,
+      "name": "Takashiro Cross-Country",
+      "pieces": [
+        "Takashiro Cross-Country",
+        "Takashiro Cross-Country",
+        "Takashiro Cross-Country",
+        "Takashiro Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 11,
+      "name": "na Alpine Cross-Country Tal",
+      "pieces": [
+        "Cross-Country eyama Alpine",
+        "na Alpine Cross-Country Tal",
+        "Alpine Cross-Country Tateya",
+        "Tateyama ne Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 12,
+      "name": "Wind Farm Cross-Country",
+      "pieces": [
+        "Wind Farm Cross-Country",
+        "Wind Farm Cross-Country",
+        "Wind Farm Cross-Country",
+        "Wind Farm Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 13,
+      "name": "Yahikoyama Cross-Country",
+      "pieces": [
+        "Yahikoyama Cross-Country",
+        "Yahikoyama Cross-Country",
+        "Yahikoyama Cross-Country",
+        "Yahikoyama Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 14,
+      "name": "Cross-Country Shimi loyama",
+      "pieces": [
+        "Cross-Country Shimi loyama",
+        "ma Cross -Country Shimanoj",
+        "Cross-Country' Shimanoyam"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 15,
+      "name": "u Gyoen Shir",
+      "pieces": [
+        "u Gyoen Shir",
+        "Shinjuki"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 16,
+      "name": "Temple Cross-Country",
+      "pieces": [
+        "Temple Cross-Country",
+        "Temple Cross-Country",
+        "Temple Cross-Country",
+        "Temple Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 17,
+      "name": "Izu Cross-Country",
+      "pieces": [
+        "Izu Cross-Country",
+        "Izu Cross-Country",
+        "Izu Cross-Country",
+        "Izu Cross-Country"
+      ],
+      "stitched": false
+    },
+    {
+      "route_index": 18,
+      "name": "The Titan",
+      "pieces": [
+        "The Titan",
+        "The Titan",
+        "The Titan",
+        "The Titan"
+      ],
+      "stitched": false
+    }
+  ]
+}

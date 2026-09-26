@@ -1,0 +1,1150 @@
+﻿using System.Drawing;
+using System.Drawing.Imaging;
+
+namespace ForzaHaptics.Tester;
+
+/// <summary>
+/// The awkward inputs: broken files, empty data, extreme screens, names that are not names.
+/// </summary>
+/// <remarks>
+/// Added on 2026-09-24 as part of <c>--self-test</c>. The other checks prove each
+/// feature works on good input; these prove it does not fall over on bad input --
+/// which is what a user's machine actually delivers: a notes file cut off by a
+/// crash, an archive with a stray file in it, a monitor nobody measured on.
+///
+/// Every case throws with a sentence saying what broke, like the rest of the
+/// self-test, so a failure names itself.
+/// </remarks>
+internal static class EdgeCaseTest
+{
+    private static void Soll(bool gut, string was)
+    {
+        if (!gut) { throw new InvalidOperationException("Grenzfall: " + was); }
+    }
+
+    public static void Run()
+    {
+        CarNotesFiles();
+        CarNamePlaceholders();
+        RouteLookups();
+        HudsAtExtremes();
+        OwnTimesOnBadArchives();
+        ScreenMaths();
+        ReaderOnDegenerateFrames();
+        SubmitDecision();
+        HudPartsAreSeparate();
+        OwnStandings();
+        LiveMapOrientation();
+        MapLines();
+        CarMenuNotes();
+        LapMessageAfterRace();
+        TuneStorageReading();
+        ChampionshipStates();
+        CourseNamesFromLaps();
+        ShapeDisplayTime();
+        TuneForLap();
+        AppliedTuneForNote();
+        DeletionPlan();
+        TuneDeleterReading();
+        RenameMigration();
+    }
+
+    /// <summary>
+    /// Was das Loeschen im Spiel liest: welcher Schirm, welcher Eintrag, welches Symbol.
+    /// Ein Fehler hier loescht das falsche Tune -- darum jede Regel einzeln.
+    /// </summary>
+    private static void TuneDeleterReading()
+    {
+        Rivals.OcrLine L(string t, double y = 100) => new(t, 100, y);
+        Tuning.TuneDeleter.Schirm S(params string[] t) => Tuning.TuneDeleter.Einordnen(t.Select(x => L(x)).ToList());
+        Soll(S("Delete File", "Are you sure you want to delete this file?", "Yes", "No") == Tuning.TuneDeleter.Schirm.DeleteConfirm,
+             "Loeschen: die Rueckfrage wird nicht erkannt");
+        Soll(S("File Options", "Load Tuning Setup", "Delete") == Tuning.TuneDeleter.Schirm.FileOptions,
+             "Loeschen: der Dialog File Options wird nicht erkannt");
+        Soll(S("Date Created", "Tuner Rank", "Creator") == Tuning.TuneDeleter.Schirm.TunesList,
+             "Loeschen: die eigene Tune-Liste wird nicht erkannt");
+        Soll(S("Date Created", "Tuner Rank", "TRENDING") == Tuning.TuneDeleter.Schirm.TuneBrowser,
+             "Loeschen: die Tune-SUCHE gilt als eigene Liste -- dort darf nichts geloescht werden");
+        Soll(S("My Tuning Setups", "Custom Tuning") == Tuning.TuneDeleter.Schirm.Upgrades,
+             "Loeschen: das Upgrades-Menue wird nicht erkannt");
+        Soll(S("Upgrades & Tuning", "Designs & Paints") == Tuning.TuneDeleter.Schirm.CarsMenu,
+             "Loeschen: das Autos-Menue wird nicht erkannt");
+        Soll(S("Race", "Settings") == Tuning.TuneDeleter.Schirm.Unbekannt,
+             "Loeschen: ein fremder Schirm wird einem bekannten zugeordnet");
+
+        Soll(Tuning.TuneDeleter.Norm("GT-R l0") == Tuning.TuneDeleter.Norm("gtr 10"),
+             "Loeschen: OCR-Verwechsler (l/1, 0/o) werden nicht gleichgesetzt");
+        Soll(Tuning.TuneDeleter.Aehnlich("Drift Setup", "Drift Setup") == 1
+             && Tuning.TuneDeleter.Aehnlich("", "Drift") == 0
+             && Tuning.TuneDeleter.Aehnlich("Drift Setup", "Grip Setup") < 0.85,
+             "Loeschen: die Aehnlichkeit trennt verschiedene Namen nicht");
+
+        Tuning.StoredTune T(string name, string tuner, int tag) =>
+            new($"Tuning_0247_202607{tag:00}100000", 247, new DateTime(2026, 7, tag, 10, 0, 0), name, tuner, 1,
+                new DateTime(2026, 7, tag));
+        var plan = new[] { T("Race", "Alice", 1), T("Race", "Alice", 5), T("Drift", "Bob", 2) };
+        Soll(Tuning.TuneDeleter.Treffer(plan, "Race", "Alice", "05/07/2026")?.CreatedAt?.Day == 5,
+             "Loeschen: unter gleichnamigen Tunes entscheidet das Datum nicht");
+        Soll(Tuning.TuneDeleter.Treffer(plan, "Race", "Bob", "") is null,
+             "Loeschen: ein Tune eines ANDEREN Tuners gilt als Treffer");
+        Soll(Tuning.TuneDeleter.Treffer(plan, "Rally", "Alice", "") is null,
+             "Loeschen: ein Tune mit anderem Namen gilt als Treffer");
+
+        using var bild = new Bitmap(200, 200);
+        char Farbe(Color c)
+        {
+            using (var g = Graphics.FromImage(bild)) { g.Clear(Color.Black); }
+            for (var y = 18; y < 24; y++) { for (var x = 19; x < 25; x++) { bild.SetPixel(x, y, c); } }
+            return Tuning.TuneDeleter.Symbol(bild, new Rectangle(0, 0, 164, 164));
+        }
+        Soll(Farbe(Color.FromArgb(220, 40, 40)) == 'v', "Loeschen: das rote Symbol (schwaecher) wird nicht erkannt");
+        Soll(Farbe(Color.FromArgb(60, 200, 60)) == '^', "Loeschen: das gruene Symbol (staerker) wird nicht erkannt");
+        Soll(Farbe(Color.FromArgb(150, 150, 150)) == '-',
+             "Loeschen: das graue Symbol (aufgespielt) wird nicht erkannt -- das aufgespielte Tune waere nicht geschuetzt");
+    }
+
+    /// <summary>
+    /// Die Umbenennung in FH Companion: der Datenordner zieht um, Verknuepfungen
+    /// unter dem alten Namen bekommen den neuen -- aber nur die auf DIESE Kopie.
+    /// </summary>
+    private static void RenameMigration()
+    {
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-rename-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var alt = Path.Combine(wurzel, "ForzaGripHaptics");
+            var neu = Path.Combine(wurzel, "FHCompanion");
+            Directory.CreateDirectory(Path.Combine(alt, "laps"));
+            File.WriteAllText(Path.Combine(alt, "laps", "a.json"), "{}");
+            Soll(AppInfo.Umzug(alt, neu) == neu && File.Exists(Path.Combine(neu, "laps", "a.json")) && !Directory.Exists(alt),
+                 "Umbenennung: der alte Datenordner zieht nicht um");
+            Directory.CreateDirectory(alt);
+            Soll(AppInfo.Umzug(alt, neu) == neu && Directory.Exists(alt),
+                 "Umbenennung: ein vorhandener neuer Ordner wird ueberschrieben oder der alte angefasst");
+
+            var ordner = Path.Combine(wurzel, "Desktop");
+            Directory.CreateDirectory(ordner);
+            var altLnk = Path.Combine(ordner, AppInfo.OldName + ".lnk");
+            Soll(Shortcuts.Create(ShortcutPlace.Desktop, out _, altLnk, zielExe: AppInfo.OldExePath),
+                 "Umbenennung: die Probe-Verknuepfung liess sich nicht anlegen");
+            if (File.Exists(AppInfo.ExePath))
+            {
+                Soll(Shortcuts.Umbenennen(ShortcutPlace.Desktop, ordner)
+                     && !File.Exists(altLnk)
+                     && Shortcuts.PointsHere(Path.Combine(ordner, AppInfo.Name + ".lnk")),
+                     "Umbenennung: die Verknuepfung auf diese Kopie bekommt den neuen Namen nicht");
+            }
+            var fremd = Path.Combine(wurzel, "Fremd");
+            Directory.CreateDirectory(fremd);
+            var fremdLnk = Path.Combine(fremd, AppInfo.OldName + ".lnk");
+            Shortcuts.Create(ShortcutPlace.Desktop, out _, fremdLnk, zielExe: Path.Combine(wurzel, "anderswo", AppInfo.OldExeName));
+            Soll(!Shortcuts.Umbenennen(ShortcutPlace.Desktop, fremd) && File.Exists(fremdLnk),
+                 "Umbenennung: eine Verknuepfung auf eine ANDERE Kopie wurde umbenannt");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>Der Loeschplan nimmt nur, was sicher auf keinem Auto liegt -- im Zeitraum.</summary>
+    private static void DeletionPlan()
+    {
+        Tuning.StoredTune T(int auto, int monat, string name) =>
+            new($"Tuning_{auto:0000}_2026{monat:00}01100000", auto, new DateTime(2026, monat, 1, 10, 0, 0), name, "Tuner" + auto, 1, null);
+        var drauf = T(247, 6, "drauf");
+        var frei = T(247, 7, "frei");
+        var freiAlt = T(300, 5, "frei alt");
+        var danach = T(247, 9, "nach der Pruefung");
+        var alle = new List<Tuning.StoredTune> { drauf, frei, freiAlt, danach };
+        var pruefung = new Tuning.TuneStorage.Usage { CheckedAt = new DateTime(2026, 8, 1), Applied = new List<string> { drauf.Folder } };
+        var plan = Tuning.TunesTab.Plan(alle, pruefung, null, null).Select(t => t.Name).ToList();
+        Soll(plan.SequenceEqual(new[] { "frei", "frei alt" }),
+             $"Loeschplan: falsche Tunes ({string.Join(", ", plan)}) -- ein aufgespieltes oder ungeprueftes darf nie hinein");
+        var juni = Tuning.TunesTab.Plan(alle, pruefung, new DateTime(2026, 6, 1), new DateTime(2026, 8, 1)).Select(t => t.Name).ToList();
+        Soll(juni.SequenceEqual(new[] { "frei" }), $"Loeschplan: der Zeitraum wird nicht beachtet ({string.Join(", ", juni)})");
+        Soll(Tuning.TunesTab.Plan(alle, null, null, null).Count == 0, "Loeschplan: ohne Garagen-Pruefung stehen Tunes im Plan");
+    }
+
+    /// <summary>Welches Tune in der Autonotiz steht -- nach, vor und ohne Garagen-Pruefung.</summary>
+    private static void AppliedTuneForNote()
+    {
+        var alt = new Tuning.StoredTune("Tuning_0247_20260601100000", 247, new DateTime(2026, 6, 1), "Old", "Alice", 1, null, "old one");
+        var auf = new Tuning.StoredTune("Tuning_0247_20260701100000", 247, new DateTime(2026, 7, 1), "Grip", "Bob", 2, null, "B Road Grip");
+        var alle = new List<Tuning.StoredTune> { alt, auf };
+        var pruefung = new Tuning.TuneStorage.Usage { CheckedAt = new DateTime(2026, 8, 1), Applied = new List<string> { alt.Folder } };
+        Soll(Tuning.TuneStorage.Aufgespielt(alle, pruefung, 247) is { Tune.Name: "Old", Sicher: true },
+             "Autonotiz-Tune: nicht das Tune, das die Garagen-Pruefung auf dem Auto fand");
+        var danach = new Tuning.StoredTune("Tuning_0247_20260901100000", 247, new DateTime(2026, 9, 1), "New", "Cara", 3, null, "");
+        Soll(Tuning.TuneStorage.Aufgespielt(new List<Tuning.StoredTune> { alt, auf, danach }, pruefung, 247) is { Tune.Name: "New", Sicher: false },
+             "Autonotiz-Tune: ein nach der Pruefung geladenes Tune wird nicht genommen");
+        Soll(Tuning.TuneStorage.Aufgespielt(alle, null, 247) is { Tune.Name: "Grip", Sicher: false },
+             "Autonotiz-Tune: ohne Pruefung nicht das juengste Tune");
+        var keinesDrauf = new Tuning.TuneStorage.Usage { CheckedAt = new DateTime(2026, 8, 1), Applied = new List<string>() };
+        Soll(Tuning.TuneStorage.Aufgespielt(alle, keinesDrauf, 247) is null,
+             "Autonotiz-Tune: ein Tune erscheint, obwohl laut Pruefung keins aufgespielt ist");
+        Soll(Tuning.TuneStorage.Aufgespielt(alle, pruefung, 999) is null, "Autonotiz-Tune: ein fremdes Auto bekommt ein Tune");
+    }
+
+    /// <summary>Welches Tune lag bei einer Runde auf dem Auto -- sicher oder geschaetzt.</summary>
+    private static void TuneForLap()
+    {
+        var a = new Tuning.StoredTune("Tuning_0247_20260601100000", 247, new DateTime(2026, 6, 1, 10, 0, 0), "A", "Alice", 1, null);
+        var b = new Tuning.StoredTune("Tuning_0247_20260701100000", 247, new DateTime(2026, 7, 1, 10, 0, 0), "B", "Bob", 2, null);
+        var c = new Tuning.StoredTune("Tuning_0300_20260601100000", 300, new DateTime(2026, 6, 1, 10, 0, 0), "C", "Cara", 3, null);
+        var alle = new List<Tuning.StoredTune> { a, b, c };
+        var juni = new DateTime(2026, 6, 15);
+        var august = new DateTime(2026, 8, 1);
+        Soll(Tuning.TunesTab.TuneZurRunde(alle, null, 247, juni) is { Tune.Creator: "Alice", Sicher: false },
+             "Tune zur Runde: im Juni lag das Juni-Tune nicht drauf");
+        Soll(Tuning.TunesTab.TuneZurRunde(alle, null, 247, august) is { Tune.Creator: "Bob", Sicher: false },
+             "Tune zur Runde: im August nicht das juengste Tune vor der Runde");
+        Soll(Tuning.TunesTab.TuneZurRunde(alle, new[] { a.Folder }, 247, august) is { Tune.Creator: "Alice", Sicher: true },
+             "Tune zur Runde: das heute aufgespielte, schon vorher gespeicherte Tune wird nicht als sicher genommen");
+        Soll(Tuning.TunesTab.TuneZurRunde(alle, new[] { b.Folder }, 247, juni) is { Tune.Creator: "Alice", Sicher: false },
+             "Tune zur Runde: ein erst NACH der Runde gespeichertes Tune wird der Runde zugeschrieben");
+        Soll(Tuning.TunesTab.TuneZurRunde(alle, null, 999, august).Tune is null,
+             "Tune zur Runde: ein Auto ohne Tunes bekommt eines");
+    }
+
+    /// <summary>
+    /// Die Anmeldekarten verschwinden nach der eingestellten Zeit -- auch wenn der Leser
+    /// den Schirm alle anderthalb Sekunden neu erkennt.
+    /// </summary>
+    private static void ShapeDisplayTime()
+    {
+        var uhr = new Rivals.ShapeDisplayClock();
+        var t0 = new DateTime(2026, 9, 26, 12, 0, 0);
+        uhr.NewOffer();
+        uhr.Shown(t0, 45);
+        // Der Leser erkennt das Angebot immer wieder -- jedes Mal "gezeigt".
+        for (var s = 1.5; s < 45; s += 1.5)
+        {
+            uhr.Shown(t0.AddSeconds(s), 45);
+            Soll(!uhr.Due(t0.AddSeconds(s)), $"Kartenzeit: nach {s} s schon abgelaufen");
+        }
+        Soll(uhr.Due(t0.AddSeconds(45.2)), "Kartenzeit: nach 45 s nicht abgelaufen -- jede Erkennung startet die Zeit neu");
+        Soll(uhr.Expired && !uhr.Due(t0.AddSeconds(46)), "Kartenzeit: laeuft nach dem Ablauf ein zweites Mal ab");
+        uhr.Shown(t0.AddSeconds(50), 45);
+        Soll(uhr.Expired, "Kartenzeit: dasselbe Angebot kommt nach dem Ablauf wieder");
+        uhr.RaceEnded();
+        Soll(!uhr.Expired, "Kartenzeit: nach einem Meisterschaftsrennen bleibt die Anzeige dunkel");
+        uhr.Shown(t0.AddSeconds(300), 45);
+        Soll(!uhr.Due(t0.AddSeconds(330)) && uhr.Due(t0.AddSeconds(346)), "Kartenzeit: nach dem Rennen laeuft keine neue Frist");
+        uhr.NewOffer();
+        uhr.Shown(t0.AddSeconds(400), 0);
+        Soll(!uhr.Due(t0.AddSeconds(4000)), "Kartenzeit: 0 Sekunden laesst die Karten trotzdem verschwinden");
+    }
+
+    /// <summary>
+    /// Ein Kurs, der nur seine Kennung als Namen traegt, bekommt den Namen seiner Runden --
+    /// und eine unsichere Rivalen-Linie zeigt das Kartenbild.
+    /// </summary>
+    /// <remarks>
+    /// Am 2026-09-26 zeigte die Kachel fuer "Shimanoyama Circuit" eine falsche Form: der
+    /// Kursordner mit 34 Runden hiess nach seiner Kennung, also griff die Rivalen-Karte,
+    /// und deren Linie war an einer zu kleinen Karte falsch nachgezeichnet.
+    /// </remarks>
+    private static void CourseNamesFromLaps()
+    {
+        Soll(!Rivals.LapArchive.IstStreckenname("course_-1850_1575_to_-1850_1575")
+             && !Rivals.LapArchive.IstStreckenname("  ") && Rivals.LapArchive.IstStreckenname("Shimanoyama Circuit"),
+             "Kursname: eine Ordnerkennung gilt als Streckenname");
+
+        var wurzel = Path.Combine(Path.GetTempPath(), $"forza-names-test-{Environment.ProcessId}");
+        try
+        {
+            void Kurs(string key, string name, params string?[] strecken)
+            {
+                var ordner = Path.Combine(wurzel, key);
+                Directory.CreateDirectory(Path.Combine(ordner, "S1"));
+                File.WriteAllText(Path.Combine(ordner, "course.json"),
+                                  System.Text.Json.JsonSerializer.Serialize(new { Name = name, NameEvidence = "none" }));
+                for (var i = 0; i < strecken.Length; i++)
+                {
+                    var runde = strecken[i] is null
+                        ? (object)new { Lap = new { lapSeconds = 30 } }
+                        : new { Lap = new { lapSeconds = 30, track = strecken[i], trackEvidence = "signup+length" } };
+                    File.WriteAllText(Path.Combine(ordner, "S1", $"lap{i}.json"), System.Text.Json.JsonSerializer.Serialize(runde));
+                }
+            }
+            Kurs("course_1_to_1", "course_1_to_1", "Shimanoyama Circuit", "Shimanoyama Circuit", null, "course_1_to_1");
+            Kurs("course_2_to_2", "", "Daikoku Circuit", "Irokawa Circuit");
+            Kurs("course_3_to_3", "", "Soni Circuit");
+            Kurs("course_4_to_4", "Legend Island Circuit", "Other Name", "Other Name");
+            var n = Rivals.LapArchive.NamenNachtragen(wurzel);
+            string Name(string key) => System.Text.Json.JsonDocument.Parse(
+                File.ReadAllText(Path.Combine(wurzel, key, "course.json"))).RootElement.GetProperty("Name").GetString() ?? "";
+            Soll(Name("course_1_to_1") == "Shimanoyama Circuit",
+                 $"Kursname: ein Kurs mit seiner Kennung als Namen heisst weiter '{Name("course_1_to_1")}'");
+            Soll(Name("course_2_to_2") == "", "Kursname: bei zwei verschiedenen Namen wird trotzdem einer gesetzt");
+            Soll(Name("course_3_to_3") == "", "Kursname: eine einzelne Runde genuegt schon");
+            Soll(Name("course_4_to_4") == "Legend Island Circuit", "Kursname: ein gesetzter Name wird ueberschrieben");
+            Soll(n == 1, $"Kursname: {n} statt 1 Kurs benannt");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, true); } catch (Exception) { }
+        }
+
+        // Eine unsichere Rivalen-Linie zeigt das Kartenbild, auch im Linienmodus.
+        var bildDatei = Path.Combine(Path.GetTempPath(), $"forza-unsicher-{Environment.ProcessId}.png");
+        try
+        {
+            using (var probe = new Bitmap(40, 40))
+            {
+                using (var g = Graphics.FromImage(probe)) { g.Clear(Color.FromArgb(0, 255, 0)); }
+                probe.Save(bildDatei, ImageFormat.Png);
+            }
+            var unsicher = new Rivals.CourseShape.Outline(
+                new List<PointF> { new(0.1f, 0.1f), new(0.9f, 0.9f) }, Rivals.ShapeSource.Rivals, 1100,
+                Image: bildDatei, Reliable: false);
+            using var ziel = new Bitmap(100, 100);
+            using (var g = Graphics.FromImage(ziel))
+            {
+                g.Clear(Color.Black);
+                Rivals.CourseShape.Draw(g, unsicher, new RectangleF(0, 0, 100, 100), Color.Magenta, 3, Color.Empty, 50, alsBild: false);
+            }
+            var m = ziel.GetPixel(50, 20);
+            Soll(m.G > 200 && m.R < 60, "Umriss: eine unsichere Rivalen-Linie wird gezeichnet statt des Kartenbilds");
+        }
+        finally
+        {
+            try { File.Delete(bildDatei); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>Gefahren, jetzt, danach -- in der Reihenfolge des Anmeldeschirms.</summary>
+    private static void ChampionshipStates()
+    {
+        string Text(int anzahl, params int[] erledigt) => string.Join(",",
+            Rivals.OverlayController.Stati(anzahl, erledigt.ToHashSet()));
+        Soll(Text(3) == "None,None,None", $"Meisterschaft: vor dem ersten Rennen steht schon ein Stand ({Text(3)})");
+        Soll(Text(3, 0) == "Done,Now,Next", $"Meisterschaft: nach Rennen 1 falsch ({Text(3, 0)})");
+        Soll(Text(3, 0, 1) == "Done,Done,Now", $"Meisterschaft: nach Rennen 2 falsch ({Text(3, 0, 1)})");
+        Soll(Text(3, 0, 1, 2) == "Done,Done,Done", $"Meisterschaft: nach dem letzten Rennen falsch ({Text(3, 0, 1, 2)})");
+        Soll(Text(3, 1) == "Now,Done,Next", $"Meisterschaft: eine ausser der Reihe gefahrene Strecke falsch ({Text(3, 1)})");
+    }
+
+    // ------------------------------------------------------------ tune storage
+
+    /// <summary>
+    /// Die Tune-Container lesen: Name des Containers, Kopf, Zaehlung -- an nachgebauten
+    /// Containern, nie am echten Spielstand.
+    /// </summary>
+    private static void TuneStorageReading()
+    {
+        // Ein Kopf wie gemessen (Fassung 7): Name, 4 Byte, SYSTEMTIME, 4 Byte, Kennung, Gamertag.
+        byte[] Kopf(string name, ushort jahr, ushort monat, ushort tag, ulong xuid, string gt)
+        {
+            using var ms = new MemoryStream();
+            using var w = new BinaryWriter(ms);
+            w.Write(7);
+            w.Write(name.Length); w.Write(System.Text.Encoding.Unicode.GetBytes(name));
+            w.Write(0);
+            foreach (var v in new ushort[] { jahr, monat, 0, tag, 17, 21, 40, 194 }) { w.Write(v); }
+            w.Write(1);
+            w.Write(xuid);
+            w.Write(gt.Length); w.Write(System.Text.Encoding.Unicode.GetBytes(gt));
+            w.Write(new byte[40]);
+            return ms.ToArray();
+        }
+        var t = Tuning.TuneStorage.Parse("Tuning_0247_20260606114055", Kopf("B - Road", 2026, 5, 14, 2535440000000000UL, "SolidMemo"));
+        Soll(t is { CarId: 247, Name: "B - Road", Creator: "SolidMemo" }
+             && t.SavedAt == new DateTime(2026, 6, 6, 11, 40, 55)
+             && t.CreatedAt == new DateTime(2026, 5, 14, 17, 21, 0),
+             $"Tunes: der Kopf wird falsch gelesen ({t})");
+        // Mit Beschreibung -- bis zum 2026-09-26 verrutschte der Ersteller dann.
+        byte[] MitBeschreibung()
+        {
+            using var ms = new MemoryStream();
+            using var w = new BinaryWriter(ms);
+            w.Write(7);
+            var n = "A700 Street Config"; w.Write(n.Length); w.Write(System.Text.Encoding.Unicode.GetBytes(n));
+            var d = "Balanced config. Enjoy"; w.Write(d.Length); w.Write(System.Text.Encoding.Unicode.GetBytes(d));
+            foreach (var v in new ushort[] { 2026, 5, 0, 16, 7, 56, 58, 77 }) { w.Write(v); }
+            w.Write(1);
+            w.Write(2535400000000000UL);
+            var g = "Daslaker"; w.Write(g.Length); w.Write(System.Text.Encoding.Unicode.GetBytes(g));
+            w.Write(new byte[40]);
+            return ms.ToArray();
+        }
+        var beschrieben = Tuning.TuneStorage.Parse("Tuning_0269_20260606231522", MitBeschreibung());
+        Soll(beschrieben is { Name: "A700 Street Config", Creator: "Daslaker" }
+             && beschrieben.CreatedAt == new DateTime(2026, 5, 16, 7, 56, 0),
+             $"Tunes: ein Kopf mit Beschreibung wird falsch gelesen ({beschrieben})");
+        var ohneKopf = Tuning.TuneStorage.Parse("Tuning_3726_20260901080000", Array.Empty<byte>());
+        Soll(ohneKopf is { CarId: 3726 } && ohneKopf.Name.Length == 0,
+             "Tunes: ohne lesbaren Kopf geht auch das Auto verloren");
+        Soll(Tuning.TuneStorage.Parse("Livery_0247_20260606114055", Array.Empty<byte>()) is null
+             && Tuning.TuneStorage.Parse("Tuning_x_y", Array.Empty<byte>()) is null,
+             "Tunes: ein fremder Container wird als Tune gezaehlt");
+
+        var ordner = Path.Combine(Path.GetTempPath(), $"forza-tunes-test-{Environment.ProcessId}");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(ordner, "Tuning_0247_20260606114055"));
+            Directory.CreateDirectory(Path.Combine(ordner, "Tuning_0249_20260915175734"));
+            Directory.CreateDirectory(Path.Combine(ordner, "Livery_0247_20260521222909"));
+            File.WriteAllBytes(Path.Combine(ordner, "Tuning_0249_20260915175734", "header"),
+                               Kopf("Road Purist", 2026, 5, 31, 1UL, "LetzeLU"));
+            Soll(Tuning.TuneStorage.Count(ordner) == 2, "Tunes: die Zaehlung nimmt Lackierungen mit");
+            var alle = Tuning.TuneStorage.Read(ordner);
+            Soll(alle.Count == 2 && alle.Any(x => x.Creator == "LetzeLU"), "Tunes: die Liste liest die Koepfe nicht");
+        }
+        finally
+        {
+            try { Directory.Delete(ordner, true); } catch (Exception) { }
+        }
+
+        // Die Warnung: oben mittig, und nicht leer.
+        using var bild = new Bitmap(1920, 1080, PixelFormat.Format32bppPArgb);
+        using (var g = Graphics.FromImage(bild))
+        {
+            g.Clear(Color.Transparent);
+            Rivals.MessageHud.Male(g, new Size(1920, 1080), "Tune storage full",
+                                   "996 of 1000 tunes -- 4 free.", Color.FromArgb(255, 107, 107));
+        }
+        Soll(bild.GetPixel(960, 100).A > 200 && bild.GetPixel(960, 700).A == 0,
+             "Tunes: die Warnung erscheint nicht oben mittig");
+    }
+
+    // ------------------------------------------------------------ lap message after the race
+
+    /// <summary>
+    /// "lap stored" muss nach einem Sprint zu sehen sein -- allein, ohne Delta.
+    /// </summary>
+    /// <remarks>
+    /// Gemeldet am 2026-09-25: eine halbe Stunde Meisterschaften, jede Fahrt abgelegt,
+    /// keine einzige Meldung gesehen. Ein Sprint endet im Ziel, und in demselben
+    /// Augenblick verschwand der Streifen, auf dem die Meldung stand.
+    /// </remarks>
+    private static void LapMessageAfterRace()
+    {
+        var s = new Rivals.OverlaySettings();
+        using var streifen = new Rivals.DeltaHud(new Rectangle(0, 0, 1920, 1080), s);
+        int Tinte(Action vorher)
+        {
+            vorher();
+            using var bild = new Bitmap(1920, 1080, PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.Transparent);
+                streifen.PaintInto(g);
+            }
+            var n = 0;
+            for (var y = 0; y < bild.Height; y += 3)
+                for (var x = 0; x < bild.Width; x += 3)
+                {
+                    if (bild.GetPixel(x, y).A > 40) { n++; }
+                }
+            return n;
+        }
+        streifen.Update(-1.234f, "same car, this course", 3f);
+        var imRennen = Tinte(() => { streifen.NurNotiz(false); streifen.Note("lap stored: 155.601 s, 7409 m"); });
+        var nurMeldung = Tinte(() => streifen.NurNotiz(true));
+        var abgelaufen = Tinte(() => streifen.Note("lap stored: 155.601 s, 7409 m", seconds: 0));
+        Soll(nurMeldung > 0, "Nach dem Rennen: die Meldung \"lap stored\" erscheint nicht");
+        Soll(nurMeldung < imRennen, "Nach dem Rennen: Delta und Ghost bleiben neben der Meldung stehen");
+        Soll(abgelaufen == 0, $"Nach dem Rennen: ohne Meldung bleibt etwas stehen ({abgelaufen} Punkte)");
+
+        // Eine abgelegte Runde mit einem Sprung zerfaellt in zwei Stuecke statt einer Linie quer ueber die Karte.
+        var weg = new List<PointF>();
+        for (var i = 0; i < 50; i++) { weg.Add(new PointF(i * 5f, 0f)); }
+        for (var i = 0; i < 50; i++) { weg.Add(new PointF(2000f + (i * 5f), 900f)); }
+        Soll(Rivals.LiveMapHud.Stuecke(weg).Count == 2, "Live-Karte: ein Sprung in der Referenz wird als Linie gezeichnet");
+        Soll(Rivals.CourseShape.HatSprung(weg) && !Rivals.CourseShape.HatSprung(weg.Take(50).ToList()),
+             "Umriss: ein Sprung in einer Runde wird nicht erkannt");
+    }
+
+    // ------------------------------------------------------------ car notes in My Cars
+
+    /// <summary>
+    /// Das Auto unter dem Rahmen im Automenue -- und dass seine Notiz bleibt.
+    /// </summary>
+    /// <remarks>
+    /// Anlass (2026-09-25): der Nutzer stand in "My Cars" auf seinem 595 esseesse, der
+    /// Reiter zeigte "No cars seen yet", und ueber dem Spiel erschien nichts. Die
+    /// Telemetrie nennt dort nur das gefahrene Auto; die Liste lebte nur im Speicher.
+    /// </remarks>
+    private static void CarMenuNotes()
+    {
+        // ---- der Rahmen: gelbgruen, hohl, in Kachelgroesse -- nachgebaut wie gemessen
+        Bitmap Menue(bool rahmen, bool verdeckt = false, bool nurZweiSeiten = false)
+        {
+            var b = new Bitmap(1280, 720, PixelFormat.Format24bppRgb);
+            using var g = Graphics.FromImage(b);
+            g.Clear(Color.FromArgb(46, 138, 126));
+            using var weiss = new SolidBrush(Color.White);
+            using var lime = new Pen(Color.FromArgb(202, 255, 2), 3);
+            using var limeFlaeche = new SolidBrush(Color.FromArgb(202, 255, 2));
+            for (var i = 0; i < 3; i++) { g.FillRectangle(weiss, 150 + (i * 250), 140, 220, 170); }
+            // Koeder: ein gelbgruener Strich und ein Logo-Klecks, wie auf dem echten Schirm.
+            g.FillRectangle(limeFlaeche, 300, 118, 180, 2);
+            g.FillRectangle(limeFlaeche, 60, 300, 14, 10);
+            if (rahmen)
+            {
+                if (nurZweiSeiten)
+                {
+                    g.DrawLine(lime, 395, 132, 625, 132);
+                    g.DrawLine(lime, 395, 132, 395, 318);
+                }
+                else
+                {
+                    g.DrawRectangle(lime, 395, 132, 230, 186);
+                }
+            }
+            if (verdeckt)
+            {
+                // Ein fremdes Fenster ueber der rechten unteren Ecke -- wie im Bild des Nutzers.
+                using var fenster = new SolidBrush(Color.FromArgb(20, 22, 26));
+                g.FillRectangle(fenster, 600, 230, 300, 200);
+            }
+            return b;
+        }
+        using (var b = Menue(true))
+        {
+            var r = Rivals.CarGridReader.FindeRahmen(b);
+            Soll(r is { } k && Math.Abs(k.X - 395) <= 3 && Math.Abs(k.Width - 232) <= 4,
+                 $"Automenue: der Rahmen wird nicht gefunden ({r})");
+        }
+        using (var b = Menue(true, verdeckt: true))
+        {
+            Soll(Rivals.CarGridReader.FindeRahmen(b) is not null,
+                 "Automenue: ein halb verdeckter Rahmen wird nicht mehr erkannt");
+        }
+        using (var b = Menue(false))
+        {
+            Soll(Rivals.CarGridReader.FindeRahmen(b) is null,
+                 "Automenue: ohne Rahmen wird trotzdem einer gefunden -- ein Strich oder Logo?");
+        }
+        using (var b = Menue(true, nurZweiSeiten: true))
+        {
+            Soll(Rivals.CarGridReader.FindeRahmen(b) is null,
+                 "Automenue: zwei Striche gelten als Rahmen");
+        }
+
+        // ---- aus den zwei Titelzeilen der Name im Stil des Datensatzes
+        var zeilen = new List<Rivals.OcrLine> { new("1968 ABARTH", 0, 40), new("595 ESSEESSE", 0, 10) };
+        var gebaut = Rivals.CarGridReader.NameAus(zeilen);
+        Soll(gebaut is { } nb && nb.Name == "ABARTH 595 ESSEESSE '68" && nb.Jahr == 1968,
+             $"Automenue: aus den Titelzeilen wird '{gebaut?.Name}' statt \"ABARTH 595 ESSEESSE '68\"");
+        Soll(Rivals.CarGridReader.NameAus(new List<Rivals.OcrLine> { new("595 ESSEESSE", 0, 10) }) is null,
+             "Automenue: ohne Baujahr wird trotzdem ein Name gebaut");
+        Soll(Rivals.CarGridReader.JahrVon("Abarth 595 esseesse '68") == 1968
+             && Rivals.CarGridReader.JahrVon("Acura Integra A-Spec '23") == 2023,
+             "Automenue: das Baujahr eines Datensatz-Namens wird falsch gelesen");
+
+        // ---- die Notizen: bleiben, und die richtige gewinnt
+        var datei = Path.Combine(Path.GetTempPath(), $"forza-notes-test-{Environment.ProcessId}.json");
+        try
+        {
+            File.Delete(datei);
+            var n = new Rivals.CarNotes(datei);
+            var meldungen = 0;
+            n.Changed += () => meldungen++;
+            n.NoteModel(2017, "Abarth 595 esseesse '68", "menu");
+            Soll(meldungen == 1, "Notizen: ein neues Auto meldet sich nicht");
+            n.NoteModel(2017, "Abarth 595 esseesse '68", "menu");
+            Soll(meldungen == 1, "Notizen: dasselbe Auto meldet sich bei jedem Lesen neu");
+            Soll(new Rivals.CarNotes(datei).Lookup(Rivals.CarNotes.ModelKey(2017)) is not null,
+                 "Notizen: ein gesehenes Auto ist nach einem Neustart weg");
+
+            var aufbau = Rivals.CarNotes.Fingerprint(2017, 600, 1, 4, 7000, 900);
+            n.Note(aufbau, 2017, "Abarth 595 esseesse '68", 600, 80);
+            n.SetComment(Rivals.CarNotes.ModelKey(2017), "Modell");
+            Soll(n.CommentFor(aufbau, 2017) == "Modell", "Notizen: die Modellnotiz gilt nicht fuer einen Aufbau");
+            n.SetComment(aufbau, "Aufbau");
+            Soll(n.CommentFor(aufbau, 2017) == "Aufbau", "Notizen: die Aufbaunotiz geht der Modellnotiz nicht vor");
+            Soll(n.CommentFor(null, 2017) == "Modell", "Notizen: im Menue (ohne Aufbau) gilt nicht die Modellnotiz");
+
+            var vorher = n.Count;
+            var neu = n.NoteModels(new[] { (2017, (string?)"Abarth 595 esseesse '68"), (3726, "Acura Integra A-Spec '23"), (0, null) }, "garage");
+            Soll(neu == 1 && n.Count == vorher + 1, $"Notizen: die Garage bringt {neu} statt 1 neues Auto");
+            Soll(n.Lookup(Rivals.CarNotes.ModelKey(2017))?.Source == "menu",
+                 "Notizen: die Garage ueberschreibt, woher ein Auto bekannt ist");
+        }
+        finally
+        {
+            try { File.Delete(datei); } catch (Exception) { }
+        }
+
+        // ---- der ganze Weg an einer gezeichneten Kachel, wenn Datensatz und OCR da sind
+        var pfad = Rivals.RivalsDataset.FindDefaultPath();
+        if (pfad is null) { return; }
+        var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad));
+        Soll(Rivals.CarGridReader.Erkenne(zeilen, rat) is { Ordinal: 2017 },
+             "Automenue: \"595 ESSEESSE / 1968 ABARTH\" ergibt nicht den Abarth 595 esseesse '68");
+        Soll(Rivals.CarGridReader.Erkenne(new List<Rivals.OcrLine> { new("595 ESSEESSE", 0, 10), new("1971 ABARTH", 0, 40) }, rat) is null,
+             "Automenue: ein falsches Baujahr ergibt trotzdem ein Auto");
+        var leser = new Rivals.RivalsScreenReader(rat, new Rivals.OverlaySettings());
+        if (!leser.OcrAvailable) { return; }
+        using var karte = new Bitmap(3840, 2160, PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(karte))
+        {
+            g.Clear(Color.FromArgb(46, 138, 126));
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            using var lime = new Pen(Color.FromArgb(202, 255, 2), 8);
+            g.DrawRectangle(lime, 800, 380, 677, 515);
+            g.FillRectangle(Brushes.Black, 806, 386, 665, 503);
+            g.FillRectangle(Brushes.White, 812, 392, 653, 491);
+            using var gross = new Font("Arial", 34, FontStyle.Bold, GraphicsUnit.Pixel);
+            using var klein = new Font("Arial", 30, FontStyle.Regular, GraphicsUnit.Pixel);
+            using var mittig = new StringFormat { Alignment = StringAlignment.Center };
+            g.DrawString("595 ESSEESSE", gross, Brushes.Black, new RectangleF(812, 415, 653, 44), mittig);
+            g.DrawString("1968 ABARTH", klein, Brushes.Gray, new RectangleF(812, 466, 653, 40), mittig);
+        }
+        var gelesen = Rivals.CarGridReader.LiesBild(karte, leser.ReadLines, rat);
+        Soll(gelesen is { Auto: { Ordinal: 2017 } },
+             $"Automenue: eine gezeichnete Kachel wird als '{gelesen?.Gelesen}' gelesen, nicht als Abarth 595 esseesse");
+    }
+
+    // ------------------------------------------------------------ map lines
+
+    /// <summary>
+    /// Glaettung, Anordnung untereinander, Kartenbild -- seit 2026-09-25.
+    /// </summary>
+    /// <remarks>
+    /// Anlass: "very pixely and low quality". Geprueft wird, was man sonst nur im Bild
+    /// saehe: dass die Glaettung Treppen wirklich wegnimmt und die Enden stehen laesst,
+    /// dass untereinander angeordnete Kacheln einander nicht ueberdecken, und dass der
+    /// Bildmodus das Bild zeigt -- und ohne Bild auf die Linie zurueckfaellt.
+    /// </remarks>
+    private static void MapLines()
+    {
+        // ---- Glaettung: eine Treppe (die Rasterstufen einer Linie) wird gerade
+        var treppe = new List<PointF>();
+        for (var i = 0; i <= 200; i++) { treppe.Add(new PointF(i, (i / 4) % 2 == 0 ? 0f : 3f)); }
+        var glatt = Rivals.CourseShape.Glaetten(treppe, false, 6f);
+        var mitte = glatt.Skip(glatt.Length / 5).Take(glatt.Length * 3 / 5).ToList();
+        Soll(mitte.All(q => Math.Abs(q.Y - 1.5f) < 0.6f),
+             $"Glaettung: die Treppe bleibt stufig (Abweichung bis {mitte.Max(q => Math.Abs(q.Y - 1.5f)):0.00})");
+        Soll(glatt[0] == treppe[0] && glatt[^1] == treppe[^1],
+             "Glaettung: ein offener Weg verliert seine Enden -- die Startscheibe laege neben der Linie");
+        Soll(Rivals.CourseShape.Glaetten(treppe, false, 0f).Length == treppe.Count,
+             "Glaettung 0 veraendert die Linie");
+
+        // Ein Rundkurs bleibt, wo er war, und bekommt keine Naht.
+        var ring = new List<PointF>();
+        for (var i = 0; i < 64; i++)
+        {
+            var w = i * Math.PI * 2 / 64;
+            ring.Add(new PointF((float)(100 + (50 * Math.Cos(w))), (float)(100 + (50 * Math.Sin(w)))));
+        }
+        var rund = Rivals.CourseShape.Glaetten(ring, true, 4f);
+        Soll(rund.All(q => float.IsFinite(q.X) && float.IsFinite(q.Y)), "Glaettung: ein Rundkurs ergibt NaN");
+        Soll(Math.Abs(rund.Average(q => q.X) - 100) < 1.5 && Math.Abs(rund.Average(q => q.Y) - 100) < 1.5,
+             "Glaettung: ein Rundkurs wandert beim Glaetten");
+        var naht = Math.Sqrt(Math.Pow(rund[0].X - rund[^1].X, 2) + Math.Pow(rund[0].Y - rund[^1].Y, 2));
+        Soll(naht < 10, $"Glaettung: der Rundkurs hat eine Naht von {naht:0.0} Punkten");
+
+        // Grenzfaelle: zwei Punkte, lauter gleiche, ein sehr langer Weg.
+        Rivals.CourseShape.Glaetten(new List<PointF> { new(1, 1), new(2, 2) }, false, 5f);
+        Rivals.CourseShape.Glaetten(Enumerable.Repeat(new PointF(3, 3), 10).ToList(), true, 5f);
+        var lang = Enumerable.Range(0, 100_000).Select(i => new PointF(i * 0.5f, (i % 7) * 0.1f)).ToList();
+        Soll(Rivals.CourseShape.Glaetten(lang, false, 3f).Length <= 6001,
+             "Glaettung: ein langer Weg wird nicht auf hoechstens 6000 Proben begrenzt");
+
+        // ---- Untereinander: drei Kacheln, keine ueberdeckt die andere
+        var quadrat = new Rivals.CourseShape.Outline(
+            new List<PointF> { new(0.1f, 0.1f), new(0.9f, 0.1f), new(0.9f, 0.9f), new(0.1f, 0.9f) },
+            Rivals.ShapeSource.Telemetry, 100, Closed: true);
+        var s = new Rivals.OverlaySettings
+        {
+            CourseShapes = true, CourseShapeLine = "#ff00ff", CourseShapeBackAlpha = 0,
+            CourseShapeLayout = "vertical", CourseShapeWidth = 3, HudCourseX = 0.1, HudCourseY = 0.1,
+        };
+        var flaeche = new Size(1920, 1080);
+        var a = Rivals.CourseShapeHud.Lege(s, flaeche, 3);
+        Soll(a.Block.Height > a.Block.Width * 2 && a.Block.Width == a.Kachel + (2 * a.Fuge),
+             $"Untereinander: der Block ist nicht hoch und schmal ({a.Block})");
+        Soll(a.Block.Bottom <= flaeche.Height && a.Block.Right <= flaeche.Width,
+             $"Untereinander: der Block ragt aus dem Bild ({a.Block})");
+        var drei = new List<(string, Rivals.CourseShape.Outline?)> { ("A", quadrat), ("B", quadrat), ("C", quadrat) };
+        int Tinte(Bitmap b, Rectangle r)
+        {
+            var n = 0;
+            for (var y = r.Top; y < r.Bottom; y += 2)
+                for (var x = r.Left; x < r.Right; x += 2)
+                {
+                    var q = b.GetPixel(x, y);
+                    if (q.R > 180 && q.G < 90 && q.B > 180) { n++; }
+                }
+            return n;
+        }
+        using (var bild = new Bitmap(flaeche.Width, flaeche.Height))
+        {
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.Black);
+                Rivals.CourseShapeHud.Male(g, s, flaeche, drei);
+            }
+            for (var i = 0; i < 3; i++)
+            {
+                var zelle = new Rectangle(a.Block.X + a.Fuge, a.Block.Y + (i * (a.Kopf + a.Kachel + a.Fuge)) + a.Kopf,
+                                          a.Kachel, a.Kachel);
+                Soll(Tinte(bild, zelle) > 20, $"Untereinander: Kachel {i + 1} ist leer -- die Umrisse liegen woanders");
+            }
+        }
+
+        // ---- Bildmodus: das Bild erscheint; fehlt es, bleibt die Linie
+        var datei = Path.Combine(Path.GetTempPath(), $"forza-map-test-{Environment.ProcessId}.png");
+        try
+        {
+            using (var probe = new Bitmap(60, 30))
+            {
+                using (var g = Graphics.FromImage(probe)) { g.Clear(Color.FromArgb(0, 255, 0)); }
+                probe.Save(datei, ImageFormat.Png);
+            }
+            var mitBild = quadrat with { Source = Rivals.ShapeSource.Rivals, Image = datei };
+            var kasten = new RectangleF(10, 10, 100, 100);
+            using var ziel = new Bitmap(120, 120);
+            using (var g = Graphics.FromImage(ziel))
+            {
+                g.Clear(Color.Black);
+                Rivals.CourseShape.Draw(g, mitBild, kasten, Color.Magenta, 3, Color.Empty, 50, alsBild: true);
+            }
+            var m = ziel.GetPixel(60, 60);
+            Soll(m.G > 200 && m.R < 60, "Bildmodus: der Kartenausschnitt erscheint nicht in der Kachel");
+            Soll(ziel.GetPixel(60, 18).G < 60, "Bildmodus: das Bild wird verzerrt statt eingepasst");
+
+            var ohneBild = mitBild with { Image = datei + ".fehlt" };
+            using var ziel2 = new Bitmap(120, 120);
+            using (var g = Graphics.FromImage(ziel2))
+            {
+                g.Clear(Color.Black);
+                Rivals.CourseShape.Draw(g, ohneBild, kasten, Color.Magenta, 3, Color.Empty, 50, alsBild: true);
+            }
+            Soll(Tinte(ziel2, new Rectangle(0, 0, 120, 120)) > 20,
+                 "Bildmodus: ohne Bilddatei erscheint gar nichts statt der Linie");
+        }
+        finally
+        {
+            try { File.Delete(datei); } catch (Exception) { }
+        }
+
+        // ---- Die aufbereiteten Rivalen-Karten, wo sie liegen (Bau-Rechner, Paket)
+        var daikoku = Rivals.CourseShape.ForRoute("Daikoku Circuit", Rivals.ShapeSource.Rivals);
+        if (daikoku is { Image: not null })
+        {
+            Soll(daikoku.Ordered && daikoku.Closed && daikoku.Points.Count > 20,
+                 "Rivalen-Karte: Daikoku Circuit ist kein geschlossener Weg -- wieder eine Punktwolke?");
+            Soll(File.Exists(daikoku.Image), "Rivalen-Karte: das Kartenbild fehlt");
+        }
+    }
+
+    // ------------------------------------------------------------ live map
+
+    /// <summary>
+    /// Sitzt das Auto auf der Live-Karte an der richtigen Ecke -- und nordweisend?
+    /// </summary>
+    /// <remarks>
+    /// Ein Quadrat in Weltkoordinaten, das Auto an der NORDOSTecke (grosses X, grosses
+    /// Z). Auf der Karte muss es oben rechts stehen. Unten rechts hiesse: gespiegelt --
+    /// und eine gespiegelte Strecke sieht aus wie eine andere, nicht wie ein Fehler.
+    /// </remarks>
+    private static void LiveMapOrientation()
+    {
+        var s = new Rivals.OverlaySettings
+        {
+            LiveMap = true, LiveMapCar = "#ff00ff", CourseShapeBack = "#000000", CourseShapeBackAlpha = 255,
+            HudLiveMapX = 0.5, HudLiveMapY = 0.3, HudLiveMapAlign = "center",
+        };
+        var flaeche = new Size(1920, 1080);
+        var quadrat = new List<PointF> { new(0, 0), new(100, 0), new(100, 100), new(0, 100), new(0, 0) };
+        using var bild = new Bitmap(flaeche.Width, flaeche.Height);
+        using (var g = Graphics.FromImage(bild))
+        {
+            g.Clear(Color.Black);
+            Rivals.LiveMapHud.Male(g, s, flaeche, quadrat, quadrat.Take(3).ToList(), new PointF(100, 100));
+        }
+        var k = Rivals.LiveMapHud.Lege(s, flaeche);
+        bool Magenta(int x, int y)
+        {
+            for (var dy = -3; dy <= 3; dy++)
+                for (var dx = -3; dx <= 3; dx++)
+                {
+                    var p = bild.GetPixel(Math.Clamp(x + dx, 0, flaeche.Width - 1), Math.Clamp(y + dy, 0, flaeche.Height - 1));
+                    if (p.R > 200 && p.G < 60 && p.B > 200) { return true; }
+                }
+            return false;
+        }
+        var rand = 12;
+        Soll(Magenta(k.Right - rand, k.Top + rand), "Live-Karte: das Auto an der Nordostecke steht nicht oben rechts");
+        Soll(!Magenta(k.Right - rand, k.Bottom - rand), "Live-Karte: das Auto steht unten rechts -- die Karte ist gespiegelt");
+
+        foreach (var schirm in new[] { new Size(1280, 720), new Size(3840, 2160), new Size(7680, 4320) })
+        {
+            var b = Rivals.LiveMapHud.Lege(s, schirm);
+            Soll(b.Left >= 0 && b.Top >= 0 && b.Right <= schirm.Width && b.Bottom <= schirm.Height && b.Width == b.Height,
+                 $"Live-Karte bei {schirm.Width}x{schirm.Height} nicht quadratisch im Bild: {b}");
+        }
+        using var klein = new Bitmap(10, 10);
+        using var gk = Graphics.FromImage(klein);
+        Rivals.LiveMapHud.Male(gk, s, flaeche, new List<PointF>(), new List<PointF>(), null);
+        Rivals.LiveMapHud.Male(gk, s, flaeche, new List<PointF> { new(5, 5) }, new List<PointF> { new(5, 5) }, new PointF(5, 5));
+        var umriss = new Rivals.CourseShape.Outline(new List<PointF> { new(0.2f, 0.1f), new(0.8f, 0.9f) },
+                                                    Rivals.ShapeSource.Telemetry, 100);
+        var probe = Rivals.LiveMapHud.SampleAus(umriss);
+        Soll(Math.Abs(probe[0].Y - 0.9f) < 1e-5 && Math.Abs(probe[1].Y - 0.1f) < 1e-5,
+             "Live-Karte: die Beispielstrecke der Vorschau wird nicht auf Norden gedreht");
+    }
+
+    // ------------------------------------------------------------ own standings
+
+    /// <summary>
+    /// Die Wertung im Reiter "My times" -- an Runden, deren Ergebnis von Hand feststeht.
+    /// </summary>
+    private static void OwnStandings()
+    {
+        Rivals.OwnTimes.Row R(string kurs, string klasse, int auto, double s, bool stehend = false) =>
+            new(new Rivals.OwnTimes.Lap(kurs, kurs, klasse, auto, "t", 800, s, stehend, false,
+                                        DateTime.MinValue, "rivals", ""),
+                "car" + auto, null, null, null, null, null, null, 0);
+
+        var zeilen = new List<Rivals.OwnTimes.Row>
+        {
+            // Kurs X, fliegend: 1 vor 2 vor 3 -> 3, 2, 1 Punkte
+            R("X", "A", 1, 60.0), R("X", "A", 2, 61.0), R("X", "A", 3, 62.0),
+            R("X", "A", 1, 60.8),                       // langsamere zweite Runde: zaehlt nicht
+            // Kurs Y, fliegend: 2 vor 1 -> 2, 1 Punkte; Auto 3 fehlt und erbt 51.0
+            R("Y", "A", 2, 50.0), R("Y", "A", 1, 51.0),
+            // Kurs X STEHEND ist ein eigenes Board: nur Auto 3 -> 1 Punkt, ein Sieg
+            R("X", "A", 3, 55.0, stehend: true),
+            // Klasse B zaehlt fuer sich
+            R("X", "B", 1, 58.0),
+        };
+
+        var p = Rivals.OwnTimes.Standings(zeilen, nachPunkten: true);
+        var a = p.Where(s => s.Klass == "A").OrderBy(s => s.Place).ToList();
+        Soll(a.Count == 3 && a.All(s => s.Boards == 3), "Wertung: drei Autos auf drei Boards in A");
+        // 1 und 2 haben beide 4 Punkte; wie auf der Seite entscheidet das erste
+        // Auftreten (Board X, dort war 1 schneller).
+        Soll(a[0].Ordinal == 1 && a[0].Points == 4 && a[1].Ordinal == 2 && a[1].Points == 4
+             && a[2].Ordinal == 3 && a[2].Points == 2,
+             $"Wertung nach Punkten: {string.Join(", ", a.Select(s => $"{s.Ordinal}={s.Points}"))}");
+        Soll(a[0].Present == 2 && a[2].Present == 2 && a[2].Wins == 1 && a[0].Wins == 1,
+             "Wertung: gefahrene Kurse oder Siege falsch gezaehlt");
+        Soll(Math.Abs(a[0].TotalSeconds - (60.0 + 51.0 + 55.0)) < 1e-9 && a[0].Inherited == 1,
+             $"Zeitsumme mit geerbter Zeit falsch: {a[0].TotalSeconds}");
+        var b = p.Where(s => s.Klass == "B").ToList();
+        Soll(b.Count == 1 && b[0].Place == 1 && b[0].Points == 1 && b[0].Boards == 1,
+             "Klasse B vermischt sich mit A");
+
+        var zeit = Rivals.OwnTimes.Standings(zeilen, nachPunkten: false)
+                             .Where(s => s.Klass == "A").OrderBy(s => s.Place).ToList();
+        // 1: 60+51+55 = 166, 2: 61+50+55 = 166, 3: 62+51+55 = 168
+        Soll(zeit[2].Ordinal == 3 && Math.Abs(zeit[2].TotalSeconds - 168.0) < 1e-9,
+             "Wertung nach Zeitsumme: das Auto mit den meisten geerbten Zeiten steht nicht hinten");
+        Soll(Rivals.OwnTimes.Standings(new List<Rivals.OwnTimes.Row>(), true).Count == 0,
+             "Wertung ohne Runden liefert Zeilen");
+    }
+
+    // ------------------------------------------------------------ HUD editor
+
+    /// <summary>
+    /// Verstellt jeder Regler NUR sein eigenes Stueck -- und traegt eine Anordnung alle?
+    /// </summary>
+    /// <remarks>
+    /// Bis zum 2026-09-25 verstellten Groesse, Mausrad und Anker fuer den Umriss und
+    /// die Autonotiz die Delta-Zahl, und eine gespeicherte Anordnung liess beide weg.
+    /// </remarks>
+    private static void HudPartsAreSeparate()
+    {
+        var teile = Enum.GetValues<Rivals.HudPart>();
+        foreach (var teil in teile)
+        {
+            var s = new Rivals.OverlaySettings();
+            var vorher = teile.ToDictionary(t => t, t => s.PlacementOf(t));
+            s.SetScale(teil, 1.77);
+            s.SetAlign(teil, "right");
+            s.SetPosition(teil, 0.4321, 0.1234);
+            var jetzt = s.PlacementOf(teil);
+            Soll(Math.Abs(jetzt.Scale - 1.77f) < 1e-4 && jetzt.Align == "right"
+                 && Math.Abs(jetzt.X - 0.4321f) < 1e-4 && Math.Abs(jetzt.Y - 0.1234f) < 1e-4,
+                 $"{teil}: Groesse, Anker oder Lage kommen nicht an");
+            foreach (var anderes in teile.Where(t => t != teil))
+            {
+                Soll(s.PlacementOf(anderes) == vorher[anderes],
+                     $"{teil} zu verstellen hat {anderes} mitverstellt");
+            }
+        }
+
+        Soll(!Rivals.OverlaySettings.UnknownLayoutKeys().Any(),
+             "eine Anordnung nennt Felder, die es nicht gibt: "
+             + string.Join(", ", Rivals.OverlaySettings.UnknownLayoutKeys()));
+
+        // Hin und zurueck: Umriss und Notiz muessen mit der Anordnung reisen.
+        var name = "selbsttest-" + Guid.NewGuid().ToString("N")[..8];
+        var quelle = new Rivals.OverlaySettings();
+        quelle.SetScale(Rivals.HudPart.Course, 1.6);
+        quelle.SetPosition(Rivals.HudPart.CarNote, 0.33, 0.44);
+        quelle.SetScale(Rivals.HudPart.CarNote, 0.8);
+        quelle.CarNoteWidth = 420;
+        try
+        {
+            Soll(quelle.SaveLayout(name), "Anordnung liess sich nicht ablegen");
+            var ziel = new Rivals.OverlaySettings();
+            Soll(ziel.LoadLayout(name), "Anordnung liess sich nicht laden");
+            Soll(Math.Abs(ziel.PlacementOf(Rivals.HudPart.Course).Scale - 1.6f) < 1e-4
+                 && Math.Abs(ziel.PlacementOf(Rivals.HudPart.CarNote).X - 0.33f) < 1e-4
+                 && Math.Abs(ziel.PlacementOf(Rivals.HudPart.CarNote).Scale - 0.8f) < 1e-4
+                 && ziel.CarNoteWidth == 420,
+                 "Umriss oder Autonotiz reisen nicht mit der Anordnung");
+        }
+        finally { quelle.DeleteLayout(name); }
+
+        // Die Vorschau der Notiz: der Kasten zum Anfassen muss die Platte sein, die
+        // das Overlay zeichnen wuerde -- gleich breit, und der Text muss hineinpassen.
+        using var bild = new Bitmap(10, 10);
+        using var g = Graphics.FromImage(bild);
+        var n = new Rivals.OverlaySettings();
+        foreach (var flaeche in new[] { new Size(1280, 720), new Size(3840, 2160), new Size(7680, 4320) })
+        {
+            var a = Rivals.CarNoteHud.Lege(g, n, flaeche, "Porsche 911 GT3 RS '19",
+                                           "understeers from turn 3, tyres go off after 4 laps");
+            Soll(a.Kasten.Width >= 120 && a.Kasten.Right <= flaeche.Width + 0.5f
+                 && a.Kasten.Bottom <= flaeche.Height + 0.5f
+                 && a.Kasten.Height >= a.TextHoehe + a.KopfHoehe,
+                 $"Notizkasten bei {flaeche.Width}x{flaeche.Height} passt nicht zum Text");
+        }
+    }
+
+    // ------------------------------------------------------------ lap submission
+
+    private static void SubmitDecision()
+    {
+        // Ein Board: Test Circuit, Klasse A. Auto 1234 gueltig 60,000 s, ungueltig 50,000 s.
+        var data = new Rivals.RivalsDataset
+        {
+            Tracks = new List<string> { "Test Circuit" },
+            Classes = new List<string> { "A", "B", "C", "D", "R", "S1", "S2" },
+            CarIds = new List<int> { 1234, 5678 },
+            Flags = new List<string> { "clean" },
+            Boards = new List<Rivals.RivalsDataset.Board>
+            {
+                new() { Track = 0, Klass = 0, GroupCar = new[] { 0, 0, 1 }, GroupSignature = new[] { 1, 0, 1 },
+                        LapGroup = new[] { 0, 1, 2 }, LapMs = new[] { 60000, 50000, 70000 } },
+            },
+        };
+        Rivals.RecordedLap Lap(float sek, int car = 1234, int klasse = 3)
+        {
+            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = klasse };
+            for (var i = 0; i < 12; i++) { l.Samples.Add(new Rivals.LapSample()); }
+            return l;
+        }
+        var leer = new Dictionary<string, int>();
+        Soll(Rivals.LapAutoSubmit.Pruefen(Lap(59.0f), "Test Circuit", data, leer).Senden,
+             "eine schnellere Runde (59 < 60 s) wird nicht gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(60.0f), "Test Circuit", data, leer).Senden,
+             "eine gleich schnelle Runde wird gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(55.0f), "test  circuit ", data,
+                                           new Dictionary<string, int> { ["test circuit|A|1234"] = 54000 }).Senden,
+             "eine Runde, langsamer als die schon gesendete, wird erneut gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(51.0f), "Test Circuit", data, leer).Senden == false,
+             "eine ungueltige Bestzeit (50 s) blockiert eine gueltige Verbesserung (51 s)");
+        Soll(Rivals.LapAutoSubmit.Pruefen(Lap(80.0f, car: 9999), "Test Circuit", data, leer).Senden,
+             "ein Auto ohne Bestenlisten-Eintrag wird nicht gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(59.0f), "Nowhere Ring", data, leer).Senden,
+             "eine Strecke ohne Bestenliste wird gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(59.0f, klasse: 2), "Test Circuit", data, leer).Senden,
+             "eine Klasse ohne Board wird gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(-5.0f), "Test Circuit", data, leer).Senden,
+             "eine negative Zeit wird gesendet");
+        Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(59.0f), null, data, leer).Senden,
+             "eine Runde ohne Strecke wird gesendet");
+        var ohneTelemetrie = new Rivals.RecordedLap { LapSeconds = 30f, CarOrdinal = 1234, CarClass = 3 };
+        Soll(!Rivals.LapAutoSubmit.Pruefen(ohneTelemetrie, "Test Circuit", data, leer).Senden,
+             "eine Runde ohne Telemetrie wird gesendet");
+        Soll(Rivals.LapAutoSubmit.RouteName(new Rivals.RecordedLap { Track = "course_1_2_to_1_2" },
+                                            Path.GetTempPath()) is null,
+             "ein Ordnername gilt als Streckenname");
+    }
+
+    // ------------------------------------------------------------ car notes
+
+    private static void CarNotesFiles()
+    {
+        var ordner = Path.Combine(Path.GetTempPath(), "forza-edge-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(ordner);
+        try
+        {
+            // 1. Kaputte Datei (Absturz beim Schreiben): laden, nicht werfen, danach heil speichern.
+            var kaputt = Path.Combine(ordner, "kaputt.json");
+            File.WriteAllText(kaputt, "{\"entries\": [ {\"key\": \"a\", ");
+            var n1 = new Rivals.CarNotes(kaputt);
+            var k = Rivals.CarNotes.Fingerprint(1, 500, 0, 4, 6000, 800);
+            n1.Note(k, 1, "Test '99", 500, 100);
+            n1.SetComment(k, "nach dem Absturz");
+            Soll(new Rivals.CarNotes(kaputt).Lookup(k)?.Comment == "nach dem Absturz",
+                 "eine abgeschnittene Notizdatei wird nicht wieder brauchbar");
+
+            // 2. Mit Bytefolgemarke (PowerShell schreibt so) -- darf nichts ausmachen.
+            var bom = Path.Combine(ordner, "bom.json");
+            File.WriteAllText(bom, File.ReadAllText(kaputt), new System.Text.UTF8Encoding(true));
+            Soll(new Rivals.CarNotes(bom).Lookup(k)?.Comment == "nach dem Absturz",
+                 "eine Notizdatei mit BOM wird nicht gelesen");
+
+            // 3. Unicode, sehr lang, leer.
+            var uni = "Kurve 3: 🏎️ untersteuert — 高速コーナーで不安定 — ü ß";
+            n1.SetComment(k, uni);
+            Soll(new Rivals.CarNotes(kaputt).Lookup(k)?.Comment == uni, "Unicode-Notiz ueberlebt das Speichern nicht");
+            var lang = string.Concat(Enumerable.Repeat("sehr lange Notiz ", 800));
+            n1.SetComment(k, lang);
+            Soll((new Rivals.CarNotes(kaputt).Lookup(k)?.Comment ?? "").Length >= 1000,
+                 "eine lange Notiz wird verstuemmelt");
+            n1.SetComment(k, "");
+            Soll(string.IsNullOrEmpty(new Rivals.CarNotes(kaputt).Lookup(k)?.Comment),
+                 "eine geleerte Notiz bleibt stehen");
+            n1.Remove(k);
+            Soll(new Rivals.CarNotes(kaputt).Lookup(k) is null, "ein entferntes Auto bleibt in der Datei");
+
+            // 4. Datei, die es nicht gibt, in einem Ordner, den es nicht gibt.
+            var fehlt = Path.Combine(ordner, "gibt", "es", "nicht.json");
+            var n2 = new Rivals.CarNotes(fehlt);
+            n2.Note(k, 1, "Test '99", 500, 100);
+            n2.SetComment(k, "neu");
+            Soll(File.Exists(fehlt), "eine Notiz in einem fehlenden Ordner wird nicht angelegt");
+        }
+        finally
+        {
+            try { Directory.Delete(ordner, true); } catch (Exception) { }
+        }
+    }
+
+    // ------------------------------------------------------------ car names
+
+    private static void CarNamePlaceholders()
+    {
+        foreach (var platzhalter in new[] { "Car #123", "car 12", "CAR#5", "Car  # 7", "", "   ", null })
+        {
+            Soll(!Rivals.RivalsAdvisor.IsRealCarName(platzhalter),
+                 $"'{platzhalter}' gilt als echter Autoname");
+        }
+        foreach (var echt in new[] { "Carrera GT", "Car #12 Edition", "Porsche 911 GT3 '21", "Cars 3 Lightning McQueen", "Nissan #32 Skyline" })
+        {
+            Soll(Rivals.RivalsAdvisor.IsRealCarName(echt), $"'{echt}' gilt NICHT als Autoname");
+        }
+    }
+
+    // ------------------------------------------------------------ route lookups
+
+    private static void RouteLookups()
+    {
+        Soll(Rivals.CourseShape.ForRoute("") is null, "eine leere Strecke hat eine Karte");
+        Soll(Rivals.CourseShape.ForRoute("   ") is null, "eine Leerzeichen-Strecke hat eine Karte");
+        Soll(Rivals.CourseShape.ForRoute("Nonexistent Route 42") is null, "eine erfundene Strecke hat eine Karte");
+        Soll(Rivals.CourseShape.ForRoute("Highway Circuit", Rivals.ShapeSource.Telemetry) is null,
+             "die Telemetrie-Quelle liefert eine Karte fuer eine nie gefahrene Strecke");
+        // Ordnernamen, die keine sind, bleiben unveraendert statt zu zerfallen.
+        Soll(Rivals.OwnTimes.CourseText("course_x", null) == "course_x", "ein unpassender Ordnername wird verbogen");
+        Soll(Rivals.OwnTimes.CourseText("", null) == "", "ein leerer Kurs wirft oder wird erfunden");
+        Soll(Rivals.OwnTimes.CourseText("course_-1_-2_to_-1_-2", null).Contains("-1/-2"),
+             "ein Rundkurs mit negativen Koordinaten wird falsch benannt");
+        Soll(Rivals.OwnTimes.CourseText("course_1_2_to_3_4", "Cedar Run") == "Cedar Run",
+             "ein echter Name wird vom Ordnernamen verdraengt");
+    }
+
+    // ------------------------------------------------------------ HUDs
+
+    private static void HudsAtExtremes()
+    {
+        var settings = new Rivals.OverlaySettings();
+        var umriss = new Rivals.CourseShape.Outline(
+            Enumerable.Range(0, 60).Select(i => new PointF((float)Math.Cos(i / 9.5), (float)Math.Sin(i / 9.5))).ToList(),
+            Rivals.ShapeSource.Telemetry, 1000);
+        foreach (var schirm in new[] { new Rectangle(0, 0, 1280, 720), new Rectangle(0, 0, 7680, 4320),
+                                       new Rectangle(-1920, 0, 1920, 1080), new Rectangle(0, 0, 3440, 1440) })
+        {
+            // Klein halten, was nur gezeichnet wird: ein 8K-Bitmap waere 130 MB.
+            var bild = new Size(Math.Min(schirm.Width, 3840), Math.Min(schirm.Height, 2160));
+            foreach (var anzahl in new[] { 0, 1, 3, 5 })
+            {
+                using var hud = new Rivals.CourseShapeHud(settings, schirm);
+                var liste = Enumerable.Range(0, anzahl)
+                    .Select(i => ((string Name, Rivals.CourseShape.Outline? Shape))
+                                 ($"Route {i} with a rather long name", i % 2 == 0 ? umriss : null))
+                    .ToList();
+                hud.SetCourses(liste);
+                using var bmp = new Bitmap(bild.Width, bild.Height, PixelFormat.Format32bppArgb);
+                using var g = Graphics.FromImage(bmp);
+                hud.Paint(g);
+            }
+            using var note = new Rivals.CarNoteHud(settings, schirm);
+            using var nbmp = new Bitmap(bild.Width, bild.Height, PixelFormat.Format32bppArgb);
+            using var ng = Graphics.FromImage(nbmp);
+            note.Paint(ng, "Porsche 911 GT3 '21", string.Concat(Enumerable.Repeat("long note ", 400)));
+            note.Paint(ng, "", "");
+        }
+    }
+
+    // ------------------------------------------------------------ My times
+
+    private static void OwnTimesOnBadArchives()
+    {
+        var wurzel = Path.Combine(Path.GetTempPath(), "forza-edge-laps-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Soll(Rivals.OwnTimes.All(wurzel).Count == 0, "ein fehlendes Rundenarchiv liefert Runden");
+            // Ein Archiv mit Muell darin: falsche Tiefe, kaputtes JSON, falscher Dateiname.
+            var tief = Path.Combine(wurzel, "course_1_2_to_1_2", "A", "car100", "100-700-1-4-7000-800", "untagged");
+            Directory.CreateDirectory(tief);
+            File.WriteAllText(Path.Combine(tief, "2026-09-24_10-00-00_61.5s.json"), "{ kaputt");
+            File.WriteAllText(Path.Combine(tief, "kein_zeitname.json"), "{}");
+            File.WriteAllText(Path.Combine(wurzel, "stray.json"), "{}");
+            Directory.CreateDirectory(Path.Combine(wurzel, "carFOO", "x"));
+            var laps = Rivals.OwnTimes.All(wurzel);
+            Soll(laps.Count == 1, $"das Archiv mit Muell liefert {laps.Count} statt 1 Runde");
+            Soll(Math.Abs(laps[0].Seconds - 61.5) < 1e-6, "die Zeit wird aus dem Dateinamen falsch gelesen");
+
+            var leer = new Rivals.OwnTimes.Filter { YearFrom = 2030, YearTo = 1990 };
+            Soll(Rivals.OwnTimes.Query(laps, leer, null).Count == 0, "ein unmoeglicher Jahresbereich liefert Zeilen");
+            var nichts = new Rivals.OwnTimes.Filter { CarSearch = "\u0000<script>" };
+            Soll(Rivals.OwnTimes.Query(laps, nichts, null).Count == 0, "eine Unsinnssuche liefert Zeilen");
+            Soll(Rivals.OwnTimes.Query(Array.Empty<Rivals.OwnTimes.Lap>(), new Rivals.OwnTimes.Filter(), null).Count == 0,
+                 "ein leerer Bestand liefert Zeilen");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, true); } catch (Exception) { }
+        }
+    }
+
+    // ------------------------------------------------------------ screen maths
+
+    private static void ScreenMaths()
+    {
+        foreach (var r in new[] { new Rectangle(0, 0, 1, 1), new Rectangle(0, 0, 0, 0), new Rectangle(5, 5, 16, 9),
+                                  new Rectangle(0, 0, 15360, 8640), new Rectangle(-3840, -200, 3840, 2160),
+                                  new Rectangle(0, 0, 5120, 1440), new Rectangle(0, 0, 1080, 1920) })
+        {
+            var s = GameArea.SixteenNine(r);
+            Soll(s.Width <= Math.Max(0, r.Width) && s.Height <= Math.Max(0, r.Height),
+                 $"der 16:9-Ausschnitt von {r} ragt heraus ({s})");
+            Soll(s.X >= r.X && s.Y >= r.Y, $"der 16:9-Ausschnitt von {r} liegt daneben ({s})");
+            var k = GameArea.ResolutionScale(r);
+            Soll(k >= 0.25f && !float.IsNaN(k) && !float.IsInfinity(k), $"Massstab {k} fuer {r}");
+        }
+        Soll(Math.Abs(GameArea.ResolutionScale(new Rectangle(0, 0, 3840, 2160)) - 2f) < 0.01f, "4K ist nicht Massstab 2");
+        Soll(Math.Abs(GameArea.ResolutionScale(new Rectangle(0, 0, 5120, 1440)) - 1.3333f) < 0.01f,
+             "32:9 nimmt nicht den mittigen 16:9-Teil");
+    }
+
+    // ------------------------------------------------------------ reader
+
+    private static void ReaderOnDegenerateFrames()
+    {
+        var pfad = Rivals.RivalsDataset.FindDefaultPath();
+        if (pfad is null) { return; }
+        var reader = new Rivals.RivalsScreenReader(
+            new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad)), new Rivals.OverlaySettings());
+        if (!reader.OcrAvailable) { return; }
+        foreach (var groesse in new[] { new Size(1280, 720), new Size(3840, 2160), new Size(64, 36), new Size(2, 2) })
+        {
+            using var schwarz = new Bitmap(groesse.Width, groesse.Height, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(schwarz)) { g.Clear(Color.Black); }
+            var st = reader.ReadBitmap(schwarz);
+            Soll(st.Tracks.Count == 0, $"ein schwarzes {groesse.Width}x{groesse.Height}-Bild zeigt Strecken");
+        }
+    }
+}

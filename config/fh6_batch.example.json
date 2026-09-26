@@ -1,0 +1,40 @@
+{
+  "description": "Batch jobs for FH6 Rivals leaderboard capture. Replace the sample tracks with real FH6 event names after learning the route.",
+  "route_config": "config/fh6_visual_route.example.json",
+  "capture_root": "data/inbox/batch",
+  "processed_root": "data/processed/batch",
+  "sqlite_path": "data/processed/leaderboard_entries.sqlite",
+  "parquet_path": "data/processed/leaderboard_entries.parquet",
+  "backup_root": "data/backups/forza_display",
+  "defaults": {
+    "event_type": "Rivals",
+    "rivals_modes": [
+      "Road Racing"
+    ],
+    "performance_classes": [
+      "All"
+    ],
+    "pages": 20
+  },
+  "jobs": [
+    {
+      "track": "REPLACE_WITH_TRACK_NAME_1",
+      "rivals_modes": [
+        "Road Racing",
+        "Street Racing"
+      ],
+      "performance_classes": [
+        "A",
+        "S1",
+        "R"
+      ],
+      "pages": 10
+    },
+    {
+      "track": "REPLACE_WITH_TRACK_NAME_2",
+      "rivals_mode": "Dirt Racing",
+      "performance_class": "All",
+      "pages": 8
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+# Der Dienst auf dem GNAS. Liegt dort unter <remote_root>/server/deploy/.
+#
+# ALLE PFADE RELATIV zu diesem Ordner: ../.. ist remote_root (der gespiegelte Baum),
+# ../../../forza-secrets liegt daneben (deploy_gnas.geheim_ordner). So steht kein
+# Konto- oder Ordnername des NAS im Quelltext.
+#
+#     docker compose up -d --build     einrichten oder Laufzeit erneuern
+#     docker compose restart           nach einem Code-Update
+#     docker compose logs -f           zusehen
+#
+# PORT 8787 UND NICHT 80: auf dem GNAS bedient Apache bereits Nextcloud auf 80.
+# Diesen vhost anzufassen hiesse, fuer eine Rennseite an der Wolke zu schrauben,
+# die dort taeglich gebraucht wird. 8787 kostet eine Portangabe in der Adresse und
+# beruehrt nichts Bestehendes.
+#
+# HTTPS AUF DEMSELBEN PORT (seit 2026-09-24). serve_analytics.py erkennt am ersten
+# Byte, ob eine Verbindung TLS spricht, und bedient beides -- die ausgelieferten
+# Apps sprechen weiter http://...:8787, bis ein Update sie umstellt. Solange unter
+# /tls kein Zertifikat liegt, laeuft alles wie bisher nur mit HTTP.
+#
+# DAS ZERTIFIKAT holt `forza-cert` (acme.sh, Let's Encrypt, DNS-Pruefung ueber
+# DuckDNS -- kein Port 80 noetig). Der Dienst steht im Profil "tls" und startet
+# NUR mit `--profile tls`: ohne DuckDNS-Schluessel waere er sonst ein Fehler bei
+# jedem Neustart. Der Schluessel liegt ausserhalb des gespiegelten Baums, in
+# ../../../forza-secrets/duckdns.env (eine Zeile: DuckDNS_Token=...), und
+# wird von hier aus nie gelesen, geschickt oder gesichert.
+services:
+  forza-site:
+    build: .
+    image: forza-site:latest
+    container_name: forza-site
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      # Der ganze Baum, nicht einzelne Dateien: der Server leitet jeden Pfad aus
+      # seinem eigenen Ort ab (WORKSPACE = scripts/..), und Fremdbeitraege landen
+      # in data/. Einzelne Einhaengungen wuerden bei der ersten neuen Datei reissen.
+      - ../..:/app
+      # Nur lesend, und NICHT im gespiegelten Baum: ein privater TLS-Schluessel
+      # gehoert in keinen Ordner, den eine Auslieferung beschreibt.
+      - ../../../forza-secrets/tls:/tls:ro
+    working_dir: /app
+    command: ["python", "server/serve_analytics.py", "--host", "0.0.0.0",
+              "--port", "8787", "--nur-ausliefern",
+              "--tls-cert", "/tls/fullchain.pem", "--tls-key", "/tls/privkey.pem"]
+    environment:
+      - PYTHONUNBUFFERED=1
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  forza-cert:
+    # Feste Fassung statt "latest": ein Werkzeug, das Zertifikate schreibt, soll
+    # sich nicht ungefragt aendern.
+    image: neilpang/acme.sh:3.1.1
+    container_name: forza-cert
+    profiles: ["tls"]
+    restart: unless-stopped
+    command: daemon
+    env_file:
+      - ../../../forza-secrets/duckdns.env
+    volumes:
+      - ../../../forza-secrets/acme:/acme.sh
+      - ../../../forza-secrets/tls:/tls
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"

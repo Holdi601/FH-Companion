@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Contribute a Scan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<!--
+  Die Seite hinter /mitmachen.
+
+  WARUM ES SIE BRAUCHT: die Auswertungsseite verlinkt seit je auf /mitmachen, und der
+  Server sucht dafuer contribute_page.html neben sich. Geschrieben war sie nie -- wer
+  klickte, bekam "404 -- contribute_page.html is missing".
+
+  WAS SIE NICHT TUT: so tun, als koenne man sich hier anmelden. Mitmachen setzt ein
+  persoenliches Beitragspaket voraus, das der Betreiber baut
+  (scripts/build_contrib_package.py), samt eigenem Geheimnis. Eine Seite mit einem
+  Knopf "jetzt mitmachen", hinter dem nichts liegt, waere schlimmer als ein 404:
+  der 404 luegt wenigstens nicht.
+
+  Englisch zuerst, Deutsch fuer deutsche Browser -- wie auf /app. Der volle
+  Sprachsatz kommt mit dem gemeinsamen Uebersetzungsspeicher; fehlt eine Sprache,
+  steht Englisch da, und das ist beabsichtigt.
+-->
+<style>
+/* GROSSE SCHIRME. Die Seite ist in CSS-Pixeln fuer ~1080p-1440p gebaut (Spalte
+   1240px, Schrift 12-15px). Auf einem 4K-Schirm mit 100 % Skalierung war sie ein
+   schmaler Streifen winziger Schrift, auf 8K/16K unlesbar. zoom skaliert Layout,
+   Schrift, Tabellen und Diagramme gemeinsam; die Stufen haengen an der Breite des
+   Fensters in CSS-Pixeln, also greifen sie nicht, wenn Windows ohnehin skaliert. */
+@media (min-width: 2200px) { html { zoom: 1.5; } }
+@media (min-width: 3000px) { html { zoom: 2; } }
+@media (min-width: 4400px) { html { zoom: 3; } }
+@media (min-width: 6000px) { html { zoom: 4; } }
+@media (min-width: 9000px) { html { zoom: 6; } }
+@media (min-width: 12000px) { html { zoom: 8; } }
+
+:root {
+  --ground: #f5f6f8; --surface: #ffffff; --raised: #fafbfc;
+  --border: #e3e7ed; --ink: #0f1520; --ink-soft: #3d4759; --muted: #59647a;
+  --bar: #0891b2; --link: #0e7490; --on-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(15,21,32,.05), 0 10px 26px rgba(15,21,32,.045);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0b1017; --surface: #131a23; --raised: #182029;
+    --border: #232e3b; --ink: #e7ecf3; --ink-soft: #c3ccd9; --muted: #93a2b5;
+    --bar: #22d3ee; --link: #5eead4; --on-ink: #0b1017;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.35);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; line-height: 1.55;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 26px 18px 70px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.label { font-size: 12.5px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+select {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 7px; padding: 5px 8px; font: inherit; font-size: 13px;
+}
+h1 {
+  font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
+  font-size: clamp(30px, 6vw, 46px); margin: 6px 0 10px; letter-spacing: -.01em;
+}
+h2 {
+  font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
+  font-size: 22px; margin: 32px 0 10px;
+}
+p { margin: 0 0 12px; max-width: 74ch; color: var(--ink-soft); }
+a { color: var(--link); }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 18px 20px; margin: 18px 0;
+  border-left: 4px solid var(--bar);
+}
+ul { margin: 0 0 12px; padding-left: 20px; color: var(--ink-soft); max-width: 74ch; }
+li { margin: 6px 0; }
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px;
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 5px;
+}
+footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+[dir="rtl"] ul { padding-left: 0; padding-right: 20px; }
+[dir="rtl"] .panel { border-left: 1px solid var(--border); border-right: 4px solid var(--bar); }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="label">Forza Horizon 6</span>
+    <select id="lang" aria-label="Language"></select>
+  </div>
+
+  <h1 id="h1"></h1>
+  <p id="lead"></p>
+
+  <div class="panel">
+    <p id="ask" style="margin-bottom:0"></p>
+  </div>
+
+  <h2 id="h-what"></h2>
+  <p id="what1"></p>
+  <p id="what2"></p>
+
+  <h2 id="h-need"></h2>
+  <ul>
+    <li id="n1"></li>
+    <li id="n2"></li>
+    <li id="n3"></li>
+  </ul>
+
+  <h2 id="h-back"></h2>
+  <p id="back1"></p>
+  <p id="back2"></p>
+
+  <h2 id="h-priv"></h2>
+  <p id="priv"></p>
+
+  <footer><a href="/" id="home"></a> &middot; <a href="/app" id="applink"></a></footer>
+</div>
+
+<script>
+var T = {
+  en: {
+    name: "English",
+    h1: "Contribute a scan",
+    lead: "The car ratings on this site are read off real leaderboards — one page at a time, by a program that drives the game's menus and reads the rows off the screen. More scans mean more routes covered and fresher numbers. It is slow, and it is the one part more people genuinely help with.",
+    ask: "This is not self-service. Taking part needs a personal package that has to be built for you, with a key of your own. Ask the person who runs this site for one — there is nothing to sign up for here, and no form that would do anything.",
+    hWhat: "What a scan actually is",
+    what1: "The same scanner that produced everything on this site, minus the virtual machine — it reads your own screen instead. It opens a leaderboard, pages through it, and writes down each row: rank, time, car and player.",
+    what2: "What comes back are lines of text, not recordings. About 5 MB per board. Raw captures would be between 266 MB and 2.2 GB — measured, not guessed — and they are deleted after being read anyway.",
+    hNeed: "What it needs from you",
+    n1: "A PC with Forza Horizon 6 and the patience to leave it running. A board takes a while, and the game does not like being rushed.",
+    n2: "About 300 MB of disk for a Python environment, set up once by the start script. Nothing else is installed.",
+    n3: "Somewhere to put the result — the tool can upload it itself, or you send the ZIP.",
+    hBack: "What happens to it",
+    back1: "It lands in the dataset and is visible on the site from the next rebuild, with your name on the scan so anyone can see where a number came from.",
+    back2: "Every package carries two signatures: one that says who sent it, and one that says the package is still a valid one at all. Both are computed, never transmitted — so a file changed on the way fails, and reading the traffic gets nobody a key. Your own key can be withdrawn without affecting anyone else's.",
+    hPriv: "What is recorded about you",
+    priv: "Your name as you choose it for the scan, and nothing else. No account, no email, no telemetry from your own driving. The rows you send are leaderboard entries — public in the game to everyone who opens that board.",
+    home: "Back to the car ratings",
+    applink: "The app"
+  },
+  de: {
+    name: "Deutsch",
+    h1: "Einen Scan beisteuern",
+    lead: "Die Auto-Wertungen auf dieser Seite sind von echten Bestenlisten abgelesen — Seite für Seite, von einem Programm, das die Menüs des Spiels bedient und die Zeilen vom Bildschirm liest. Mehr Scans heißt mehr abgedeckte Strecken und frischere Zahlen. Es dauert, und es ist der eine Teil, bei dem mehr Leute wirklich helfen.",
+    ask: "Das hier ist keine Selbstbedienung. Mitmachen setzt ein persönliches Paket voraus, das für dich gebaut werden muss, mit einem eigenen Schlüssel. Frag den Betreiber dieser Seite danach — es gibt hier nichts anzumelden und kein Formular, das etwas bewirken würde.",
+    hWhat: "Was ein Scan wirklich ist",
+    what1: "Derselbe Scanner, der alles auf dieser Seite erzeugt hat, nur ohne virtuelle Maschine — er liest stattdessen deinen eigenen Bildschirm. Er öffnet eine Bestenliste, blättert durch und schreibt jede Zeile mit: Rang, Zeit, Auto und Spieler.",
+    what2: "Zurück kommen Textzeilen, keine Aufnahmen. Etwa 5 MB je Board. Rohe Aufnahmen wären zwischen 266 MB und 2,2 GB — gemessen, nicht geschätzt — und werden nach dem Lesen ohnehin gelöscht.",
+    hNeed: "Was es von dir braucht",
+    n1: "Einen PC mit Forza Horizon 6 und die Geduld, ihn laufen zu lassen. Ein Board dauert, und das Spiel lässt sich nicht hetzen.",
+    n2: "Rund 300 MB Platte für eine Python-Umgebung, einmalig vom Startskript eingerichtet. Sonst wird nichts installiert.",
+    n3: "Einen Weg für das Ergebnis — das Werkzeug kann selbst hochladen, oder du schickst die ZIP.",
+    hBack: "Was damit geschieht",
+    back1: "Es landet im Datenbestand und ist ab dem nächsten Seitenaufbau sichtbar, mit deinem Namen am Scan — so kann jeder sehen, woher eine Zahl stammt.",
+    back2: "Jedes Paket trägt zwei Unterschriften: eine sagt, wer es geschickt hat, die andere, ob das Paket überhaupt noch gültig ist. Beide werden gerechnet, nie übertragen — eine unterwegs veränderte Datei fällt durch, und wer den Verkehr mitliest, bekommt keinen Schlüssel. Dein eigener lässt sich zurückziehen, ohne jemanden sonst zu treffen.",
+    hPriv: "Was über dich festgehalten wird",
+    priv: "Dein Name, so wie du ihn für den Scan wählst, und sonst nichts. Kein Konto, keine E-Mail, keine Telemetrie von deinem eigenen Fahren. Die Zeilen, die du schickst, sind Bestenlisten-Einträge — im Spiel für jeden sichtbar, der dieses Board öffnet.",
+    home: "Zurück zu den Auto-Wertungen",
+    applink: "Die App"
+  }
+};
+
+function pick() {
+  try {
+    var saved = localStorage.getItem("fgh-lang");
+    if (saved && T[saved]) { return saved; }
+  } catch (e) { /* privates Fenster */ }
+  var list = navigator.languages || [navigator.language || "en"];
+  for (var i = 0; i < list.length; i++) {
+    var base = String(list[i] || "").toLowerCase().split("-")[0];
+    if (T[base]) { return base; }
+  }
+  return "en";
+}
+
+function apply(code) {
+  var t = T[code] || T.en, en = T.en;
+  function put(id, key) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = t[key] || en[key] || ""; }
+  }
+  document.documentElement.lang = code;
+  document.documentElement.dir = t.rtl ? "rtl" : "ltr";
+  put("h1", "h1"); put("lead", "lead"); put("ask", "ask");
+  put("h-what", "hWhat"); put("what1", "what1"); put("what2", "what2");
+  put("h-need", "hNeed"); put("n1", "n1"); put("n2", "n2"); put("n3", "n3");
+  put("h-back", "hBack"); put("back1", "back1"); put("back2", "back2");
+  put("h-priv", "hPriv"); put("priv", "priv");
+  put("home", "home"); put("applink", "applink");
+  document.title = t.h1 || en.h1;
+}
+
+(function () {
+  var sel = document.getElementById("lang");
+  Object.keys(T).sort(function (a, b) {
+    return T[a].name.localeCompare(T[b].name);
+  }).forEach(function (c) {
+    var o = document.createElement("option");
+    o.value = c; o.textContent = T[c].name;
+    sel.appendChild(o);
+  });
+  var start = pick();
+  sel.value = start;
+  apply(start);
+  sel.addEventListener("change", function () {
+    try { localStorage.setItem("fgh-lang", sel.value); } catch (e) { /* egal */ }
+    apply(sel.value);
+  });
+})();
+</script>
+</html>

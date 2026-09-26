@@ -1,0 +1,292 @@
+{
+  "_comment": [
+    "Aus dem Speicher des laufenden Spiels gelesen.",
+    "tiers: Stufe 0..3 heissen Stock, Street, Sport, Race -- belegt an",
+    "587 Autos: wo genau die Stufen 0..3 vorkommen, enthaelt der Vorrat",
+    "genau diese vier Namen.",
+    "Fuer Stufen ab 4 ist KEINE Zuordnung belegt; 'other' listet nur,",
+    "welche Namen es sonst gibt."
+  ],
+  "tiers": [
+    "Stock",
+    "Street",
+    "Sport",
+    "Race"
+  ],
+  "byPart": {
+    "Brakes": [
+      "Stock Brakes",
+      "Street Brakes",
+      "Sport Brakes",
+      "Race Brakes"
+    ],
+    "Cams and Valves": [
+      "Stock Cams and Valves",
+      "Street Cams and Valves",
+      "Sport Cams and Valves",
+      "Race Cams and Valves"
+    ],
+    "Carburetor": [
+      "Stock Carburetor",
+      "Street Carburetor",
+      "Sport Carburetor",
+      "Race Carburetor"
+    ],
+    "Centrifugal Supercharger": [
+      "Stock Centrifugal Supercharger",
+      "Street Centrifugal Supercharger",
+      "Sport Centrifugal Supercharger",
+      "Race Centrifugal Supercharger"
+    ],
+    "Chassis Reinforcement / Roll Cage": [
+      "Stock Chassis Reinforcement / Roll Cage",
+      "Street Chassis Reinforcement / Roll Cage",
+      "Sport Chassis Reinforcement / Roll Cage",
+      "Race Chassis Reinforcement / Roll Cage"
+    ],
+    "Clutch": [
+      "Stock Clutch",
+      "Street Clutch",
+      "Sport Clutch",
+      "Race Clutch"
+    ],
+    "Diff": [
+      "Stock Diff",
+      "Street Diff",
+      "Sport Diff",
+      "Race Diff"
+    ],
+    "Driveline": [
+      "Stock Driveline",
+      "Street Driveline",
+      "Sport Driveline",
+      "Race Driveline"
+    ],
+    "Engine Block": [
+      "Stock Engine Block",
+      "Street Engine Block",
+      "Sport Engine Block",
+      "Race Engine Block"
+    ],
+    "Exhaust": [
+      "Stock Exhaust",
+      "Street Exhaust",
+      "Sport Exhaust",
+      "Race Exhaust"
+    ],
+    "Flywheel": [
+      "Stock Flywheel",
+      "Street Flywheel",
+      "Sport Flywheel",
+      "Race Flywheel"
+    ],
+    "Front Anti-roll Bars": [
+      "Stock Front Anti-roll Bars",
+      "Street Front Anti-roll Bars",
+      "Sport Front Anti-roll Bars",
+      "Race Front Anti-roll Bars"
+    ],
+    "Front Bumper": [
+      "Stock Front Bumper",
+      "Street Front Bumper",
+      "Sport Front Bumper",
+      "Race Front Bumper"
+    ],
+    "Fuel System": [
+      "Stock Fuel System",
+      "Street Fuel System",
+      "Sport Fuel System",
+      "Race Fuel System"
+    ],
+    "Ignition": [
+      "Stock Ignition",
+      "Street Ignition",
+      "Sport Ignition",
+      "Race Ignition"
+    ],
+    "Intake": [
+      "Stock Intake",
+      "Street Intake",
+      "Sport Intake",
+      "Race Intake"
+    ],
+    "Intake Manifold / Throttle Body": [
+      "Stock Intake Manifold / Throttle Body",
+      "Street Intake Manifold / Throttle Body",
+      "Sport Intake Manifold / Throttle Body",
+      "Race Intake Manifold / Throttle Body"
+    ],
+    "Intercooler": [
+      "Stock Intercooler",
+      "Street Intercooler",
+      "Sport Intercooler",
+      "Race Intercooler"
+    ],
+    "Motor and Battery Parts": [
+      "Stock Motor and Battery Parts",
+      "Street Motor and Battery Parts",
+      "Sport Motor and Battery Parts",
+      "Race Motor and Battery Parts"
+    ],
+    "Oil / Cooling": [
+      "Stock Oil / Cooling",
+      "Street Oil / Cooling",
+      "Sport Oil / Cooling",
+      "Race Oil / Cooling"
+    ],
+    "Pistons / Compression": [
+      "Stock Pistons / Compression",
+      "Street Pistons / Compression",
+      "Sport Pistons / Compression",
+      "Race Pistons / Compression"
+    ],
+    "Positive Displacement Supercharger": [
+      "Stock Positive Displacement Supercharger",
+      "Street Positive Displacement Supercharger",
+      "Sport Positive Displacement Supercharger",
+      "Race Positive Displacement Supercharger"
+    ],
+    "Rear Anti-roll Bars": [
+      "Stock Rear Anti-roll Bars",
+      "Street Rear Anti-roll Bars",
+      "Sport Rear Anti-roll Bars",
+      "Race Rear Anti-roll Bars"
+    ],
+    "Rear Bumper": [
+      "Stock Rear Bumper",
+      "Street Rear Bumper",
+      "Sport Rear Bumper",
+      "Race Rear Bumper"
+    ],
+    "Rear Wing": [
+      "Stock Rear Wing",
+      "Street Rear Wing",
+      "Sport Rear Wing",
+      "Race Rear Wing"
+    ],
+    "Rotors / Compression": [
+      "Stock Rotors / Compression",
+      "Street Rotors / Compression",
+      "Sport Rotors / Compression",
+      "Race Rotors / Compression"
+    ],
+    "Spring and Dampers": [
+      "Stock Spring and Dampers",
+      "Street Spring and Dampers",
+      "Sport Spring and Dampers",
+      "Race Spring and Dampers"
+    ],
+    "Transmission": [
+      "Stock Transmission",
+      "Street Transmission",
+      "Sport Transmission",
+      "Race Transmission"
+    ],
+    "Turbo": [
+      "Stock Turbo",
+      "Street Turbo",
+      "Sport Turbo",
+      "Race Turbo"
+    ],
+    "Twin Turbo": [
+      "Stock Twin Turbo",
+      "Street Twin Turbo",
+      "Sport Twin Turbo",
+      "Race Twin Turbo"
+    ],
+    "Valves": [
+      "Stock Valves",
+      "Street Valves",
+      "Sport Valves",
+      "Race Valves"
+    ],
+    "Weight Reduction": [
+      "Stock Weight Reduction",
+      "Street Weight Reduction",
+      "Sport Weight Reduction",
+      "Race Weight Reduction"
+    ]
+  },
+  "other": [
+    "'Horizon' Semi-Slick Race Tyre Compound",
+    "'Hot Wheels' Semi-Slick Race Tyre Compound",
+    "Alternative Rim Style",
+    "Centrifugal Supercharger",
+    "Drag Tyre Compound",
+    "Drift Diff",
+    "Drift Spring and Dampers",
+    "Drift Transmission: 4 Speed",
+    "Drift Tyre Compound",
+    "Hot Rod Conversion",
+    "Naturally Aspirated",
+    "No Intercooler",
+    "Off-Road Diff",
+    "Off-road Race Tyre Compound",
+    "Positive-Displacement Supercharger",
+    "Race Diesel Ignition",
+    "Race Transmission: 10 Speed",
+    "Race Transmission: 6 Speed",
+    "Race Transmission: 7 Speed",
+    "Race Transmission: 8 Speed",
+    "Race Transmission: 9 Speed",
+    "Race Turbo With Anti-Lag",
+    "Race Twin Turbo With Anti-Lag",
+    "Rally Diff",
+    "Rally Spring and Dampers",
+    "Rally Transmission",
+    "Rally Tyre Compound",
+    "Remove Front Bumper",
+    "Remove Rear Bumper",
+    "Remove Restrictors",
+    "Remove Side Skirts",
+    "Remove Wing",
+    "Roo Bars",
+    "Semi-Slick Race Tyre Compound",
+    "Single Turbo",
+    "Slick Race Tyre Compound",
+    "Snow Tyre Compound",
+    "Sport Diesel Fuel System",
+    "Sport Tyre Compound",
+    "Stock - Centrifugal Supercharger",
+    "Stock - Naturally Aspirated",
+    "Stock - Positive-Displacement Supercharger",
+    "Stock - Quad Turbo",
+    "Stock - Single Turbo",
+    "Stock - Twin Turbo",
+    "Stock Body",
+    "Stock Bonnet",
+    "Stock Diesel Fuel System",
+    "Stock Front Rim Size",
+    "Stock Front Track Width",
+    "Stock Front Tyre Width",
+    "Stock Motor and Battery Swap",
+    "Stock Powertrain Swap",
+    "Stock Rear Rim Size",
+    "Stock Rear Track Width",
+    "Stock Rear Tyre Profile Size",
+    "Stock Rear Tyre Width",
+    "Stock Rim Style",
+    "Stock Side Skirts",
+    "Stock Tyre Compound",
+    "Stock Tyre Profile Size",
+    "Street Bonnet",
+    "Street Diesel Fuel System",
+    "Street Motor Swap",
+    "Street Powertrain Swap",
+    "Street Side Skirts",
+    "Street Tyre Compound",
+    "Submarine Conversion",
+    "Twin Turbo",
+    "Upgraded Front Rim Size",
+    "Upgraded Front Track Width",
+    "Upgraded Front Tyre Profile Size",
+    "Upgraded Front Tyre Width",
+    "Upgraded Rear Rim Size",
+    "Upgraded Rear Track Width",
+    "Upgraded Rear Tyre Profile Size",
+    "Upgraded Rear Tyre Width",
+    "Vintage Race Tyre Compound",
+    "Vintage White Wall Tyre Compound",
+    "Widebody Kit"
+  ]
+}

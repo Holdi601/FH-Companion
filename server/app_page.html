@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>FH Companion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<!--
+  Die Downloadseite fuer die App.
+
+  WARUM ES SIE BRAUCHT: die Auswertungsseite verlinkt auf /app, /mitmachen und
+  /admin. Der Server bedient diese Wege auch -- er sucht dafuer app_page.html,
+  contribute_page.html und admin_page.html NEBEN sich im server/-Ordner.
+  Geschrieben wurde keine davon. Wer klickte, bekam "404 -- app_page.html is
+  missing", und zwar seit dem ersten Tag.
+
+  ENGLISCH ZUERST. Meine erste Fassung war durchgehend deutsch -- der Nutzer hat
+  richtig angemerkt, dass die App englisch ist und die Seite es auch sein muss.
+  Die Sprache wird aus `navigator.languages` gewaehlt, Englisch ist die
+  Rueckfallebene, und ein Waehler daneben laesst jeden umstellen. Die Wahl bleibt
+  in localStorage stehen.
+
+  Die ZAHLEN stehen nicht im HTML, sondern kommen von /api/haptics: eine
+  Downloadseite, die eine veraltete Version behauptet, ist schlimmer als eine ohne
+  Angabe. Faellt die Abfrage aus, bleibt der Knopf trotzdem benutzbar.
+-->
+<style>
+/* GROSSE SCHIRME. Die Seite ist in CSS-Pixeln fuer ~1080p-1440p gebaut (Spalte
+   1240px, Schrift 12-15px). Auf einem 4K-Schirm mit 100 % Skalierung war sie ein
+   schmaler Streifen winziger Schrift, auf 8K/16K unlesbar. zoom skaliert Layout,
+   Schrift, Tabellen und Diagramme gemeinsam; die Stufen haengen an der Breite des
+   Fensters in CSS-Pixeln, also greifen sie nicht, wenn Windows ohnehin skaliert. */
+@media (min-width: 2200px) { html { zoom: 1.5; } }
+@media (min-width: 3000px) { html { zoom: 2; } }
+@media (min-width: 4400px) { html { zoom: 3; } }
+@media (min-width: 6000px) { html { zoom: 4; } }
+@media (min-width: 9000px) { html { zoom: 6; } }
+@media (min-width: 12000px) { html { zoom: 8; } }
+
+:root {
+  --ground: #f5f6f8; --surface: #ffffff; --raised: #fafbfc;
+  --border: #e3e7ed; --ink: #0f1520; --ink-soft: #3d4759; --muted: #59647a;
+  --bar: #0891b2; --link: #0e7490; --on-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(15,21,32,.05), 0 10px 26px rgba(15,21,32,.045);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0b1017; --surface: #131a23; --raised: #182029;
+    --border: #232e3b; --ink: #e7ecf3; --ink-soft: #c3ccd9; --muted: #93a2b5;
+    --bar: #22d3ee; --link: #5eead4; --on-ink: #0b1017;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.35);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; line-height: 1.55;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 26px 18px 70px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.label { font-size: 12.5px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+select {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 7px; padding: 5px 8px; font: inherit; font-size: 13px;
+}
+h1 {
+  font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
+  font-size: clamp(30px, 6vw, 46px); margin: 6px 0 10px; letter-spacing: -.01em;
+}
+h2 {
+  font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
+  font-size: 22px; margin: 32px 0 10px;
+}
+p { margin: 0 0 12px; max-width: 74ch; color: var(--ink-soft); }
+a { color: var(--link); }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 20px 22px; margin: 18px 0;
+}
+.get { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+.button {
+  display: inline-block; background: var(--ink); color: var(--on-ink);
+  text-decoration: none; font-weight: 600; font-size: 17px;
+  padding: 13px 26px; border-radius: 9px; border: 1px solid var(--ink);
+}
+.button:hover { background: var(--bar); border-color: var(--bar); }
+.facts { font-size: 13.5px; color: var(--muted); }
+.facts div { margin: 2px 0; }
+.facts b { color: var(--ink-soft); font-weight: 500; }
+.sum { word-break: break-all; }
+ul { margin: 0 0 12px; padding-left: 20px; color: var(--ink-soft); max-width: 74ch; }
+li { margin: 5px 0; }
+table.settings { border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
+table.settings td { padding: 3px 18px 3px 0; color: var(--ink-soft); }
+table.settings td:first-child { color: var(--muted); }
+/* Der Defender-Hinweis. Auffaellig genug, dass er vor dem Schreck gelesen wird,
+   aber kein roter Alarm -- es ist ein Fehlalarm, keine Gefahr. */
+.warn {
+  margin: 30px 0 0; padding: 18px 20px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 4px solid var(--bar); box-shadow: var(--shadow);
+}
+[dir="rtl"] .warn { border-left: 1px solid var(--border); border-right: 4px solid var(--bar); }
+footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+[dir="rtl"] ul { padding-left: 0; padding-right: 20px; }
+[dir="rtl"] table.settings td { padding: 3px 0 3px 18px; }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="label">Forza Horizon 6</span>
+    <select id="lang" aria-label="Language"></select>
+  </div>
+
+  <h1>FH Companion</h1>
+  <p id="tagline"></p>
+
+  <div class="panel">
+    <div class="get">
+      <a class="button" href="/download/haptics" id="dl">Download</a>
+      <div class="facts" id="facts"><div class="mono">…</div></div>
+    </div>
+  </div>
+
+  <h2 id="h-setup"></h2>
+  <p id="setup1"></p>
+  <p id="setup2"></p>
+  <table class="settings">
+    <tr><td id="s-on">Data Out</td><td class="mono">On</td></tr>
+    <tr><td id="s-ip">Data Out IP</td><td class="mono">127.0.0.1</td></tr>
+    <tr><td id="s-port">Data Out Port</td><td class="mono">5300</td></tr>
+    <tr><td id="s-fmt">Data Out Format</td><td class="mono">Dash</td></tr>
+  </table>
+  <p id="setup3"></p>
+
+  <h2 id="h-does"></h2>
+  <ul>
+    <li id="f1"></li>
+    <li id="f2"></li>
+    <li id="f3"></li>
+    <li id="f4"></li>
+    <li id="f5"></li>
+  </ul>
+
+  <h2 id="h-upd"></h2>
+  <p id="upd"></p>
+
+  <h2 id="h-req"></h2>
+  <p id="req"></p>
+
+  <div class="warn">
+    <h2 id="h-safe" style="margin-top:0"></h2>
+    <p id="safe" style="margin-bottom:0"></p>
+  </div>
+
+  <footer><a href="/" id="back"></a></footer>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Die Texte. Englisch ist die Grundlage; fehlt ein Schluessel in einer Sprache,
+// wird der englische genommen -- eine halb uebersetzte Seite ist besser als eine
+// leere Zeile.
+//
+// Die Uebersetzungen stammen von mir und sind NICHT von Muttersprachlern
+// geprueft. Darum steht hier bewusst kein Werbetext, sondern kurze, sachliche
+// Saetze: die lassen sich zuverlaessig uebertragen.
+// ---------------------------------------------------------------------------
+var T = {
+  en: {
+    name: "English",
+    tagline: "Haptics, a rivals overlay, a lap delta, time attack in free roam and a tuning inspector — one program, nothing to install, and it works offline.",
+    dl: "Download", file: "File", size: "Size", built: "Built", build: "Build", sum: "Checksum",
+    hSetup: "Setup",
+    setup1: "Unzip the whole archive — do not drag single files out of it — and double-click START.cmd. Nothing is installed and nothing is written to the registry.",
+    setup2: "So that telemetry arrives, once in the game under Settings › HUD and Gameplay:",
+    setup3: "Without this every number in the program stays at 0, because the game sends nothing.",
+    hDoes: "What it does",
+    f1: "Haptics — tyre grip becomes vibration, on the side the car is sliding. Steam Controller, DualSense including adaptive triggers, Xbox, PlayStation and 8BitDo pads.",
+    f2: "Rivals overlay — which of the offered routes suits your car, and which car is worth driving in this class. Computed from real players' laps.",
+    f3: "Lap delta — your time against your own best, measured at the place you are standing, not after the same number of seconds.",
+    f4: "Time attack in free roam — Forza runs no clock outside a race; this does. Every route you have driven already has a start line, and F10 sets one of your own.",
+    f5: "Tuning inspector — what the tune on your car consists of: every fitted part with its name, step and price, all 37 sliders, and where the tune came from.",
+    hUpd: "Updating",
+    upd: "The program asks on startup and says so when something new is here; the button Check for app updates on the Rivals overlay tab does it at once. It verifies the checksum, replaces itself and restarts — your config folder is kept.",
+    hReq: "Requirements",
+    req: "Windows 10 or 11, 64-bit. The runtime is in the package, no .NET to install. The tuning inspector reads the running game's memory and may need administrator rights.",
+    back: "Back to the car ratings",
+    dataOut: "Data Out", ip: "Data Out IP", port: "Data Out Port", fmt: "Data Out Format",
+    noinfo: "Package details are not reachable right now — the download still works.",
+    hData: "What leaves your computer",
+    data1: "It downloads. It does not upload. The program asks the server whether the car ratings are newer than yours, whether a newer version of itself exists, and fetches either when you say so. That is the whole list.",
+    data2: "Your lap times, your telemetry, your tunes and your gamertag are never sent anywhere. They are written into the program's own folder and stay there. There is no account and nothing to sign in to. Set “offline” to true in config/overlay.json and it stops contacting the server at all.",
+    data3: "Two things about the program do look unusual, and you should know about them before you run it. It reads the running game's memory — read-only, only while the Tuning tab is open, and only to find the list of parts on your car, which the telemetry does not contain. And it replaces its own files when you update it. The program explains both on first start and asks you to confirm you have read it.",
+    hSafe: "Windows may warn about this file",
+    safe: "Defender can report this download as a threat. The file is unsigned and barely anyone has it yet, so Windows judges it by behaviour — and this program reads the running game's memory and replaces itself when it updates, which from the outside looks the same. Every release is scanned before it is published, and the checksum above lets you verify that the file you got is the file that was built. If Windows blocks it, choose Allow on device."
+  },
+  de: {
+    name: "Deutsch",
+    tagline: "Haptik, Rivals-Overlay, Rundendelta, Zeitjagd in der freien Welt und ein Tuning-Inspektor — ein Programm, nichts zu installieren, rechnet offline.",
+    dl: "Herunterladen", file: "Datei", size: "Größe", built: "Gebaut", build: "Bau", sum: "Prüfsumme",
+    hSetup: "Einrichten",
+    setup1: "Das Archiv vollständig entpacken — keine einzelnen Dateien herausziehen — und START.cmd doppelklicken. Es wird nichts installiert und nichts in die Registry geschrieben.",
+    setup2: "Damit Telemetrie ankommt, einmalig im Spiel unter Einstellungen › HUD und Gameplay:",
+    setup3: "Ohne das bleiben alle Zahlen im Programm auf 0, weil das Spiel nichts schickt.",
+    hDoes: "Was es tut",
+    f1: "Haptik — die Griffigkeit der Reifen wird zu Vibration, an der Seite, an der das Auto rutscht. Steam Controller, DualSense samt Adaptivtriggern, Xbox-, PlayStation- und 8BitDo-Pads.",
+    f2: "Rivals-Overlay — welche der angebotenen Strecken zu deinem Auto passt und welches Auto in dieser Klasse taugt. Gerechnet aus den Runden echter Spieler.",
+    f3: "Rundendelta — deine Zeit gegen deine eigene Bestzeit, gemessen an dem Ort, an dem du gerade stehst, nicht nach gleich vielen Sekunden.",
+    f4: "Zeitjagd in der freien Welt — Forza lässt draußen keine Uhr laufen, dieses Programm schon. Jede gefahrene Strecke hat bereits eine Start-Ziel-Linie, mit F10 setzt du eigene.",
+    f5: "Tuning-Inspektor — woraus der Tune auf deinem Auto besteht: jedes verbaute Teil mit Name, Stufe und Preis, alle 37 Regler, und woher der Tune stammt.",
+    hUpd: "Aktualisieren",
+    upd: "Das Programm fragt beim Start selbst nach und meldet sich, sobald hier etwas Neues liegt; der Knopf Check for app updates auf dem Reiter Rivals overlay tut es sofort. Es prüft die Prüfsumme, tauscht sich aus und startet neu — der Ordner config bleibt erhalten.",
+    hReq: "Voraussetzungen",
+    req: "Windows 10 oder 11, 64 Bit. Die Laufzeitumgebung liegt im Paket, es muss kein .NET nachinstalliert werden. Der Tuning-Inspektor liest den Speicher des laufenden Spiels und braucht dafür gelegentlich Administratorrechte.",
+    back: "Zurück zu den Auto-Wertungen",
+    dataOut: "Data Out", ip: "Data Out IP", port: "Data Out Port", fmt: "Data Out Format",
+    noinfo: "Die Angaben zum Paket sind gerade nicht abrufbar — der Download funktioniert trotzdem.",
+    hData: "Was deinen Rechner verlässt",
+    data1: "Es lädt. Es sendet nicht. Das Programm fragt den Server, ob die Auto-Wertungen neuer sind als deine und ob es eine neuere Fassung seiner selbst gibt, und holt beides, wenn du es sagst. Das ist die ganze Liste.",
+    data2: "Deine Rundenzeiten, deine Telemetrie, deine Tunes und dein Gamertag gehen nirgendwohin: sie werden in den eigenen Ordner des Programms geschrieben und bleiben dort. Es gibt kein Konto und nichts, wo man sich anmelden müsste. Setze „offline“ in config/overlay.json auf true, und es nimmt überhaupt keinen Kontakt mehr auf.",
+    data3: "Zwei Dinge an diesem Programm sehen ungewöhnlich aus, und du solltest sie kennen, bevor du es startest. Es liest den Speicher des laufenden Spiels — nur lesend, nur solange der Tuning-Reiter offen ist, und nur, um die Teileliste deines Autos zu finden, die in der Telemetrie nicht steht. Und es tauscht beim Update seine eigenen Dateien aus. Das Programm erklärt beides beim ersten Start und bittet um die Bestätigung, dass du es gelesen hast.",
+    hSafe: "Windows warnt möglicherweise vor dieser Datei",
+    safe: "Defender meldet diesen Download unter Umständen als Bedrohung. Die Datei ist nicht signiert und kaum verbreitet, also urteilt Windows nach dem Verhalten — und dieses Programm liest den Speicher des laufenden Spiels und tauscht sich beim Update selbst aus, was von außen genauso aussieht. Jede Fassung wird vor der Veröffentlichung geprüft, und mit der Prüfsumme oben lässt sich nachrechnen, dass die geladene Datei die gebaute ist. Wenn Windows blockiert: Auf Gerät zulassen."
+  },
+  es: {
+    name: "Español",
+    tagline: "Vibración, superposición de Rivals, delta de vuelta, contrarreloj en mundo abierto e inspector de tuning — un programa, sin instalación, funciona sin conexión.",
+    dl: "Descargar", file: "Archivo", size: "Tamaño", built: "Compilado", build: "Versión", sum: "Suma de verificación",
+    hSetup: "Configuración",
+    setup1: "Descomprime todo el archivo — no arrastres archivos sueltos — y haz doble clic en START.cmd. No se instala nada ni se escribe en el registro.",
+    setup2: "Para que llegue la telemetría, una vez en el juego en Ajustes › HUD y Jugabilidad:",
+    setup3: "Sin esto todos los números del programa se quedan en 0, porque el juego no envía nada.",
+    hDoes: "Qué hace",
+    f1: "Vibración — el agarre de los neumáticos se convierte en vibración, en el lado por el que desliza el coche. Steam Controller, DualSense con gatillos adaptativos, mandos de Xbox, PlayStation y 8BitDo.",
+    f2: "Superposición de Rivals — qué ruta de las ofrecidas le va mejor a tu coche y qué coche vale la pena en esa clase. Calculado con vueltas de jugadores reales.",
+    f3: "Delta de vuelta — tu tiempo frente a tu propio mejor tiempo, medido en el punto donde estás, no tras el mismo número de segundos.",
+    f4: "Contrarreloj en mundo abierto — Forza no cuenta el tiempo fuera de carrera; esto sí. Cada ruta que ya has corrido tiene una línea de salida, y F10 crea una propia.",
+    f5: "Inspector de tuning — de qué se compone el ajuste de tu coche: cada pieza con su nombre, nivel y precio, los 37 deslizadores y de dónde viene el ajuste.",
+    hUpd: "Actualización",
+    upd: "El programa pregunta al arrancar y avisa cuando hay algo nuevo; el botón Check for app updates en la pestaña Rivals overlay lo hace al instante. Comprueba la suma, se reemplaza y reinicia — tu carpeta config se conserva.",
+    hReq: "Requisitos",
+    req: "Windows 10 u 11, 64 bits. El entorno de ejecución va incluido, no hay que instalar .NET. El inspector de tuning lee la memoria del juego y puede necesitar permisos de administrador.",
+    back: "Volver a las valoraciones de coches",
+    noinfo: "Los datos del paquete no están disponibles ahora — la descarga funciona igualmente.",
+    hData: "Qué sale de tu ordenador",
+    data1: "Descarga. No sube nada. El programa pregunta al servidor si las valoraciones son más nuevas que las tuyas, si existe una versión más reciente de sí mismo, y trae cualquiera de las dos cuando tú lo dices. Esa es toda la lista.",
+    data2: "Tus tiempos, tu telemetría, tus ajustes y tu gamertag no se envían a ninguna parte: se escriben en la carpeta del propio programa y ahí se quedan. No hay cuenta ni nada a lo que iniciar sesión. Pon «offline» en true en config/overlay.json y dejará de contactar con el servidor.",
+    data3: "Dos cosas del programa sí parecen inusuales, y conviene saberlas antes de ejecutarlo. Lee la memoria del juego en marcha —solo lectura, solo mientras la pestaña de tuning está abierta, y solo para encontrar la lista de piezas de tu coche, que la telemetría no contiene—. Y sustituye sus propios archivos al actualizarse. El programa explica ambas cosas al primer arranque y te pide que confirmes que lo has leído.",
+    hSafe: "Windows puede advertir sobre este archivo",
+    safe: "Defender puede marcar esta descarga como amenaza. El archivo no está firmado y casi nadie lo tiene, así que Windows lo juzga por su comportamiento: este programa lee la memoria del juego y se reemplaza al actualizarse, lo que desde fuera se ve igual. Cada versión se analiza antes de publicarse, y la suma de verificación de arriba permite comprobar que el archivo que recibiste es el que se compiló. Si Windows lo bloquea, elige Permitir en el dispositivo."
+  },
+  fr: {
+    name: "Français",
+    tagline: "Retour haptique, surcouche Rivals, delta au tour, contre-la-montre en monde ouvert et inspecteur de réglages — un seul programme, rien à installer, fonctionne hors ligne.",
+    dl: "Télécharger", file: "Fichier", size: "Taille", built: "Compilé", build: "Version", sum: "Somme de contrôle",
+    hSetup: "Installation",
+    setup1: "Décompressez toute l'archive — n'en extrayez pas des fichiers isolés — puis double-cliquez sur START.cmd. Rien n'est installé ni écrit dans le registre.",
+    setup2: "Pour recevoir la télémétrie, une seule fois dans le jeu sous Paramètres › ATH et gameplay :",
+    setup3: "Sans cela, tous les chiffres du programme restent à 0, car le jeu n'envoie rien.",
+    hDoes: "Ce que ça fait",
+    f1: "Haptique — l'adhérence des pneus devient vibration, du côté où la voiture glisse. Steam Controller, DualSense avec gâchettes adaptatives, manettes Xbox, PlayStation et 8BitDo.",
+    f2: "Surcouche Rivals — quel parcours proposé convient à votre voiture et quelle voiture vaut le coup dans cette classe. Calculé à partir des tours de vrais joueurs.",
+    f3: "Delta au tour — votre temps face à votre propre record, mesuré à l'endroit où vous êtes, pas après le même nombre de secondes.",
+    f4: "Contre-la-montre en monde ouvert — Forza ne chronomètre pas hors course ; ce programme si. Chaque parcours déjà couru a une ligne de départ, et F10 en crée une à vous.",
+    f5: "Inspecteur de réglages — de quoi se compose le réglage de votre voiture : chaque pièce avec son nom, son niveau et son prix, les 37 curseurs, et d'où vient le réglage.",
+    hUpd: "Mise à jour",
+    upd: "Le programme vérifie au démarrage et signale toute nouveauté ; le bouton Check for app updates dans l'onglet Rivals overlay le fait immédiatement. Il vérifie la somme de contrôle, se remplace et redémarre — votre dossier config est conservé.",
+    hReq: "Configuration requise",
+    req: "Windows 10 ou 11, 64 bits. L'environnement d'exécution est inclus, aucun .NET à installer. L'inspecteur de réglages lit la mémoire du jeu et peut demander des droits administrateur.",
+    back: "Retour aux notes des voitures",
+    noinfo: "Les informations du paquet sont indisponibles — le téléchargement fonctionne quand même.",
+    hData: "Ce qui quitte votre ordinateur",
+    data1: "Il télécharge. Il n'envoie rien. Le programme demande au serveur si les notes des voitures sont plus récentes que les vôtres, si une nouvelle version de lui-même existe, et récupère l'une ou l'autre quand vous le dites. C'est toute la liste.",
+    data2: "Vos temps, votre télémétrie, vos réglages et votre gamertag ne sont envoyés nulle part : ils sont écrits dans le dossier du programme et y restent. Il n'y a ni compte ni connexion. Mettez « offline » à true dans config/overlay.json et il cesse de contacter le serveur.",
+    data3: "Deux choses paraissent inhabituelles, et il faut les connaître avant de lancer le programme. Il lit la mémoire du jeu en cours — en lecture seule, uniquement pendant que l'onglet de réglages est ouvert, et uniquement pour trouver la liste des pièces de votre voiture, que la télémétrie ne contient pas. Et il remplace ses propres fichiers lors d'une mise à jour. Le programme explique les deux au premier démarrage et vous demande de confirmer que vous l'avez lu.",
+    hSafe: "Windows peut vous avertir à propos de ce fichier",
+    safe: "Defender peut signaler ce téléchargement comme une menace. Le fichier n'est pas signé et presque personne ne l'a, donc Windows le juge sur son comportement : ce programme lit la mémoire du jeu et se remplace lors des mises à jour, ce qui paraît identique de l'extérieur. Chaque version est analysée avant publication, et la somme de contrôle ci-dessus permet de vérifier que le fichier reçu est bien celui qui a été compilé. Si Windows bloque, choisissez Autoriser sur l'appareil."
+  },
+  pt: {
+    name: "Português",
+    tagline: "Háptica, sobreposição de Rivals, delta de volta, contrarrelógio em mundo aberto e inspetor de tuning — um programa, sem instalação, funciona offline.",
+    dl: "Baixar", file: "Arquivo", size: "Tamanho", built: "Compilado", build: "Versão", sum: "Soma de verificação",
+    hSetup: "Configuração",
+    setup1: "Extraia o arquivo inteiro — não retire arquivos avulsos — e dê duplo clique em START.cmd. Nada é instalado nem escrito no registro.",
+    setup2: "Para a telemetria chegar, uma vez no jogo em Configurações › HUD e Jogabilidade:",
+    setup3: "Sem isso todos os números do programa ficam em 0, porque o jogo não envia nada.",
+    hDoes: "O que faz",
+    f1: "Háptica — a aderência dos pneus vira vibração, do lado em que o carro desliza. Steam Controller, DualSense com gatilhos adaptativos, controles Xbox, PlayStation e 8BitDo.",
+    f2: "Sobreposição de Rivals — qual das rotas oferecidas combina com seu carro e qual carro vale a pena nessa classe. Calculado com voltas de jogadores reais.",
+    f3: "Delta de volta — seu tempo contra seu próprio recorde, medido no ponto onde você está, não após o mesmo número de segundos.",
+    f4: "Contrarrelógio em mundo aberto — o Forza não cronometra fora de corrida; este programa sim. Toda rota já percorrida tem uma linha de largada, e F10 cria a sua.",
+    f5: "Inspetor de tuning — do que o acerto do seu carro é feito: cada peça com nome, nível e preço, os 37 controles, e de onde veio o acerto.",
+    hUpd: "Atualização",
+    upd: "O programa verifica ao iniciar e avisa quando há novidade; o botão Check for app updates na aba Rivals overlay faz isso na hora. Ele confere a soma, se substitui e reinicia — sua pasta config é mantida.",
+    hReq: "Requisitos",
+    req: "Windows 10 ou 11, 64 bits. O runtime vem no pacote, sem .NET para instalar. O inspetor de tuning lê a memória do jogo e pode precisar de direitos de administrador.",
+    back: "Voltar às avaliações de carros",
+    noinfo: "Os dados do pacote estão indisponíveis — o download funciona mesmo assim.",
+    hData: "O que sai do seu computador",
+    data1: "Ele baixa. Ele não envia. O programa pergunta ao servidor se as avaliações são mais novas que as suas, se existe uma versão mais recente dele mesmo, e busca qualquer uma das duas quando você manda. Essa é a lista inteira.",
+    data2: "Seus tempos, sua telemetria, seus acertos e seu gamertag não são enviados a lugar nenhum: são gravados na pasta do próprio programa e ficam lá. Não há conta nem login. Ponha «offline» como true em config/overlay.json e ele para de contatar o servidor.",
+    data3: "Duas coisas parecem incomuns, e você deve sabê-las antes de executar. Ele lê a memória do jogo em execução — apenas leitura, apenas enquanto a aba de tuning está aberta, e apenas para achar a lista de peças do seu carro, que a telemetria não traz. E ele substitui os próprios arquivos ao se atualizar. O programa explica as duas coisas no primeiro início e pede que você confirme que leu.",
+    hSafe: "O Windows pode avisar sobre este arquivo",
+    safe: "O Defender pode apontar este download como ameaça. O arquivo não é assinado e quase ninguém o tem, então o Windows julga pelo comportamento: este programa lê a memória do jogo e se substitui ao atualizar, o que de fora parece igual. Toda versão é verificada antes de publicada, e a soma acima permite conferir que o arquivo que você recebeu é o que foi compilado. Se o Windows bloquear, escolha Permitir no dispositivo."
+  },
+  it: {
+    name: "Italiano",
+    tagline: "Feedback aptico, overlay Rivals, delta sul giro, prova a tempo in mondo aperto e ispettore di assetto — un solo programma, niente da installare, funziona offline.",
+    dl: "Scarica", file: "File", size: "Dimensione", built: "Compilato", build: "Versione", sum: "Checksum",
+    hSetup: "Installazione",
+    setup1: "Estrai l'intero archivio — non trascinarne fuori singoli file — e fai doppio clic su START.cmd. Non viene installato nulla né scritto nel registro.",
+    setup2: "Perché la telemetria arrivi, una volta nel gioco in Impostazioni › HUD e Gameplay:",
+    setup3: "Senza questo tutti i numeri del programma restano a 0, perché il gioco non invia nulla.",
+    hDoes: "Cosa fa",
+    f1: "Aptica — il grip delle gomme diventa vibrazione, dal lato in cui l'auto scivola. Steam Controller, DualSense con grilletti adattivi, pad Xbox, PlayStation e 8BitDo.",
+    f2: "Overlay Rivals — quale dei percorsi proposti si adatta alla tua auto e quale auto conviene in quella classe. Calcolato dai giri di giocatori veri.",
+    f3: "Delta sul giro — il tuo tempo contro il tuo record, misurato nel punto in cui ti trovi, non dopo lo stesso numero di secondi.",
+    f4: "Prova a tempo in mondo aperto — Forza non cronometra fuori gara; questo sì. Ogni percorso già corso ha una linea di partenza, e F10 ne crea una tua.",
+    f5: "Ispettore di assetto — di cosa è fatto l'assetto della tua auto: ogni componente con nome, livello e prezzo, tutti i 37 cursori, e da dove viene l'assetto.",
+    hUpd: "Aggiornamento",
+    upd: "Il programma controlla all'avvio e segnala le novità; il pulsante Check for app updates nella scheda Rivals overlay lo fa subito. Verifica il checksum, si sostituisce e riparte — la cartella config resta.",
+    hReq: "Requisiti",
+    req: "Windows 10 o 11, 64 bit. Il runtime è incluso, nessun .NET da installare. L'ispettore di assetto legge la memoria del gioco e può richiedere i diritti di amministratore.",
+    back: "Torna alle valutazioni delle auto",
+    noinfo: "I dati del pacchetto non sono raggiungibili — il download funziona comunque.",
+    hData: "Che cosa esce dal tuo computer",
+    data1: "Scarica. Non carica. Il programma chiede al server se le valutazioni sono più recenti delle tue, se esiste una versione più nuova di sé stesso, e prende l'una o l'altra quando glielo dici. Questo è tutto l'elenco.",
+    data2: "I tuoi tempi, la tua telemetria, i tuoi assetti e il tuo gamertag non vengono mandati da nessuna parte: sono scritti nella cartella del programma e lì restano. Non c'è alcun account né alcun accesso. Metti «offline» su true in config/overlay.json e smette di contattare il server.",
+    data3: "Due cose sembrano insolite, ed è giusto saperle prima di eseguirlo. Legge la memoria del gioco in esecuzione — sola lettura, solo mentre la scheda dell'assetto è aperta, e solo per trovare l'elenco dei componenti della tua auto, che la telemetria non contiene. E sostituisce i propri file quando si aggiorna. Il programma spiega entrambe le cose al primo avvio e ti chiede di confermare di averlo letto.",
+    hSafe: "Windows potrebbe avvisarti su questo file",
+    safe: "Defender può segnalare questo download come minaccia. Il file non è firmato e quasi nessuno lo ha, quindi Windows lo giudica dal comportamento: questo programma legge la memoria del gioco e si sostituisce quando si aggiorna, cosa che da fuori appare identica. Ogni versione viene analizzata prima della pubblicazione, e il checksum qui sopra permette di verificare che il file ricevuto sia quello compilato. Se Windows blocca, scegli Consenti nel dispositivo."
+  },
+  pl: {
+    name: "Polski",
+    tagline: "Haptyka, nakładka Rivals, delta okrążenia, próba czasowa w otwartym świecie i inspektor tuningu — jeden program, bez instalacji, działa offline.",
+    dl: "Pobierz", file: "Plik", size: "Rozmiar", built: "Zbudowano", build: "Wersja", sum: "Suma kontrolna",
+    hSetup: "Konfiguracja",
+    setup1: "Rozpakuj całe archiwum — nie wyciągaj pojedynczych plików — i kliknij dwukrotnie START.cmd. Nic nie jest instalowane ani zapisywane w rejestrze.",
+    setup2: "Aby telemetria docierała, raz w grze w Ustawienia › HUD i rozgrywka:",
+    setup3: "Bez tego wszystkie liczby w programie zostają na 0, bo gra nic nie wysyła.",
+    hDoes: "Co robi",
+    f1: "Haptyka — przyczepność opon zamienia się w wibracje, po tej stronie, po której auto ślizga się. Steam Controller, DualSense z adaptacyjnymi spustami, pady Xbox, PlayStation i 8BitDo.",
+    f2: "Nakładka Rivals — która z proponowanych tras pasuje do twojego auta i które auto warto wziąć w tej klasie. Liczone z okrążeń prawdziwych graczy.",
+    f3: "Delta okrążenia — twój czas wobec twojego rekordu, mierzony w miejscu, w którym jesteś, a nie po tej samej liczbie sekund.",
+    f4: "Próba czasowa w otwartym świecie — Forza nie mierzy czasu poza wyścigiem; ten program tak. Każda przejechana trasa ma już linię startu, a F10 tworzy własną.",
+    f5: "Inspektor tuningu — z czego składa się ustawienie twojego auta: każda część z nazwą, poziomem i ceną, wszystkie 37 suwaków i skąd pochodzi ustawienie.",
+    hUpd: "Aktualizacja",
+    upd: "Program sprawdza przy starcie i zgłasza nowości; przycisk Check for app updates na karcie Rivals overlay robi to od razu. Sprawdza sumę kontrolną, podmienia się i uruchamia ponownie — folder config zostaje.",
+    hReq: "Wymagania",
+    req: "Windows 10 lub 11, 64-bit. Środowisko uruchomieniowe jest w paczce, nie trzeba instalować .NET. Inspektor tuningu czyta pamięć gry i może wymagać uprawnień administratora.",
+    back: "Powrót do ocen samochodów",
+    noinfo: "Dane paczki są chwilowo niedostępne — pobieranie i tak działa.",
+    hData: "Co opuszcza twój komputer",
+    data1: "Pobiera. Nie wysyła. Program pyta serwer, czy oceny aut są nowsze od twoich, czy istnieje nowsza wersja jego samego, i pobiera jedno albo drugie, gdy mu każesz. To cała lista.",
+    data2: "Twoje czasy, twoja telemetria, twoje ustawienia i twój gamertag nie trafiają nigdzie: zapisują się w folderze programu i tam zostają. Nie ma konta ani logowania. Ustaw «offline» na true w config/overlay.json, a przestanie łączyć się z serwerem.",
+    data3: "Dwie rzeczy wyglądają nietypowo i warto je znać przed uruchomieniem. Program czyta pamięć działającej gry — tylko do odczytu, tylko gdy karta tuningu jest otwarta i tylko po to, by znaleźć listę części twojego auta, której nie ma w telemetrii. I podmienia własne pliki przy aktualizacji. Program wyjaśnia obie rzeczy przy pierwszym starcie i prosi o potwierdzenie, że to przeczytałeś.",
+    hSafe: "Windows może ostrzec przed tym plikiem",
+    safe: "Defender może zgłosić to pobranie jako zagrożenie. Plik nie jest podpisany i prawie nikt go nie ma, więc Windows ocenia go po zachowaniu: program czyta pamięć gry i podmienia sam siebie przy aktualizacji, co z zewnątrz wygląda tak samo. Każda wersja jest skanowana przed publikacją, a suma kontrolna powyżej pozwala sprawdzić, że otrzymany plik to ten zbudowany. Jeśli Windows blokuje, wybierz Zezwól na urządzeniu."
+  },
+  ru: {
+    name: "Русский",
+    tagline: "Виброотдача, оверлей Rivals, дельта круга, заезд на время в свободном мире и инспектор тюнинга — одна программа, без установки, работает автономно.",
+    dl: "Скачать", file: "Файл", size: "Размер", built: "Собрано", build: "Сборка", sum: "Контрольная сумма",
+    hSetup: "Установка",
+    setup1: "Распакуйте весь архив — не вытаскивайте отдельные файлы — и дважды щёлкните START.cmd. Ничего не устанавливается и не пишется в реестр.",
+    setup2: "Чтобы телеметрия приходила, один раз в игре: Настройки › HUD и геймплей:",
+    setup3: "Без этого все числа в программе останутся нулём, потому что игра ничего не шлёт.",
+    hDoes: "Что она делает",
+    f1: "Вибрация — сцепление шин становится вибрацией с той стороны, куда скользит машина. Steam Controller, DualSense с адаптивными курками, геймпады Xbox, PlayStation и 8BitDo.",
+    f2: "Оверлей Rivals — какой из предложенных маршрутов подходит вашей машине и какая машина хороша в этом классе. По кругам реальных игроков.",
+    f3: "Дельта круга — ваше время против вашего же рекорда, измеренное в точке, где вы сейчас, а не через то же число секунд.",
+    f4: "Заезд на время в свободном мире — Forza не ведёт отсчёт вне гонки, а эта программа ведёт. У каждого пройденного маршрута уже есть линия старта, а F10 создаёт свою.",
+    f5: "Инспектор тюнинга — из чего состоит настройка вашей машины: каждая деталь с названием, уровнем и ценой, все 37 ползунков и откуда взята настройка.",
+    hUpd: "Обновление",
+    upd: "Программа проверяет при запуске и сообщает, когда есть новое; кнопка Check for app updates на вкладке Rivals overlay делает это сразу. Она сверяет контрольную сумму, заменяет себя и перезапускается — папка config сохраняется.",
+    hReq: "Требования",
+    req: "Windows 10 или 11, 64 бита. Среда выполнения в комплекте, .NET ставить не нужно. Инспектор тюнинга читает память игры и может потребовать прав администратора.",
+    back: "Назад к рейтингам машин",
+    noinfo: "Сведения о пакете сейчас недоступны — загрузка всё равно работает.",
+    hData: "Что покидает ваш компьютер",
+    data1: "Программа загружает. Она ничего не отправляет. Она спрашивает сервер, новее ли рейтинги машин ваших, есть ли более новая версия её самой, и берёт то или другое, когда вы скажете. Это весь список.",
+    data2: "Ваши времена, ваша телеметрия, ваши настройки и ваш игровой тег никуда не отправляются: они пишутся в папку самой программы и там остаются. Нет ни учётной записи, ни входа. Поставьте «offline» в true в config/overlay.json — и обращения к серверу прекратятся.",
+    data3: "Две вещи выглядят необычно, и о них стоит знать до запуска. Программа читает память запущенной игры — только на чтение, только пока открыта вкладка тюнинга и только чтобы найти список деталей вашей машины, которого нет в телеметрии. И она заменяет собственные файлы при обновлении. Программа объясняет и то и другое при первом запуске и просит подтвердить, что вы это прочли.",
+    hSafe: "Windows может предупредить об этом файле",
+    safe: "Defender может счесть эту загрузку угрозой. Файл не подписан и почти ни у кого его нет, поэтому Windows судит по поведению: программа читает память игры и заменяет себя при обновлении — снаружи это выглядит одинаково. Каждая сборка проверяется перед публикацией, а контрольная сумма выше позволяет убедиться, что полученный файл — это собранный файл. Если Windows блокирует, выберите «Разрешить на устройстве»."
+  },
+  tr: {
+    name: "Türkçe",
+    tagline: "Titreşim, Rivals bindirmesi, tur delta'sı, serbest dünyada zaman denemesi ve ayar denetleyicisi — tek program, kurulum yok, çevrimdışı çalışır.",
+    dl: "İndir", file: "Dosya", size: "Boyut", built: "Derlendi", build: "Sürüm", sum: "Sağlama",
+    hSetup: "Kurulum",
+    setup1: "Arşivin tamamını çıkarın — tek tek dosya sürüklemeyin — ve START.cmd dosyasına çift tıklayın. Hiçbir şey kurulmaz, kayıt defterine yazılmaz.",
+    setup2: "Telemetrinin gelmesi için oyunda bir kez Ayarlar › HUD ve Oynanış altında:",
+    setup3: "Bu olmadan programdaki tüm sayılar 0 kalır, çünkü oyun hiçbir şey göndermez.",
+    hDoes: "Ne yapar",
+    f1: "Titreşim — lastik tutuşu titreşime dönüşür, aracın kaydığı taraftan. Steam Controller, uyarlanır tetikli DualSense, Xbox, PlayStation ve 8BitDo kolları.",
+    f2: "Rivals bindirmesi — sunulan parkurlardan hangisi aracınıza uyar ve bu sınıfta hangi araç değer. Gerçek oyuncuların turlarından hesaplanır.",
+    f3: "Tur delta'sı — kendi rekorunuza karşı süreniz, bulunduğunuz noktada ölçülür, aynı saniye sayısından sonra değil.",
+    f4: "Serbest dünyada zaman denemesi — Forza yarış dışında süre tutmaz; bu program tutar. Sürdüğünüz her parkurun bir başlangıç çizgisi vardır, F10 kendinizinkini kurar.",
+    f5: "Ayar denetleyicisi — aracınızın ayarı neden oluşur: her parça adı, seviyesi ve fiyatıyla, 37 sürgünün tamamı ve ayarın nereden geldiği.",
+    hUpd: "Güncelleme",
+    upd: "Program açılışta sorar ve yeni bir şey olduğunda haber verir; Rivals overlay sekmesindeki Check for app updates düğmesi bunu hemen yapar. Sağlamayı doğrular, kendini değiştirir ve yeniden başlar — config klasörünüz korunur.",
+    hReq: "Gereksinimler",
+    req: "Windows 10 veya 11, 64 bit. Çalışma zamanı pakette, .NET kurmanız gerekmez. Ayar denetleyicisi oyunun belleğini okur ve yönetici hakkı isteyebilir.",
+    back: "Araç değerlendirmelerine dön",
+    noinfo: "Paket bilgileri şu an alınamıyor — indirme yine de çalışıyor.",
+    hData: "Bilgisayarınızdan ne çıkar",
+    data1: "İndirir. Yüklemez. Program sunucuya araç puanlarının sizinkinden yeni olup olmadığını, kendisinin daha yeni bir sürümünün bulunup bulunmadığını sorar ve siz söyleyince ikisinden birini alır. Listenin tamamı bu.",
+    data2: "Süreleriniz, telemetriniz, ayarlarınız ve oyuncu adınız hiçbir yere gönderilmez: programın kendi klasörüne yazılır ve orada kalır. Hesap da yok, giriş de. config/overlay.json içinde «offline» değerini true yapın, sunucuya hiç bağlanmaz.",
+    data3: "İki şey alışılmadık görünür ve çalıştırmadan önce bilmelisiniz. Çalışan oyunun belleğini okur — yalnızca okuma, yalnızca Tuning sekmesi açıkken ve yalnızca telemetride bulunmayan parça listesini bulmak için. Ve güncellenirken kendi dosyalarını değiştirir. Program ilk açılışta ikisini de anlatır ve okuduğunuzu onaylamanızı ister.",
+    hSafe: "Windows bu dosya için uyarabilir",
+    safe: "Defender bu indirmeyi tehdit olarak bildirebilir. Dosya imzasız ve neredeyse kimsede yok, bu yüzden Windows davranışa bakar: bu program oyunun belleğini okur ve güncellenirken kendini değiştirir; dışarıdan aynı görünür. Her sürüm yayınlanmadan taranır ve yukarıdaki sağlama, aldığınız dosyanın derlenen dosya olduğunu doğrulamanızı sağlar. Windows engellerse Cihazda izin ver'i seçin."
+  },
+  ja: {
+    name: "日本語",
+    tagline: "ハプティクス、Rivals オーバーレイ、ラップデルタ、フリーロームでのタイムアタック、チューンインスペクター — インストール不要、オフラインで動作。",
+    dl: "ダウンロード", file: "ファイル", size: "サイズ", built: "ビルド日", build: "ビルド", sum: "チェックサム",
+    hSetup: "セットアップ",
+    setup1: "書庫全体を展開して（個別のファイルだけ取り出さないで）START.cmd をダブルクリック。何もインストールされず、レジストリも書き換えません。",
+    setup2: "テレメトリを受け取るには、ゲーム内で一度だけ設定 › HUD とゲームプレイ：",
+    setup3: "これがないとプログラムの数値はすべて 0 のままです。ゲームが何も送信しません。",
+    hDoes: "できること",
+    f1: "ハプティクス — タイヤのグリップを振動に。車が滑っている側が震えます。Steam Controller、アダプティブトリガー対応の DualSense、Xbox、PlayStation、8BitDo パッド。",
+    f2: "Rivals オーバーレイ — 提示されたルートのうちどれが自分の車に合うか、そのクラスでどの車が通用するか。実際のプレイヤーのラップから算出。",
+    f3: "ラップデルタ — 自分のベストとの差を、今いる場所で比較。同じ秒数後ではありません。",
+    f4: "フリーロームでのタイムアタック — Forza はレース外で計測しませんが、これはします。走ったことのあるルートには既にスタートラインがあり、F10 で自分の線を置けます。",
+    f5: "チューンインスペクター — 車のチューンの中身：各パーツの名前・段階・価格、37 のスライダーすべて、そしてチューンの出所。",
+    hUpd: "更新",
+    upd: "起動時に自動で確認し、新しいものがあれば知らせます。Rivals overlay タブの Check for app updates で即時確認。チェックサムを検証して入れ替わり、再起動します — config フォルダーは保持されます。",
+    hReq: "動作環境",
+    req: "Windows 10 または 11、64 ビット。ランタイムは同梱されており .NET の導入は不要。チューンインスペクターはゲームのメモリを読むため、管理者権限が必要な場合があります。",
+    back: "クルマ評価に戻る",
+    noinfo: "パッケージ情報を取得できません — ダウンロードは可能です。",
+    hData: "パソコンから出ていくもの",
+    data1: "ダウンロードはします。アップロードはしません。プログラムはサーバーに、車の評価があなたのものより新しいか、自身の新しいバージョンがあるかを尋ね、あなたが指示したときにどちらかを取得します。それが全部です。",
+    data2: "あなたのラップタイム、テレメトリ、チューン、ゲーマータグはどこにも送られません。プログラム自身のフォルダーに書かれ、そこに留まります。アカウントもログインもありません。config/overlay.json の「offline」を true にすれば、サーバーへの接続そのものをやめます。",
+    data3: "ふつうとは違う点が二つあり、実行する前に知っておくべきです。ひとつは、実行中のゲームのメモリを読むこと——読み取りのみ、チューニングタブを開いている間だけ、そしてテレメトリには含まれない車の部品一覧を見つけるためだけです。もうひとつは、更新時に自分自身のファイルを置き換えることです。プログラムは初回起動時に両方を説明し、読んだことの確認を求めます。",
+    hSafe: "Windows がこのファイルを警告することがあります",
+    safe: "Defender がこのダウンロードを脅威として報告する場合があります。署名がなく利用者もほとんどいないため、Windows は振る舞いで判断します。本プログラムは実行中のゲームのメモリを読み、更新時に自分自身を置き換えますが、外からは同じに見えます。公開前に毎回検査しており、上記のチェックサムで受け取ったファイルがビルドされたファイルであることを確認できます。ブロックされた場合は「デバイス上で許可」を選んでください。"
+  },
+  ko: {
+    name: "한국어",
+    tagline: "햄틱, Rivals 오버레이, 랩 델타, 오픈월드 타임어택, 튜닝 검사기 — 하나의 프로그램, 설치 없음, 오프라인 동작.",
+    dl: "다운로드", file: "파일", size: "크기", built: "빌드일", build: "빌드", sum: "체크섬",
+    hSetup: "설정",
+    setup1: "압축 파일을 전부 풀고(개별 파일만 꺼내지 마세요) START.cmd를 더블클릭하세요. 설치되는 것도, 레지스트리에 기록되는 것도 없습니다.",
+    setup2: "텔레메트리를 받으려면 게임에서 한 번만 설정 › HUD 및 게임플레이:",
+    setup3: "이것이 없으면 프로그램의 모든 숫자가 0으로 남습니다. 게임이 아무것도 보내지 않기 때문입니다.",
+    hDoes: "기능",
+    f1: "햄틱 — 타이어 그립이 진동으로. 차가 미끄러지는 쪽이 진동합니다. Steam Controller, 적응형 트리거 DualSense, Xbox, PlayStation, 8BitDo 패드.",
+    f2: "Rivals 오버레이 — 제시된 코스 중 내 차에 맞는 것과 해당 클래스에서 쓸만한 차. 실제 플레이어 기록으로 계산합니다.",
+    f3: "랩 델타 — 내 최고 기록과의 차이를 지금 있는 지점에서 비교. 같은 초 수 뒤가 아닙니다.",
+    f4: "오픈월드 타임어택 — Forza는 레이스 밖에서 시간을 재지 않지만 이 프로그램은 재습니다. 달렸던 코스에는 이미 출발선이 있고, F10으로 직접 만듭니다.",
+    f5: "튜닝 검사기 — 내 차 셋업의 구성: 부품별 이름·단계·가격, 37개 슬라이더 전부, 그리고 튜닝의 출처.",
+    hUpd: "업데이트",
+    upd: "시작 시 자동으로 확인하고 새 버전이 있으면 알려줍니다. Rivals overlay 탭의 Check for app updates 버튼으로 즉시 확인합니다. 체크섬을 검증하고 교체 후 재시작합니다 — config 폴더는 유지됩니다.",
+    hReq: "요구 사항",
+    req: "Windows 10 또는 11, 64비트. 런타임이 포함되어 있어 .NET 설치가 필요 없습니다. 튜닝 검사기는 게임 메모리를 읽으므로 관리자 권한이 필요할 수 있습니다.",
+    back: "자동차 평가로 돌아가기",
+    noinfo: "패키지 정보를 가져올 수 없습니다 — 다운로드는 가능합니다.",
+    hData: "컴퓨터를 떠나는 것",
+    data1: "내려받습니다. 올리지는 않습니다. 프로그램은 서버에 자동차 평가가 당신 것보다 새로운지, 자신의 새 버전이 있는지 묻고, 당신이 지시할 때 둘 중 하나를 가져옵니다. 목록은 그게 전부입니다.",
+    data2: "당신의 랩 타임, 텔레메트리, 세팅, 게이머태그는 어디로도 전송되지 않습니다. 프로그램 자체 폴더에 기록되어 그대로 남습니다. 계정도 로그인도 없습니다. config/overlay.json에서 «offline»을 true로 두면 서버에 아예 연결하지 않습니다.",
+    data3: "평범하지 않아 보이는 두 가지가 있고, 실행 전에 알아야 합니다. 실행 중인 게임의 메모리를 읽습니다 — 읽기 전용이며, 튜닝 탭이 열려 있는 동안만, 그리고 텔레메트리에 없는 자동차 부품 목록을 찾기 위해서만입니다. 그리고 업데이트할 때 자기 파일을 교체합니다. 프로그램은 첫 실행에서 두 가지를 설명하고 읽었음을 확인해 달라고 요청합니다.",
+    hSafe: "Windows가 이 파일을 경고할 수 있습니다",
+    safe: "Defender가 이 다운로드를 위협으로 보고할 수 있습니다. 서명이 없고 사용자도 거의 없어 Windows는 동작으로 판단합니다. 이 프로그램은 실행 중인 게임의 메모리를 읽고 업데이트 시 스스로를 교체하는데, 밖에서는 똑같아 보입니다. 모든 배포본은 공개 전에 검사하며, 위의 체크섬으로 받은 파일이 빌드된 파일인지 확인할 수 있습니다. 차단되면 '장치에서 허용'을 선택하세요."
+  },
+  zh: {
+    name: "简体中文",
+    tagline: "振动反馈、Rivals 叠层、圈速差值、自由模式计时赛与调校检查器 — 一个程序，无需安装，离线可用。",
+    dl: "下载", file: "文件", size: "大小", built: "构建于", build: "构建号", sum: "校验和",
+    hSetup: "设置",
+    setup1: "完整解压压缩包（不要单独拖出文件），双击 START.cmd。不会安装任何东西，也不写注册表。",
+    setup2: "为了收到遥测数据，在游戏中设置一次：设置 › HUD 与玩法：",
+    setup3: "没有这一步，程序里的所有数值都会停在 0，因为游戏什么也不发送。",
+    hDoes: "它能做什么",
+    f1: "振动反馈 — 轮胎抓地力变成振动，哪侧打滑哪侧震。支持 Steam Controller、带自适应扳机的 DualSense，以及 Xbox、PlayStation 和 8BitDo 手柄。",
+    f2: "Rivals 叠层 — 当前提供的赛道哪条适合你的车，以及这个级别里哪辆车值得开。根据真实玩家的圈速计算。",
+    f3: "圈速差值 — 你的成绩与自己最佳成绩的差，在你所在的位置比较，而不是同样秒数之后。",
+    f4: "自由模式计时赛 — Forza 在比赛之外不计时，这个程序会。你跑过的每条赛道都已有起点线，F10 可以自己设一条。",
+    f5: "调校检查器 — 你车上的调校由什么组成：每个零件的名称、等级和价格，全部 37 个滑块，以及调校的来源。",
+    hUpd: "更新",
+    upd: "程序启动时会自己检查，有新版本会提示；Rivals overlay 选项卡上的 Check for app updates 可立即检查。它会校验校验和、替换自身并重启 — config 文件夹会保留。",
+    hReq: "系统要求",
+    req: "Windows 10 或 11，64 位。运行时已包含在内，无需安装 .NET。调校检查器需读取游戏内存，可能需要管理员权限。",
+    back: "返回车辆评分",
+    noinfo: "暂时无法获取安装包信息 — 下载仍然可用。",
+    hData: "什么会离开你的电脑",
+    data1: "它只下载，不上传。程序会询问服务器：车辆评分是否比你手上的更新，是否存在更新的版本；在你同意时取回其中之一。列表就这些。",
+    data2: "你的圈速、遥测、调校和玩家名不会被发送到任何地方，它们写在程序自己的文件夹里并留在那里。没有账号，也没有需要登录的地方。把 config/overlay.json 里的「offline」设为 true，它就完全不再联系服务器。",
+    data3: "有两点看起来不寻常，运行前应当知道。一是读取运行中游戏的内存——只读，只在打开调校标签页时，且只为找到遥测里没有的车辆零件清单。二是更新时替换自己的文件。程序在首次启动时会解释这两点，并要求你确认已经读过。",
+    hSafe: "Windows 可能会对此文件发出警告",
+    safe: "Defender 可能将此下载报为威胁。文件未签名且几乎无人使用，因此 Windows 按行为判断：本程序会读取游戏内存，并在更新时替换自身，从外部看完全一样。每个版本发布前都会扫描，上方的校验和可用于核对你拿到的文件就是构建出来的文件。若 Windows 阻止，请选择「允许在设备上运行」。"
+  },
+  nl: {
+    name: "Nederlands",
+    tagline: "Haptiek, Rivals-overlay, rondedelta, tijdrit in de vrije wereld en een tuning-inspecteur — één programma, niets te installeren, werkt offline.",
+    dl: "Downloaden", file: "Bestand", size: "Grootte", built: "Gebouwd", build: "Build", sum: "Controlesom",
+    hSetup: "Installeren",
+    setup1: "Pak het hele archief uit — sleep er geen losse bestanden uit — en dubbelklik START.cmd. Er wordt niets geïnstalleerd en niets in het register geschreven.",
+    setup2: "Zodat telemetrie binnenkomt, éénmalig in het spel onder Instellingen › HUD en gameplay:",
+    setup3: "Zonder dit blijven alle getallen in het programma op 0, want het spel stuurt niets.",
+    hDoes: "Wat het doet",
+    f1: "Haptiek — grip van de banden wordt trilling, aan de kant waar de auto glijdt. Steam Controller, DualSense met adaptieve triggers, Xbox-, PlayStation- en 8BitDo-pads.",
+    f2: "Rivals-overlay — welke van de aangeboden routes bij je auto past en welke auto de moeite waard is in die klasse. Berekend uit rondes van echte spelers.",
+    f3: "Rondedelta — jouw tijd tegen je eigen beste, gemeten op de plek waar je staat, niet na hetzelfde aantal seconden.",
+    f4: "Tijdrit in de vrije wereld — Forza klokt niets buiten een race; dit programma wel. Elke gereden route heeft al een startlijn, en F10 zet er zelf een.",
+    f5: "Tuning-inspecteur — waar de afstelling van je auto uit bestaat: elk onderdeel met naam, trap en prijs, alle 37 schuiven, en waar de afstelling vandaan komt.",
+    hUpd: "Bijwerken",
+    upd: "Het programma kijkt bij het starten en meldt het als er iets nieuws is; de knop Check for app updates op het tabblad Rivals overlay doet dat meteen. Het controleert de controlesom, vervangt zichzelf en herstart — je map config blijft behouden.",
+    hReq: "Vereisten",
+    req: "Windows 10 of 11, 64-bits. De runtime zit in het pakket, geen .NET te installeren. De tuning-inspecteur leest het geheugen van het spel en heeft soms beheerdersrechten nodig.",
+    back: "Terug naar de autobeoordelingen",
+    noinfo: "Pakketgegevens zijn nu niet bereikbaar — downloaden werkt wel.",
+    hData: "Wat je computer verlaat",
+    data1: "Het downloadt. Het uploadt niet. Het programma vraagt de server of de beoordelingen nieuwer zijn dan die van jou, of er een nieuwere versie van zichzelf bestaat, en haalt beide op wanneer jij dat zegt. Dat is de hele lijst.",
+    data2: "Je tijden, je telemetrie, je afstellingen en je gamertag gaan nergens heen: ze worden in de eigen map van het programma geschreven en blijven daar. Er is geen account en niets om op in te loggen. Zet «offline» op true in config/overlay.json en het neemt geen contact meer op met de server.",
+    data3: "Twee dingen zien er ongebruikelijk uit, en die moet je weten voordat je het draait. Het leest het geheugen van het draaiende spel — alleen lezen, alleen terwijl het tabblad Tuning open is, en alleen om de onderdelenlijst van je auto te vinden, die niet in de telemetrie staat. En het vervangt zijn eigen bestanden bij een update. Het programma legt beide bij de eerste start uit en vraagt je te bevestigen dat je het gelezen hebt.",
+    hSafe: "Windows waarschuwt mogelijk voor dit bestand",
+    safe: "Defender kan deze download als bedreiging melden. Het bestand is niet ondertekend en vrijwel niemand heeft het, dus Windows oordeelt op gedrag: dit programma leest het geheugen van het spel en vervangt zichzelf bij een update, wat van buiten hetzelfde oogt. Elke versie wordt vóór publicatie gescand, en met de controlesom hierboven kun je nagaan dat het bestand dat je kreeg het gebouwde bestand is. Blokkeert Windows het, kies dan Toestaan op apparaat."
+  },
+  sv: {
+    name: "Svenska",
+    tagline: "Haptik, Rivals-overlay, varvdelta, tidsjakt i fri körning och en trimningsinspektör — ett program, inget att installera, fungerar offline.",
+    dl: "Ladda ner", file: "Fil", size: "Storlek", built: "Byggd", build: "Bygge", sum: "Kontrollsumma",
+    hSetup: "Installation",
+    setup1: "Packa upp hela arkivet — dra inte ut enskilda filer — och dubbelklicka på START.cmd. Inget installeras och inget skrivs till registret.",
+    setup2: "För att telemetri ska komma fram, en gång i spelet under Inställningar › HUD och spelupplevelse:",
+    setup3: "Utan detta står alla siffror i programmet kvar på 0, eftersom spelet inte skickar något.",
+    hDoes: "Vad det gör",
+    f1: "Haptik — däckens grepp blir vibration, på den sida bilen glider. Steam Controller, DualSense med adaptiva avtryckare, Xbox-, PlayStation- och 8BitDo-handkontroller.",
+    f2: "Rivals-overlay — vilken av de erbjudna banorna som passar din bil och vilken bil som duger i klassen. Beräknat från riktiga spelares varv.",
+    f3: "Varvdelta — din tid mot ditt eget bästa, mätt på platsen där du är, inte efter lika många sekunder.",
+    f4: "Tidsjakt i fri körning — Forza tar ingen tid utanför lopp; det här gör det. Varje bana du kört har redan en startlinje, och F10 sätter en egen.",
+    f5: "Trimningsinspektör — vad trimningen på din bil består av: varje del med namn, steg och pris, alla 37 reglage, och varifrån trimningen kommer.",
+    hUpd: "Uppdatering",
+    upd: "Programmet kollar vid start och säger till när något nytt finns; knappen Check for app updates på fliken Rivals overlay gör det direkt. Det verifierar kontrollsumman, byter ut sig självt och startar om — mappen config behålls.",
+    hReq: "Krav",
+    req: "Windows 10 eller 11, 64-bitars. Körtiden ingår, inget .NET att installera. Trimningsinspektören läser spelets minne och kan behöva administratörsrättigheter.",
+    back: "Tillbaka till bilbetygen",
+    noinfo: "Paketuppgifterna går inte att nå just nu — nedladdningen fungerar ändå.",
+    hData: "Vad som lämnar din dator",
+    data1: "Den hämtar. Den skickar inget. Programmet frågar servern om bilbetygen är nyare än dina, om en nyare version av det självt finns, och hämtar endera när du säger till. Det är hela listan.",
+    data2: "Dina tider, din telemetri, dina trimningar och ditt spelarnamn skickas ingenstans: de skrivs i programmets egen mapp och stannar där. Det finns inget konto och inget att logga in på. Sätt «offline» till true i config/overlay.json så slutar det kontakta servern helt.",
+    data3: "Två saker ser ovanliga ut, och du bör känna till dem innan du kör det. Det läser minnet i spelet som körs — bara läsning, bara medan trimningsfliken är öppen, och bara för att hitta listan över bilens delar, som telemetrin inte innehåller. Och det byter ut sina egna filer när det uppdaterar sig. Programmet förklarar båda vid första starten och ber dig bekräfta att du läst det.",
+    hSafe: "Windows kan varna för den här filen",
+    safe: "Defender kan rapportera nedladdningen som ett hot. Filen är osignerad och nästan ingen har den, så Windows dömer efter beteende: programmet läser spelets minne och byter ut sig självt vid uppdatering, vilket utifrån ser likadant ut. Varje version skannas före publicering, och kontrollsumman ovan låter dig verifiera att filen du fick är den som byggdes. Om Windows blockerar, välj Tillåt på enheten."
+  },
+  cs: {
+    name: "Čeština",
+    tagline: "Haptika, překryv Rivals, delta kola, časovka ve volné jízdě a inspektor ladění — jeden program, nic se neinstaluje, funguje offline.",
+    dl: "Stáhnout", file: "Soubor", size: "Velikost", built: "Sestaveno", build: "Sestavení", sum: "Kontrolní součet",
+    hSetup: "Nastavení",
+    setup1: "Rozbalte celý archiv — netahejte z něj jednotlivé soubory — a dvakrát klikněte na START.cmd. Nic se neinstaluje ani nezapisuje do registru.",
+    setup2: "Aby telemetrie dorazila, jednou ve hře v Nastavení › HUD a hratelnost:",
+    setup3: "Bez toho zůstanou všechna čísla v programu na 0, protože hra nic neposlá.",
+    hDoes: "Co to dělá",
+    f1: "Haptika — přilnavost pneumatik se mění ve vibrace na straně, kde vůz klouže. Steam Controller, DualSense s adaptivními spouštěmi, ovladače Xbox, PlayStation a 8BitDo.",
+    f2: "Překryv Rivals — která z nabízených tratí sedí vašemu vozu a který vůz v té třídě stojí za to. Spočteno z kol skutečných hráčů.",
+    f3: "Delta kola — váš čas proti vašemu vlastnímu nejlepšímu, měřený v místě, kde právě jste, ne po stejném počtu sekund.",
+    f4: "Časovka ve volné jízdě — Forza mimo závod čas neměří, tento program ano. Każdá trať, kterou jste jeli, už má startovní čáru, a F10 založí vlastní.",
+    f5: "Inspektor ladění — z čeho se ladění vašeho vozu skládá: każdý díl se jménem, stupněm a cenou, všech 37 posuvníků a odkud ladění pochází.",
+    hUpd: "Aktualizace",
+    upd: "Program se při startu ptá sám a oznámí, když je tu něco nového; tlačítko Check for app updates na kartě Rivals overlay to udělá hned. Ověří kontrolní součet, vymění se a restartuje — složka config zůstane.",
+    hReq: "Požadavky",
+    req: "Windows 10 nebo 11, 64bitový. Běhové prostředí je součástí balíčku, .NET instalovat netřeba. Inspektor ladění čte paměť hry a může vyžadovat práva správce.",
+    back: "Zpět na hodnocení vozů",
+    noinfo: "Údaje o balíčku teď nejsou dostupné — stažení přesto funguje.",
+    hData: "Co opouští váš počítač",
+    data1: "Stahuje. Neodesílá. Program se ptá serveru, zda jsou hodnocení vozů novější než vaše, zda existuje novější verze jeho samotného, a když řeknete, jedno nebo druhé stáhne. To je celý seznam.",
+    data2: "Vaše časy, vaše telemetrie, vaše ladění a váš herní jmenovka se nikam neposílají: zapisují se do vlastní složky programu a tam zůstávají. Není tu žádný účet ani přihlášení. Nastavte «offline» na true v config/overlay.json a přestane server kontaktovat úplně.",
+    data3: "Dvě věci vypadají neobvykle a měli byste je znát dřív, než program spustíte. Čte paměť běžící hry — jen ke čtení, jen když je otevřena karta ladění, a jen aby našel seznam dílů vašeho vozu, který v telemetrii není. A při aktualizaci nahrazuje vlastní soubory. Program obojí vysvětlí při prvním spuštění a požádá vás o potvrzení, že jste to četli.",
+    hSafe: "Windows může před tímto souborem varovat",
+    safe: "Defender může toto stažení označit za hrozbu. Soubor není podepsaný a téměř nikdo ho nemá, takže Windows soudí podle chování: program čte paměť hry a při aktualizaci se sám nahradí, což zvenku vypadá stejně. Každá verze se před zveřejněním kontroluje a kontrolní součet výše umožňuje ověřit, že soubor, který jste dostali, je ten sestavený. Pokud Windows blokuje, zvolte Povolit v zařízení."
+  },
+  ar: {
+    name: "العربية", rtl: true,
+    tagline: "اهتزاز، طبقة Rivals، فارق اللفة، سباق ضد الزمن في العالم المفتوح، ومفتّش الضبط — برنامج واحد، بلا تثبيت، يعمل دون اتصال.",
+    dl: "تنزيل", file: "الملف", size: "الحجم", built: "تاريخ البناء", build: "الإصدار", sum: "المجموع الاختباري",
+    hSetup: "الإعداد",
+    setup1: "فكّ ضغط الأرشيف بالكامل — لا تسحب ملفات مفردة — ثم انقر مزدوجًا على START.cmd. لا يُثبّت شيء ولا يُكتب في السجل.",
+    setup2: "لكي تصل بيانات القياس، مرة واحدة داخل اللعبة في الإعدادات › واجهة العرض واللعب:",
+    setup3: "بدون ذلك تبقى كل الأرقام عند 0، لأن اللعبة لا ترسل شيئًا.",
+    hDoes: "ما الذي يفعله",
+    f1: "الاهتزاز — تماسك الإطارات يتحول إلى اهتزاز من الجهة التي تنزلق منها السيارة. يدعم Steam Controller وDualSense وXbox وPlayStation و8BitDo.",
+    f2: "طبقة Rivals — أي المسارات المعروضة يناسب سيارتك، وأي سيارة تستحق في هذه الفئة. محسوب من لفات لاعبين حقيقيين.",
+    f3: "فارق اللفة — زمنك مقابل أفضل زمن لك، يُقاس عند الموضع الذي أنت فيه، لا بعد عدد الثواني نفسه.",
+    f4: "سباق ضد الزمن في العالم المفتوح — Forza لا تقيس الوقت خارج السباق، وهذا البرنامج يقيسه. لكل مسار قدته خط بداية، وF10 ينشئ خطًا خاصًا بك.",
+    f5: "مفتّش الضبط — مم يتكون ضبط سيارتك: كل قطعة باسمها ودرجتها وسعرها، وكل المنزلقات الـ 37، ومن أين جاء الضبط.",
+    hUpd: "التحديث",
+    upd: "يتحقق البرنامج عند البدء ويخبرك عند وجود جديد؛ وزر Check for app updates في علامة Rivals overlay يفعل ذلك فورًا. يتحقق من المجموع الاختباري ثم يستبدل نفسه ويعيد التشغيل — ويُحفظ مجلد config.",
+    hReq: "المتطلبات",
+    req: "Windows 10 أو 11، 64 بت. بيئة التشغيل مدرجة في الحزمة، ولا حاجة لتثبيت .NET. مفتّش الضبط يقرأ ذاكرة اللعبة وقد يحتاج صلاحيات المسؤول.",
+    back: "العودة إلى تقييمات السيارات",
+    noinfo: "تعذر جلب معلومات الحزمة — والتنزيل يعمل مع ذلك.",
+    hData: "ما الذي يغادر حاسوبك",
+    data1: "إنه ينزّل فقط، ولا يرفع شيئًا. يسأل البرنامج الخادم إن كانت تقييمات السيارات أحدث مما لديك، وإن كانت هناك نسخة أحدث منه، ويجلب أيًّا منهما حين تطلب. هذه هي القائمة كاملة.",
+    data2: "أزمنتك وبيانات القياس وضبطك واسمك في اللعبة لا تُرسل إلى أي مكان: تُكتب في مجلد البرنامج نفسه وتبقى هناك. لا يوجد حساب ولا تسجيل دخول. اجعل «offline» بقيمة true في config/overlay.json فيتوقف عن الاتصال بالخادم تمامًا.",
+    data3: "هناك أمران يبدوان غير معتادين، ومن حقك معرفتهما قبل التشغيل. الأول أنه يقرأ ذاكرة اللعبة العاملة — قراءة فقط، وفقط أثناء فتح لسان الضبط، وفقط للعثور على قائمة قطع سيارتك التي لا تتضمنها بيانات القياس. والثاني أنه يستبدل ملفاته عند التحديث. يشرح البرنامج الأمرين عند أول تشغيل ويطلب منك تأكيد أنك قرأت ذلك.",
+    hSafe: "قد يحذّرك Windows من هذا الملف",
+    safe: "قد يُبلّغ Defender عن هذا التنزيل كتهديد. الملف غير موقّع ولا يكاد يملكه أحد، لذلك يحكم Windows عليه من سلوكه: هذا البرنامج يقرأ ذاكرة اللعبة ويستبدل نفسه عند التحديث، وهو ما يبدو من الخارج متماثلًا. تُفحص كل نسخة قبل نشرها، والمجموع الاختباري أعلاه يتيح التحقق من أن الملف الذي حصلت عليه هو الملف الذي بُني. إذا حجبه Windows فاختر \"السماح على الجهاز\"."
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Sprache waehlen: gespeicherte Wahl, sonst die des Browsers, sonst Englisch.
+// ---------------------------------------------------------------------------
+function pick() {
+  try {
+    var saved = localStorage.getItem("fgh-lang");
+    if (saved && T[saved]) { return saved; }
+  } catch (e) { /* privates Fenster: dann eben die Browsersprache */ }
+  var list = navigator.languages || [navigator.language || "en"];
+  for (var i = 0; i < list.length; i++) {
+    var tag = String(list[i] || "").toLowerCase();
+    // Chinesisch: nur Vereinfacht liegt vor. Traditionell faellt auf Englisch
+    // zurueck, statt eine Schrift zu zeigen, die nicht gemeint war.
+    if (tag.indexOf("zh") === 0) {
+      return (tag.indexOf("hant") >= 0 || tag.indexOf("tw") >= 0
+              || tag.indexOf("hk") >= 0) ? "en" : "zh";
+    }
+    var base = tag.split("-")[0];
+    if (T[base]) { return base; }
+  }
+  return "en";
+}
+
+function apply(code) {
+  var t = T[code] || T.en, en = T.en;
+  function put(id, key) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = t[key] || en[key] || ""; }
+  }
+  document.documentElement.lang = code;
+  document.documentElement.dir = t.rtl ? "rtl" : "ltr";
+  put("tagline", "tagline"); put("dl", "dl");
+  put("h-setup", "hSetup"); put("setup1", "setup1"); put("setup2", "setup2");
+  put("setup3", "setup3");
+  put("h-does", "hDoes");
+  put("f1", "f1"); put("f2", "f2"); put("f3", "f3"); put("f4", "f4"); put("f5", "f5");
+  put("h-upd", "hUpd"); put("upd", "upd");
+  put("h-req", "hReq"); put("req", "req");
+  put("h-safe", "hSafe"); put("safe", "safe");
+  put("back", "back");
+  window.__t = t;
+  facts();
+}
+
+var paket = null;
+function facts() {
+  var t = window.__t || T.en, en = T.en, ziel = document.getElementById("facts");
+  if (!paket) {
+    ziel.innerHTML = '<div class="mono">' + esc(t.noinfo || en.noinfo) + "</div>";
+    return;
+  }
+  function esc(v) {
+    return String(v === null || v === undefined ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  // Maskiert: die Werte kommen vom Server, und auf einem Weg ohne TLS kann sie
+  // unterwegs jemand ersetzen.
+  function row(label, value, cls) {
+    return '<div><b>' + esc(label) + '</b> <span class="mono ' + esc(cls || "") + '">'
+      + esc(value) + "</span></div>";
+  }
+  var mb = paket.bytes ? (paket.bytes / 1048576).toFixed(1) + " MB" : "";
+  var day = (paket.built_at || "").slice(0, 16).replace("T", " ");
+  ziel.innerHTML =
+    row(t.file || en.file, paket.name || "fh-companion.zip") +
+    (mb ? row(t.size || en.size, mb) : "") +
+    (day ? row(t.built || en.built, day) : "") +
+    (paket.build ? row(t.build || en.build, paket.build) : "") +
+    (paket.sha256 ? row(t.sum || en.sum, paket.sha256, "sum") : "");
+}
+
+(function () {
+  var sel = document.getElementById("lang");
+  var codes = Object.keys(T).sort(function (a, b) {
+    return T[a].name.localeCompare(T[b].name);
+  });
+  codes.forEach(function (c) {
+    var o = document.createElement("option");
+    o.value = c; o.textContent = T[c].name;
+    sel.appendChild(o);
+  });
+  var start = pick();
+  sel.value = start;
+  apply(start);
+  sel.addEventListener("change", function () {
+    try { localStorage.setItem("fgh-lang", sel.value); } catch (e) { /* egal */ }
+    apply(sel.value);
+  });
+
+  fetch("/api/haptics", { cache: "no-store" })
+    .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.json(); })
+    .then(function (d) { paket = d; facts(); })
+    .catch(function () { paket = null; facts(); });
+})();
+</script>
+</html>

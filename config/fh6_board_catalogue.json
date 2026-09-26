@@ -1,0 +1,2028 @@
+{
+ "_comment": [
+  "Catalogue of Rivals boards on build 6.420.696.0.",
+  "",
+  "'verified' entries were read off OCR frames captured during a real",
+  "navigation run on 2026-08-19 (data/runtime/navigation/20260819_170217).",
+  "'unconfirmed' entries are inferred and MUST be confirmed by a catalogue",
+  "walk before any sweep relies on them -- a guessed board name sends the",
+  "navigator seeking a marker that never appears, which costs a full step",
+  "timeout each time.",
+  "",
+  "reachable_without_personal_time is the open question that decides how much",
+  "of this matrix can be scanned at all: docs/index.md, docs/vm_rank_scanning.md",
+  "and docs/troubleshooting.md all state that a board requires a posted",
+  "personal time for that exact track AND performance class. If that holds,",
+  "the sweep is limited to boards the player has driven, not the full matrix."
+ ],
+ "build": "6.420.696.0",
+ "captured_at": "2026-08-19",
+ "reachable_without_personal_time": null,
+ "rivals_modes": {
+  "verified": [
+   "Road Racing",
+   "Street Racing"
+  ],
+  "navigable_but_untested": [
+   "Cross-Country",
+   "Dirt Racing",
+   "Drag Racing",
+   "Touge"
+  ],
+  "route_counts": {
+   "Road Racing": 23,
+   "Dirt Racing": 21,
+   "Cross-Country": 19,
+   "Street Racing": 15,
+   "Touge": 5,
+   "Drag Racing": 3
+  },
+  "route_counts_total": 86,
+  "source": "Read off the Horizon Rivals category screen (a vertical list showing every category with 'N Routes Available'); see data/runtime/navigation/20260819_170217/frames/0085_hub-check-1.txt.",
+  "selection_notes": [
+   "The category screen lists ALL categories at once, so the old",
+   "Invoke-Seek-by-name in the navigator's rivals_modes handler matches the",
+   "wanted name immediately without moving the highlight -- ENTER then opens the",
+   "top/default category (Road Racing). That is why every non-Road-Racing run",
+   "actually stayed in Road Racing.",
+   "FIX (apply after the current sweep, do not edit the navigator mid-run):",
+   "replace the rivals_modes Invoke-Seek with Select-ByHover on the category",
+   "label -- the same validated hover primitive used for the Rivals tile. Then",
+   "verify by enumerating a non-Road category and confirming its route count",
+   "matches this table (e.g. Cross-Country should show 19, not 23).",
+   "2026-08-28: Kategorieschirm ist ein 2x3-GITTER, keine senkrechte Liste.",
+   "Road Racing (0,0) Cross-Country (0,1) Street Racing (0,2) / Dirt (1,0) Drag (1,1) Touge (1,2).",
+   "Auswahl per Pfeiltasten MIT Sichtpruefung: scripts/select_rivals_category.py",
+   "prueft den gelben Rahmen (RGB 202,255,2; Gruen > Rot) im Standbild nach jedem",
+   "Tastendruck. Blindes Druecken hat dreimal Road Racing geoeffnet."
+  ]
+ },
+ "performance_classes": {
+  "verified": [
+   "D",
+   "C",
+   "B",
+   "A",
+   "S1",
+   "S2",
+   "R"
+  ],
+  "unconfirmed": [
+   "X"
+  ],
+  "notes": [
+   "The class strip is horizontal and R sits off-screen to the right of S2,",
+   "so it cannot be found by reading the strip -- the header names the",
+   "selected class, so scroll and watch the header.",
+   "S1 sits between A (PI 700) and S2 (PI 900) at the PI 800 band, confirmed by",
+   "the '800' label present in the class-strip frames; the literal 'S1' text",
+   "OCR'd poorly but the position and PI band are unambiguous. Promoted to",
+   "verified 2026-08-20. If the header OCR for S1 is unreliable at run time the",
+   "sweep records that board as unreachable rather than failing.",
+   "X was never reached; 6 RIGHT presses from D landed on R."
+  ]
+ },
+ "tracks": {
+  "Road Racing": {
+   "verified": [
+    {
+     "name": "Highway Circuit",
+     "route_length_km": 7.0,
+     "carousel_step": 20,
+     "route_index": 0
+    },
+    {
+     "name": "Narai-Juku Circuit",
+     "route_length_km": 2.4,
+     "carousel_step": 21,
+     "route_index": 1
+    },
+    {
+     "name": "Shirakawa Circuit",
+     "route_length_km": 3.2,
+     "carousel_step": 22,
+     "route_index": 2
+    },
+    {
+     "name": "Shimanoyama Circuit",
+     "route_length_km": 1.1,
+     "carousel_step": 0,
+     "route_index": 3
+    },
+    {
+     "name": "Hokubu Circuit",
+     "route_length_km": 2.5,
+     "carousel_step": 1,
+     "route_index": 4
+    },
+    {
+     "name": "Soni Circuit",
+     "route_length_km": 1.9,
+     "carousel_step": 2,
+     "route_index": 5
+    },
+    {
+     "name": "Daikoku Circuit",
+     "route_length_km": 2.7,
+     "carousel_step": 3,
+     "route_index": 6
+    },
+    {
+     "name": "Electric Town Circuit",
+     "route_length_km": 4.4,
+     "carousel_step": 4,
+     "route_index": 7
+    },
+    {
+     "name": "Legend Island Circuit",
+     "route_length_km": 4.7,
+     "carousel_step": 5,
+     "route_index": 8
+    },
+    {
+     "name": "Irokawa Circuit",
+     "route_length_km": 1.9,
+     "carousel_step": 6,
+     "route_index": 9
+    },
+    {
+     "name": "Edamame Circuit",
+     "route_length_km": 1.1,
+     "carousel_step": 7,
+     "route_index": 10
+    },
+    {
+     "name": "Festival Sprint",
+     "route_length_km": 7.8,
+     "carousel_step": 8,
+     "route_index": 11
+    },
+    {
+     "name": "Venus Sprint",
+     "route_length_km": 8.0,
+     "carousel_step": 9,
+     "route_index": 12
+    },
+    {
+     "name": "Seaside Park Sprint",
+     "route_length_km": 7.3,
+     "carousel_step": 10,
+     "route_index": 13
+    },
+    {
+     "name": "Ito Sprint",
+     "route_length_km": 9.3,
+     "carousel_step": 11,
+     "route_index": 14
+    },
+    {
+     "name": "Tateyama Kurobe Sprint",
+     "route_length_km": 6.0,
+     "carousel_step": 12,
+     "route_index": 15
+    },
+    {
+     "name": "Shimanoyama Sprint",
+     "route_length_km": 6.5,
+     "carousel_step": 13,
+     "route_index": 16
+    },
+    {
+     "name": "Satta Sprint",
+     "route_length_km": 8.3,
+     "carousel_step": 14,
+     "route_index": 17
+    },
+    {
+     "name": "Coastline Sprint",
+     "route_length_km": 8.1,
+     "carousel_step": 15,
+     "route_index": 18
+    },
+    {
+     "name": "Tokyo Sprint",
+     "route_length_km": 6.8,
+     "carousel_step": 16,
+     "route_index": 19
+    },
+    {
+     "name": "Shikisai Sprint",
+     "route_length_km": 7.7,
+     "carousel_step": 17,
+     "route_index": 20
+    },
+    {
+     "name": "The Colossus",
+     "route_length_km": 37.7,
+     "carousel_step": 18,
+     "route_index": 21
+    },
+    {
+     "name": "The Goliath",
+     "route_length_km": 85.4,
+     "carousel_step": 19,
+     "route_index": 22
+    }
+   ],
+   "unconfirmed": [],
+   "notes": [
+    "Alle 23 Strecken am 2026-08-24 durch einen kompletten Karussell-Durchlauf",
+    "bestaetigt (siehe route_carousel auf oberster Ebene). Die frueheren",
+    "carousel_index-Werte waren nicht stabil und sind nur noch beschreibend --",
+    "carousel_step ist der Abstand in RIGHT-Druecken von Shimanoyama Circuit."
+   ]
+  },
+  "Street Racing": {
+   "_comment": [
+    "Aufgenommen 2026-08-28 mit forza_navigator.ps1 -EnumerateRoutes, Namen aus",
+    "scripts/read_route_titles.py (Host-OCR gegen Gast-OCR geprueft, beide Leser",
+    "muessen plausibel sein). Die Kachel verspricht 15 Strecken, es sind 15.",
+    "Reihenfolge = Karussellreihenfolge ab Position 0 (Daikoku Chase)."
+   ],
+   "verified": [
+    {
+     "route_index": 0,
+     "name": "Daikoku Chase",
+     "route_length_km": 6.8
+    },
+    {
+     "route_index": 1,
+     "name": "Norikura Descent",
+     "route_length_km": 5.8
+    },
+    {
+     "route_index": 2,
+     "name": "Nachi Run",
+     "route_length_km": 6.3
+    },
+    {
+     "route_index": 3,
+     "name": "Hokubu Ascent",
+     "route_length_km": 6.7
+    },
+    {
+     "route_index": 4,
+     "name": "Okishinaimura Run",
+     "route_length_km": 5.2
+    },
+    {
+     "route_index": 5,
+     "name": "Sunflower Charge",
+     "route_length_km": 6.1
+    },
+    {
+     "route_index": 6,
+     "name": "Kita Ine",
+     "route_length_km": 6.6
+    },
+    {
+     "route_index": 7,
+     "name": "Rainbow Bridge Descent",
+     "route_length_km": 8.5
+    },
+    {
+     "route_index": 8,
+     "name": "Shimanoyama Charge",
+     "route_length_km": 8.4
+    },
+    {
+     "route_index": 9,
+     "name": "Festival Chase",
+     "route_length_km": 6.6
+    },
+    {
+     "route_index": 10,
+     "name": "Matsumi Climb",
+     "route_length_km": 7.3
+    },
+    {
+     "route_index": 11,
+     "name": "Minami Chase",
+     "route_length_km": 7.4
+    },
+    {
+     "route_index": 12,
+     "name": "River Descent",
+     "route_length_km": 6.1
+    },
+    {
+     "route_index": 13,
+     "name": "Cedar Run",
+     "route_length_km": 6.8
+    },
+    {
+     "route_index": 14,
+     "name": "Tokyo City Docks Charge",
+     "route_length_km": 6.5
+    }
+   ]
+  },
+  "Cross-Country": {
+   "_comment": [
+    "Aufgenommen 2026-08-31 mit harvest_route_names.py (4 + 8 Aufnahmen) und",
+    "rekonstruiert mit stitch_rotated_names.py. Der Titel LAEUFT IM KREIS, die",
+    "Namen sind daher aus Rotationen zusammengestimmt, nicht abgelesen.",
+    "Index 0 ist 'The Titan' -- er wird in 12 von 12 Aufnahmen woertlich gleich",
+    "gelesen und dient deshalb als Anker.",
+    "Sechs Positionen sind ABSICHTLICH leer (5, 7, 8, 12, 15, 16): dort war die",
+    "Einigkeit zu gering. Ein leerer Katalogeintrag laesst den Sweep das Board",
+    "ueberspringen, statt es falsch zu beschriften."
+   ],
+   "verified": [
+    {
+     "name": "The Titan",
+     "route_index": 0
+    },
+    {
+     "name": "Legend Island Cross-Country Circuit",
+     "route_index": 1
+    },
+    {
+     "name": "Naruo Cross-Country Circuit",
+     "route_index": 2
+    },
+    {
+     "name": "Forest Cross-Country Circuit Snow",
+     "route_index": 3
+    },
+    {
+     "name": "Oka Cross-Country Circuit",
+     "route_index": 4
+    },
+    {
+     "name": "Edogawa Cross-Country Circuit",
+     "route_index": 5,
+     "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+     "name_evidence": [
+      "Sweep 'Edogawa CIN' (0.80, naechstbester 0.33)",
+      "Aufnahme 28.08. 'Edogawa Cras-eouniry Circ' (0.82, naechstbester 0.64)"
+     ]
+    },
+    {
+     "name": "City Docks Cross-Country Circuit",
+     "route_index": 6
+    },
+    {
+     "name": "Stadium Cross-Country Circuit",
+     "route_index": 7,
+     "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+     "name_evidence": [
+      "Sweep 'Stadium Cross-Country Circt' (0.96, naechstbester 0.79)",
+      "Aufnahme 28.08. 'Stadium Cross-Country Circi' (0.96, naechstbester 0.79)"
+     ]
+    },
+    {
+     "name": "Nangan Cross-Country Circuit",
+     "route_index": 8,
+     "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+     "name_evidence": [
+      "Sweep 'Nangan Cross-Country Circu' (1.00, naechstbester 0.83)",
+      "Aufnahme 28.08. 'Nangan Cross-Country Circu' (1.00, naechstbester 0.83)"
+     ]
+    },
+    {
+     "name": "Soni Highlands Cross-Country",
+     "route_index": 9
+    },
+    {
+     "name": "Ruriko-ji Cross-Country",
+     "route_index": 10
+    },
+    {
+     "name": "Takashiro Cross-Country",
+     "route_index": 11
+    },
+    {
+     "name": "Tateyama Alpine Cross-Country",
+     "route_index": 12,
+     "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+     "name_evidence": [
+      "Sweep 'Tateyama Alpine Cross-Cour' (0.96, naechstbester 0.68)",
+      "Aufnahme 28.08. 'Tateyama Alpine Cross-Cour' (0.96, naechstbester 0.68)"
+     ]
+    },
+    {
+     "name": "Wind Farm Cross-Country",
+     "route_index": 13
+    },
+    {
+     "name": "Yahikoyama Cross-Country",
+     "route_index": 14
+    },
+    {
+     "name": "Shimanoyama Cross-Country",
+     "route_index": 15,
+     "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+     "name_evidence": [
+      "Sweep 'Shimanoyama Cross-Countr)' (1.00, naechstbester 0.82)",
+      "Aufnahme 28.08. 'Shimanoyama Cross-Country' (1.00, naechstbester 0.84)"
+     ]
+    },
+    {
+     "name": "Shinjuku Gyoen Cross-Country",
+     "route_index": 16,
+     "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+     "name_evidence": [
+      "Bildschirm 2026-09-13 19:07 (Fehlschlagbild des Navigators): \"ShnjUk&'GYden Cross-\" -- passt zu 0,76 auf diesen Namen, naechstbester Kandidat 0,53",
+      "zuvor nur durch Ausschluss: alle anderen 18 Namen waren vergeben"
+     ]
+    },
+    {
+     "name": "Temple Cross-Country",
+     "route_index": 17
+    },
+    {
+     "name": "Izu Cross-Country",
+     "route_index": 18
+    }
+   ]
+  },
+  "Dirt Racing": {
+   "_comment": [
+    "Freigeschaltet 2026-09-05 aus route_enumerations_unverified (Aufnahme",
+    "vom 2026-08-28 mit -EnumerateRoutes). 21 Strecken, Muster 10x Scramble /",
+    "10x Trail / The Gauntlet 30,1 km.",
+    "Wahrzeichen in forza_navigator.ps1: 'Scramble|Trail' -- gegen alle",
+    "Kategorien auf Kollisionen geprueft, kommt sonst nirgends vor.",
+    "Leere Positionen werden vom Sweep uebersprungen statt falsch beschriftet."
+   ],
+   "verified": [
+    {
+     "route_index": 0,
+     "name": "Chiheisen Scramble",
+     "route_length_km": 2.6
+    },
+    {
+     "route_index": 1,
+     "name": "Sotoyama Scramble",
+     "route_length_km": 2.9
+    },
+    {
+     "route_index": 2,
+     "name": "Hirosaki Scramble",
+     "route_length_km": 2.7
+    },
+    {
+     "route_index": 3,
+     "name": "Sunflower Scramble",
+     "route_length_km": 2.8
+    },
+    {
+     "route_index": 4,
+     "name": "Bamboo Forest Scramble",
+     "route_length_km": 5.0
+    },
+    {
+     "route_index": 5,
+     "name": "Ine Scramble",
+     "route_length_km": 3.1
+    },
+    {
+     "route_index": 6,
+     "name": "Horizon Stadium Scramble",
+     "route_length_km": 3.9
+    },
+    {
+     "route_index": 7,
+     "name": "Taiyaki Scramble",
+     "route_length_km": 3.6
+    },
+    {
+     "route_index": 8,
+     "name": "Kawazu Nanadaru S Scramble",
+     "route_length_km": 4.2
+    },
+    {
+     "route_index": 9,
+     "name": "Sekibe S Scramble",
+     "route_length_km": 2.1
+    },
+    {
+     "route_index": 10,
+     "name": "Nukabira Trail",
+     "route_length_km": 8.0
+    },
+    {
+     "route_index": 11,
+     "name": "Waterfall Trail",
+     "route_length_km": 5.8
+    },
+    {
+     "route_index": 12,
+     "name": "Hokubu Trail",
+     "route_length_km": 5.8
+    },
+    {
+     "route_index": 13,
+     "name": "Ito Trail",
+     "route_length_km": 7.0
+    },
+    {
+     "route_index": 14,
+     "name": "Airfield Trail",
+     "route_length_km": 6.7
+    },
+    {
+     "route_index": 15,
+     "name": "Cherry Field Trail",
+     "route_length_km": 7.3
+    },
+    {
+     "route_index": 16,
+     "name": "Kinkaku-ji Trail",
+     "route_length_km": 5.5
+    },
+    {
+     "route_index": 17,
+     "name": "Legend Island Trail",
+     "route_length_km": 5.4
+    },
+    {
+     "route_index": 18,
+     "name": "Oyashirazu Trail",
+     "route_length_km": 5.1
+    },
+    {
+     "route_index": 19,
+     "name": "Takashiro Trail",
+     "route_length_km": 5.7
+    },
+    {
+     "route_index": 20,
+     "name": "The Gauntlet",
+     "route_length_km": 30.1
+    }
+   ]
+  },
+  "Drag Racing": {
+   "_comment": [
+    "Freigeschaltet 2026-09-09. Namen einzeln am Spiel nachgelesen,",
+    "nicht aus der Aufnahme uebernommen -- drei davon waren falsch.",
+    "Wahrzeichen siehe forza_navigator.ps1 CategoryLandmark."
+   ],
+   "verified": [
+    {
+     "route_index": 0,
+     "name": "Horizon Festival Drag Strip",
+     "route_length_km": 1.0
+    },
+    {
+     "route_index": 1,
+     "name": "Irokawa Space Centre Drag Strip",
+     "route_length_km": 0.4
+    },
+    {
+     "route_index": 2,
+     "name": "Ito Airfield Drag Strip",
+     "route_length_km": 0.8
+    }
+   ]
+  },
+  "Touge": {
+   "_comment": [
+    "Freigeschaltet 2026-09-09. Namen einzeln am Spiel nachgelesen,",
+    "nicht aus der Aufnahme uebernommen -- drei davon waren falsch.",
+    "Wahrzeichen siehe forza_navigator.ps1 CategoryLandmark."
+   ],
+   "verified": [
+    {
+     "route_index": 0,
+     "name": "Hakone Nanamagari",
+     "route_length_km": 2.7
+    },
+    {
+     "route_index": 1,
+     "name": "Norikura Skyline",
+     "route_length_km": 5.8
+    },
+    {
+     "route_index": 2,
+     "name": "Arashiyama Takao",
+     "route_length_km": 4.8
+    },
+    {
+     "route_index": 3,
+     "name": "Bandai Azuma",
+     "route_length_km": 4.7
+    },
+    {
+     "route_index": 4,
+     "name": "Mt Haruna",
+     "route_length_km": 6.9
+    }
+   ]
+  }
+ },
+ "boards_scanned": [
+  {
+   "mode": "Road Racing",
+   "track": "Soni Circuit",
+   "performance_class": "R",
+   "ranks_read": "1-50",
+   "complete": false,
+   "note": "One page only. Decoded by scripts/capture_scoreboard_memory.py, cross-checked against the on-screen frame."
+  }
+ ],
+ "route_carousel": {
+  "_comment": [
+   "Die Reihenfolge des Streckenkarussells, am 2026-08-24 EINMAL KOMPLETT abgefahren:",
+   "je ein Schritt nach rechts, ein Standbild, Name und Laenge gelesen. Nach 23",
+   "Schritten war die Startposition wieder erreicht (r23 = Start, r24 = r01), die Liste",
+   "ist also geschlossen und vollstaendig -- und deckt sich mit der 23 aus dem",
+   "Kategoriemenue.",
+   "WICHTIG: das Karussell reagiert einwandfrei auf RIGHT. Ein Durchlauf am 2026-08-18",
+   "drueckte 65x ohne Wirkung und galt seither als 'Karussell klemmt' -- er drueckte auf",
+   "dem RIVALS-Schirm (Klassenauswahl), eine Ebene zu hoch. Die Hierarchie ist:",
+   "Rangliste -ESC-> Rivals (Klassen) -ESC-> Routes (Strecken).",
+   "step ist der Abstand in RIGHT-Druecken von Shimanoyama Circuit aus, modulo 23.",
+   "Die 7.0-km-Position gab ihren Namen nicht her; sie ist ueber die Laenge als Highway",
+   "Circuit bestimmt, die einzige 7.0-km-Strecke.",
+   "route_index ist die Nummer, die --route-indices im Sweep und -RouteIndex im Navigator",
+   "erwarten: rotiert auf Highway Circuit = 0, denn das ist der Anker (-RouteAnchorIndex 0).",
+   "Abgeglichen: 0-6 stimmen genau mit den sieben bisher gescannten Strecken ueberein,",
+   "die 16 offenen sind damit 7-22. Es braucht keinen neuen Navigator-Code -- die",
+   "Faehigkeit war da, nur die Zuordnung Index->Name fehlte."
+  ],
+  "positions": [
+   {
+    "step": 20,
+    "name": "Highway Circuit",
+    "lap_km": 7.0,
+    "scanned": true,
+    "route_index": 0
+   },
+   {
+    "step": 21,
+    "name": "Narai-Juku Circuit",
+    "lap_km": 2.4,
+    "scanned": true,
+    "route_index": 1
+   },
+   {
+    "step": 22,
+    "name": "Shirakawa Circuit",
+    "lap_km": 3.2,
+    "scanned": true,
+    "route_index": 2
+   },
+   {
+    "step": 0,
+    "name": "Shimanoyama Circuit",
+    "lap_km": 1.1,
+    "scanned": true,
+    "route_index": 3
+   },
+   {
+    "step": 1,
+    "name": "Hokubu Circuit",
+    "lap_km": 2.5,
+    "scanned": true,
+    "route_index": 4
+   },
+   {
+    "step": 2,
+    "name": "Soni Circuit",
+    "lap_km": 1.9,
+    "scanned": true,
+    "route_index": 5
+   },
+   {
+    "step": 3,
+    "name": "Daikoku Circuit",
+    "lap_km": 2.7,
+    "scanned": true,
+    "route_index": 6
+   },
+   {
+    "step": 4,
+    "name": "Electric Town Circuit",
+    "lap_km": 4.4,
+    "scanned": false,
+    "route_index": 7
+   },
+   {
+    "step": 5,
+    "name": "Legend Island Circuit",
+    "lap_km": 4.7,
+    "scanned": false,
+    "route_index": 8
+   },
+   {
+    "step": 6,
+    "name": "Irokawa Circuit",
+    "lap_km": 1.9,
+    "scanned": false,
+    "route_index": 9
+   },
+   {
+    "step": 7,
+    "name": "Edamame Circuit",
+    "lap_km": 1.1,
+    "scanned": false,
+    "route_index": 10
+   },
+   {
+    "step": 8,
+    "name": "Festival Sprint",
+    "lap_km": 7.8,
+    "scanned": false,
+    "route_index": 11
+   },
+   {
+    "step": 9,
+    "name": "Venus Sprint",
+    "lap_km": 8.0,
+    "scanned": false,
+    "route_index": 12
+   },
+   {
+    "step": 10,
+    "name": "Seaside Park Sprint",
+    "lap_km": 7.3,
+    "scanned": false,
+    "route_index": 13
+   },
+   {
+    "step": 11,
+    "name": "Ito Sprint",
+    "lap_km": 9.3,
+    "scanned": false,
+    "route_index": 14
+   },
+   {
+    "step": 12,
+    "name": "Tateyama Kurobe Sprint",
+    "lap_km": 6.0,
+    "scanned": false,
+    "route_index": 15
+   },
+   {
+    "step": 13,
+    "name": "Shimanoyama Sprint",
+    "lap_km": 6.5,
+    "scanned": false,
+    "route_index": 16
+   },
+   {
+    "step": 14,
+    "name": "Satta Sprint",
+    "lap_km": 8.3,
+    "scanned": false,
+    "route_index": 17
+   },
+   {
+    "step": 15,
+    "name": "Coastline Sprint",
+    "lap_km": 8.1,
+    "scanned": false,
+    "route_index": 18
+   },
+   {
+    "step": 16,
+    "name": "Tokyo Sprint",
+    "lap_km": 6.8,
+    "scanned": false,
+    "route_index": 19
+   },
+   {
+    "step": 17,
+    "name": "Shikisai Sprint",
+    "lap_km": 7.7,
+    "scanned": false,
+    "route_index": 20
+   },
+   {
+    "step": 18,
+    "name": "The Colossus",
+    "lap_km": 37.7,
+    "scanned": false,
+    "route_index": 21
+   },
+   {
+    "step": 19,
+    "name": "The Goliath",
+    "lap_km": 85.4,
+    "scanned": false,
+    "route_index": 22
+   }
+  ],
+  "wraps_after": 23
+ },
+ "route_cross_reference": {
+  "_comment": [
+   "Die vollstaendige Road-Racing-Streckenliste, 2026-08-24 aus zwei unabhaengigen",
+   "Quellen zusammengefuehrt: forza.labsgg.com/all-race-tracks (20 Strecken, in MEILEN",
+   "Renndistanz) und unseren eigenen Bildschirmaufnahmen (km RUNDENlaenge).",
+   "Die Quellen validieren sich gegenseitig: jeder Sprint stimmt auf 1:1 km ueberein,",
+   "jeder Circuit ist ein glattes 2- bis 5-Faches -- also Renndistanz vs Rundenlaenge,",
+   "kein Widerspruch in 19 gemeinsamen Strecken.",
+   "Die Liste ist ein MINDESTBESTAND: sie enthaelt keine ganz neuen Strecken, und der",
+   "Operator bestaetigt, dass kuerzlich eine weitere dazukam. Das Kategorie-Menue des",
+   "Spiels nannte 23 Routen; wird dort mehr gezaehlt, fehlt hier eine.",
+   "Laenge ist KEIN eindeutiger Schluessel: 1.1 km und 1.9 km tragen je zwei Strecken."
+  ],
+  "count_expected_from_game_menu": 23,
+  "routes": [
+   {
+    "name": "Shimanoyama Circuit",
+    "lap_km": 1.1,
+    "source": "beides",
+    "scanned": true
+   },
+   {
+    "name": "Edamame Circuit",
+    "lap_km": 1.1,
+    "source": "aufnahme",
+    "scanned": false
+   },
+   {
+    "name": "Soni Circuit",
+    "lap_km": 1.9,
+    "source": "aufnahme",
+    "scanned": true
+   },
+   {
+    "name": "Irokawa Circuit",
+    "lap_km": 1.9,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Narai-Juku Circuit",
+    "lap_km": 2.4,
+    "source": "beides",
+    "scanned": true
+   },
+   {
+    "name": "Hokubu Circuit",
+    "lap_km": 2.5,
+    "source": "beides",
+    "scanned": true
+   },
+   {
+    "name": "Daikoku Circuit",
+    "lap_km": 2.7,
+    "source": "beides",
+    "scanned": true
+   },
+   {
+    "name": "Shirakawa Circuit",
+    "lap_km": 3.2,
+    "source": "beides",
+    "scanned": true
+   },
+   {
+    "name": "Electric Town Circuit",
+    "lap_km": 4.4,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Legend Island Circuit",
+    "lap_km": 4.7,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Tateyama Kurobe Sprint",
+    "lap_km": 6.0,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Shimanoyama Sprint",
+    "lap_km": 6.5,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Tokyo Railway Sprints",
+    "lap_km": 6.8,
+    "source": "aufnahme",
+    "scanned": false
+   },
+   {
+    "name": "Highway Circuit",
+    "lap_km": 7.0,
+    "source": "beides",
+    "scanned": true
+   },
+   {
+    "name": "Seaside Park Sprint",
+    "lap_km": 7.3,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Shikisai Sprint",
+    "lap_km": 7.7,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Festival Sprint",
+    "lap_km": 7.8,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Venus Sprint",
+    "lap_km": 8.0,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Coastline Sprint",
+    "lap_km": 8.1,
+    "source": "liste",
+    "scanned": false
+   },
+   {
+    "name": "Satta Sprint",
+    "lap_km": 8.3,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "Ito Sprint",
+    "lap_km": 9.3,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "The Colossus",
+    "lap_km": 37.7,
+    "source": "beides",
+    "scanned": false
+   },
+   {
+    "name": "The Goliath",
+    "lap_km": 85.4,
+    "source": "beides",
+    "scanned": false
+   }
+  ]
+ },
+ "route_name_harvest": {
+  "_comment": [
+   "Route names recovered on 2026-08-23 from 206 existing navigation captures, by",
+   "pairing each 'Route Length: N KM' line with the title directly above it -- the",
+   "Routes screen prints the name ONLY for the highlighted tile, so these were",
+   "filmed one at a time while navigating for other reasons and never collected.",
+   "NOT verified: the captures span several rivals categories, so which category",
+   "each route belongs to is unconfirmed, and OCR mangled some titles (the 4.4 KM",
+   "route read five different ways before resolving to Electric Town Circuit).",
+   "Two lengths carry TWO routes each -- 1.1 KM and 1.9 KM -- so length is not a",
+   "unique key and the 'unconfirmed' entries above, keyed on length alone, would",
+   "have collided. Confirm by name before any sweep relies on these."
+  ],
+  "routes": [
+   {
+    "name": "Shimanoyama Circuit",
+    "route_length_km": 1.1,
+    "already_verified_in_road_racing": true
+   },
+   {
+    "name": "Edamame Circuit",
+    "route_length_km": 1.1,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Soni Circuit",
+    "route_length_km": 1.9,
+    "already_verified_in_road_racing": true
+   },
+   {
+    "name": "Irokawa Circuit",
+    "route_length_km": 1.9,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Narai-Juku Circuit",
+    "route_length_km": 2.4,
+    "already_verified_in_road_racing": true
+   },
+   {
+    "name": "Hokubu Circuit",
+    "route_length_km": 2.5,
+    "already_verified_in_road_racing": true
+   },
+   {
+    "name": "Daikoku Circuit",
+    "route_length_km": 2.7,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Shirakawa Circuit",
+    "route_length_km": 3.2,
+    "already_verified_in_road_racing": true
+   },
+   {
+    "name": "Electric Town Circuit",
+    "route_length_km": 4.4,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Legend Island Circuit",
+    "route_length_km": 4.7,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Tateyama Kurobe Sprint",
+    "route_length_km": 6.0,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Shimanoyama Sprint",
+    "route_length_km": 6.5,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Highway Circuit",
+    "route_length_km": 7.0,
+    "already_verified_in_road_racing": true
+   },
+   {
+    "name": "Seaside Park Sprint",
+    "route_length_km": 7.3,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Shikisai Sprint",
+    "route_length_km": 7.7,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Festival Sprint",
+    "route_length_km": 7.8,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Venus Sprint",
+    "route_length_km": 8.0,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Satta Sprint",
+    "route_length_km": 8.3,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Ito Sprint",
+    "route_length_km": 9.3,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "The Colossus",
+    "route_length_km": 37.7,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "The Goliath",
+    "route_length_km": 85.4,
+    "already_verified_in_road_racing": false
+   },
+   {
+    "name": "Tokyo Railway Sprints",
+    "route_length_km": 6.8,
+    "already_verified_in_road_racing": false,
+    "note": "Karussell liest 'Tokyo Sprint', aeltere Aufnahmen 4x 'Tokyo RailV$tay Sprints' und 1x 'Tokyo Sprints'. Karussell-Lesung ist die verlaesslichere Quelle, aber nicht gegengepruft.",
+    "name_from_carousel": "Tokyo Sprint"
+   }
+  ],
+  "names_still_missing": [
+   {
+    "route_length_km": 8.1,
+    "note": "seen in the carousel; its title was never on a captured frame"
+   }
+  ]
+ },
+ "route_carousel_by_category": {
+  "_comment": [
+   "catalogue_route() las bis 2026-08-28 EINE Positionsliste -- die von Road",
+   "Racing. Bei einer anderen Kategorie waere der Streckenname aus der falschen",
+   "Liste gekommen: richtige Zeilen, falsche Beschriftung, und das faellt beim",
+   "Scannen nicht auf. Darum je Kategorie eine eigene Liste."
+  ],
+  "Road Racing": [
+   {
+    "step": 20,
+    "name": "Highway Circuit",
+    "lap_km": 7.0,
+    "scanned": true,
+    "route_index": 0
+   },
+   {
+    "step": 21,
+    "name": "Narai-Juku Circuit",
+    "lap_km": 2.4,
+    "scanned": true,
+    "route_index": 1
+   },
+   {
+    "step": 22,
+    "name": "Shirakawa Circuit",
+    "lap_km": 3.2,
+    "scanned": true,
+    "route_index": 2
+   },
+   {
+    "step": 0,
+    "name": "Shimanoyama Circuit",
+    "lap_km": 1.1,
+    "scanned": true,
+    "route_index": 3
+   },
+   {
+    "step": 1,
+    "name": "Hokubu Circuit",
+    "lap_km": 2.5,
+    "scanned": true,
+    "route_index": 4
+   },
+   {
+    "step": 2,
+    "name": "Soni Circuit",
+    "lap_km": 1.9,
+    "scanned": true,
+    "route_index": 5
+   },
+   {
+    "step": 3,
+    "name": "Daikoku Circuit",
+    "lap_km": 2.7,
+    "scanned": true,
+    "route_index": 6
+   },
+   {
+    "step": 4,
+    "name": "Electric Town Circuit",
+    "lap_km": 4.4,
+    "scanned": false,
+    "route_index": 7
+   },
+   {
+    "step": 5,
+    "name": "Legend Island Circuit",
+    "lap_km": 4.7,
+    "scanned": false,
+    "route_index": 8
+   },
+   {
+    "step": 6,
+    "name": "Irokawa Circuit",
+    "lap_km": 1.9,
+    "scanned": false,
+    "route_index": 9
+   },
+   {
+    "step": 7,
+    "name": "Edamame Circuit",
+    "lap_km": 1.1,
+    "scanned": false,
+    "route_index": 10
+   },
+   {
+    "step": 8,
+    "name": "Festival Sprint",
+    "lap_km": 7.8,
+    "scanned": false,
+    "route_index": 11
+   },
+   {
+    "step": 9,
+    "name": "Venus Sprint",
+    "lap_km": 8.0,
+    "scanned": false,
+    "route_index": 12
+   },
+   {
+    "step": 10,
+    "name": "Seaside Park Sprint",
+    "lap_km": 7.3,
+    "scanned": false,
+    "route_index": 13
+   },
+   {
+    "step": 11,
+    "name": "Ito Sprint",
+    "lap_km": 9.3,
+    "scanned": false,
+    "route_index": 14
+   },
+   {
+    "step": 12,
+    "name": "Tateyama Kurobe Sprint",
+    "lap_km": 6.0,
+    "scanned": false,
+    "route_index": 15
+   },
+   {
+    "step": 13,
+    "name": "Shimanoyama Sprint",
+    "lap_km": 6.5,
+    "scanned": false,
+    "route_index": 16
+   },
+   {
+    "step": 14,
+    "name": "Satta Sprint",
+    "lap_km": 8.3,
+    "scanned": false,
+    "route_index": 17
+   },
+   {
+    "step": 15,
+    "name": "Coastline Sprint",
+    "lap_km": 8.1,
+    "scanned": false,
+    "route_index": 18
+   },
+   {
+    "step": 16,
+    "name": "Tokyo Sprint",
+    "lap_km": 6.8,
+    "scanned": false,
+    "route_index": 19
+   },
+   {
+    "step": 17,
+    "name": "Shikisai Sprint",
+    "lap_km": 7.7,
+    "scanned": false,
+    "route_index": 20
+   },
+   {
+    "step": 18,
+    "name": "The Colossus",
+    "lap_km": 37.7,
+    "scanned": false,
+    "route_index": 21
+   },
+   {
+    "step": 19,
+    "name": "The Goliath",
+    "lap_km": 85.4,
+    "scanned": false,
+    "route_index": 22
+   }
+  ],
+  "Street Racing": [
+   {
+    "route_index": 0,
+    "name": "Daikoku Chase",
+    "route_length_km": 6.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 1,
+    "name": "Norikura Descent",
+    "route_length_km": 5.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 2,
+    "name": "Nachi Run",
+    "route_length_km": 6.3,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 3,
+    "name": "Hokubu Ascent",
+    "route_length_km": 6.7,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 4,
+    "name": "Okishinaimura Run",
+    "route_length_km": 5.2,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 5,
+    "name": "Sunflower Charge",
+    "route_length_km": 6.1,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 6,
+    "name": "Kita Ine",
+    "route_length_km": 6.6,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 7,
+    "name": "Rainbow Bridge Descent",
+    "route_length_km": 8.5,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 8,
+    "name": "Shimanoyama Charge",
+    "route_length_km": 8.4,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 9,
+    "name": "Festival Chase",
+    "route_length_km": 6.6,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 10,
+    "name": "Matsumi Climb",
+    "route_length_km": 7.3,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 11,
+    "name": "Minami Chase",
+    "route_length_km": 7.4,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 12,
+    "name": "River Descent",
+    "route_length_km": 6.1,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 13,
+    "name": "Cedar Run",
+    "route_length_km": 6.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 14,
+    "name": "Tokyo City Docks Charge",
+    "route_length_km": 6.5,
+    "step": null,
+    "scanned": false
+   }
+  ],
+  "Cross-Country": [
+   {
+    "route_index": 0,
+    "name": "The Titan",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 1,
+    "name": "Legend Island Cross-Country Circuit",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 2,
+    "name": "Naruo Cross-Country Circuit",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 3,
+    "name": "Forest Cross-Country Circuit Snow",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 4,
+    "name": "Oka Cross-Country Circuit",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 5,
+    "name": "Edogawa Cross-Country Circuit",
+    "confidence": "low",
+    "unresolved_pieces": [
+     "va Cross-Country Circuit Edr",
+     "ross-Country Circuit Edogav",
+     "-Country Circuit Edogawa",
+     "Edogawa untry Circuit Cross"
+    ],
+    "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+    "name_evidence": [
+     "Sweep 'Edogawa CIN' (0.80, naechstbester 0.33)",
+     "Aufnahme 28.08. 'Edogawa Cras-eouniry Circ' (0.82, naechstbester 0.64)"
+    ],
+    "named_on": "2026-09-13"
+   },
+   {
+    "route_index": 6,
+    "name": "City Docks Cross-Country Circuit",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 7,
+    "name": "Stadium Cross-Country Circuit",
+    "confidence": "low",
+    "unresolved_pieces": [
+     "dium Cross-Country Circuit",
+     "n Cross-Country Circuit Star",
+     "oss-Country Circuit Stadium",
+     "-Country Circuit Stadium Cr"
+    ],
+    "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+    "name_evidence": [
+     "Sweep 'Stadium Cross-Country Circt' (0.96, naechstbester 0.79)",
+     "Aufnahme 28.08. 'Stadium Cross-Country Circi' (0.96, naechstbester 0.79)"
+    ],
+    "named_on": "2026-09-13"
+   },
+   {
+    "route_index": 8,
+    "name": "Nangan Cross-Country Circuit",
+    "confidence": "low",
+    "unresolved_pieces": [
+     "ngan Cross-Country Circuit",
+     "1 Cross-Country ( Circuit Nang",
+     "oss-Country Circuit Nangan",
+     "Country Circuit Nangan Cro:"
+    ],
+    "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+    "name_evidence": [
+     "Sweep 'Nangan Cross-Country Circu' (1.00, naechstbester 0.83)",
+     "Aufnahme 28.08. 'Nangan Cross-Country Circu' (1.00, naechstbester 0.83)"
+    ],
+    "named_on": "2026-09-13"
+   },
+   {
+    "route_index": 9,
+    "name": "Soni Highlands Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 10,
+    "name": "Ruriko-ji Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 11,
+    "name": "Takashiro Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 12,
+    "name": "Tateyama Alpine Cross-Country",
+    "confidence": "low",
+    "unresolved_pieces": [
+     "Cross-Country eyama Alpine",
+     "na Alpine Cross-Country Tal",
+     "Alpine Cross-Country Tateya",
+     "Tateyama ne Cross-Country"
+    ],
+    "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+    "name_evidence": [
+     "Sweep 'Tateyama Alpine Cross-Cour' (0.96, naechstbester 0.68)",
+     "Aufnahme 28.08. 'Tateyama Alpine Cross-Cour' (0.96, naechstbester 0.68)"
+    ],
+    "named_on": "2026-09-13"
+   },
+   {
+    "route_index": 13,
+    "name": "Wind Farm Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 14,
+    "name": "Yahikoyama Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 15,
+    "name": "Shimanoyama Cross-Country",
+    "confidence": "low",
+    "unresolved_pieces": [
+     "Cross-Country Shim loyama",
+     "ma Cross -Country Shimanoy",
+     "Cross-Country\" Shimanoyam",
+     ";s-Country Shimanoyama Cr"
+    ],
+    "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+    "name_evidence": [
+     "Sweep 'Shimanoyama Cross-Countr)' (1.00, naechstbester 0.82)",
+     "Aufnahme 28.08. 'Shimanoyama Cross-Country' (1.00, naechstbester 0.84)"
+    ],
+    "named_on": "2026-09-13"
+   },
+   {
+    "route_index": 16,
+    "name": "Shinjuku Gyoen Cross-Country",
+    "confidence": "low",
+    "unresolved_pieces": [
+     "u Gyoen Shir",
+     "Shinjuki",
+     "Country Shinjuku Gyoen",
+     "shinjuku Gyoen Cra Country"
+    ],
+    "name_source": "https://guides4gamers.com/forza-horizon-6/pois/cross-country/",
+    "name_evidence": [
+     "Bildschirm 2026-09-13 19:07 (Fehlschlagbild des Navigators): \"ShnjUk&'GYden Cross-\" -- passt zu 0,76 auf diesen Namen, naechstbester Kandidat 0,53",
+     "zuvor nur durch Ausschluss: alle anderen 18 Namen waren vergeben"
+    ],
+    "named_on": "2026-09-13"
+   },
+   {
+    "route_index": 17,
+    "name": "Temple Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   },
+   {
+    "route_index": 18,
+    "name": "Izu Cross-Country",
+    "confidence": "high",
+    "unresolved_pieces": null
+   }
+  ],
+  "Dirt Racing": [
+   {
+    "route_index": 0,
+    "name": "Chiheisen Scramble",
+    "route_length_km": 2.6,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 1,
+    "name": "Sotoyama Scramble",
+    "route_length_km": 2.9,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 2,
+    "name": "Hirosaki Scramble",
+    "route_length_km": 2.7,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 3,
+    "name": "Sunflower Scramble",
+    "route_length_km": 2.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 4,
+    "name": "Bamboo Forest Scramble",
+    "route_length_km": 5.0,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 5,
+    "name": "Ine Scramble",
+    "route_length_km": 3.1,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 6,
+    "name": "Horizon Stadium Scramble",
+    "route_length_km": 3.9,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 7,
+    "name": "Taiyaki Scramble",
+    "route_length_km": 3.6,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 8,
+    "name": "Kawazu Nanadaru S Scramble",
+    "route_length_km": 4.2,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 9,
+    "name": "Sekibe S Scramble",
+    "route_length_km": 2.1,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 10,
+    "name": "Nukabira Trail",
+    "route_length_km": 8.0,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 11,
+    "name": "Waterfall Trail",
+    "route_length_km": 5.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 12,
+    "name": "Hokubu Trail",
+    "route_length_km": 5.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 13,
+    "name": "Ito Trail",
+    "route_length_km": 7.0,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 14,
+    "name": "Airfield Trail",
+    "route_length_km": 6.7,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 15,
+    "name": "Cherry Field Trail",
+    "route_length_km": 7.3,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 16,
+    "name": "Kinkaku-ji Trail",
+    "route_length_km": 5.5,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 17,
+    "name": "Legend Island Trail",
+    "route_length_km": 5.4,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 18,
+    "name": "Oyashirazu Trail",
+    "route_length_km": 5.1,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 19,
+    "name": "Takashiro Trail",
+    "route_length_km": 5.7,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 20,
+    "name": "The Gauntlet",
+    "route_length_km": 30.1,
+    "step": null,
+    "scanned": false
+   }
+  ],
+  "Drag Racing": [
+   {
+    "route_index": 0,
+    "name": "Horizon Festival Drag Strip",
+    "route_length_km": 1.0,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 1,
+    "name": "Irokawa Space Centre Drag Strip",
+    "route_length_km": 0.4,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 2,
+    "name": "Ito Airfield Drag Strip",
+    "route_length_km": 0.8,
+    "step": null,
+    "scanned": false
+   }
+  ],
+  "Touge": [
+   {
+    "route_index": 0,
+    "name": "Hakone Nanamagari",
+    "route_length_km": 2.7,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 1,
+    "name": "Norikura Skyline",
+    "route_length_km": 5.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 2,
+    "name": "Arashiyama Takao",
+    "route_length_km": 4.8,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 3,
+    "name": "Bandai Azuma",
+    "route_length_km": 4.7,
+    "step": null,
+    "scanned": false
+   },
+   {
+    "route_index": 4,
+    "name": "Mt Haruna",
+    "route_length_km": 6.9,
+    "step": null,
+    "scanned": false
+   }
+  ]
+ },
+ "route_enumerations_unverified": {
+  "_comment": [
+   "Aufgenommen 2026-08-28, aber bewusst NICHT unter tracks eingetragen: damit",
+   "bleibt der Riegel in ocr_board_sweep.refuse_unverified_category() zu.",
+   "Freischalten heisst: Namen pruefen, Position 0 als Wahrzeichen in",
+   "forza_navigator.ps1 CategoryLandmark eintragen, dann hierher nach tracks.",
+   "Cross-Country: DAS SPIEL SELBST schneidet die Namen am Kartenrand ab",
+   "('City Docks Cross-Country Ci'). Der vollstaendige Name steht erst auf dem",
+   "Klassenschirm -- vor dem Freischalten dort nachlesen."
+  ],
+  "Cross-Country": [
+   {
+    "route_index": 0,
+    "name": "and Cross-Country Circuit Le",
+    "route_length_km": 5.0
+   },
+   {
+    "route_index": 1,
+    "name": "Naruo Cross-Country Circuit",
+    "route_length_km": 3.0
+   },
+   {
+    "route_index": 2,
+    "name": "Forest Cross-Country Snow",
+    "route_length_km": 3.5
+   },
+   {
+    "route_index": 3,
+    "name": "Oka Cross-Country Circuit",
+    "route_length_km": 3.9
+   },
+   {
+    "route_index": 4,
+    "name": "Edogawa Cras-eouniry Circ",
+    "route_length_km": 4.6
+   },
+   {
+    "route_index": 5,
+    "name": "City Docks Cross-Country Ci",
+    "route_length_km": 3.8
+   },
+   {
+    "route_index": 6,
+    "name": "Stadium Cross-Country Circi",
+    "route_length_km": 3.2
+   },
+   {
+    "route_index": 7,
+    "name": "Nangan Cross-Country Circu",
+    "route_length_km": 2.9
+   },
+   {
+    "route_index": 8,
+    "name": "Soni Highlands Cross-Counti",
+    "route_length_km": 7.9
+   },
+   {
+    "route_index": 9,
+    "name": "Ruriko-ji Cross-Country",
+    "route_length_km": 6.6
+   },
+   {
+    "route_index": 10,
+    "name": "Tateyama Alpine Cross-Cour",
+    "route_length_km": 8.9
+   },
+   {
+    "route_index": 11,
+    "name": "Tateyama Alpine Cross-Cour",
+    "route_length_km": 7.9
+   },
+   {
+    "route_index": 12,
+    "name": "Nahikoyama Cross-Country",
+    "route_length_km": 6.3
+   },
+   {
+    "route_index": 13,
+    "name": "Shimanoyama Cross-Counttl",
+    "route_length_km": 6.3
+   },
+   {
+    "route_index": 14,
+    "name": "Shimanoyama Cross-Country",
+    "route_length_km": 6.5
+   },
+   {
+    "route_index": 15,
+    "name": "Temple Cross-Coüntry",
+    "route_length_km": 6.0
+   },
+   {
+    "route_index": 16,
+    "name": "Temple Cross-Country",
+    "route_length_km": 7.0
+   },
+   {
+    "route_index": 17,
+    "name": "Izu Cross-Country",
+    "route_length_km": 7.8
+   },
+   {
+    "route_index": 18,
+    "name": "The Titan",
+    "route_length_km": 23.1
+   }
+  ],
+  "Dirt Racing": [
+   {
+    "route_index": 0,
+    "name": "Chiheisen Scranfble",
+    "route_length_km": 2.6
+   },
+   {
+    "route_index": 1,
+    "name": "Sotoyama Scramble",
+    "route_length_km": 2.9
+   },
+   {
+    "route_index": 2,
+    "name": "Hirosaki Scramble",
+    "route_length_km": 2.7
+   },
+   {
+    "route_index": 3,
+    "name": "Sunflower Scramble",
+    "route_length_km": 2.8
+   },
+   {
+    "route_index": 4,
+    "name": "Bamboo Forest Scramble",
+    "route_length_km": 5.0
+   },
+   {
+    "route_index": 5,
+    "name": "Ine Scramble",
+    "route_length_km": 3.1
+   },
+   {
+    "route_index": 6,
+    "name": "Horizon Stadium Scramble",
+    "route_length_km": 3.9
+   },
+   {
+    "route_index": 7,
+    "name": "Taiyaki Scramble",
+    "route_length_km": 3.6
+   },
+   {
+    "route_index": 8,
+    "name": "Kawazu Nanadaru S Scramble",
+    "route_length_km": 4.2
+   },
+   {
+    "route_index": 9,
+    "name": "Sekibe S Scramble",
+    "route_length_km": 2.1
+   },
+   {
+    "route_index": 10,
+    "name": "Nukabira Trail",
+    "route_length_km": 8.0
+   },
+   {
+    "route_index": 11,
+    "name": "Waterfall Trail",
+    "route_length_km": 5.8
+   },
+   {
+    "route_index": 12,
+    "name": "Hokubu Trail",
+    "route_length_km": 5.8
+   },
+   {
+    "route_index": 13,
+    "name": "Ito Trail",
+    "route_length_km": 7.0
+   },
+   {
+    "route_index": 14,
+    "name": "Airfield Trail",
+    "route_length_km": 6.7
+   },
+   {
+    "route_index": 15,
+    "name": "Cherry Field Trail",
+    "route_length_km": 7.3
+   },
+   {
+    "route_index": 16,
+    "name": "Kinkaku-ji Trail",
+    "route_length_km": 5.5
+   },
+   {
+    "route_index": 17,
+    "name": "Legend Island Trail",
+    "route_length_km": 5.4
+   },
+   {
+    "route_index": 18,
+    "name": "Oyashirazu Trail",
+    "route_length_km": 5.1
+   },
+   {
+    "route_index": 19,
+    "name": "Takashiro Trail",
+    "route_length_km": 5.7
+   },
+   {
+    "route_index": 20,
+    "name": "The Gauntlet",
+    "route_length_km": 30.1
+   }
+  ],
+  "Drag Racing": [
+   {
+    "route_index": 0,
+    "name": "Horizon Festival Drag Strip",
+    "route_length_km": 1.0
+   },
+   {
+    "route_index": 1,
+    "name": "lrokawa Space Centre Drag",
+    "route_length_km": 0.4
+   },
+   {
+    "route_index": 2,
+    "name": "Ito Airfield Drag S Strip",
+    "route_length_km": 0.8
+   }
+  ],
+  "Touge": [
+   {
+    "route_index": 0,
+    "name": "Hakone Nanamagari",
+    "route_length_km": 2.7
+   },
+   {
+    "route_index": 1,
+    "name": "Norikura Skyline",
+    "route_length_km": 5.8
+   },
+   {
+    "route_index": 2,
+    "name": "Arashiyama Takao",
+    "route_length_km": 4.8
+   },
+   {
+    "route_index": 3,
+    "name": "Bandai Azuma",
+    "route_length_km": 4.7
+   },
+   {
+    "route_index": 4,
+    "name": "Mt karuna",
+    "route_length_km": 6.9
+   }
+  ]
+ }
+}

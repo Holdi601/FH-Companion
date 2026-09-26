@@ -1,0 +1,375 @@
+{
+ "rivals_mode": "Cross-Country",
+ "routes": [
+  {
+   "route_index": 0,
+   "name": "The Titan",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan",
+    "The Titan"
+   ]
+  },
+  {
+   "route_index": 1,
+   "name": "Legend Island Cross-Country Circuit",
+   "confidence": "high",
+   "why": "12 Stuecke, Ring 36 Zeichen, Einigkeit 0.97",
+   "pieces": [
+    "end Island Cross-Country Cir",
+    "Island Cross-Country Circuit",
+    "nd Cross-Country Circuit Le",
+    "Cross-Country Circuit Legen",
+    "s-Country Circuit Legend Isl",
+    "Circuit Legend Island ountry",
+    "ry Circuit Legend Island Cro",
+    "ircuit Legend Island Cross-C",
+    "1 sland Cross-Country Circui",
+    "Ind Cross-Country Circuit Le",
+    "Cross-Country Circuit Legen",
+    "s-Country Circuit Legend Is"
+   ]
+  },
+  {
+   "route_index": 2,
+   "name": "Naruo Cross-Country Circuit",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit",
+    "Naruo Cross-Country Circuit"
+   ]
+  },
+  {
+   "route_index": 3,
+   "name": "Forest Cross-Country Circuit Snow",
+   "confidence": "high",
+   "why": "11 Stuecke, Ring 34 Zeichen, Einigkeit 0.96",
+   "pieces": [
+    "Forest Cross-Country Circ M",
+    "st Cross-Country Circuit Sna",
+    "oss-Country Circuit SnowF",
+    "Country Circuit Snow Fores",
+    "antry Circuit Snow Forest Cr",
+    "Circuit Snow Forest Cross- M",
+    "cuit Snow Forest Cross-Cou",
+    "Forest Cross-Country Cir MC",
+    "orest Cross Country Circuit",
+    "st Cross-Country Circuit Snc",
+    "ross-Country Circuit SnowF"
+   ]
+  },
+  {
+   "route_index": 4,
+   "name": "Oka Cross-Country Circuit",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit",
+    "Oka Cross-Country Circuit"
+   ]
+  },
+  {
+   "route_index": 5,
+   "name": "Edogawa Cross-Country Circuit",
+   "confidence": "low",
+   "why": "10 Stuecke, Ring 30 Zeichen, Einigkeit 0.89",
+   "pieces": [
+    "va Cross-Country Circuit Edr",
+    "ross-Country Circuit Edogav",
+    "-Country Circuit Edogawa",
+    "Edogawa untry Circuit Cross",
+    "Edogawa Cross-Co y Circuit",
+    "rcuit Edogawa Cross-Counti",
+    "t Edogawa Cross-Country Ci",
+    "va Cross-Country Circuit Edi",
+    "ross-Country Circuit Edogal",
+    "s-Country Circuit Edogawa"
+   ]
+  },
+  {
+   "route_index": 6,
+   "name": "City Docks Cross-Country Circuit",
+   "confidence": "high",
+   "why": "12 Stuecke, Ring 33 Zeichen, Einigkeit 0.97",
+   "pieces": [
+    "Docks Cross-Country Circu",
+    "cks Cross-Country Circuit C",
+    "Cross-Country Circuit City E",
+    "ss-Country Circuit City Dock",
+    "ountry Circuit City Docks Cr",
+    "try Circuit: City Docks Cross.",
+    "Circuit City Docks Cross-Cot",
+    "lit City Docks Cross-Country",
+    "Docks Cross-Country Circu",
+    "cks Cross-Country Circuit C",
+    "Cross-Country Circuit City",
+    "ss-Country Circuit City Dock"
+   ]
+  },
+  {
+   "route_index": 7,
+   "name": "Stadium Crs Stadium Cross-Country Circuit",
+   "confidence": "low",
+   "why": "12 Stuecke, Ring 42 Zeichen, Einigkeit 0.89",
+   "pieces": [
+    "dium Cross-Country Circuit",
+    "n Cross-Country Circuit Star",
+    "oss-Country Circuit Stadium",
+    "-Country Circuit Stadium Cr",
+    "untry Circuit S Stadium Cross",
+    "y Circuits Stadium Cross-Cou",
+    "Stadium Cross-Country 'cuits",
+    "Cross-Country Cir Stadium",
+    "dium Cross-Country Circuit",
+    "n Cross-Country Circuit Star",
+    "oss-Country Circuit Stadium",
+    "-Country Circuit Stadium Cr"
+   ]
+  },
+  {
+   "route_index": 8,
+   "name": "Nangan Cross-Country Circuit",
+   "confidence": "low",
+   "why": "12 Stuecke, Ring 29 Zeichen, Einigkeit 0.95",
+   "pieces": [
+    "ngan Cross-Country Circuit",
+    "1 Cross-Country ( Circuit Nang",
+    "oss-Country Circuit Nangan",
+    "Country Circuit Nangan Cro:",
+    "intry Circuit Nangan Cross-C",
+    "Circuit Nangan Cross-Cour",
+    "cuit Nangan Cross-Country",
+    "Nangan n Cross-Country Circ",
+    "ngan Cross-Country Circuit",
+    "n Cross-Country Circuit Nan!",
+    "oss-Country Circuit Nangan",
+    "-Country Circuit Nangan Cro"
+   ]
+  },
+  {
+   "route_index": 9,
+   "name": "Soni Highlands Cross-Country",
+   "confidence": "high",
+   "why": "12 Stuecke, Ring 29 Zeichen, Einigkeit 0.97",
+   "pieces": [
+    "ni Highlands Cross-Country",
+    "lighlands Cross-Country Sor",
+    "lands Cross-Country Soni Hi",
+    "ds Cross-Country Soni Highl.",
+    "ross-Country Soni Highland",
+    "Country Soni Highlands C S-",
+    "ountry Soni Highlands Cros!",
+    "Soni Highlands Cross-C ntry",
+    "ni Highlands Cross-Country",
+    "lighlands Cross-Country Sor",
+    "lands Cross-Country Soni Hi",
+    "ds Cross-Country Soni Highl"
+   ]
+  },
+  {
+   "route_index": 10,
+   "name": "Ruriko-ji Cross-Country",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country",
+    "Ruriko-ji Cross-Country"
+   ]
+  },
+  {
+   "route_index": 11,
+   "name": "Takashiro Cross-Country",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country",
+    "Takashiro Cross-Country"
+   ]
+  },
+  {
+   "route_index": 12,
+   "name": "Tateyama Alpine Cross-Country",
+   "confidence": "low",
+   "why": "12 Stuecke, Ring 30 Zeichen, Einigkeit 0.84",
+   "pieces": [
+    "Cross-Country eyama Alpine",
+    "na Alpine Cross-Country Tal",
+    "Alpine Cross-Country Tateya",
+    "Tateyama ne Cross-Country",
+    "ross-Country Tateyama Alpi",
+    "s-Country Tateyama Alpine",
+    "untry Tateyama Alpine Cros",
+    "Tateyama Alpine Cross-C ry1",
+    "Cross-Country eyama Alpine",
+    "na Alpine Cross-Country Tal",
+    "Alpine Cross-Country Tateya",
+    "Tateyama ne Cross-Country"
+   ]
+  },
+  {
+   "route_index": 13,
+   "name": "Wind Farm Cross-Country",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country",
+    "Wind Farm Cross-Country"
+   ]
+  },
+  {
+   "route_index": 14,
+   "name": "Yahikoyama Cross-Country",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country",
+    "Yahikoyama Cross-Country"
+   ]
+  },
+  {
+   "route_index": 15,
+   "name": "Crosss-Country Shimanoyama Cross-Country",
+   "confidence": "low",
+   "why": "10 Stuecke, Ring 41 Zeichen, Einigkeit 0.82",
+   "pieces": [
+    "Cross-Country Shim loyama",
+    "ma Cross -Country Shimanoy",
+    "Cross-Country\" Shimanoyam",
+    ";s-Country Shimanoyama Cr",
+    "Shimanoyama Cross- ountry",
+    "Shimanoyama Cross-Cou trys",
+    "Shimanoyama Cross-Country",
+    "Cross-Country Shimi loyama",
+    "ma Cross -Country Shimanoj",
+    "Cross-Country' Shimanoyam"
+   ]
+  },
+  {
+   "route_index": 16,
+   "name": "Shinjuku Gyoen ShirCountry",
+   "confidence": "low",
+   "why": "7 Stuecke, Ring 27 Zeichen, Einigkeit 0.85",
+   "pieces": [
+    "u Gyoen Shir",
+    "Shinjuki",
+    "Country Shinjuku Gyoen",
+    "shinjuku Gyoen Cra Country",
+    "Shinjukd Gyoen Cross-Cour",
+    "u Gyoen Shir",
+    "Shinjuki"
+   ]
+  },
+  {
+   "route_index": 17,
+   "name": "Temple Cross-Country",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country",
+    "Temple Cross-Country"
+   ]
+  },
+  {
+   "route_index": 18,
+   "name": "Izu Cross-Country",
+   "confidence": "high",
+   "why": "12 Aufnahmen woertlich gleich",
+   "pieces": [
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country",
+    "Izu Cross-Country"
+   ]
+  }
+ ]
+}
