@@ -26,6 +26,25 @@ data/
 bodies/
 
 # ---------------------------------------------------------------------------
+# Eigene Telemetrie und Aufnahmen: nie ins Repository, egal wo sie liegen.
+# Die App schreibt sie nach %LOCALAPPDATA%\FHCompanion, ausserhalb dieses Baums;
+# diese Regeln fangen Kopien ab, die zum Testen hier abgelegt werden.
+# ---------------------------------------------------------------------------
+**/laps/
+personal_laps.json
+freeroam_lines.json
+tune_usage.json
+last_blueprint.txt
+*.pcap
+*.pcapng
+*.etl
+*.parquet
+*.sqlite
+*.db
+*.mmdb
+*.csv
+
+# ---------------------------------------------------------------------------
 # Persoenliches: die Werte dieser Installation und die eigenen Einstellungen.
 #
 # config/local.json   Serveradresse, oeffentlicher Name, Kontakt (Form: local.example.json)

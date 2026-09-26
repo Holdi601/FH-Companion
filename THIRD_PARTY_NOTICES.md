@@ -38,19 +38,22 @@ These ship inside `fh-companion.zip` and are therefore redistributed.
 |---|---|---|---|
 | **.NET runtime & Windows Desktop runtime** | 9.0 | MIT | Self-contained publish; 196 of the 220 DLLs in `app/` are Microsoft's runtime |
 | **SDL** (`SDL3.dll`) | 3.4.10 | zlib | Version resource: "Simple DirectMedia Layer", © 2026 Sam Lantinga |
-| **HidSharp** | 2.1.0 | **unverified** — see below | `.nuspec` gives only a `licenseUrl`, no SPDX expression, and the package ships no licence text |
+| **HidSharp** | 2.1.0 | Apache-2.0 | The licence file the `.nuspec` links to (`zer7.com/files/oss/hidsharp/LICENSE.txt`), read 2026-09-26: © 2010-2025 James F. Bellinger, Apache License 2.0 |
 | **Microsoft.Data.Sqlite** / `.Core` | 10.0.12 | MIT | SPDX expression in the `.nuspec` |
 | **SQLitePCLRaw** (`core`, `bundle_e_sqlite3`, `lib.e_sqlite3`, `provider.e_sqlite3`) | 2.1.12 | Apache-2.0 | SPDX expression in the `.nuspec` |
 | **SQLite** (inside `e_sqlite3.dll`) | bundled by SQLitePCLRaw | public domain | SQLite's own terms |
 | **System.Memory** | 4.5.3 | MIT | `licenseUrl` points at the .NET Core `LICENSE.TXT` |
 
-### HidSharp needs checking before publication
+### HidSharp
 
-Its NuGet package carries **no licence file** — only a link to
-<http://www.zer7.com/files/oss/hidsharp/LICENSE.txt>. The project page is
-<http://www.zer7.com/software/hidsharp>. Fetch that text, confirm the terms, and
-paste them here. Until then this table must not be read as a statement that the
-terms are met.
+Its NuGet package carries no licence file, only a link to
+<http://www.zer7.com/files/oss/hidsharp/LICENSE.txt>. That text (checked
+2026-09-26) reads:
+
+> HIDSharp
+> Copyright 2010-2025 James F. Bellinger
+>
+> Licensed under the Apache License, Version 2.0.
 
 ---
 
