@@ -63,7 +63,11 @@ Everything drawn over the game while you drive, and where it sits:
     game's picture or as a smooth traced line.
   - **Layout:** side by side or stacked, with their own thickness and smoothing.
   - **Display time:** how long they stay up (0 = until the race starts).
-  - **Championships:** the routes are coloured done, now and next.
+  - **Championships:** the routes are coloured done, now and next. When you
+    join a Horizon Play series midway, the sign-up screen marks the route that
+    is already running ("In Progress") and the one you join ("Up Next"); the
+    app counts the running one as done, recommends cars only for the races you
+    still drive, and names your laps after the route that is up next.
 - **Car note.** Whether the note in the car menu also shows the applied tune's
   name and description.
 - **Archive every lap for heatmaps.**
@@ -128,7 +132,13 @@ already has a start and finish line, and `F10` sets one of your own. Details:
   curves for each mapping.
 
 It supports the Steam Controller, DualSense (including adaptive triggers), Xbox,
-PlayStation and 8BitDo pads. The controller is only driven while Forza runs.
+PlayStation and 8BitDo pads. The controller is only driven while Forza runs and
+sends telemetry.
+
+It works without any setup: a built-in graph turns tyre grip loss into rumble on
+the side that slides and a locking wheel into a short buzz. Untick
+`Graph output enabled` in the Blueprint editor to switch it off; the app
+remembers the choice.
 
 ## Updating
 

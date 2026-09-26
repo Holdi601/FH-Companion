@@ -56,7 +56,10 @@ internal sealed class RecordedLap
     /// <remarks>
     /// "none" heisst: es gibt keinen. "signup+length" heisst: der Anmeldeschirm
     /// bot diese Strecke an, und die gefahrene Rundenlaenge passte zu GENAU EINER
-    /// der angebotenen -- zwei Anhaltspunkte, nicht einer.
+    /// der angebotenen -- zwei Anhaltspunkte, nicht einer. "series-order+length"
+    /// (seit 2026-09-26): der Schirm einer Reihe (Horizon Play) zeigte, welche
+    /// Strecke dran war, und die Rundenlaenge passte zu ihr -- auch wenn eine andere
+    /// angebotene Strecke fast gleich lang ist.
     ///
     /// Der Beleg steht daneben, weil ein Name ohne Herkunft spaeter nicht mehr zu
     /// bewerten ist. Dieses Projekt hat schon einmal geratene Autonamen als

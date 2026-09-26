@@ -130,6 +130,15 @@ internal sealed class OverlayController : IDisposable
             // Nur wenn die Runde ihn nicht schon selbst kennt: eine Freiwelt-Fahrt
             // hat ihn aus der eigenen Uhr und der ist ein Beweis, die Einstellung
             // nur eine Angabe. Ein Beweis wird nicht von einer Angabe ueberschrieben.
+            //
+            // Ein frisch gelesener Horizon-Play-Anmeldeschirm ist ebenfalls ein Beleg
+            // (seit 2026-09-26) -- darum steht er vor der Einstellung.
+            if (lap.Mode == "unknown" && _schirmHorizonPlay
+                && _letzterSchirm is { } gelesen && DateTime.UtcNow - gelesen.Seen <= SchirmGilt)
+            {
+                lap.Mode = "horizon-play";
+                lap.ModeEvidence = $"screen:{(int)(DateTime.UtcNow - gelesen.Seen).TotalSeconds}s";
+            }
             if (lap.Mode == "unknown"
                 && !string.IsNullOrWhiteSpace(_settings.LapMode)
                 && _settings.LapMode != "auto")
@@ -140,16 +149,18 @@ internal sealed class OverlayController : IDisposable
 
             // FUER DIE MEISTERSCHAFT: welche der angebotenen Strecken war das?
             _rundenImRennen++;
-            _letzteStrecke = StreckeZurRunde(lap) ?? _letzteStrecke;
+            var zuordnung = StreckeZurRunde(lap);
+            _letzteStrecke = zuordnung?.Name ?? _letzteStrecke;
 
             // DEN STRECKENNAMEN DAZUSCHREIBEN, falls der Anmeldeschirm ihn hergibt.
             // Wie beim Modus: nur, wenn die Runde ihn nicht schon selbst kennt.
-            if (string.IsNullOrWhiteSpace(lap.Track)
-                && StreckeZurRunde(lap) is { } strecke)
+            if (string.IsNullOrWhiteSpace(lap.Track) && zuordnung is { } strecke)
             {
-                lap.Track = strecke;
-                lap.TrackEvidence = "signup+length";
-                LogLap($"route: {strecke} (sign-up screen, matched by length)");
+                lap.Track = strecke.Name;
+                lap.TrackEvidence = strecke.Evidence;
+                LogLap(strecke.Evidence == "series-order+length"
+                    ? $"route: {strecke.Name} (series order on the sign-up screen, confirmed by length)"
+                    : $"route: {strecke.Name} (sign-up screen, matched by length)");
             }
 
             // Die volle Spur nur, wenn sie gewollt ist -- sie kostet rund
@@ -607,6 +618,9 @@ internal sealed class OverlayController : IDisposable
             _meisterschaftWeg.Start();
         }
     }
+
+    /// <summary>Die Strecken vor dem Einstieg in eine Reihe -- die faehrt man nicht mehr.</summary>
+    internal static IEnumerable<int> Einstieg(int ab, int anzahl) => Enumerable.Range(0, Math.Clamp(ab, 0, anzahl));
 
     /// <summary>Wie jede angebotene Strecke steht: gefahren, jetzt, danach.</summary>
     internal static List<CourseShapeHud.TileState> Stati(int anzahl, IReadOnlySet<int> erledigt)
@@ -2156,7 +2170,12 @@ internal sealed class OverlayController : IDisposable
                       // welcher eigene Kurs eine angebotene Strecke ist; steht hier
                       // eine falsche Zahl, ist die Maske zu eng -- und das waere
                       // sonst erst an einer falsch beschrifteten Runde zu merken.
-                      + $" km={string.Join(" | ", state.Tracks.Select(s => state.TrackLengths.TryGetValue(s, out var l) ? $"{l.TotalKm:0.0}/{l.Laps}" : "?"))}";
+                      + $" km={string.Join(" | ", state.Tracks.Select(s => state.TrackLengths.TryGetValue(s, out var l) ? $"{l.TotalKm:0.0}/{l.Laps}" : "?"))}"
+                      // Reihe und Statusspalte (Horizon Play), wenn der Schirm sie zeigt.
+                      + (state.SeriesIndex > 0 ? $" series={state.Series} {state.SeriesIndex}/{state.SeriesCount}" : string.Empty)
+                      + (state.TrackStatus.Count > 0
+                          ? $" status={string.Join(" | ", state.TrackStatus.Select(p => $"{p.Key}={p.Value}"))} ab={state.FirstOwnIndex}"
+                          : string.Empty);
             File.AppendAllText(Path.Combine(dir, "reads.log"),
                                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {what}"
                                + Environment.NewLine);
@@ -2279,6 +2298,32 @@ internal sealed class OverlayController : IDisposable
     private (DateTime Seen, string? Klass,
              List<(string Name, double LapMetres)> Routen)? _letzterSchirm;
 
+    /// <summary>Der zuletzt gelesene Schirm war der einer Reihe (Horizon Play, Spec Racing).</summary>
+    private bool _schirmReihe;
+
+    /// <summary>... und zwar einer Horizon-Play-Reihe -- das ist ein Beleg fuer den Modus.</summary>
+    private bool _schirmHorizonPlay;
+
+    /// <summary>Ab welcher Strecke des Schirms man selbst faehrt (ScreenState.FirstOwnIndex).</summary>
+    private int _schirmAb;
+
+    /// <summary>Den gelesenen Schirm fuer die naechsten Runden merken.</summary>
+    /// <remarks>
+    /// Seit 2026-09-26 VOR jeder Empfehlung: bis dahin stand das erst hinter dem
+    /// Zweig ohne Bestenliste, und Strecken ohne Board -- die trotzdem gefahren
+    /// werden -- bekamen nie einen Namen.
+    /// </remarks>
+    private void MerkeSchirm(ScreenState state)
+    {
+        var routen = state.Tracks
+            .Select(s => (s, state.TrackLengths.TryGetValue(s, out var l) ? l.LapMetres : 0))
+            .ToList();
+        _letzterSchirm = (DateTime.UtcNow, state.Klass ?? string.Empty, routen);
+        _schirmReihe = state.SeriesIndex > 0 || state.TrackStatus.Count > 0;
+        _schirmHorizonPlay = state.IsHorizonPlay;
+        _schirmAb = state.FirstOwnIndex;
+    }
+
     /// <summary>
     /// Wie lange ein gelesener Anmeldeschirm fuer eine Runde noch als Beleg gilt.
     /// </summary>
@@ -2304,7 +2349,7 @@ internal sealed class OverlayController : IDisposable
     /// Die Klasse muss auch stimmen. Ein Klasse-A-Angebot beschriftet keine
     /// Klasse-B-Runde, selbst wenn die Laenge passt.
     /// </remarks>
-    private string? StreckeZurRunde(RecordedLap lap)
+    private (string Name, string Evidence)? StreckeZurRunde(RecordedLap lap)
     {
         if (_letzterSchirm is not { } schirm) { return null; }
         if (DateTime.UtcNow - schirm.Seen > SchirmGilt) { return null; }
@@ -2320,6 +2365,24 @@ internal sealed class OverlayController : IDisposable
             }
         }
 
+        // IN EINER REIHE IST DIE REIHENFOLGE BEKANNT. Die erste noch offene Strecke
+        // ab dem Einstieg ist die, die gerade gefahren wird. Passt ihre Laenge, gilt
+        // sie -- auch wenn eine andere fast gleich lang ist: Coastline Sprint und
+        // Festival Sprint liegen 3,7 % auseinander, und die Laenge allein liess eine
+        // solche Runde am 2026-09-25 ohne Namen.
+        if (_schirmReihe)
+        {
+            var erwartet = ErwarteteStrecke(schirm.Routen.Count, _schirmAb, _erledigt);
+            if (erwartet >= 0)
+            {
+                var (name, meter) = schirm.Routen[erwartet];
+                if (meter > 0 && Math.Abs(meter - lap.LengthMetres) / meter <= 0.06)
+                {
+                    return (name, "series-order+length");
+                }
+            }
+        }
+
         string? treffer = null;
         foreach (var (name, meter) in schirm.Routen)
         {
@@ -2328,8 +2391,12 @@ internal sealed class OverlayController : IDisposable
             if (treffer is not null) { return null; }   // zwei passen: keiner gilt
             treffer = name;
         }
-        return treffer;
+        return treffer is null ? null : (treffer, "signup+length");
     }
+
+    /// <summary>Die Strecke einer Reihe, die jetzt dran ist: die erste offene ab dem Einstieg.</summary>
+    internal static int ErwarteteStrecke(int anzahl, int ab, IReadOnlySet<int> erledigt) =>
+        Enumerable.Range(0, anzahl).FirstOrDefault(i => i >= ab && !erledigt.Contains(i), -1);
 
     public void RenderAdvice(ScreenState state)
     {
@@ -2338,21 +2405,29 @@ internal sealed class OverlayController : IDisposable
         // also keeps the ranking inside one category, which matters wherever two
         // categories share a route name.
         var category = _advisor.CategoryOf(state.Tracks);
-        var advice = _advisor.Advise(state.Tracks, klass, category);
+        // EINE REIHE, MITTEN DRIN BETRETEN (Horizon Play "2/3"): die Empfehlung gilt den
+        // Strecken, die man noch selbst faehrt. Die laufende faehrt man nicht mehr, und
+        // ein Auto, das nur dort glaenzt, ist die falsche Wahl. Die Kategorie kommt
+        // weiter aus ALLEN Strecken -- sie beschreibt die Reihe, nicht den Rest.
+        var advice = _advisor.Advise(state.RemainingTracks, klass, category);
         var title = category is null ? $"Class {klass}" : $"Class {klass} · {category}";
+        var reihe = state.SeriesIndex > 0
+            ? $"{state.Series} {state.SeriesIndex}/{state.SeriesCount}: "
+            : state.FirstOwnIndex > 0 ? "Remaining: " : string.Empty;
         var lines = new List<PanelLine>();
         var budget = _right.RowBudget;
+        MerkeSchirm(state);
 
         if (advice.ByPoints.Count == 0)
         {
             // DIE UMRISSE HAENGEN NICHT AN DER BESTENLISTE. Bis zum 2026-09-25 kehrte
             // dieser Zweig vor ihnen zurueck: ohne Board in dieser Klasse keine Karten,
             // obwohl die Karten gar nichts mit den Zeiten zu tun haben.
-            ZeigeUmrisse(state.Tracks.Select(n => (n, string.Empty)).ToList());
+            ZeigeUmrisse(state.Tracks.Select(n => (n, string.Empty)).ToList(), state.FirstOwnIndex);
             lines.Add(new PanelLine("No board for these routes in this class yet.",
                                     string.Empty, OverlayPanel.Warn));
             _right.SetContent($"{title} – what to drive",
-                              string.Join(" · ", advice.Tracks),
+                              reihe + string.Join(" · ", advice.Tracks),
                               lines,
                               "The sweep has not reached them. The site's Scan status "
                               + "tab lists what exists.");
@@ -2434,16 +2509,12 @@ internal sealed class OverlayController : IDisposable
         // Die Bruecke vom Namen zum eigenen Kursordner ist die Laenge, die der
         // Schirm unter dem Streckennamen nennt. Fehlt sie, bleibt die Spalte leer
         // -- das ist richtig so, siehe OwnCars.Table.
-        var routen = new List<(string Name, double LapMetres)>();
-        foreach (var strecke in advice.Tracks)
-        {
-            routen.Add((strecke,
-                        state.TrackLengths.TryGetValue(strecke, out var l)
-                            ? l.LapMetres : 0));
-        }
-
-        // Merken, damit die naechste gefahrene Runde einen Namen bekommen kann.
-        _letzterSchirm = (DateTime.UtcNow, klass, routen);
+        //
+        // ALLE STRECKEN DES SCHIRMS, auch bei einer Reihe: die Tabelle und die Karten
+        // zeigen die ganze Reihe (die Karten mit Stand), nur die Rangliste darueber gilt
+        // dem Rest. Seit 2026-09-26 aus dem Schirm statt aus der Empfehlung -- dieselbe
+        // Liste, die MerkeSchirm fuer die Rundennamen ablegt, in derselben Reihenfolge.
+        var routen = _letzterSchirm?.Routen ?? new List<(string Name, double LapMetres)>();
 
         var meineTabelle = OwnCars.Table(klass, routen);
         if (routen.Count > 0)
@@ -2630,7 +2701,7 @@ internal sealed class OverlayController : IDisposable
         }
 
         _right.SetContent($"{title} – what to drive",
-                          string.Join(" · ", advice.Tracks), lines,
+                          reihe + string.Join(" · ", advice.Tracks), lines,
                           string.Join(" — ", notes));
 
         // DIE UMRISSE DER ANGEBOTENEN STRECKEN.
@@ -2643,12 +2714,13 @@ internal sealed class OverlayController : IDisposable
             .Select(i => (routen[i].Name,
                           i < meineTabelle.Courses.Count ? meineTabelle.Courses[i].Key
                                                          : string.Empty))
-            .ToList());
+            .ToList(), state.FirstOwnIndex);
     }
 
     /// <summary>Die Umrisse der angebotenen Strecken zeigen -- mit oder ohne Bestenliste.</summary>
     /// <param name="routen">Name je Strecke und, wenn bekannt, der eigene Kursordner.</param>
-    private void ZeigeUmrisse(IReadOnlyList<(string Name, string Key)> routen)
+    /// <param name="ab">Ab welcher Strecke man selbst faehrt (Horizon Play "2/3": ab der zweiten).</param>
+    private void ZeigeUmrisse(IReadOnlyList<(string Name, string Key)> routen, int ab = 0)
     {
         // DASSELBE ANGEBOT WIE ZULETZT? Dann bleibt, was schon gefahren ist -- zwischen
         // zwei Rennen einer Meisterschaft zeigt das Spiel die Liste womoeglich erneut.
@@ -2662,6 +2734,11 @@ internal sealed class OverlayController : IDisposable
             // Ein neues Angebot ist eine neue Frage: die Zeit laeuft neu.
             _umrisseUhr.NewOffer();
         }
+        // MITTEN IN EINE REIHE EINGESTIEGEN: was vor dem Einstieg liegt, faehrt man
+        // nicht mehr -- es zaehlt als erledigt. Bis 2026-09-26 hielt die Zaehlung die
+        // laufende Strecke fuer die eigene, und die Karten nannten sie "jetzt". Auch
+        // bei gleichem Angebot: der Schirm weiss es dann besser als die eigene Zaehlung.
+        foreach (var i in Einstieg(ab, routen.Count)) { _erledigt.Add(i); }
         _angebot = routen.ToList();
         _angebotZeit = DateTime.UtcNow;
         // WAEHREND DES RENNENS NIE -- auch nicht, wenn der Leser mitten im Rennen

@@ -425,7 +425,10 @@ def copy_config(root: Path, server: str) -> None:
     # fuer JEDEN Nutzer -- ein hier eingetragener Gamertag reichte sonst die Runden
     # aller unter diesem Namen ein. Und die Einreichung ist im Paket AN (so gewollt:
     # abwaehlbar, nicht anwaehlbar), gleich wie sie auf diesem Rechner steht.
-    for persoenlich in ("gamertag", "disclosure_ack", "skipped_update", "telemetry_from_lan"):
+    # Ob hier die Haptik-Ausgabe aus ist, gehoert ebenso diesem Rechner: ohne den
+    # Schluessel gilt die Vorgabe (an), und eine frische Installation vibriert.
+    for persoenlich in ("gamertag", "disclosure_ack", "skipped_update", "telemetry_from_lan",
+                        "haptics_graph_enabled"):
         settings.pop(persoenlich, None)
     settings["submit_laps"] = True
     target = root / "config" / "overlay.json"
@@ -573,7 +576,8 @@ What it does
 * Tuning inspector: what the tune on your car is made of.
 * Tunes: how many downloaded tunes you keep against the game's limit, which ones
   no car uses, and whose tunes you drive.
-* Haptics: tyre grip becomes vibration -- on the side the car is sliding. For the
+* Haptics: tyre grip becomes vibration -- on the side the car is sliding -- and a
+  locking wheel a short buzz, without setting anything up. For the
   2026 Steam Controller (four actuators), DualSense (including the adaptive
   triggers), and Xbox, PlayStation and 8BitDo pads. The signal editor maps
   telemetry to haptics as a node graph (saved as .fhgraph.json).

@@ -75,7 +75,14 @@ internal sealed class BlueprintEditor : UserControl
             Height = 38,
             Checked = graph.Enabled
         };
-        _enabled.CheckedChanged += (_, _) => _graph.Enabled = _enabled.Checked;
+        _enabled.CheckedChanged += (_, _) =>
+        {
+            _graph.Enabled = _enabled.Checked;
+            if (!_setzeSchalter)
+            {
+                OutputEnabledChanged?.Invoke(_enabled.Checked);
+            }
+        };
 
         var addConstant = PaletteButton("Add constant test source");
         addConstant.Click += (_, _) => AddNode(new ConstantSignalNode(
@@ -266,21 +273,56 @@ internal sealed class BlueprintEditor : UserControl
         }
     }
 
+    /// <summary>Der Nutzer hat "Graph output enabled" umgeschaltet (nicht der Code).</summary>
+    public event Action<bool>? OutputEnabledChanged;
+
+    private bool _setzeSchalter;
+
+    /// <summary>Ausgabe an oder aus, ohne dass es als Umschalten des Nutzers zaehlt.</summary>
+    public void SetOutputEnabled(bool an)
+    {
+        _setzeSchalter = true;
+        try
+        {
+            _graph.Enabled = an;
+            _enabled.Checked = an;
+        }
+        finally
+        {
+            _setzeSchalter = false;
+        }
+    }
+
     public void SetActiveController(ControllerOutputTarget target)
     {
         foreach (var output in _graph.Nodes.OfType<OutputSignalNode>())
         {
             output.TargetId = target.Id;
-            output.Channel = target.IsSteamNative
-                ? SteamControllerHaptics.LeftGrip
-                : target.IsDualSenseNative
-                    ? DualSenseHaptics.FrequencyMix
-                    : GenericGamepadHaptics.FrequencyMix;
+            // DEN KANAL NUR ERSETZEN, WENN ES IHN DORT NICHT GIBT. Bis 2026-09-26 bekam
+            // hier JEDER Ausgang denselben Kanal -- bei jeder Controllerwahl, also auch
+            // beim Start. Links und rechts landeten auf einem Griff, und ein Graph mit
+            // DualSense-Abzugskanaelen verlor sie beim Einstecken.
+            if (!KanalGibtEs(target, output.Channel))
+            {
+                output.Channel = target.IsSteamNative
+                    ? SteamControllerHaptics.LeftGrip
+                    : target.IsDualSenseNative
+                        ? DualSenseHaptics.FrequencyMix
+                        : GenericGamepadHaptics.FrequencyMix;
+            }
         }
 
         RefreshControllerTargets();
         _canvas.Invalidate();
     }
+
+    internal static bool KanalGibtEs(ControllerOutputTarget target, int kanal) =>
+        target.IsSteamNative
+            ? kanal is >= SteamControllerHaptics.RightGrip and <= SteamControllerHaptics.RightPad
+            : target.IsDualSenseNative
+                ? kanal is >= DualSenseHaptics.LowBodyMotor and <= DualSenseHaptics.FrequencyMix
+                    or >= DualSenseHaptics.LeftAdaptiveTrigger and <= DualSenseHaptics.BothAdaptiveTriggers
+                : kanal is >= GenericGamepadHaptics.LowMotor and <= GenericGamepadHaptics.BothTriggers;
 
     internal decimal[] GetPropertyNumberValuesForTest() =>
         Descendants(_properties)
@@ -513,8 +555,12 @@ internal sealed class BlueprintEditor : UserControl
 
     private void ApplyLoadedGraph(string path)
     {
+        // Laden schaltet die Ausgabe weder an noch aus: ob der Graph den Controller
+        // treibt, entscheidet der Schalter (gemerkt in haptics_graph_enabled), nicht
+        // die Datei. Wer die Ausgabe aus hat, bekommt sie durch ein Profil nicht an.
+        var an = _graph.Enabled;
         SignalGraphPersistence.LoadInto(_graph, path);
-        _enabled.Checked = _graph.Enabled;
+        SetOutputEnabled(an);
         _canvas.SelectedNode = null;
         _canvas.Invalidate();
         RefreshCanvasExtent();

@@ -753,6 +753,17 @@ internal sealed class OverlaySettings
     [JsonPropertyName("haptics_require_telemetry")]
     public bool HapticsRequireTelemetry { get; set; } = true;
 
+    /// <summary>Drive the controller from the haptics graph ("Graph output enabled").</summary>
+    /// <remarks>
+    /// On by default since 2026-09-26, and remembered: before that the switch started
+    /// off on every launch, so a fresh install never vibrated until someone found it
+    /// in the Blueprint editor. The two guards above still apply -- nothing is driven
+    /// unless Forza runs and telemetry arrives. The package strips this key, so the
+    /// build machine's choice never ships.
+    /// </remarks>
+    [JsonPropertyName("haptics_graph_enabled")]
+    public bool HapticsGraphEnabled { get; set; } = true;
+
     /// <summary>Only let the overlay panels appear while Forza runs.</summary>
     /// <remarks>
     /// A panel over the desktop is a bug, not a feature: it reads the game's screen

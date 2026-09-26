@@ -48,6 +48,40 @@ internal static class EdgeCaseTest
         TuneDeleterReading();
         RenameMigration();
         BrandResources();
+        SeriesStatusWords();
+    }
+
+    /// <summary>
+    /// Horizon Play: die Statuswoerter, der Einstieg mitten in eine Reihe und welche
+    /// Strecke danach dran ist.
+    /// </summary>
+    private static void SeriesStatusWords()
+    {
+        Rivals.RouteStatus S(string t) => Rivals.RivalsScreenReader.StatusIn(t);
+        Soll(S("In Progress") == Rivals.RouteStatus.InProgress, "Reihe: 'In Progress' nicht erkannt");
+        Soll(S("Up Next") == Rivals.RouteStatus.UpNext, "Reihe: 'Up Next' nicht erkannt");
+        Soll(S("Izu Cross-Country In Progress") == Rivals.RouteStatus.InProgress, "Reihe: angehaengtes 'In Progress' nicht erkannt");
+        Soll(S("Up Nexl") == Rivals.RouteStatus.UpNext && S("In Pr0gress") == Rivals.RouteStatus.InProgress,
+             "Reihe: verlesene Statuswoerter nicht erkannt");
+        foreach (var fremd in new[] { "", "Next", "Upgrades", "Winter / Late Afternoon / Cloudy", "11.4 KM - 3 LAPS", "Progress" })
+        {
+            Soll(S(fremd) == Rivals.RouteStatus.None, $"Reihe: '{fremd}' fuer ein Statuswort gehalten");
+        }
+
+        // Einstieg bei "2/3": Strecke 01 laeuft schon und zaehlt als erledigt.
+        var erledigt = Rivals.OverlayController.Einstieg(1, 3).ToHashSet();
+        Soll(erledigt.SetEquals(new[] { 0 }), "Reihe: der Einstieg bei 2/3 markiert nicht genau Strecke 01");
+        var stati = Rivals.OverlayController.Stati(3, erledigt);
+        Soll(stati.SequenceEqual(new[] { Rivals.CourseShapeHud.TileState.Done, Rivals.CourseShapeHud.TileState.Now,
+                                         Rivals.CourseShapeHud.TileState.Next }),
+             "Reihe: die Karten zeigen nach dem Einstieg bei 2/3 nicht erledigt/jetzt/danach");
+        Soll(Rivals.OverlayController.ErwarteteStrecke(3, 1, erledigt) == 1, "Reihe: nach dem Einstieg ist nicht Strecke 02 dran");
+        erledigt.Add(1);
+        Soll(Rivals.OverlayController.ErwarteteStrecke(3, 1, erledigt) == 2, "Reihe: nach dem ersten Rennen ist nicht Strecke 03 dran");
+        erledigt.Add(2);
+        Soll(Rivals.OverlayController.ErwarteteStrecke(3, 1, erledigt) == -1, "Reihe: nach dem letzten Rennen ist noch eine Strecke dran");
+        Soll(!Rivals.OverlayController.Einstieg(5, 3).Any(i => i >= 3) && !Rivals.OverlayController.Einstieg(-1, 3).Any(),
+             "Reihe: ein Einstieg ausserhalb der Strecken wird nicht begrenzt");
     }
 
     /// <summary>

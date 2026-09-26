@@ -132,6 +132,13 @@ internal static class RivalsDump
             category = advisor.CategoryOf(state.Tracks),
             spec = state.Spec,
             isOffer = state.IsOffer,
+            // Horizon Play und andere Reihen: Statusspalte und Ueberschrift.
+            series = state.Series,
+            seriesIndex = state.SeriesIndex,
+            seriesCount = state.SeriesCount,
+            status = state.TrackStatus.ToDictionary(p => p.Key, p => p.Value.ToString()),
+            firstOwnIndex = state.FirstOwnIndex,
+            remaining = state.RemainingTracks,
             lines = state.Lines.Select(l => l.Text).ToList(),
             readMs = state.ReadMilliseconds,
         }));

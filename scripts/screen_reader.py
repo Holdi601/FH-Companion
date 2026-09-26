@@ -33,8 +33,22 @@ CONFIG_PATH = WORKSPACE / "config/overlay.json"
 
 # Forza's PI bands. Only a fallback: a class token on screen always wins, because
 # the number next to a card can be the PI cap, the reward, or a distance.
-PI_BANDS = [(500, "D"), (600, "C"), (700, "B"), (800, "A"), (900, "S1"),
-            (998, "S2"), (9999, "X")]
+# BERICHTIGT am 2026-09-26, wie der C#-Leser am 2026-09-14: die Zahlen sind die
+# OBERGRENZEN der Klassen (D bis 400, C bis 500, ...). Hier stand 500 fuer D, jede
+# Klasse war um eine Stufe verschoben.
+PI_BANDS = [(400, "D"), (500, "C"), (600, "B"), (700, "A"), (800, "S1"),
+            (900, "S2"), (9999, "R")]
+
+# HORIZON PLAY UND ANDERE REIHEN (seit 2026-09-26, wie RivalsScreenReader.cs): die
+# Statusspalte neben den Strecken und die Ueberschrift "Joining ... 2/3". Die
+# Texterkennung liest den Schraegstrich gern als 1 ("213").
+STATUS_IN_PROGRESS = "InProgress"
+STATUS_UP_NEXT = "UpNext"
+SERIES_PATTERN = re.compile(
+    r"J[o0]in[il1]ng\s+(?P<name>.+?)\s+(?P<k>[1-9])\s*[/1Il|\\]\s*(?P<n>[1-9])(?!\d)",
+    re.IGNORECASE)
+# Dieselbe Zeile wie der Streckenname; die naechste Strecke steht ~175 px tiefer.
+STATUS_NEAR_Y = 50.0
 
 # The class as the game writes it, in the two orders it uses, plus the bare
 # "A 800" form. `R` is included because FH6's Rivals boards have an R class;
@@ -149,14 +163,60 @@ class ScreenState:
     spec: bool = False
     lines: list[Line] = field(default_factory=list)
     read_seconds: float = 0.0
+    # Horizon Play und andere Reihen (siehe SERIES_PATTERN).
+    track_status: dict[str, str] = field(default_factory=dict)
+    series: str | None = None
+    series_index: int = 0
+    series_count: int = 0
 
     @property
     def is_offer(self) -> bool:
         """Enough to answer with: at least two routes and a class."""
         return bool(self.klass) and len(self.tracks) >= 2
 
+    @property
+    def first_own_index(self) -> int:
+        """Ab welcher Strecke man selbst faehrt: "Up Next", dann "2/3", dann nach "In Progress"."""
+        for i, name in enumerate(self.tracks):
+            if self.track_status.get(name) == STATUS_UP_NEXT:
+                return i
+        if 1 <= self.series_index <= len(self.tracks):
+            return self.series_index - 1
+        for i, name in enumerate(self.tracks):
+            if self.track_status.get(name) == STATUS_IN_PROGRESS and i + 1 < len(self.tracks):
+                return i + 1
+        return 0
+
+    @property
+    def remaining_tracks(self) -> list[str]:
+        return self.tracks[self.first_own_index:]
+
     def key(self) -> tuple:
+        if self.series_index or self.track_status:
+            return (tuple(self.tracks), self.klass, self.first_own_index)
         return (tuple(self.tracks), self.klass)
+
+
+def status_in(text: str) -> str | None:
+    """"In Progress" oder "Up Next" in einer Zeile -- auch angehaengt und verlesen."""
+    from rivals_advisor import _normalise, _similarity
+
+    norm = _normalise(text)
+    if not norm:
+        return None
+    if norm.endswith("in progress"):
+        return STATUS_IN_PROGRESS
+    if norm.endswith("up next"):
+        return STATUS_UP_NEXT
+    words = norm.split(" ")
+    if len(words) < 2:
+        return None
+    tail = words[-2] + " " + words[-1]
+    if _similarity(tail, "in progress") >= 0.8:
+        return STATUS_IN_PROGRESS
+    if _similarity(tail, "up next") >= 0.8:
+        return STATUS_UP_NEXT
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -441,6 +501,25 @@ class ScreenReader:
         keep.sort(key=lambda h: h[0])
         state.tracks = [name for _y, name, _s in keep]
         state.track_scores = {name: score for _y, name, score in keep}
+
+        # Die Statusspalte einer Reihe: dieselbe Zeile wie der Streckenname, als
+        # eigene Zeile der Texterkennung oder an den Namen angehaengt.
+        for line in state.lines:
+            status = status_in(line.text)
+            if status is None or not keep:
+                continue
+            y, name, _s = min(keep, key=lambda h: abs(h[0] - line.y))
+            if abs(y - line.y) <= STATUS_NEAR_Y:
+                state.track_status[name] = status
+        for line in state.lines:
+            m = SERIES_PATTERN.search(line.text)
+            if not m:
+                continue
+            k, n = int(m.group("k")), int(m.group("n"))
+            if not 1 <= k <= n:
+                continue
+            state.series, state.series_index, state.series_count = m.group("name").strip(), k, n
+            break
 
         # The PI fallback only runs once the routes say we are on an offer
         # screen. Without that guard a desktop reads "You've played for 538

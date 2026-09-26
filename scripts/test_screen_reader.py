@@ -243,6 +243,14 @@ def main() -> int:
             f"the badge on the card read as {state.klass!r} ({state.klass_source})")
         assert len(state.tracks) >= 2, f"routes came back as {state.tracks}"
         assert state.is_offer, "a real sign-up screen was not taken as an offer"
+        # Das Bild ist der Anmeldeschirm einer laufenden Horizon-Play-Reihe (2/3):
+        # Izu laeuft schon, City Docks ist die naechste -- seit 2026-09-26 gelesen.
+        assert (state.series, state.series_index, state.series_count) == ("Horizon Play Racing", 2, 3), (
+            f"series read as {state.series!r} {state.series_index}/{state.series_count}")
+        assert state.track_status.get("Izu Cross-Country") == "InProgress", state.track_status
+        assert state.track_status.get("City Docks Cross-Country Circuit") == "UpNext", state.track_status
+        assert state.remaining_tracks == ["City Docks Cross-Country Circuit", "Ruriko-ji Cross-Country"], (
+            f"remaining routes {state.remaining_tracks}")
 
     def a_whole_frame_read_is_the_diagnosis_path():
         # --full is for checking a drifted mask, so it has to still work; it is
@@ -265,6 +273,12 @@ def main() -> int:
             # from the screen: the card's own word for it is artwork on a photo.
             assert got.get("category") == "Cross-Country", (
                 f"C# named the race type {got.get('category')!r}")
+            # Horizon Play 2/3: beide Leser muessen dieselbe Reihe lesen.
+            assert (got.get("series"), got.get("seriesIndex"), got.get("seriesCount")) == (
+                "Horizon Play Racing", 2, 3), f"C# read the series as {got.get('series')!r}"
+            assert got.get("remaining") == ["City Docks Cross-Country Circuit",
+                                            "Ruriko-ji Cross-Country"], (
+                f"C# left routes {got.get('remaining')}")
         wanted = {"offer_1920": ("C", trio), "offer_2560": ("C", trio),
                   "offer_3840": ("C", trio), "badge_vs_car": ("A", trio),
                   "normal": ("S1", trio), "desktop": (None, [])}

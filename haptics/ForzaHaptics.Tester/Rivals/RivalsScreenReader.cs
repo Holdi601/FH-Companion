@@ -44,10 +44,68 @@ internal sealed class ScreenState
     public List<OcrLine> Lines { get; } = new();
     public double ReadMilliseconds { get; set; }
 
+    /// <summary>
+    /// Horizon Play und andere Reihen: was rechts neben einer Strecke steht.
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-09-26. Der Anmeldeschirm einer laufenden Reihe ist derselbe Schirm
+    /// wie sonst, nur mit einer Statusspalte: "In Progress" neben dem Rennen, das die
+    /// anderen gerade fahren, "Up Next" neben dem, in das man einsteigt. Die
+    /// Texterkennung lieferte beides schon immer -- es passte nur auf keinen
+    /// Streckennamen und fiel darum weg.
+    /// </remarks>
+    public Dictionary<string, RouteStatus> TrackStatus { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>"Joining Horizon Play Racing 2/3": der Name der Reihe.</summary>
+    public string? Series { get; set; }
+
+    /// <summary>Das wievielte Rennen der Reihe man betritt (1-basiert, 0 = unbekannt).</summary>
+    public int SeriesIndex { get; set; }
+
+    /// <summary>Wie viele Rennen die Reihe hat (0 = unbekannt).</summary>
+    public int SeriesCount { get; set; }
+
+    public bool IsHorizonPlay =>
+        Series?.Contains("Horizon Play", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>
+    /// Ab welcher Strecke (Index in <see cref="Tracks"/>) man selbst faehrt.
+    /// </summary>
+    /// <remarks>
+    /// Wer bei "2/3" einsteigt, faehrt Strecke 01 nie: die laeuft schon. Zuerst gilt
+    /// "Up Next", dann die Zahl der Ueberschrift, dann die Strecke nach "In Progress".
+    /// Ohne jede Angabe (der gewoehnliche Anmeldeschirm) faehrt man alle.
+    /// </remarks>
+    public int FirstOwnIndex
+    {
+        get
+        {
+            var weiter = Tracks.FindIndex(t => TrackStatus.GetValueOrDefault(t) == RouteStatus.UpNext);
+            if (weiter >= 0) { return weiter; }
+            if (SeriesIndex >= 1 && SeriesIndex <= Tracks.Count) { return SeriesIndex - 1; }
+            var laeuft = Tracks.FindIndex(t => TrackStatus.GetValueOrDefault(t) == RouteStatus.InProgress);
+            return laeuft >= 0 && laeuft + 1 < Tracks.Count ? laeuft + 1 : 0;
+        }
+    }
+
+    /// <summary>Die Strecken, die man ab jetzt noch selbst faehrt, in ihrer Reihenfolge.</summary>
+    public List<string> RemainingTracks => Tracks.Skip(FirstOwnIndex).ToList();
+
     /// <summary>Enough to answer with: at least two routes and a class.</summary>
     public bool IsOffer => !string.IsNullOrEmpty(Klass) && Tracks.Count >= 2;
 
-    public string Key => string.Join('|', Tracks) + "/" + (Klass ?? "-");
+    // Der Einstieg gehoert zum Schluessel: rueckt "Up Next" weiter, ist das eine neue
+    // Antwort (andere Reststrecken), auch wenn Strecken und Klasse gleich bleiben.
+    public string Key => string.Join('|', Tracks) + "/" + (Klass ?? "-")
+                         + (SeriesIndex > 0 || TrackStatus.Count > 0 ? "/ab" + FirstOwnIndex : string.Empty);
+}
+
+/// <summary>Was in der Statusspalte einer Reihe neben einer Strecke steht.</summary>
+internal enum RouteStatus
+{
+    None,
+    InProgress,
+    UpNext,
 }
 
 /// <summary>
@@ -353,6 +411,31 @@ internal sealed class RivalsScreenReader
             if (laenge is { } l) { state.TrackLengths[name] = l; }
         }
 
+        // DIE STATUSSPALTE EINER REIHE. "In Progress" und "Up Next" stehen in derselben
+        // Zeile wie der Streckenname, weiter rechts -- mal als eigene Zeile der
+        // Texterkennung, mal an den Namen angehaengt. Beides landet bei der Strecke,
+        // deren Zeile am naechsten liegt.
+        foreach (var line in routeLines)
+        {
+            var status = StatusIn(line.Text);
+            if (status == RouteStatus.None || keep.Count == 0) { continue; }
+            var zeile = keep.MinBy(h => Math.Abs(h.Y - line.Y));
+            if (Math.Abs(zeile.Y - line.Y) > StatusNaheY) { continue; }
+            state.TrackStatus[zeile.Track] = status;
+        }
+        foreach (var line in routeLines)
+        {
+            var reihe = ReiheMuster.Match(line.Text);
+            if (!reihe.Success) { continue; }
+            var k = reihe.Groups["k"].Value[0] - '0';
+            var n = reihe.Groups["n"].Value[0] - '0';
+            if (k < 1 || k > n) { continue; }
+            state.Series = reihe.Groups["name"].Value.Trim();
+            state.SeriesIndex = k;
+            state.SeriesCount = n;
+            break;
+        }
+
         // A masked class region is confirmation enough on its own; a whole-frame
         // read still has to earn it with routes, or a desktop reading "played for
         // 538 hours" comes back as class C.
@@ -408,6 +491,42 @@ internal sealed class RivalsScreenReader
 
     /// <summary>Wie weit unter dem Namen die Entfernungszeile hoechstens steht.</summary>
     private const double NaheY = 140;
+
+    /// <summary>Wie weit ein Statuswort hoechstens neben der Zeile seiner Strecke steht.</summary>
+    /// <remarks>
+    /// Dieselbe Zeile, also wenige Bildpunkte; die naechste Strecke steht rund 175
+    /// Bildpunkte (1440p) tiefer. 50 laesst Spiel fuer schief gelesene Zeilen, ohne
+    /// je die Nachbarzeile zu erreichen.
+    /// </remarks>
+    private const double StatusNaheY = 50;
+
+    /// <summary>"In Progress" oder "Up Next" in einer Zeile -- auch angehaengt und verlesen.</summary>
+    internal static RouteStatus StatusIn(string text)
+    {
+        var norm = TextMatch.Normalise(text);
+        if (norm.Length == 0) { return RouteStatus.None; }
+        if (norm.EndsWith("in progress", StringComparison.Ordinal)) { return RouteStatus.InProgress; }
+        if (norm.EndsWith("up next", StringComparison.Ordinal)) { return RouteStatus.UpNext; }
+        // Verlesen ("In Pr0gress", "Up Nexl"): die letzten zwei Woerter gegen beide halten.
+        var woerter = norm.Split(' ');
+        if (woerter.Length < 2) { return RouteStatus.None; }
+        var schluss = woerter[^2] + " " + woerter[^1];
+        if (TextMatch.Similarity(schluss, "in progress") >= 0.8) { return RouteStatus.InProgress; }
+        if (TextMatch.Similarity(schluss, "up next") >= 0.8) { return RouteStatus.UpNext; }
+        return RouteStatus.None;
+    }
+
+    /// <summary>
+    /// "Joining Horizon Play Racing 2/3 - 25.8 KM": Name der Reihe, Rennen, Anzahl.
+    /// </summary>
+    /// <remarks>
+    /// Die Texterkennung liest den Schraegstrich gern als 1 ("213" am 2026-09-09),
+    /// darum ist 1, I, l und | als Trenner erlaubt. Eine Reihe hat hoechstens neun
+    /// Rennen -- eine Ziffer je Seite, sonst waere "213" nicht zu zerlegen.
+    /// </remarks>
+    private static readonly Regex ReiheMuster = new(
+        @"J[o0]in[il1]ng\s+(?<name>.+?)\s+(?<k>[1-9])\s*[/1Il|\\]\s*(?<n>[1-9])(?!\d)",
+        RegexOptions.IgnoreCase);
 
     /// <summary>"8.5 KM - 3 LAPS", auch ohne den Rundenteil.</summary>
     private static readonly Regex KmMuster = new(

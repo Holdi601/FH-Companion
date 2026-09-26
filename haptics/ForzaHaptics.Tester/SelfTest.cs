@@ -47,14 +47,42 @@ internal static class SelfTest
         CheckPartNames();
         EdgeCaseTest.Run();
 
+        // DER STANDARDGRAPH: still bei maessigem Schlupf, kraeftig am Limit, stumm ohne
+        // Pakete. Das Paket oben hat links Grip 0,5 und rechts 0,95.
         var graph = SignalGraph.CreateDefault();
+        GraphHapticOutput Kanal(GraphEvaluationResult r, int kanal) => r.Outputs.Single(output => output.Channel == kanal);
         var result = new SignalGraphEvaluator().Evaluate(graph, telemetry, DateTime.UtcNow);
-        var left = result.Outputs.Single(output => output.Channel == SteamControllerHaptics.LeftGrip);
-        var right = result.Outputs.Single(output => output.Channel == SteamControllerHaptics.RightGrip);
-        if (left.Strength <= 0.05 || right.Strength >= 0.05)
+        // "Still" heisst unter 1 %: die Kurve laeuft flach aus 0 heraus und liefert bei
+        // 5 % Griffverlust noch 0,0002 -- das ist am Controller nicht zu spueren.
+        if (Kanal(result, SteamControllerHaptics.LeftGrip).Strength >= 0.1
+            || Kanal(result, SteamControllerHaptics.RightGrip).Strength > 0.01)
         {
             throw new InvalidOperationException(
-                $"Graph evaluation failed: left={left.Strength:F3}, right={right.Strength:F3}.");
+                "Default graph: moderate slip is not quiet -- left="
+                + $"{Kanal(result, SteamControllerHaptics.LeftGrip).Strength:F3}, right={Kanal(result, SteamControllerHaptics.RightGrip).Strength:F3}.");
+        }
+        var amLimit = (byte[])packet.Clone();
+        BitConverter.GetBytes(0.95f).CopyTo(amLimit, 180);
+        if (!ForzaPacket.TryParse(amLimit, out var limitTelemetry))
+        {
+            throw new InvalidOperationException("Default graph: the test packet at the limit did not parse.");
+        }
+        var limit = new SignalGraphEvaluator().Evaluate(graph, limitTelemetry, DateTime.UtcNow);
+        if (Kanal(limit, SteamControllerHaptics.LeftGrip).Strength <= 0.4)
+        {
+            throw new InvalidOperationException(
+                $"Default graph: grip at the limit barely vibrates ({Kanal(limit, SteamControllerHaptics.LeftGrip).Strength:F3}).");
+        }
+        var ohnePakete = new SignalGraphEvaluator().Evaluate(graph, null, DateTime.UtcNow);
+        if (ohnePakete.Outputs.Any(output => output.Strength > 0.0001))
+        {
+            throw new InvalidOperationException(
+                "Default graph: without telemetry an output still vibrates -- zero must mean silence.");
+        }
+        var steam = new ControllerOutputTarget(OutputSignalNode.SteamNativeTargetId, "Steam", true, false, true, false);
+        if (graph.Nodes.OfType<OutputSignalNode>().Any(output => !BlueprintEditor.KanalGibtEs(steam, output.Channel)))
+        {
+            throw new InvalidOperationException("Default graph: an output uses a channel the Steam Controller does not have.");
         }
 
         var constantGraph = new SignalGraph();
@@ -112,9 +140,11 @@ internal static class SelfTest
         {
             var outputNode = graph.Nodes.OfType<OutputSignalNode>().First();
             editor.SelectNodeForTest(outputNode);
-            AssertNear(outputNode.MinimumFrequencyHz, 70, "Output property editor frequency");
+            // 20 Hz: der Standardgraph rumpelt seit 2026-09-26 so tief wie das Profil
+            // des Nutzers (vorher 70 Hz).
+            AssertNear(outputNode.MinimumFrequencyHz, 20, "Output property editor frequency");
             var propertyValues = editor.GetPropertyNumberValuesForTest();
-            if (!propertyValues.Contains(70))
+            if (!propertyValues.Contains(20))
             {
                 throw new InvalidOperationException("Output frequency control was not created.");
             }
@@ -1920,6 +1950,77 @@ internal static class SelfTest
         Pruefe("Sunflower Scramble", 8.5, 3);
         Pruefe("Kinkaku-ji Trail", 5.5, 1);
         Pruefe("Bamboo Forest Scramble", 15.0, 3);
+
+        CheckHorizonPlayScreen(leser);
+    }
+
+    /// <summary>
+    /// Der Anmeldeschirm einer laufenden Horizon-Play-Reihe: Ueberschrift "2/3", die
+    /// Statusspalte als eigene Zeile oder an den Namen angehaengt.
+    /// </summary>
+    private static void CheckHorizonPlayScreen(Rivals.RivalsScreenReader leser)
+    {
+        // Wie am 2026-09-09 gelesen (Y wie im 1440p-Ausschnitt): "2/3" kam als "213".
+        var getrennt = new List<Rivals.OcrLine>
+        {
+            new("Joining Horizon Play Racing 213 - 25.8 KM", 100, 40),
+            new("Sunflower Scramble", 100, 100),
+            new("In Progress", 900, 104),
+            new("8.5 KM - 3 LAPS", 100, 160),
+            new("Kinkaku-ji Trail", 100, 280),
+            new("Up Next", 950, 282),
+            new("5.5 KM", 100, 340),
+            new("Bamboo Forest Scramble", 100, 460),
+            new("15.0 KM - 3 LAPS", 100, 520),
+        };
+        var zustand = leser.Interpret(getrennt, null, Point.Empty);
+        if (zustand.Tracks.Count < 3)
+        {
+            return;   // die Strecken stehen nicht im Datensatz dieses Rechners
+        }
+        if (zustand.Series != "Horizon Play Racing" || zustand.SeriesIndex != 2 || zustand.SeriesCount != 3)
+        {
+            throw new InvalidOperationException(
+                $"Horizon Play: Ueberschrift falsch gelesen ({zustand.Series} {zustand.SeriesIndex}/{zustand.SeriesCount}).");
+        }
+        if (zustand.TrackStatus.GetValueOrDefault("Sunflower Scramble") != Rivals.RouteStatus.InProgress
+            || zustand.TrackStatus.GetValueOrDefault("Kinkaku-ji Trail") != Rivals.RouteStatus.UpNext
+            || zustand.TrackStatus.ContainsKey("Bamboo Forest Scramble"))
+        {
+            throw new InvalidOperationException(
+                "Horizon Play: Statusspalte falsch zugeordnet -- "
+                + string.Join(", ", zustand.TrackStatus.Select(p => $"{p.Key}={p.Value}")));
+        }
+        if (zustand.FirstOwnIndex != 1
+            || !zustand.RemainingTracks.SequenceEqual(new[] { "Kinkaku-ji Trail", "Bamboo Forest Scramble" }))
+        {
+            throw new InvalidOperationException(
+                $"Horizon Play: Einstieg {zustand.FirstOwnIndex}, Rest {string.Join(" | ", zustand.RemainingTracks)}.");
+        }
+
+        // Angehaengt und verlesen: derselbe Schirm, die Woerter hinter dem Namen.
+        var angehaengt = new List<Rivals.OcrLine>
+        {
+            new("Sunflower Scramble In Pr0gress", 100, 100),
+            new("8.5 KM - 3 LAPS", 100, 160),
+            new("Kinkaku-ji Trail Up Nexl", 100, 280),
+            new("5.5 KM", 100, 340),
+            new("Bamboo Forest Scramble", 100, 460),
+        };
+        var zweiter = leser.Interpret(angehaengt, null, Point.Empty);
+        if (zweiter.FirstOwnIndex != 1 || zweiter.SeriesIndex != 0)
+        {
+            throw new InvalidOperationException(
+                $"Horizon Play: angehaengter Status nicht erkannt (Einstieg {zweiter.FirstOwnIndex}).");
+        }
+
+        // Der gewoehnliche Anmeldeschirm bleibt, wie er war: alles faehrt man selbst.
+        var gewoehnlich = leser.Interpret(getrennt.Where(z => z.X == 100 && z.Y > 50).ToList(), null, Point.Empty);
+        if (gewoehnlich.FirstOwnIndex != 0 || gewoehnlich.TrackStatus.Count != 0
+            || gewoehnlich.Key.Contains("/ab", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Horizon Play: der gewoehnliche Anmeldeschirm wird fuer eine Reihe gehalten.");
+        }
     }
 
     /// <summary>

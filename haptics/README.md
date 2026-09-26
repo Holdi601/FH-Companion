@@ -207,6 +207,23 @@ choose the actuator/frequency/maximum strength, connect the two nodes, and then
 enable `Graph output enabled`. Disable it or deactivate the constant node to
 stop the test.
 
+**Out of the box** (since 2026-09-26) the app drives a built-in graph, and
+`Graph output enabled` starts on and remembers its state (`haptics_graph_enabled`
+in `config/overlay.json`):
+
+- grip loss on the left wheels -> channel 1 (Steam: left grip), right wheels ->
+  channel 0 (right grip), 20 Hz rumble. The curve stays quiet up to about 60 %
+  grip loss and rises steeply towards the limit.
+- any wheel locking under braking -> channel 2 (Steam: left pad; DualSense and
+  Xbox-style pads: both motors), a 500 Hz buzz pulsed 30 times a second.
+- channels 0-2 exist on every controller type, and choosing a controller keeps
+  a node's channel as long as that controller has it.
+- no fresh telemetry means silence: all telemetry nodes read 0, and the default
+  graph maps 0 to nothing.
+
+A graph you load or save yourself replaces the built-in one and is loaded again
+at the next start.
+
 The built-in wheel presets include left/right/front/rear grip and wheel-lock
 groups. Custom groups can combine arbitrary signals such as surface rumble,
 suspension, brake input, acceleration, or individual tires.

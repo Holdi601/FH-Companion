@@ -184,42 +184,108 @@ internal sealed class SignalGraph
             connection.ToNodeId == id);
     }
 
+    /// <summary>
+    /// Der eingebaute Graph, mit dem jede Installation faehrt, die keinen eigenen hat:
+    /// Reifen am Limit rumpeln, blockierende Raeder summen.
+    /// </summary>
+    /// <remarks>
+    /// ## Woher die Werte kommen (2026-09-26)
+    ///
+    /// Aus dem Profil, das der Nutzer im Juni selbst abgestimmt hat
+    /// (forza-haptics.fhgraph.json): Grip links/rechts auf die beiden Griffe, 20 Hz,
+    /// eine Kurve, die erst unterhalb eines Drittels Grip anspricht und zum Limit hin
+    /// steil wird. Das Blockieren kam aus seinem spaeteren Profil: ein Puls, 500 Hz,
+    /// 30 Pulse je Sekunde -- vom Rumpeln deutlich zu unterscheiden.
+    ///
+    /// ## Null heisst Stille
+    ///
+    /// Die Telemetrie-Knoten stehen auf "Invert" (Griffverlust statt Grip), die Kurve
+    /// steigt. Der alte Standard kehrte den Grip erst in der KURVE um -- und ohne
+    /// frische Pakete liefert ein Telemetrie-Knoten 0, ohne Invert: Grip 0 hiess dann
+    /// volle Staerke, zwischen 0,3 und 2 Sekunden nach dem letzten Paket.
+    ///
+    /// ## Kanaele, die es ueberall gibt
+    ///
+    /// 0 und 1 sind auf jedem Controller-Typ zwei getrennte Aktoren (Steam: rechter
+    /// und linker Griff, DualSense und Xbox-Pads: der schwere und der leichte Motor),
+    /// 2 ist beim Steam Controller das linke Pad und sonst beide Motoren. So bleibt
+    /// der Graph sinnvoll, egal welcher Controller gewaehlt ist --
+    /// BlueprintEditor.SetActiveController laesst gueltige Kanaele seitdem stehen.
+    /// </remarks>
     public static SignalGraph CreateDefault()
     {
         var graph = new SignalGraph();
         var leftGrip = new TelemetrySignalNode(
-            "Left wheel grip",
-            new Point(45, 70),
+            "Left wheels: grip loss",
+            new Point(45, 60),
             "Derived.GripLeft",
             0,
-            1);
+            1)
+        {
+            Invert = true
+        };
         var rightGrip = new TelemetrySignalNode(
-            "Right wheel grip",
-            new Point(45, 220),
+            "Right wheels: grip loss",
+            new Point(45, 200),
             "Derived.GripRight",
             0,
-            1);
-        var leftCurve = new CurveSignalNode("Grip response L", new Point(330, 70), inverted: true);
-        var rightCurve = new CurveSignalNode("Grip response R", new Point(330, 220), inverted: true);
+            1)
+        {
+            Invert = true
+        };
+        var leftCurve = new CurveSignalNode("At the limit L", new Point(330, 60));
+        var rightCurve = new CurveSignalNode("At the limit R", new Point(330, 200));
+        ToTheLimit(leftCurve.Curve);
+        ToTheLimit(rightCurve.Curve);
         var leftOutput = new OutputSignalNode(
             "Left grip rumble",
-            new Point(635, 70),
+            new Point(635, 60),
             SteamControllerHaptics.LeftGrip,
             HapticEffectMode.Rumble,
-            70);
+            20);
         var rightOutput = new OutputSignalNode(
             "Right grip rumble",
-            new Point(635, 220),
+            new Point(635, 200),
             SteamControllerHaptics.RightGrip,
             HapticEffectMode.Rumble,
-            70);
+            20);
 
-        graph.Nodes.AddRange([leftGrip, rightGrip, leftCurve, rightCurve, leftOutput, rightOutput]);
+        var lockLeft = new TelemetrySignalNode("Left wheels locking", new Point(45, 360), "Derived.LockLeft", 0, 1);
+        var lockRight = new TelemetrySignalNode("Right wheels locking", new Point(45, 470), "Derived.LockRight", 0, 1);
+        var anyLock = new GroupSignalNode("Any wheel locking", new Point(330, 400), SignalGroupMode.Maximum);
+        var lockOutput = new OutputSignalNode(
+            "Brake lock buzz",
+            new Point(635, 400),
+            SteamControllerHaptics.LeftPad,
+            HapticEffectMode.Beep,
+            500)
+        {
+            BeepRateHz = 30,
+            BeepDutyCycle = 0.5
+        };
+
+        graph.Nodes.AddRange([leftGrip, rightGrip, leftCurve, rightCurve, leftOutput, rightOutput,
+                              lockLeft, lockRight, anyLock, lockOutput]);
         graph.Connect(leftGrip.Id, leftCurve.Id);
         graph.Connect(leftCurve.Id, leftOutput.Id);
         graph.Connect(rightGrip.Id, rightCurve.Id);
         graph.Connect(rightCurve.Id, rightOutput.Id);
+        graph.Connect(lockLeft.Id, anyLock.Id);
+        graph.Connect(lockRight.Id, anyLock.Id);
+        graph.Connect(anyLock.Id, lockOutput.Id);
         return graph;
+    }
+
+    /// <summary>Still bis etwa 60 % Griffverlust, dann steil bis zum Limit.</summary>
+    /// <remarks>
+    /// Die Kurve des Nutzers aus dem Juni, an x = 0,5 gespiegelt: sie lief ueber dem
+    /// Grip (1 -> 0), diese laeuft ueber dem Griffverlust (0 -> 1).
+    /// </remarks>
+    private static void ToTheLimit(BezierCurve curve)
+    {
+        curve.Nodes.Clear();
+        curve.Nodes.Add(new BezierNode(new PointF(0f, 0f), new PointF(0f, 0f), new PointF(0.67f, 0f)));
+        curve.Nodes.Add(new BezierNode(new PointF(1f, 1f), new PointF(0.87f, 0.112f), new PointF(1f, 1f)));
     }
 }
 

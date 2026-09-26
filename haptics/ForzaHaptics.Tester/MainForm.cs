@@ -405,7 +405,23 @@ internal sealed class MainForm : Form, ITelemetryHost
         // jemand den Reiter anklickt: der Graph entscheidet, WAS die Haptik ausgibt --
         // wer die App startet und losfaehrt, bekaeme sonst den Standard statt seiner
         // eigenen Abstimmung, ohne dass irgendetwas darauf hinweist.
-        Shown += (_, _) => _blueprintEditor?.LoadLastGraph();
+        //
+        // Danach der Schalter "Graph output enabled", wie er zuletzt stand (Vorgabe: an).
+        // Bis 2026-09-26 begann er bei jedem Start aus -- eine frische Installation
+        // vibrierte nie, bis jemand den Schalter im Blueprint-Editor fand.
+        Shown += (_, _) =>
+        {
+            _blueprintEditor?.LoadLastGraph();
+            _blueprintEditor?.SetOutputEnabled(_rivals?.Settings.HapticsGraphEnabled ?? true);
+        };
+        _blueprintEditor.OutputEnabledChanged += an =>
+        {
+            if (_rivals?.Settings is { } einstellungen)
+            {
+                einstellungen.HapticsGraphEnabled = an;
+                einstellungen.Save();
+            }
+        };
 
         // Den Rundenbestand gleich beim Start abgleichen, nicht erst wenn jemand die
         // Rivals-Karteikarte anklickt -- sonst rechnet die App mit Zahlen von vorletzter
@@ -1892,7 +1908,13 @@ internal sealed class MainForm : Form, ITelemetryHost
                 freshTelemetry,
                 now);
             _blueprintEditor.SetLiveValues(_graphEvaluation.NodeValues);
-            if (_signalGraph.Enabled && mayDrive)
+            // VERALTETE TELEMETRIE HEISST STILLE. Nach 300 ms ohne Paket liefert jeder
+            // Telemetrie-Knoten 0 -- und ein Graph, der den Grip erst in einer Kurve
+            // umkehrt, macht daraus volle Staerke, bis GraphMayDrive nach zwei Sekunden
+            // abschaltet. Ohne je ein Paket (ein Konstantknoten wird ohne Spiel
+            // geprueft) wird dagegen weiter ausgegeben.
+            var veraltet = _hasTelemetry && freshTelemetry is null;
+            if (_signalGraph.Enabled && mayDrive && !veraltet)
             {
                 ApplyGraphOutputs(_graphEvaluation.Outputs);
             }

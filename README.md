@@ -40,6 +40,10 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **What to drive.** On the Event Sign Up screen: which cars rank best over
   exactly the three offered routes in that class. Toggle with `F8` or the
   gamepad's View button.
+  - Joining a Horizon Play series midway ("2/3"): the ranking covers only the
+    races you still drive, and the route already under way counts as done.
+  - Laps driven in a series are named after the route that is up next, checked
+    against the lap length.
 - **Your car.** Which car you are in, and where it places in every category and
   class it has laps in. Toggle with `F6` or a left-stick click.
 - **Course maps on the sign-up screen.** An outline of each offered route, drawn
@@ -94,7 +98,8 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 
 ### Controller haptics
 
-- Tyre grip and wheel lock become vibration on the side the car is sliding.
+- Tyre grip and wheel lock become vibration on the side the car is sliding, out
+  of the box, with no curves to set up first.
 - Supports the Steam Controller, DualSense (including adaptive triggers), Xbox,
   PlayStation and 8BitDo pads.
 - A vibration test, live grip telemetry, a view of all telemetry and outputs, and
