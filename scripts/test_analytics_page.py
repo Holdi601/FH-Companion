@@ -120,7 +120,11 @@ def page_script() -> str:
     found = re.search(r"<script>(.*)</script>", page, re.S)
     if not found:
         raise SystemExit("kein <script> in der Seitenvorlage gefunden")
-    return found.group(1)
+    # Wie der Bau: die Funktionen fuer eingereichte Zeiten stehen in einer eigenen
+    # Datei und werden unveraendert eingesetzt. Ohne das scheiterte dieser Test seit
+    # 2026-09-24 an "__SUBMITTED_JS__ is not defined".
+    eingereicht = (BUILDER.parent / "submitted_laps.js").read_text(encoding="utf-8")
+    return found.group(1).replace("__SUBMITTED_JS__", eingereicht)
 
 
 def main() -> int:
