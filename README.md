@@ -29,7 +29,7 @@ is AI, or anything of that sort.
 
 If you find bugs, have feature requests or want to contribute: be my guest. Open
 an issue or a pull request. I am mostly active on Discord, so if you want a quick
-reaction, reach me there.
+reaction, reach me there: <https://discord.gg/A9ssnMXPZf>
 
 ## Features
 
