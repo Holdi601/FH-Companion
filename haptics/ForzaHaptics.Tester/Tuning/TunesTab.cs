@@ -372,7 +372,17 @@ internal sealed class TunesTab : UserControl
         TuneDeleter.SpielNachVorn();
         Task.Run(() =>
         {
-            Thread.Sleep(1500);
+            // Erst loslegen, wenn das Spiel wirklich auf dem Cars-Reiter steht -- wer OK
+            // drueckt, ist oft noch nicht dort (Probelaeufe 2026-09-26). Hoechstens zwei
+            // Minuten; der Stopp-Knopf bricht auch das Warten ab.
+            BeiUns(() => _summe.Text = Loc.T("Waiting for the game's pause menu on the CARS tab ..."));
+            var bis = DateTime.UtcNow.AddMinutes(2);
+            var treffer = 0;
+            while (treffer < 2 && DateTime.UtcNow < bis && !stop.IsCancellationRequested)
+            {
+                treffer = TuneDeleter.AufStartSchirm() ? treffer + 1 : 0;
+                Thread.Sleep(700);
+            }
             var loescher = new TuneDeleter(rat, probelauf, m => BeiUns(() => _summe.Text = m), stop);
             var ergebnis = loescher.Run(plan);
             BeiUns(() =>

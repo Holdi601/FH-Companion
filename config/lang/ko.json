@@ -210,6 +210,7 @@
  "Vibration in the grips": "손잡이의 진동",
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": "새 FH6 텔레메트리를 기다리는 중. 만약을 위해 햅틱을 멈췄습니다.",
  "Waiting for telemetry...": "텔레메트리를 기다리는 중 ...",
+ "Waiting for the game's pause menu on the CARS tab ...": "게임의 차량 탭 일시 정지 메뉴를 기다리는 중 ...",
  "What this program does, and what leaves your computer": "이 프로그램이 하는 일과 컴퓨터를 떠나는 것",
  "Wheel-lock detection from braking slip ratio": "제동 슬립으로 잠김 감지",
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": "잠김이 감지되면 이 신호가 해당 차체 쪽의 보통 접지력 진동보다 우선합니다.",

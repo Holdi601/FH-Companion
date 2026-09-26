@@ -66,7 +66,23 @@ internal static class AppInfo
         var basis = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var neu = Path.Combine(basis, Id);
         var alt = Path.Combine(basis, OldId);
+        // LAEUFT NOCH EINE ALTE KOPIE, bleibt der Ordner, wo er ist. Sie schriebe sonst
+        // in einen neu angelegten alten Ordner weiter, und die Runden liefen in zwei
+        // Ordnern auseinander (so geschehen am 2026-09-26 beim Testen der neuen
+        // Fassung neben der installierten alten).
+        if (!Directory.Exists(neu) && Directory.Exists(alt) && AlteKopieLaeuft()) { return alt; }
         return Umzug(alt, neu);
+    }
+
+    /// <summary>Laeuft eine Kopie unter dem alten Namen -- ausser dieser selbst?</summary>
+    private static bool AlteKopieLaeuft()
+    {
+        try
+        {
+            var ich = Environment.ProcessId;
+            return System.Diagnostics.Process.GetProcessesByName(OldName).Any(p => p.Id != ich);
+        }
+        catch (Exception) { return false; }
     }
 
     /// <summary>

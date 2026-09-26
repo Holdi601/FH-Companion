@@ -108,7 +108,7 @@ internal sealed class MainForm : Form, ITelemetryHost
     public MainForm()
     {
         Text = AppInfo.Name;
-        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        Icon = Marke.Symbol() ?? Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         ClientSize = new Size(1100, 700);
         MinimumSize = new Size(1000, 660);
         StartPosition = FormStartPosition.CenterScreen;
@@ -131,10 +131,10 @@ internal sealed class MainForm : Form, ITelemetryHost
 
         var logo = new PictureBox
         {
-            Image = Icon?.ToBitmap(),
+            Image = Marke.Logo() ?? Icon?.ToBitmap(),
             SizeMode = PictureBoxSizeMode.Zoom,
             Dock = DockStyle.Left,
-            Width = 56,
+            Width = 64,
             Margin = new Padding(0)
         };
 

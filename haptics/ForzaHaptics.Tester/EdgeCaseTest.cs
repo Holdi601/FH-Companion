@@ -47,6 +47,39 @@ internal static class EdgeCaseTest
         DeletionPlan();
         TuneDeleterReading();
         RenameMigration();
+        BrandResources();
+    }
+
+    /// <summary>
+    /// Symbol und Logo liegen in der DLL und lassen sich laden -- sonst faellt die App
+    /// still auf das unscharfe 32-Pixel-Bild zurueck, und niemand merkt es.
+    /// </summary>
+    private static void BrandResources()
+    {
+        using var symbol = Marke.Symbol();
+        Soll(symbol is not null, "Marke: das Symbol fehlt in der DLL (" + Marke.SymbolName + ")");
+        // Die 256er-Fassung waehlt .NET nie aus: es vergleicht mit dem Breiten-Byte des
+        // Verzeichnisses, und das ist fuer 256 eine 0. Windows selbst liest sie richtig
+        // (Explorer, Taskleiste) -- also im Verzeichnis nachsehen statt ueber Icon.
+        using (var roh = typeof(Marke).Assembly.GetManifestResourceStream(Marke.SymbolName)!)
+        using (var leser = new BinaryReader(roh))
+        {
+            leser.ReadBytes(4);
+            var anzahl = leser.ReadUInt16();
+            var breiten = Enumerable.Range(0, anzahl).Select(_ =>
+            {
+                var e = leser.ReadBytes(16);
+                return e[0] == 0 ? 256 : e[0];
+            }).ToList();
+            Soll(breiten.Contains(256) && breiten.Contains(48) && breiten.Contains(16),
+                 "Marke: dem Symbol fehlen Groessen, vorhanden sind " + string.Join(",", breiten));
+        }
+        using var gross = new Icon(symbol!, 128, 128);
+        Soll(gross.Width == 128, "Marke: die 128-Pixel-Fassung laesst sich nicht laden, sondern " + gross.Width);
+        using var klein = new Icon(symbol!, 16, 16);
+        Soll(klein.Width == 16, "Marke: das Symbol hat keine 16-Pixel-Fassung, sondern " + klein.Width);
+        using var logo = Marke.Logo();
+        Soll(logo is not null && logo.Width >= 128, "Marke: das Logo fehlt in der DLL oder ist zu klein");
     }
 
     /// <summary>
@@ -72,6 +105,13 @@ internal static class EdgeCaseTest
         Soll(S("Race", "Settings") == Tuning.TuneDeleter.Schirm.Unbekannt,
              "Loeschen: ein fremder Schirm wird einem bekannten zugeordnet");
 
+        Soll(Tuning.TuneDeleter.MarkeVon("GIULIA QUADRIFOGLIO / 2017 ALFA ROMEO") == "ALFA ROMEO"
+             && Tuning.TuneDeleter.MarkeVon("2CV / 1970 CITROËN") == "CITROEN"
+             && Tuning.TuneDeleter.MarkeVon("unlesbar") == "",
+             "Loeschen: die Marke einer Karte wird falsch gelesen -- die Reihenfolge im Raster haengt daran");
+        Soll(string.CompareOrdinal(Tuning.TuneDeleter.Grundform("Alfa Romeo"), Tuning.TuneDeleter.Grundform("ALUMICRAFT")) < 0
+             && string.CompareOrdinal(Tuning.TuneDeleter.Grundform("Abarth"), Tuning.TuneDeleter.Grundform("Acura")) < 0,
+             "Loeschen: die alphabetische Reihenfolge der Marken stimmt nicht");
         Soll(Tuning.TuneDeleter.Norm("GT-R l0") == Tuning.TuneDeleter.Norm("gtr 10"),
              "Loeschen: OCR-Verwechsler (l/1, 0/o) werden nicht gleichgesetzt");
         Soll(Tuning.TuneDeleter.Aehnlich("Drift Setup", "Drift Setup") == 1
@@ -89,6 +129,17 @@ internal static class EdgeCaseTest
              "Loeschen: ein Tune eines ANDEREN Tuners gilt als Treffer");
         Soll(Tuning.TuneDeleter.Treffer(plan, "Rally", "Alice", "") is null,
              "Loeschen: ein Tune mit anderem Namen gilt als Treffer");
+        var gelesenSchlecht = new[] { new Tuning.StoredTune("Tuning_2542_20260605201758", 2542, new DateTime(2026, 6, 5),
+            "A700 Road AWD", "x ShadowsBane x", 1, new DateTime(2026, 5, 14)) };
+        Soll(Tuning.TuneDeleter.Treffer(gelesenSchlecht, "moo Road AWD", "x ShadowsBane x", "14/05/2026") is not null,
+             "Loeschen: ein schlecht gelesener Name mit genau passendem Tuner und Datum wird nicht erkannt");
+        Soll(Tuning.TuneDeleter.Treffer(gelesenSchlecht, "moo Road AWD", "x ShadowsBane x", "15/05/2026") is null,
+             "Loeschen: ein schlecht gelesener Name genuegt ohne passendes Datum");
+        Soll(Tuning.TuneDeleter.DialogPasst("Road AWD", "x ShadowsBane x", gelesenSchlecht[0])
+             && !Tuning.TuneDeleter.DialogPasst("Road AWD", "Someone Else", gelesenSchlecht[0])
+             && !Tuning.TuneDeleter.DialogPasst("AWD", "x ShadowsBane x", gelesenSchlecht[0])
+             && !Tuning.TuneDeleter.DialogPasst("Drift Setup", "x ShadowsBane x", gelesenSchlecht[0]),
+             "Loeschen: der Dialog-Abgleich nimmt ein fremdes Tune oder verwirft ein angeschnittenes");
 
         using var bild = new Bitmap(200, 200);
         char Farbe(Color c)

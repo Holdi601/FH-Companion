@@ -2,5 +2,6 @@
   "_": "Copy to config/local.json and fill in. local.json is ignored by git: it holds the values that identify one deployment.",
   "server": "https://your-server.example.org:8787",
   "public_host": "your-server.example.org",
-  "contact_email": "you@example.org"
+  "contact_email": "you@example.org",
+  "site_title": "Your Site Name"
 }

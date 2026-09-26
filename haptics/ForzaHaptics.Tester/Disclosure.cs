@@ -265,6 +265,7 @@ top of the main window.
         using var f = new Form
         {
             Text = Titel,
+            Icon = Marke.Symbol(),
             StartPosition = FormStartPosition.CenterScreen,
             MinimizeBox = false,
             MaximizeBox = false,

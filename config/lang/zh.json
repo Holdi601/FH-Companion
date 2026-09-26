@@ -210,6 +210,7 @@
  "Vibration in the grips": "握把处的振动",
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": "正在等待新的 FH6 遥测；为稳妥起见已停止触感输出。",
  "Waiting for telemetry...": "正在等待遥测 ...",
+ "Waiting for the game's pause menu on the CARS tab ...": "正在等待游戏“车辆”选项卡的暂停菜单 ...",
  "What this program does, and what leaves your computer": "这个程序做什么，以及什么会离开你的电脑",
  "Wheel-lock detection from braking slip ratio": "根据刹车滑移检测抱死",
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": "检测到抱死时，该信号会在车辆受影响的一侧盖过正常的抓地力振动。",

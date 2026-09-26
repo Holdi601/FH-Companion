@@ -210,6 +210,7 @@
  "Vibration in the grips": "グリップ部の振動",
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": "新しい FH6 テレメトリを待っています。念のためハプティクスを停止しました。",
  "Waiting for telemetry...": "テレメトリを待っています ...",
+ "Waiting for the game's pause menu on the CARS tab ...": "ゲームの「車」タブのポーズメニューを待っています ...",
  "What this program does, and what leaves your computer": "このプログラムは何をし、何があなたのパソコンから出ていくのか",
  "Wheel-lock detection from braking slip ratio": "ブレーキ時のスリップからロックを検出",
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": "ロックを検出すると、この信号は該当する車体側の通常のグリップ振動より優先されます。",

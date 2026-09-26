@@ -35,6 +35,66 @@ internal static class Program
     [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "ReleaseDC")]
     private static extern int ProbeReleaseDC(IntPtr hWnd, IntPtr hDC);
 
+    private static int TuneDeleteCli(string[] args)
+    {
+        var echt = args.Contains("--real", StringComparer.OrdinalIgnoreCase);
+        var mp = Array.FindIndex(args, a => string.Equals(a, "--max-cars", StringComparison.OrdinalIgnoreCase));
+        var max = mp >= 0 && mp + 1 < args.Length && int.TryParse(args[mp + 1], out var m) ? m : int.MaxValue;
+        if (!Tuning.ForzaMemoryDb.GameRunning) { Console.WriteLine("The game is not running."); return 2; }
+
+        var datensatz = Path.Combine(AppInfo.DataFolder, "laps.json");
+        if (!File.Exists(datensatz)) { Console.WriteLine("No dataset at " + datensatz); return 2; }
+        var rat = new RivalsAdvisor(RivalsDataset.Load(datensatz));
+
+        Console.WriteLine("Reading the garage from the game's memory ...");
+        string? fund = null;
+        var funde = Tuning.ForzaMemoryDb.Dump(Path.Combine(AppInfo.TempFolder, "garage"), s => Console.WriteLine("  " + s),
+            pfad =>
+            {
+                if (Tuning.GarageReader.FindGarage(new[] { pfad }) is null) { return false; }
+                fund = pfad;
+                return true;
+            });
+        fund ??= Tuning.GarageReader.FindGarage(funde.Select(f => f.Path));
+        if (fund is null) { Console.WriteLine("No garage found in memory -- open My Cars once and try again."); return 2; }
+        var nutzung = new Tuning.TuneStorage.Usage { CheckedAt = DateTime.Now, Applied = Tuning.GarageReader.AppliedTunes(fund).ToList() };
+        Tuning.TuneStorage.SaveUsage(nutzung);
+
+        var tunes = Tuning.TuneStorage.Read();
+        var plan = Tuning.TunesTab.Plan(tunes, nutzung, null, null);
+        // "--cars 2542,368": nur diese Autos -- um einen einzelnen Fall nachzustellen.
+        var cp = Array.FindIndex(args, a => string.Equals(a, "--cars", StringComparison.OrdinalIgnoreCase));
+        if (cp >= 0 && cp + 1 < args.Length)
+        {
+            var nur = args[cp + 1].Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
+            plan = plan.Where(t => nur.Contains(t.CarId)).ToList();
+        }
+        Console.WriteLine($"{tunes.Count} tunes stored, {nutzung.Applied.Count} on a car, plan: {plan.Count} tunes on "
+                          + $"{plan.Select(t => t.CarId).Distinct().Count()} cars. Mode: {(echt ? "DELETE" : "test run")}, "
+                          + $"max cars: {(max == int.MaxValue ? "all" : max.ToString())}");
+        if (plan.Count == 0) { return 0; }
+
+        // NICHT nach drei Sekunden im Vordergrund loslegen (Probelauf 2026-09-26): wer ins
+        // Spiel wechselt, muss erst noch das Pausenmenue oeffnen. Gewartet wird, bis der
+        // Schirm zweimal hintereinander das Cars-Menue (oder My Cars) zeigt.
+        Console.WriteLine("Waiting for the game's pause menu on the CARS tab ...");
+        var treffer = 0;
+        var bis = DateTime.UtcNow.AddMinutes(30);
+        while (treffer < 2)
+        {
+            treffer = Tuning.TuneDeleter.AufStartSchirm() ? treffer + 1 : 0;
+            if (DateTime.UtcNow > bis) { Console.WriteLine("The CARS tab never showed up."); return 3; }
+            Thread.Sleep(700);
+        }
+        Console.WriteLine("Game in front -- running.");
+        var loescher = new Tuning.TuneDeleter(rat, probelauf: !echt, s => Console.WriteLine("  " + s), CancellationToken.None)
+        {
+            MaxAutos = max,
+        };
+        Console.WriteLine(loescher.Run(plan));
+        return 0;
+    }
+
     [STAThread]
     private static void Main(string[] args)
     {
@@ -414,6 +474,15 @@ internal static class Program
             Console.WriteLine(fehler == 0 ? "Alle Filter greifen." : $"{fehler} Filter fehlerhaft.");
             Environment.ExitCode = fehler == 0 ? 0 : 1;
             return;
+        }
+
+        if (args.Contains("--tune-delete", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--tune-delete [--real] [--max-cars N]": den Loeschplan im Spiel abarbeiten,
+            // ohne Fenster. OHNE --real ein Probelauf, der nichts loescht. Liest zuerst die
+            // Garage (welche Tunes auf einem Auto liegen), wartet dann, bis das Spiel vorn
+            // ist -- ein Prozess im Hintergrund darf es nicht selbst nach vorn holen.
+            Environment.Exit(TuneDeleteCli(args));
         }
 
         if (args.Contains("--tune-ui-test", StringComparer.OrdinalIgnoreCase))

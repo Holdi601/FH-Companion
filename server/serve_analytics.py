@@ -373,7 +373,8 @@ def make_handler(root: Path, page: Path, builder: Path):
             if self.path in ("/download/haptics", "/download/app", "/download/tool"):
                 if self.gebremst("download"):
                     return
-            elif self.path.startswith("/api/") or self.path.startswith("/fonts/"):
+            elif (self.path.startswith("/api/") or self.path.startswith("/fonts/")
+                  or self.path.startswith("/brand/") or self.path == "/favicon.ico"):
                 if self.gebremst("api"):
                     return
             elif self.gebremst("page"):
@@ -401,6 +402,30 @@ def make_handler(root: Path, page: Path, builder: Path):
                                  else "text/css; charset=utf-8")
                 self.send_header("Content-Length", str(len(roh)))
                 self._lange_cachen = True
+                self.end_headers()
+                if self.command != "HEAD":
+                    self.wfile.write(roh)
+                return
+            if self.path == "/favicon.ico" or self.path.startswith("/brand/"):
+                # LOGO UND SYMBOL (server/brand/), wie die Schriften vom eigenen Server.
+                # /favicon.ico fragt jeder Browser von selbst an -- so hat auch die
+                # Auswertungsseite ein Symbol, ohne dass sie neu gebaut werden muss.
+                # Nur schlichte Namen aus server/brand/ -- kein Pfad, kein Ausbrechen.
+                import re as _re
+                name = "favicon.ico" if self.path == "/favicon.ico" else self.path[len("/brand/"):]
+                datei = Path(__file__).resolve().parent / "brand" / name
+                treffer = _re.match(r"^[a-z0-9-]+\.(png|ico|svg)$", name)
+                if not treffer or not datei.is_file():
+                    self.send_error(404)
+                    return
+                roh = datei.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", {"png": "image/png", "ico": "image/x-icon",
+                                                  "svg": "image/svg+xml"}[treffer.group(1)])
+                self.send_header("Content-Length", str(len(roh)))
+                # Einen Tag, nicht "immutable" wie die Schriften: ein neues Logo kommt
+                # unter demselben Namen.
+                self._kurz_cachen = True
                 self.end_headers()
                 if self.command != "HEAD":
                     self.wfile.write(roh)
@@ -512,7 +537,12 @@ def make_handler(root: Path, page: Path, builder: Path):
                 if not app_file.exists():
                     self.send_error(404, "app_page.html is missing")
                     return
-                self.send_api(200, "text/html; charset=utf-8", app_file.read_bytes())
+                # Der Name der Seite steht in config/local.json, nicht im Quelltext.
+                import html as _html
+                import local_settings
+                seite = app_file.read_bytes().replace(
+                    b"__SITE_TITLE__", _html.escape(local_settings.site_title()).encode("utf-8"))
+                self.send_api(200, "text/html; charset=utf-8", seite)
                 return
             if self.path in ("/mitmachen", "/mitmachen/", "/contribute",
                              "/contribute.html"):
@@ -574,6 +604,8 @@ def make_handler(root: Path, page: Path, builder: Path):
             # Browser bleiben; alles andere wird bei jedem Laden frisch geholt.
             if getattr(self, "_lange_cachen", False):
                 self.send_header("Cache-Control", "public, max-age=2592000, immutable")
+            elif getattr(self, "_kurz_cachen", False):
+                self.send_header("Cache-Control", "public, max-age=86400")
             else:
                 self.send_header("Cache-Control", "no-store")
             # Fuer jede Antwort: keine geratenen Inhaltstypen, kein Einbetten in

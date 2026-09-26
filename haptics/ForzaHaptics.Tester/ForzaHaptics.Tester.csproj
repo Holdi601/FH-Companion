@@ -38,7 +38,7 @@
     <Description>Controller haptics and lap telemetry overlay.</Description>
     <Copyright>Free to use. No warranty.</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
-    <ApplicationIcon>assets\steam-controller.ico</ApplicationIcon>
+    <ApplicationIcon>assets\fh-companion.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!-- DER SERVER STEHT NICHT IM QUELLTEXT. Er kommt aus config/local.json ("server"),
@@ -56,6 +56,12 @@
 
   <ItemGroup>
     <None Include="..\ForzaHaptics.Probe\native\SDL3.dll" Link="SDL3.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Symbol (alle Groessen) und Logo fuer Fenster und Kopfzeile, siehe Marke.cs. -->
+  <ItemGroup>
+    <EmbeddedResource Include="assets\fh-companion.ico" LogicalName="FhCompanion.icon.ico" />
+    <EmbeddedResource Include="assets\logo-dark.png" LogicalName="FhCompanion.logo-dark.png" />
   </ItemGroup>
 
   <ItemGroup>

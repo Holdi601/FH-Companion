@@ -129,6 +129,10 @@ CODE = [
 CODE += sorted("server/fonts/" + p.name
                for p in (Path(__file__).resolve().parent.parent / "server" / "fonts").glob("*")
                if p.is_file())
+# LOGO UND SYMBOLE (server/brand/, seit 2026-09-26): /favicon.ico und /brand/...
+CODE += sorted("server/brand/" + p.name
+               for p in (Path(__file__).resolve().parent.parent / "server" / "brand").glob("*")
+               if p.is_file())
 
 # Die Seite liegt in ihrem eigenen Ordner, und der Server gibt GENAU diesen Ordner
 # frei (http.server bekommt page.parent als Wurzel). Drueben liegen darum nur diese

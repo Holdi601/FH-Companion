@@ -115,16 +115,14 @@ The overlay and the desktop app use Windows fonts (`Segoe UI`, `Consolas`) only.
 
 ---
 
-## 5. Open question: the application icon
+## 5. The application icon and logos
 
-`haptics/ForzaHaptics.Tester/assets/steam-controller.ico` and the two PNGs beside
-it (1254 × 1254) carry **no provenance information** — no metadata in the files,
-no note anywhere in the repository. The name suggests a Steam Controller, and a
-rendering or photograph of one may well belong to somebody else.
-
-**This is unresolved and has to be settled before the repository is made public.**
-Either establish where the image came from and add the attribution here, or
-replace it with artwork whose origin is known.
+**Resolved on 2026-09-26.** The earlier icon (`steam-controller.ico` and two PNGs
+without any provenance) has been removed. The application icon
+(`haptics/ForzaHaptics.Tester/assets/fh-companion.ico`), the site icons in
+`server/brand/` and the logos in `branding/` were made for this project: vector
+geometry built from scratch after a design concept supplied by the maintainer.
+They fall under the project's MIT licence like the rest of the repository.
 
 ---
 

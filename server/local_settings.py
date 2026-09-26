@@ -57,6 +57,11 @@ def contact_email() -> str:
     return get("contact_email")
 
 
+def site_title() -> str:
+    """Der Name der Webseite -- ohne Eintrag heisst sie wie die App."""
+    return get("site_title", "FH Companion")
+
+
 def app_data() -> Path:
     """Der Datenordner der App: FHCompanion, vor dem 2026-09-26 ForzaGripHaptics.
 

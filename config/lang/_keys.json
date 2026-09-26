@@ -1,12 +1,12 @@
 {
  "(own setup or stock)": [
-  "Tuning/TunesTab.cs:482"
+  "Tuning/TunesTab.cs:492"
  ],
  "(unknown)": [
-  "Tuning/TunesTab.cs:426",
-  "Tuning/TunesTab.cs:433",
-  "Tuning/TunesTab.cs:490",
-  "Tuning/TunesTab.cs:509"
+  "Tuning/TunesTab.cs:436",
+  "Tuning/TunesTab.cs:443",
+  "Tuning/TunesTab.cs:500",
+  "Tuning/TunesTab.cs:519"
  ],
  "1. In the game, open the pause menu on the CARS tab (My Cars, Upgrades & Tuning).": [
   "Tuning/TunesTab.cs:359"
@@ -24,7 +24,7 @@
   "Rivals/CarNotesTab.cs:84"
  ],
  "Add it to the Start menu": [
-  "Disclosure.cs:299"
+  "Disclosure.cs:322"
  ],
  "Add point": [
   "BlueprintEditor.cs:1100"
@@ -60,14 +60,14 @@
   "Rivals/OwnTimesTab.cs:257",
   "Tuning/TunesTab.cs:249",
   "Tuning/TunesTab.cs:293",
-  "Tuning/TunesTab.cs:408"
+  "Tuning/TunesTab.cs:418"
  ],
  "Car note": [
   "Rivals/HudTab.cs:800"
  ],
  "Cars": [
-  "Tuning/TunesTab.cs:529",
-  "Tuning/TunesTab.cs:550"
+  "Tuning/TunesTab.cs:539",
+  "Tuning/TunesTab.cs:560"
  ],
  "Cars with the most unused tunes": [
   "Tuning/TunesTab.cs:105"
@@ -110,14 +110,14 @@
  ],
  "Creator": [
   "Tuning/TunesTab.cs:249",
-  "Tuning/TunesTab.cs:408"
+  "Tuning/TunesTab.cs:418"
  ],
  "Date": [
   "Rivals/OwnTimesTab.cs:265"
  ],
  "Delete these tunes in the game": [
   "Tuning/TunesTab.cs:80",
-  "Tuning/TunesTab.cs:382"
+  "Tuning/TunesTab.cs:392"
  ],
  "Delete tunes in the game": [
   "Tuning/TunesTab.cs:363"
@@ -139,7 +139,7 @@
   "MainForm.cs:1193"
  ],
  "Details: {0}": [
-  "Tuning/TunesTab.cs:387"
+  "Tuning/TunesTab.cs:397"
  ],
  "Discovering controllers...": [
   "MainForm.cs:1415"
@@ -217,7 +217,7 @@
   "Rivals/CarNotesTab.cs:259"
  ],
  "I have read the above and understand what this program does.": [
-  "Disclosure.cs:276"
+  "Disclosure.cs:299"
  ],
  "If you are sure it works anyway: --skip-checks": [
   "scripts/contrib_scan.py:329"
@@ -293,7 +293,7 @@
  ],
  "No garage found in the game's memory -- open My Cars once, then try again.": [
   "Rivals/CarNotesTab.cs:381",
-  "Tuning/TunesTab.cs:609"
+  "Tuning/TunesTab.cs:619"
  ],
  "No native haptic channel is open.": [
   "MainForm.cs:1991"
@@ -321,7 +321,7 @@
  ],
  "Nothing to delete in this selection.": [
   "Tuning/TunesTab.cs:347",
-  "Tuning/TunesTab.cs:438"
+  "Tuning/TunesTab.cs:448"
  ],
  "Nothing to pack -- no board was finished.": [
   "scripts/contrib_scan.py:362"
@@ -373,16 +373,16 @@
   "Rivals/OwnTimesTab.cs:248"
  ],
  "Press \"Check which tunes are on a car\" first -- without it the app cannot tell which tunes are safe to delete.": [
-  "Tuning/TunesTab.cs:412"
+  "Tuning/TunesTab.cs:422"
  ],
  "Put a shortcut on my desktop": [
-  "Disclosure.cs:290"
+  "Disclosure.cs:313"
  ],
  "Puts a shortcut to this copy of the program on your desktop. One that points to a moved or deleted copy is replaced.": [
   "MainForm.cs:277"
  ],
  "Quit": [
-  "Disclosure.cs:343"
+  "Disclosure.cs:366"
  ],
  "Read the running game": [
   "Tuning/TuningTab.cs:85",
@@ -423,7 +423,7 @@
  ],
  "Saved": [
   "Tuning/TunesTab.cs:250",
-  "Tuning/TunesTab.cs:408"
+  "Tuning/TunesTab.cs:418"
  ],
  "Saved between": [
   "Tuning/TunesTab.cs:95"
@@ -498,7 +498,7 @@
   "Rivals/OwnTimesTab.cs:263"
  ],
  "Start it when I sign in to Windows": [
-  "Disclosure.cs:308"
+  "Disclosure.cs:331"
  ],
  "Start listening": [
   "MainForm.cs:628"
@@ -509,7 +509,7 @@
  "Start the game first -- the garage is read from its memory.": [
   "Rivals/CarNotesTab.cs:339",
   "Tuning/TunesTab.cs:351",
-  "Tuning/TunesTab.cs:573"
+  "Tuning/TunesTab.cs:583"
  ],
  "Stop": [
   "MainForm.cs:632",
@@ -530,7 +530,7 @@
  ],
  "Test run in the game (deletes nothing)": [
   "Tuning/TunesTab.cs:74",
-  "Tuning/TunesTab.cs:381"
+  "Tuning/TunesTab.cs:391"
  ],
  "Test run: the app goes through {1} cars in the game and checks {0} tunes, without deleting anything.": [
   "Tuning/TunesTab.cs:357"
@@ -557,7 +557,7 @@
   "Tuning/TunesTab.cs:348"
  ],
  "The desktop shortcut could not be created.": [
-  "Disclosure.cs:211",
+  "Disclosure.cs:234",
   "MainForm.cs:1211"
  ],
  "The file is here, and can be sent by hand:": [
@@ -567,7 +567,7 @@
   "scripts/contrib_scan.py:139"
  ],
  "The game does not record which tune a lap was driven with: \"~\" marks laps given to the tune saved last before them.": [
-  "Tuning/TunesTab.cs:544"
+  "Tuning/TunesTab.cs:554"
  ],
  "The game will refuse new downloads.": [
   "Rivals/OverlayController.cs:438"
@@ -623,7 +623,7 @@
   "Rivals/OwnTimesTab.cs:252",
   "Rivals/OwnTimesTab.cs:262",
   "Tuning/TunesTab.cs:249",
-  "Tuning/TunesTab.cs:408"
+  "Tuning/TunesTab.cs:418"
  ],
  "Tune storage almost full": [
   "Rivals/OverlayController.cs:435"
@@ -632,8 +632,8 @@
   "Rivals/OverlayController.cs:435"
  ],
  "Tuner": [
-  "Tuning/TunesTab.cs:529",
-  "Tuning/TunesTab.cs:549"
+  "Tuning/TunesTab.cs:539",
+  "Tuning/TunesTab.cs:559"
  ],
  "Tuners behind your best laps": [
   "Tuning/TunesTab.cs:106"
@@ -642,10 +642,10 @@
   "Tuning/TunesTab.cs:106"
  ],
  "Tunes on a car": [
-  "Tuning/TunesTab.cs:549"
+  "Tuning/TunesTab.cs:559"
  ],
  "Tunes saved": [
-  "Tuning/TunesTab.cs:549"
+  "Tuning/TunesTab.cs:559"
  ],
  "Type": [
   "Rivals/OwnTimesTab.cs:104"
@@ -680,6 +680,9 @@
  "Waiting for telemetry...": [
   "TelemetryInspector.cs:27"
  ],
+ "Waiting for the game's pause menu on the CARS tab ...": [
+  "Tuning/TunesTab.cs:378"
+ ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:223"
  ],
@@ -696,7 +699,7 @@
   "MainForm.cs:1238"
  ],
  "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.": [
-  "Disclosure.cs:324"
+  "Disclosure.cs:347"
  ],
  "Wins": [
   "Rivals/OwnTimesTab.cs:250"
@@ -705,7 +708,7 @@
   "Rivals/OwnTimesTab.cs:127"
  ],
  "Your best laps": [
-  "Tuning/TunesTab.cs:529"
+  "Tuning/TunesTab.cs:539"
  ],
  "Your laps only (telemetry)": [
   "Rivals/HudTab.cs:807"
@@ -837,7 +840,7 @@
  ],
  "searching the game's memory for its database ...": [
   "Rivals/CarNotesTab.cs:343",
-  "Tuning/TunesTab.cs:577",
+  "Tuning/TunesTab.cs:587",
   "Tuning/TuningTab.cs:187"
  ],
  "send it afterwards": [
@@ -889,10 +892,10 @@
   "Rivals/RivalsTab.cs:115"
  ],
  "{0} -- {1} tunes": [
-  "Tuning/TunesTab.cs:420"
+  "Tuning/TunesTab.cs:430"
  ],
  "{0} best laps of yours, on tunes by {1} tuners.": [
-  "Tuning/TunesTab.cs:542"
+  "Tuning/TunesTab.cs:552"
  ],
  "{0} car(s) in {1} class(es), scored over {2} course(s). On each course, place 1 earns as many points as cars you drove there, like on the website; standing and flying starts count separately. * = the total includes the slowest time on courses that car did not drive.": [
   "Rivals/OwnTimesTab.cs:309"
@@ -913,10 +916,10 @@
   "Rivals/OverlayController.cs:436"
  ],
  "{0} tunes by {1} tuners.": [
-  "Tuning/TunesTab.cs:563"
+  "Tuning/TunesTab.cs:573"
  ],
  "{0} tunes on {1} cars would be deleted, by {2} tuners: {3}": [
-  "Tuning/TunesTab.cs:439"
+  "Tuning/TunesTab.cs:449"
  ],
  "{0} tunes shown. {1} tunes are on no car and could go.": [
   "Tuning/TunesTab.cs:264"

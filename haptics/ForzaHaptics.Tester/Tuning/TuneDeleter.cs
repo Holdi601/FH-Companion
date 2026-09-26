@@ -57,6 +57,11 @@ internal sealed class TuneDeleter
     public int Geloescht { get; private set; }
     public int Uebersprungen { get; private set; }
 
+    /// <summary>Nach so vielen bearbeiteten Autos anhalten -- fuer einen kurzen ersten Lauf.</summary>
+    public int MaxAutos { get; init; } = int.MaxValue;
+
+    private int _autos;
+
     public TuneDeleter(RivalsAdvisor rat, bool probelauf, Action<string> melden, CancellationToken stop)
     {
         _rat = rat;
@@ -66,6 +71,12 @@ internal sealed class TuneDeleter
         var dir = Path.Combine(Path.GetTempPath(), "forza-overlay");
         Directory.CreateDirectory(dir);
         _logPfad = Path.Combine(dir, "tune_delete.log");
+        try
+        {
+            var bilder = Path.Combine(dir, "tune_frames");
+            if (Directory.Exists(bilder)) { foreach (var f in Directory.GetFiles(bilder, "*.jpg")) { File.Delete(f); } }
+        }
+        catch (Exception) { }
     }
 
     // ------------------------------------------------------------------ //
@@ -124,6 +135,25 @@ internal sealed class TuneDeleter
         return GameArea.Capture(flaeche, new Size(1920, 1080));
     }
 
+    private int _bildNr;
+
+    /// <summary>
+    /// Ein kleines Bild des Schirms ablegen, damit sich ein Lauf hinterher nachvollziehen
+    /// laesst (%TEMP%orza-overlay	une_frames, bei jedem Lauf geleert).
+    /// </summary>
+    private void Merke(Bitmap bild, string was)
+    {
+        try
+        {
+            var dir = Path.Combine(Path.GetDirectoryName(_logPfad)!, "tune_frames");
+            Directory.CreateDirectory(dir);
+            using var klein = new Bitmap(bild, new Size(960, 540));
+            var name = $"{++_bildNr:0000}_{string.Concat(was.Select(c => char.IsLetterOrDigit(c) ? c : '_'))}.jpg";
+            klein.Save(Path.Combine(dir, name), ImageFormat.Jpeg);
+        }
+        catch (Exception) { }
+    }
+
     private void Log(string text)
     {
         try { File.AppendAllText(_logPfad, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {text}{Environment.NewLine}"); }
@@ -137,6 +167,19 @@ internal sealed class TuneDeleter
     internal sealed record Blick(Schirm Schirm, List<OcrLine> Zeilen, Bitmap Bild) : IDisposable
     {
         public void Dispose() => Bild.Dispose();
+    }
+
+    /// <summary>Steht das Spiel gerade auf dem Cars-Menue oder in My Cars? Fuer den Start von aussen.</summary>
+    public static bool AufStartSchirm()
+    {
+        try
+        {
+            if (GameWatch.ForegroundProcessName() != "forzahorizon6") { return false; }
+            using var bild = Aufnahme();
+            var s = Einordnen(new WindowsOcr().Read(bild));
+            return s is Schirm.CarsMenu or Schirm.MyCars;
+        }
+        catch (Exception) { return false; }
     }
 
     /// <summary>Welcher Schirm ist das -- an den Texten, die nur er hat.</summary>
@@ -174,10 +217,16 @@ internal sealed class TuneDeleter
         {
             letzter?.Dispose();
             letzter = Sehen();
-            if (ziele.Contains(letzter.Schirm)) { return letzter; }
+            if (ziele.Contains(letzter.Schirm))
+            {
+                Log($"    {wozu}: {letzter.Schirm}");
+                Merke(letzter.Bild, wozu);
+                return letzter;
+            }
             if (DateTime.UtcNow > bis)
             {
                 var s = letzter.Schirm;
+                Merke(letzter.Bild, "TIMEOUT " + wozu);
                 letzter.Dispose();
                 throw new Abbruch($"{wozu}: expected {string.Join("/", ziele)}, saw {s}");
             }
@@ -323,6 +372,59 @@ internal sealed class TuneDeleter
         return '?';
     }
 
+    /// <summary>
+    /// Ist in der Rueckfrage "Delete File" das "No" markiert und das "Yes" nicht? Die
+    /// markierte Zeile ist schwarz mit gelbgruenem Rahmen, die andere weiss; "No" steht
+    /// 54 Punkte unter "Yes" (Aufnahme 2026-09-26). "No" selbst liest die Texterkennung
+    /// nicht -- zwei Zeichen sind ihr zu wenig --, darum wird an "Yes" gemessen.
+    /// </summary>
+    private bool NeinMarkiert()
+    {
+        PruefeWeiter();
+        using var bild = Aufnahme();
+        var zeilen = _ocr.Read(bild);
+        if (Einordnen(zeilen) != Schirm.DeleteConfirm) { return false; }
+        var ja = zeilen.FirstOrDefault(l => l.Text.Trim().Equals("Yes", StringComparison.OrdinalIgnoreCase));
+        if (ja.Text is null) { return false; }
+        return !Dunkel(bild, (int)ja.Y + 12) && Dunkel(bild, (int)ja.Y + 12 + 54);
+    }
+
+    /// <summary>Ist die Dialogzeile auf dieser Hoehe dunkel (= markiert)? Links und rechts neben dem Text gemessen.</summary>
+    internal static bool Dunkel(Bitmap bild, int y)
+    {
+        long summe = 0, n = 0;
+        foreach (var x0 in new[] { 660, 1220 })
+        {
+            for (var dy = -6; dy <= 6; dy += 3)
+            {
+                for (var x = x0; x < x0 + 40; x += 4)
+                {
+                    if (x >= bild.Width || y + dy < 0 || y + dy >= bild.Height) { continue; }
+                    var c = bild.GetPixel(x, y + dy);
+                    summe += (c.R + c.G + c.B) / 3;
+                    n++;
+                }
+            }
+        }
+        return n > 0 && summe / n < 90;
+    }
+
+    /// <summary>
+    /// Zeigt die Tunes-Liste dieses Auto? Oben links steht "MODELL / JAHR MARKE". Das
+    /// Jahr muss stimmen, und Marke plus Modell muessen dem Namen im Datensatz aehneln.
+    /// </summary>
+    private bool ListeGehoertZu(int auto, string zeile)
+    {
+        var name = _rat.CarIndexForId(auto) is { } ix ? _rat.RealCarName(ix) : null;
+        if (name is null) { return false; }
+        var teile = zeile.Split(" / ", 2);
+        if (teile.Length < 2) { return false; }
+        var m = System.Text.RegularExpressions.Regex.Match(teile[1], @"((?:19|20)\d\d)\s+(.+)$");
+        if (!m.Success || CarGridReader.JahrVon(name) != int.Parse(m.Groups[1].Value)) { return false; }
+        var ohneJahr = System.Text.RegularExpressions.Regex.Replace(name, @"\s*'\d\d\s*$", string.Empty);
+        return Aehnlich(ohneJahr, m.Groups[2].Value + " " + teile[0]) >= 0.75;
+    }
+
     /// <summary>Name und Tuner im Dialog "File Options".</summary>
     internal static (string Name, string Creator, string Auto) LiesDialog(IReadOnlyList<OcrLine> z)
     {
@@ -376,7 +478,14 @@ internal sealed class TuneDeleter
     /// <summary>Welcher Eintrag des Plans ist dieses Tune -- Name UND Tuner muessen passen.</summary>
     internal static StoredTune? Treffer(IEnumerable<StoredTune> offen, string name, string creator, string datum)
     {
-        var passend = offen.Where(t => Aehnlich(t.Name, name) >= 0.85 && Aehnlich(t.Creator, creator) >= 0.8).ToList();
+        // Name UND Tuner. Die Schrift im gruenen Balken liest die Erkennung manchmal
+        // schlecht ("A700" als "moo", Probelauf 2026-09-26): stimmen Tuner und
+        // Erstelldatum genau, genuegt ein aehnlicher Name.
+        var passend = offen.Where(t =>
+                Aehnlich(t.Creator, creator) >= 0.8
+                && (Aehnlich(t.Name, name) >= 0.85
+                    || (Aehnlich(t.Name, name) >= 0.6 && Aehnlich(t.Creator, creator) >= 0.9 && AmTag(t, datum))))
+            .ToList();
         if (passend.Count <= 1) { return passend.FirstOrDefault(); }
         // Mehrere gleichnamige: das Erstelldatum entscheidet, wenn es lesbar ist.
         foreach (var format in new[] { "dd/MM/yyyy", "MM/dd/yyyy", "dd.MM.yyyy", "yyyy-MM-dd" })
@@ -389,6 +498,37 @@ internal sealed class TuneDeleter
             }
         }
         return passend[0];
+    }
+
+    /// <summary>
+    /// Nennt der Dialog "File Options" dasselbe Tune? Name und Tuner -- oder, wenn der
+    /// Tuner genau stimmt, ein Name, der ein Stueck des geplanten ist: die Erkennung
+    /// liess "A700" auch im Dialog weg und las nur "Road AWD" (Probelauf 2026-09-26).
+    /// </summary>
+    internal static bool DialogPasst(string dName, string dCreator, StoredTune treffer)
+    {
+        if (Aehnlich(dCreator, treffer.Creator) < 0.8) { return false; }
+        if (Aehnlich(dName, treffer.Name) >= 0.85) { return true; }
+        if (Aehnlich(dCreator, treffer.Creator) < 0.9) { return false; }
+        var gelesen = Norm(dName);
+        return Aehnlich(dName, treffer.Name) >= 0.6
+               || (gelesen.Length >= 5 && Norm(treffer.Name).Contains(gelesen, StringComparison.Ordinal));
+    }
+
+    /// <summary>Wurde das Tune an dem Tag erstellt, den die Liste nennt?</summary>
+    private static bool AmTag(StoredTune t, string datum)
+    {
+        if (t.CreatedAt is not { } erstellt) { return false; }
+        foreach (var format in new[] { "dd/MM/yyyy", "MM/dd/yyyy", "dd.MM.yyyy", "yyyy-MM-dd" })
+        {
+            if (DateTime.TryParseExact((datum ?? string.Empty).Trim(), format, System.Globalization.CultureInfo.InvariantCulture,
+                                       System.Globalization.DateTimeStyles.None, out var d)
+                && d.Date == erstellt.Date)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ //
@@ -423,7 +563,8 @@ internal sealed class TuneDeleter
             {
                 Auto(a, offen, einsteigen: false);
             }
-            Durchs_Raster(offen);
+            // Nichts mehr offen: im Cars-Menue bleiben, nicht noch My Cars oeffnen.
+            if (offen.Count > 0) { Durchs_Raster(offen); }
         }
         catch (Abbruch ab)
         {
@@ -451,7 +592,12 @@ internal sealed class TuneDeleter
     private int? AutoAusKopf(IReadOnlyList<OcrLine> z)
     {
         var kopf = z.FirstOrDefault(l => l.Y < 80 && System.Text.RegularExpressions.Regex.IsMatch(l.Text, @"^(19|20)\d\d\s"));
-        if (kopf.Text is null) { return null; }
+        if (kopf.Text is null)
+        {
+            Log("current car: no header line with a year -- " + string.Join(" | ", z.Where(l => l.Y < 90).Select(l => l.Text)));
+            return null;
+        }
+        Log("current car header: " + kopf.Text);
         var m = System.Text.RegularExpressions.Regex.Match(kopf.Text.Trim(), @"^((?:19|20)\d\d)\s+(.+)$");
         if (!m.Success) { return null; }
         var jahr = int.Parse(m.Groups[1].Value);
@@ -461,74 +607,300 @@ internal sealed class TuneDeleter
         return name is not null && CarGridReader.JahrVon(name) == jahr ? _rat.CarIdOf(index.Value) : null;
     }
 
-    /// <summary>Die Karte unter dem Rahmen in My Cars.</summary>
-    private (string Gelesen, int? Auto, Rectangle Rahmen) Karte()
+    /// <summary>Die Karte unter dem Rahmen in My Cars, mit einem Abdruck ihrer ganzen Reihe.</summary>
+    private sealed record KartenBlick(string Gelesen, int? Auto, Rectangle Rahmen, byte[]? Reihe);
+
+    private KartenBlick Karte()
     {
         PruefeWeiter();
         using var bild = Aufnahme();
         var r = CarGridReader.LiesBild(bild, _ocr.Read, _rat);
-        return r is null ? (string.Empty, null, Rectangle.Empty) : (r.Value.Gelesen, r.Value.Auto?.Ordinal, r.Value.Rahmen);
+        if (r is null) { return new KartenBlick(string.Empty, null, Rectangle.Empty, null); }
+        var reihe = CarGridReader.Fingerabdruck(bild, new Rectangle(0, r.Value.Rahmen.Y, bild.Width, r.Value.Rahmen.Height));
+        return new KartenBlick(r.Value.Gelesen, r.Value.Auto?.Ordinal, r.Value.Rahmen, reihe);
     }
 
     /// <summary>
-    /// My Cars Spalte fuer Spalte ablaufen und jedes Auto aus dem Plan bearbeiten.
+    /// Hat sich etwas bewegt? DER RAHMEN STEHT, DAS RASTER LAEUFT DARUNTER (Aufnahme vom
+    /// 2026-09-26): nach RECHTS sitzt der Rahmen am selben Fleck, die Karten ruecken
+    /// nach. Darum zaehlt der Name, die Lage des Rahmens UND der Abdruck der Reihe --
+    /// zwei gleiche Autos nebeneinander haben denselben Namen, aber andere Nachbarn.
+    /// </summary>
+    private static bool Bewegt(KartenBlick vorher, KartenBlick nachher) =>
+        nachher.Gelesen.Length > 0
+        && (nachher.Gelesen != vorher.Gelesen
+            || Math.Abs(nachher.Rahmen.X - vorher.Rahmen.X) > 20
+            || Math.Abs(nachher.Rahmen.Y - vorher.Rahmen.Y) > 20
+            || !CarGridReader.Gleich(vorher.Reihe, nachher.Reihe));
+
+    /// <summary>So lange nachlesen, bis zweimal dasselbe dasteht -- nicht mitten im Rollen lesen.</summary>
+    private KartenBlick Stabil(KartenBlick k)
+    {
+        for (var i = 0; i < 4; i++)
+        {
+            Thread.Sleep(180);
+            var n = Karte();
+            if (n.Gelesen.Length > 0 && n.Gelesen == k.Gelesen) { return n; }
+            if (n.Gelesen.Length > 0) { k = n; }
+        }
+        return k;
+    }
+
+    /// <summary>
+    /// Einen Schritt in eine Richtung. Null, wenn sich nichts bewegt: Ende der Reihe (oder
+    /// keine weitere Reihe darunter). Erst lange genug warten, dann ein zweites Mal
+    /// druecken -- sonst risse ein langsamer Bildaufbau eine Karte mit.
+    /// </summary>
+    private KartenBlick? Schritt(KartenBlick jetzt, byte taste = Rechts)
+    {
+        for (var druck = 0; druck < 2; druck++)
+        {
+            Taste(taste, 300);
+            foreach (var warte in new[] { 0, 350, 650 })
+            {
+                if (warte > 0) { Thread.Sleep(warte); }
+                var n = Karte();
+                // Ein erkanntes Auto ist fertig gelesen; nur Unerkanntes (vielleicht mitten
+                // im Rollen gelesen) wird nachgelesen.
+                if (Bewegt(jetzt, n)) { return n.Auto is null ? Stabil(n) : n; }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// My Cars nach Marken ablaufen und jedes Auto aus dem Plan bearbeiten.
     /// </summary>
     /// <remarks>
-    /// Nach jedem bearbeiteten Auto beginnt das Raster wieder vorn ("CURRENT CAR").
-    /// Darum merkt sich der Lauf je Spalte deren oberste Karte und spult bis dorthin
-    /// vor -- erst schnell mit gezaehlten Tastendruecken, dann lesend nachgeregelt.
+    /// ## Wie das Raster gebaut ist (Probelaeufe 2026-09-26)
+    ///
+    /// Jede Marke beginnt eine eigene Spaltengruppe, die Marken stehen alphabetisch
+    /// (oben ist die Marke zu lesen). Innerhalb der Marke fuellen die Autos die
+    /// Spalten von oben nach unten, drei je Spalte, das neueste zuerst: Abarth mit
+    /// vier Autos ist eine volle Spalte und eine mit einem. RUNTER aus einer kurzen
+    /// Spalte springt in die vorige -- das hielt der erste Lauf fuer das Ende des
+    /// Rasters. Reihenweise ging es zwar, fand ein Auto in Reihe 2 aber erst nach einem
+    /// ganzen Durchgang durch Reihe 1 (Hinweis des Nutzers: an der Marke sieht man,
+    /// ob man zu weit ist).
+    ///
+    /// ## Der Weg
+    ///
+    /// Reihe 1 nach rechts, eine Spalte je Schritt. Hat die Marke der Spalte Autos im
+    /// Plan, werden auch Reihe 2 und 3 dieser Spalte gelesen; liefert RUNTER eine
+    /// Karte, die in dieser Marke schon gelesen war (oder eine andere Marke), ist die
+    /// Spalte kuerzer, und es geht zurueck nach oben.
+    ///
+    /// Nach jedem bearbeiteten Auto hat sich das Raster verschoben: das Auto ist jetzt
+    /// "CURRENT CAR" und fehlt, das vorige aktuelle Auto ist zurueck. Darum geht der
+    /// Lauf an den Anfang derselben Marke zurueck -- gezaehlt, dann nach dem Alphabet
+    /// nachgeregelt -- und liest die Marke noch einmal; Erledigtes ist nicht mehr im
+    /// Plan und wird nur ueberlaufen.
     /// </remarks>
     private void Durchs_Raster(Dictionary<int, List<StoredTune>> offen)
     {
-        ZuMyCars();
-        Taste(Rechts, 350);   // weg von "CURRENT CAR"
-        var spalte = 1;
-        var vorigeOben = string.Empty;
+        var k = ErsteKarte();
+        var spalte = 0;                 // Schritte nach rechts in Reihe 1, seit der ersten Karte
+        var marke = string.Empty;
+        var markeStart = 0;
+        var inMarke = new HashSet<string>();   // Karten dieser Marke, schon gelesen
+        var spitzen = new List<string>();      // die obersten Karten der Spalten dieser Marke
+        var gelesen = 0;
         while (offen.Count > 0)
         {
-            var oben = Karte();
-            if (oben.Gelesen.Length == 0) { throw new Abbruch("no car card under the frame in My Cars"); }
-            if (oben.Gelesen == vorigeOben) { break; }   // RIGHT bewegt nichts mehr: Ende des Rasters
-            // Die Spalte lesen: oben, Mitte, unten.
-            var zeilen = new List<(string Gelesen, int? Auto)> { (oben.Gelesen, oben.Auto) };
-            for (var r = 1; r < 3; r++)
+            var m = MarkeVon(k.Gelesen);
+            if (m != marke)
             {
-                Taste(Runter, 300);
-                var k = Karte();
-                if (k.Gelesen.Length == 0 || k.Gelesen == zeilen[^1].Gelesen) { break; }
-                // Sprang der Rahmen in eine andere Spalte (weiter oben als erwartet)? Dann nicht mitzaehlen.
-                zeilen.Add((k.Gelesen, k.Auto));
+                marke = m;
+                markeStart = spalte;
+                inMarke.Clear();
+                spitzen.Clear();
             }
-            for (var r = zeilen.Count - 1; r > 0; r--) { Taste(Hoch, 200); }
-            Log($"column {spalte}: {string.Join(" | ", zeilen.Select(z => z.Gelesen))}");
-            for (var r = 0; r < zeilen.Count; r++)
+            inMarke.Add(k.Gelesen);
+            spitzen.Add(k.Gelesen);
+            if (++gelesen % 20 == 0) { Log($"  column {spalte + 1}: {k.Gelesen}"); }
+
+            // Die Spalte: oben, und -- wenn die Marke im Plan steht -- darunter.
+            var spalteKarten = new List<KartenBlick> { k };
+            var gesprungen = false;
+            if (MarkeImPlan(marke, offen))
             {
-                if (zeilen[r].Auto is not { } auto || !offen.ContainsKey(auto)) { continue; }
-                for (var i = 0; i < r; i++) { Taste(Runter, 250); }
-                var pruef = Karte();
-                if (pruef.Auto != auto)
+                var unten = k;
+                for (var r = 1; r < 3; r++)
                 {
-                    Log($"  row {r} is '{pruef.Gelesen}', expected car {auto} -- skipped");
-                    for (var i = 0; i < r; i++) { Taste(Hoch, 200); }
-                    continue;
+                    var n = Schritt(unten, Runter);
+                    if (n is null) { break; }
+                    if (MarkeVon(n.Gelesen) != marke || inMarke.Contains(n.Gelesen))
+                    {
+                        gesprungen = true;   // kuerzere Spalte: RUNTER sprang anderswohin
+                        break;
+                    }
+                    inMarke.Add(n.Gelesen);
+                    spalteKarten.Add(n);
+                    unten = n;
                 }
-                Taste(Enter, 600);
-                var aktion = Warte("opening the car", 5000, Schirm.ActionMenu);
-                aktion.Dispose();
-                Auto(auto, offen, einsteigen: true);
-                // Zurueck an diese Spalte.
-                ZuMyCars();
-                Vorspulen(spalte, oben.Gelesen);
             }
-            vorigeOben = oben.Gelesen;
-            Taste(Rechts, 300);
+
+            // Ein Auto dieser Spalte im Plan? Dann hin, pruefen, bearbeiten.
+            var ziel = spalteKarten.FindIndex(c => c.Auto is { } a && offen.ContainsKey(a));
+            if (ziel >= 0)
+            {
+                var auto = spalteKarten[ziel].Auto!.Value;
+                ZurSpitze(k, spitzen, spalte, marke, gesprungen, spalteKarten.Count);
+                for (var r = 0; r < ziel; r++) { Taste(Runter, 350); }
+                if (!Bestaetigt(auto))
+                {
+                    Log($"  {spalteKarten[ziel].Gelesen}: the card under the frame is not the same after a second look -- skipped");
+                    offen.Remove(auto);
+                    Uebersprungen++;
+                }
+                else
+                {
+                    Taste(Enter, 600);
+                    Warte("opening the car", 5000, Schirm.ActionMenu).Dispose();
+                    Auto(auto, offen, einsteigen: true);
+                }
+                if (offen.Count == 0) { break; }
+                // Zurueck an den Anfang dieser Marke und sie noch einmal lesen.
+                k = ZurMarke(marke, markeStart);
+                spalte = markeStart;
+                marke = string.Empty;
+                continue;
+            }
+
+            // Nichts im Plan: zurueck nach oben, eine Spalte weiter.
+            ZurSpitze(k, spitzen, spalte, marke, gesprungen, spalteKarten.Count);
+            var weiter = Schritt(k);
+            if (weiter is null) { break; }   // Ende des Rasters
+            k = weiter;
             spalte++;
         }
+        Log($"grid: {spalte + 1} columns walked");
         Uebersprungen += offen.Values.Sum(v => v.Count);
         foreach (var (auto, rest) in offen)
         {
             Log($"not found in My Cars: car {auto} ({rest.Count} tunes)");
         }
+    }
+
+    /// <summary>My Cars oeffnen und auf die erste Karte gehen (rechts neben "CURRENT CAR").</summary>
+    private KartenBlick ErsteKarte()
+    {
+        ZuMyCars();
+        Taste(Rechts, 450);
+        var k = Stabil(Karte());
+        if (k.Gelesen.Length == 0) { throw new Abbruch("no car card under the frame in My Cars"); }
+        return k;
+    }
+
+    /// <summary>Die Marke einer Karte: "GIULIA QUADRIFOGLIO / 2017 ALFA ROMEO" -> "ALFA ROMEO".</summary>
+    internal static string MarkeVon(string gelesen)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(gelesen ?? string.Empty, @"/\s*(?:19|20)\d\d\s+(.+)$");
+        return m.Success ? Grundform(m.Groups[1].Value) : string.Empty;
+    }
+
+    /// <summary>Gross, ohne Akzente, einfache Leerzeichen -- fuer Vergleich und Reihenfolge.</summary>
+    internal static string Grundform(string s)
+    {
+        var zerlegt = (s ?? string.Empty).Trim().ToUpperInvariant().Normalize(System.Text.NormalizationForm.FormD);
+        var raus = new System.Text.StringBuilder();
+        foreach (var ch in zerlegt)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch) == System.Globalization.UnicodeCategory.NonSpacingMark) { continue; }
+            raus.Append(ch);
+        }
+        return System.Text.RegularExpressions.Regex.Replace(raus.ToString(), @"\s+", " ");
+    }
+
+    /// <summary>Hat eine Marke noch Autos im Plan? Der Name im Datensatz beginnt mit der Marke.</summary>
+    private bool MarkeImPlan(string marke, Dictionary<int, List<StoredTune>> offen)
+    {
+        if (marke.Length == 0) { return true; }   // unlesbar: lieber nachsehen
+        foreach (var auto in offen.Keys)
+        {
+            var name = _rat.CarIndexForId(auto) is { } ix ? _rat.RealCarName(ix) : null;
+            if (name is not null && Grundform(name).StartsWith(marke + " ", StringComparison.Ordinal)) { return true; }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Nach dem Lesen einer Spalte wieder auf ihre oberste Karte. Aus einem Sprung
+    /// (kuerzere Spalte) fuehrt HOCH in eine andere Spalte -- dann nach der Reihenfolge
+    /// der schon gelesenen Spaltenspitzen seitwaerts, und notfalls neu von vorn.
+    /// </summary>
+    private void ZurSpitze(KartenBlick spitze, List<string> spitzen, int spalte, string marke, bool gesprungen, int gelesen)
+    {
+        var hoch = gesprungen ? gelesen : gelesen - 1;
+        for (var i = 0; i < hoch; i++) { Taste(Hoch, 300); }
+        if (hoch == 0) { return; }
+        Thread.Sleep(250);
+        for (var versuch = 0; versuch < 6; versuch++)
+        {
+            var k = Stabil(Karte());
+            if (k.Gelesen == spitze.Gelesen) { return; }
+            var wo = spitzen.IndexOf(k.Gelesen);
+            if (wo < 0 && k.Rahmen.Y > spitze.Rahmen.Y + 60) { Taste(Hoch, 300); continue; }   // noch nicht oben
+            if (wo < 0) { break; }
+            Taste(wo < spitzen.Count - 1 ? Rechts : Links, 350);
+        }
+        // Nicht wiedergefunden: von vorn bis zu dieser Spalte.
+        var neu = ZurMarke(marke, spalte);
+        if (neu.Gelesen != spitze.Gelesen)
+        {
+            for (var i = 0; i < 8 && Karte().Gelesen != spitze.Gelesen; i++) { Taste(Rechts, 350); }
+        }
+    }
+
+    /// <summary>
+    /// Von vorn an den Anfang einer Marke: <paramref name="schaetzung"/> Schritte nach
+    /// rechts, dann nach dem Alphabet nachgeregelt, bis links davon eine andere Marke
+    /// steht.
+    /// </summary>
+    private KartenBlick ZurMarke(string marke, int schaetzung)
+    {
+        var k = ErsteKarte();
+        for (var i = 0; i < schaetzung; i++) { Taste(Rechts, 130); }
+        Thread.Sleep(450);
+        k = Stabil(Karte());
+        if (marke.Length == 0) { return k; }
+        for (var schritt = 0; schritt < 80; schritt++)
+        {
+            var m = MarkeVon(k.Gelesen);
+            var vergleich = string.CompareOrdinal(m, marke);
+            if (m.Length > 0 && vergleich < 0)
+            {
+                // Noch vor der Marke: rechts. Beim ersten Schritt in die Marke ist das ihr Anfang.
+                var n = Schritt(k) ?? throw new Abbruch($"brand {marke} not found in My Cars");
+                k = n;
+                var nm = MarkeVon(k.Gelesen);
+                if (nm == marke) { return k; }
+                // Gleich hinter der Marke gelandet: sie ist weg (ihr einziges Auto ist jetzt
+                // das aktuelle). Dann geht es hier weiter.
+                if (nm.Length > 0 && string.CompareOrdinal(nm, marke) > 0) { return k; }
+                continue;
+            }
+            // In der Marke oder dahinter: links, bis links davon eine fruehere Marke steht.
+            var l = Schritt(k, Links);
+            if (l is null) { return k; }   // Anfang des Rasters
+            var lm = MarkeVon(l.Gelesen);
+            if (vergleich == 0 && lm.Length > 0 && string.CompareOrdinal(lm, marke) < 0)
+            {
+                return Schritt(l) ?? k;    // einen zurueck nach rechts: der Anfang der Marke
+            }
+            k = l;
+        }
+        throw new Abbruch($"could not find the start of {marke} again");
+    }
+
+    /// <summary>Vor Enter: zweimal nachsehen, ob unter dem Rahmen wirklich dieses Auto steht.</summary>
+    private bool Bestaetigt(int auto)
+    {
+        Thread.Sleep(300);
+        var a = Karte();
+        Thread.Sleep(300);
+        var b = Karte();
+        return a.Auto == auto && b.Auto == auto && a.Gelesen == b.Gelesen;
     }
 
     /// <summary>Vom Cars-Menue nach My Cars.</summary>
@@ -540,20 +912,6 @@ internal sealed class TuneDeleter
         blick.Dispose();
         Taste(Enter, 800);
         Warte("opening My Cars", 8000, Schirm.MyCars).Dispose();
-    }
-
-    /// <summary>Im Raster bis zur Spalte mit dieser obersten Karte vorspulen.</summary>
-    private void Vorspulen(int spalte, string oben)
-    {
-        for (var i = 0; i < spalte; i++) { Taste(Rechts, 110); }
-        Thread.Sleep(300);
-        for (var nachregeln = 0; nachregeln < 12; nachregeln++)
-        {
-            var k = Karte();
-            if (k.Gelesen == oben) { return; }
-            Taste(Rechts, 300);
-        }
-        throw new Abbruch($"could not find the column starting with '{oben}' again");
     }
 
     /// <summary>Ein Auto bearbeiten: einsteigen, Tunes-Liste oeffnen, Plan-Tunes loeschen, zurueck.</summary>
@@ -578,7 +936,23 @@ internal sealed class TuneDeleter
         upgrades.Dispose();
         Taste(Enter, 1200);
         var liste = Warte("tune list", 10000, Schirm.TunesList);
+        // DIE LISTE MUSS ZUM AUTO GEHOEREN. Auf einem falschen Auto koennte ein Tune mit
+        // demselben Namen vom selben Tuner stehen ("A Road Strong" gibt es fuer viele
+        // Autos) -- und das waere nicht das geplante.
+        var zeile = LiesListe(liste.Zeilen, liste.Bild).AutoZeile;
         liste.Dispose();
+        if (!ListeGehoertZu(auto, zeile))
+        {
+            Log($"  the tune list shows '{zeile}', expected {name} -- nothing touched on this car");
+            Uebersprungen += offen[auto].Count;
+            offen.Remove(auto);
+            Taste(Esc, 700);
+            Warte("back to Upgrades", 6000, Schirm.Upgrades).Dispose();
+            Taste(Esc, 700);
+            Warte("back to the Cars menu", 6000, Schirm.CarsMenu).Dispose();
+            if (++_autos >= MaxAutos) { throw new Abbruch($"limit of {MaxAutos} cars reached"); }
+            return;
+        }
 
         Kacheln(auto, offen[auto]);
         if (offen[auto].Count == 0) { offen.Remove(auto); }
@@ -593,6 +967,7 @@ internal sealed class TuneDeleter
         Warte("back to Upgrades", 6000, Schirm.Upgrades).Dispose();
         Taste(Esc, 700);
         Warte("back to the Cars menu", 6000, Schirm.CarsMenu).Dispose();
+        if (++_autos >= MaxAutos) { throw new Abbruch($"limit of {MaxAutos} cars reached"); }
     }
 
     /// <summary>
@@ -622,9 +997,19 @@ internal sealed class TuneDeleter
         var vorige = Rectangle.Empty;
         var vorigerName = string.Empty;
         var gleichBlieb = 0;
+        // DIE LISTE LAEUFT IM KREIS: nach der letzten Kachel fuehrt RECHTS zur ersten
+        // (Probelauf 2026-09-26, zwei Tunes: 200 Schritte hin und her). Eine Kachel, die
+        // schon einmal da war, heisst: alle gesehen.
+        var gesehen = new HashSet<string>();
         for (var schritt = 0; schritt < 200 && offen.Count > 0; schritt++)
         {
             var (blick, t) = FertigeListe();
+            if (!gesehen.Add($"{Norm(t.Name)}|{Norm(t.Creator)}|{t.Datum}"))
+            {
+                blick.Dispose();
+                Log($"  tile {schritt + 1}: back at '{t.Name}' -- the list has been seen in full");
+                return;
+            }
             if (t.Kachel == vorige && t.Name == vorigerName)
             {
                 if (++gleichBlieb >= 2) { return; }   // RIGHT bewegt nichts: Ende der Liste
@@ -634,6 +1019,9 @@ internal sealed class TuneDeleter
             vorigerName = t.Name;
 
             var treffer = Treffer(offen, t.Name, t.Creator, t.Datum);
+            Log($"  tile {schritt + 1}: '{t.Name}' by '{t.Creator}', created {t.Datum}, icon {t.Symbol}"
+                + (treffer is null ? " -- not in the plan" : ""));
+            Merke(blick.Bild, $"tile {schritt + 1}");
             if (treffer is null || t.Symbol == '-')
             {
                 if (treffer is not null) { Log($"  '{t.Name}' by {t.Creator} is the applied tune (grey) -- kept"); offen.Remove(treffer); Uebersprungen++; }
@@ -646,20 +1034,10 @@ internal sealed class TuneDeleter
             Taste(Enter, 700);
             var dialog = Warte("File Options", 6000, Schirm.FileOptions);
             var (dName, dCreator, _) = LiesDialog(dialog.Zeilen);
-            if (Aehnlich(dName, treffer.Name) < 0.85 || Aehnlich(dCreator, treffer.Creator) < 0.8)
+            if (!DialogPasst(dName, dCreator, treffer))
             {
                 dialog.Dispose();
                 Log($"  dialog says '{dName}' by {dCreator} -- does not match, cancelled");
-                Taste(Esc, 600);
-                Taste(Rechts, 350);
-                continue;
-            }
-            if (_probe)
-            {
-                dialog.Dispose();
-                Log($"  PROBE: would delete '{dName}' by {dCreator}");
-                Geloescht++;
-                offen.Remove(treffer);
                 Taste(Esc, 600);
                 Taste(Rechts, 350);
                 continue;
@@ -668,6 +1046,33 @@ internal sealed class TuneDeleter
             dialog.Dispose();
             Taste(Enter, 700);
             var frage = Warte("Delete File", 6000, Schirm.DeleteConfirm);
+            if (_probe)
+            {
+                // DER PROBELAUF GEHT BIS ZUR RUECKFRAGE (Wunsch vom 2026-09-26) und waehlt
+                // "No". ESC tut dort NICHTS (Probelauf 2026-09-26: die Rueckfrage kennt nur
+                // "Select"). Also RUNTER auf "No" -- und Enter erst, wenn das Bild zeigt,
+                // dass "No" markiert ist und "Yes" nicht. Sonst anhalten, ohne zu druecken.
+                frage.Dispose();
+                Taste(Runter, 600);
+                if (!NeinMarkiert())
+                {
+                    throw new Abbruch("could not move to \"No\" on the confirmation -- choose No yourself");
+                }
+                Taste(Enter, 700);
+                Log($"  PROBE: confirmation for '{dName}' by {dCreator} reached -- answered No");
+                Geloescht++;
+                offen.Remove(treffer);
+                var danach = Warte("after cancelling", 6000, Schirm.FileOptions, Schirm.TunesList);
+                var zurueckInListe = danach.Schirm == Schirm.TunesList;
+                danach.Dispose();
+                if (!zurueckInListe)
+                {
+                    Taste(Esc, 700);
+                    Warte("back to the tune list", 6000, Schirm.TunesList).Dispose();
+                }
+                Taste(Rechts, 350);
+                continue;
+            }
             frage = Waehle(frage, "Yes", Schirm.DeleteConfirm);
             frage.Dispose();
             Taste(Enter, 900);

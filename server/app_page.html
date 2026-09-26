@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>FH Companion</title>
+<title>FH Companion &middot; __SITE_TITLE__</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="/brand/icon-180.png">
 <!--
   Die Downloadseite fuer die App.
 
@@ -66,6 +68,16 @@ h1 {
   font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
   font-size: clamp(30px, 6vw, 46px); margin: 6px 0 10px; letter-spacing: -.01em;
 }
+/* Das Logo neben dem Namen: helle und dunkle Fassung, je nach Farbschema. */
+h1.marke { display: flex; align-items: center; gap: 14px; }
+.logo { width: clamp(44px, 9vw, 60px); height: auto; flex: none; }
+.logo-dunkel { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-hell { display: none; }
+  :root:not([data-theme="light"]) .logo-dunkel { display: block; }
+}
+:root[data-theme="dark"] .logo-hell { display: none; }
+:root[data-theme="dark"] .logo-dunkel { display: block; }
 h2 {
   font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
   font-size: 22px; margin: 32px 0 10px;
@@ -112,7 +124,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     <select id="lang" aria-label="Language"></select>
   </div>
 
-  <h1>FH Companion</h1>
+  <h1 class="marke"><img class="logo logo-hell" src="/brand/logo-light.png" alt="" width="60" height="60"><img class="logo logo-dunkel" src="/brand/logo-dark.png" alt="" width="60" height="60">FH Companion</h1>
   <p id="tagline"></p>
 
   <div class="panel">

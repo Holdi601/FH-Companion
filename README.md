@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/png/fh-companion-shield-dark-transparent.png">
+    <img src="branding/png/fh-companion-shield-transparent.png" alt="FH Companion logo" width="240">
+  </picture>
+</p>
+
 # FH Companion
 
 A Windows companion app for Forza Horizon 6. It adds an in-game overlay with

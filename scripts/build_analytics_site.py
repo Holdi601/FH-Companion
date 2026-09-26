@@ -28,7 +28,9 @@ import local_settings  # noqa: E402
 
 PAGE = r"""<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FH Companion &middot; Rivals Car Ratings</title>
+<title>__SITE_TITLE__ &middot; Rivals Car Ratings</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="/brand/icon-180.png">
 <style>__FONTS_CSS__</style>
 <style>
 /* GROSSE SCHIRME. Die Seite ist in CSS-Pixeln fuer ~1080p-1440p gebaut (Spalte
@@ -103,6 +105,16 @@ h1 {
   margin: 0; text-wrap: balance;
 }
 h1 .thin { color: var(--muted); font-weight: 500; }
+/* Das Logo neben dem Titel: helle und dunkle Fassung, je nach Farbschema. */
+h1.marke { display: flex; align-items: center; gap: 16px; }
+.logo { width: clamp(48px, 6vw, 68px); height: auto; flex: none; }
+.logo-dunkel { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-hell { display: none; }
+  :root:not([data-theme="light"]) .logo-dunkel { display: block; }
+}
+:root[data-theme="dark"] .logo-hell { display: none; }
+:root[data-theme="dark"] .logo-dunkel { display: block; }
 header.top p { margin: 0; color: var(--muted); max-width: 76ch; }
 /* Die Wege zu Werkzeug, Upload und Verwaltung. Sie standen serverseitig laengst
    bereit, nur zeigte nichts darauf -- und was man nicht sieht, gibt es nicht. */
@@ -264,7 +276,7 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
 <div class="wrap">
   <header class="top">
     <span class="label">Forza Horizon 6 &middot; Rivals &middot; read straight out of game memory</span>
-    <h1>Rivals Car Ratings <span class="thin">by performance class</span></h1>
+    <h1 class="marke"><img class="logo logo-hell" src="/brand/logo-light.png" alt="" width="68" height="68"><img class="logo logo-dunkel" src="/brand/logo-dark.png" alt="" width="68" height="68"><span>__SITE_TITLE__ <span class="thin">Rivals car ratings by performance class</span></span></h1>
     <p>Two rankings over the same laps: points by finishing position per track, and the sum of the chosen lap times. Every filter applies <em>before</em> the lap is chosen, so it decides which lap represents a car &mdash; and with it the whole order.</p>
     <!-- Die Wege, die es serverseitig schon gab und auf die nichts zeigte: die
          App, das Hochladen fremder Laeufe und die Verwaltung. Das Scan-Werkzeug
@@ -2027,6 +2039,9 @@ def main(argv: list[str] | None = None) -> int:
     # Seite eine einzige Datei, die auch ohne Server lesbar ist.
     seite = seite.replace("__FONTS_CSS__", fonts_css_inline())
     # Die Kontaktadresse steht nicht im Quelltext, sondern in config/local.json.
+    # Der Name der Seite ebenso (config/local.json, "site_title").
+    import html as _html
+    seite = seite.replace("__SITE_TITLE__", _html.escape(local_settings.site_title()))
     kontakt = local_settings.contact_email()
     seite = seite.replace("__CONTACT__", f' Contact: <a href="mailto:{kontakt}">{kontakt}</a>.' if kontakt else "")
     args.out.write_text(seite.replace("__PAYLOAD__", packed), encoding="utf-8")
