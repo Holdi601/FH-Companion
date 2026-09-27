@@ -56,9 +56,8 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Lap delta.** Time gained or lost against a reference lap, measured at the
   same place on track, not after the same number of seconds.
   - The reference can be the same car and tune, the same car, the same PI class,
-    or the same car and class. It never compares against another PI class
-    unless you pick "same car".
-  - In the PI-class mode, the label names the reference car.
+    the same car and class, or any lap.
+  - In the PI-class and any-lap modes, the label names the reference car.
 - **Input strip.** Throttle, brake, clutch, steering and gear.
 - **Live map.** The current lap drawn as you drive, with adjustable thickness and
   smoothing. Jumps are drawn as gaps.

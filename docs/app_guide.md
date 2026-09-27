@@ -69,12 +69,9 @@ Everything drawn over the game while you drive, and where it sits:
   - the same car;
   - the same PI class;
   - the same car and class;
-  - two figures: the same car, and the same PI class.
+  - any lap.
 
-  In the PI-class mode the delta names the reference car. Except for "same
-  car", a reference always comes from your current PI class. The earlier "my
-  best here with anything" mode compared across classes and was removed; a
-  saved setting becomes "same PI class". The
+  In the PI-class and any-lap modes the delta names the reference car. The
   automatic source takes your own laps first and the Rivals times otherwise.
 - **Input strip.** Throttle, brake, clutch, steering and gear.
 - **Live map.** The lap drawn as you drive, with line thickness and smoothing.

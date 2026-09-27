@@ -15,10 +15,8 @@ internal enum DeltaReference
     SameClass,
     /// <summary>Dieses Auto, und nur in dieser Leistungsklasse.</summary>
     SameCarSameClass,
-    // "Anything" -- die eigene Bestzeit mit was auch immer, ueber ALLE Klassen -- gibt
-    // es seit 2026-09-27 nicht mehr: ein A-Klasse-Auto lief auf Narai gegen die
-    // R-Klasse-Zeit eines Skyline, zwoelf Sekunden Abstand, die nichts sagen. Auf die
-    // eigene Klasse beschraenkt waere es dasselbe wie SameClass.
+    /// <summary>Die eigene Bestzeit auf dieser Strecke, mit was auch immer.</summary>
+    Anything,
 }
 
 /// <summary>Ein Messpunkt einer Runde: wie weit, und wie lange bis dahin.</summary>

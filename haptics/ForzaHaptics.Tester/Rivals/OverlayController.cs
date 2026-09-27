@@ -670,7 +670,7 @@ internal sealed class OverlayController : IDisposable
     /// Wer die Taste dreimal drueckt, weiss dann, wo er ist, ohne nachzusehen.
     /// </remarks>
     internal static readonly string[] DeltaModes =
-        { "tune", "car", "carclass", "class", "dual" };
+        { "tune", "car", "carclass", "class", "any", "dual" };
 
     /// <summary>
     /// Die naechste Vergleichsstufe waehlen -- im Rennen, ohne das Spiel zu verlassen.
@@ -746,9 +746,7 @@ internal sealed class OverlayController : IDisposable
         "car" => DeltaReference.SameCar,
         "class" => DeltaReference.SameClass,
         "carclass" => DeltaReference.SameCarSameClass,
-        // "any" verglich ueber alle Klassen hinweg (bis 2026-09-27) -- eine alte
-        // Einstellung bekommt die eigene Klasse; siehe DeltaReference.
-        "any" => DeltaReference.SameClass,
+        "any" => DeltaReference.Anything,
         // "dual" zeigt oben dasselbe Auto; die Klasse kommt als zweite Zahl dazu.
         "dual" => DeltaReference.SameCar,
         _ => DeltaReference.SameCarSameTune,
@@ -785,6 +783,7 @@ internal sealed class OverlayController : IDisposable
         DeltaReference.SameCar => "same car, this course",
         DeltaReference.SameClass => "same PI class, this course",
         DeltaReference.SameCarSameClass => "same car in this PI class",
+        DeltaReference.Anything => "personal best, any car",
         _ => "same car, same tune",
     };
 
@@ -1259,7 +1258,8 @@ internal sealed class OverlayController : IDisposable
             // WELCHES AUTO DIE REFERENZ IST -- wo es ein anderes sein kann (Nutzerwunsch
             // vom 2026-09-26). Gegen "dieselbe Klasse" zu fahren heisst gegen das beste
             // Auto der Klasse; welches das ist, sagte der Streifen bis dahin nicht.
-            if (_reference is { } referenz && DeltaMode is DeltaReference.SameClass)
+            if (_reference is { } referenz
+                && DeltaMode is DeltaReference.SameClass or DeltaReference.Anything)
             {
                 beschriftung = MitReferenzAuto(beschriftung, referenz.CarOrdinal, packet);
             }
@@ -1467,6 +1467,7 @@ internal sealed class OverlayController : IDisposable
                 DeltaReference.SameClass => kandidat.CarClass == klasse,
                 DeltaReference.SameCarSameClass =>
                     kandidat.CarOrdinal == (_ordinal ?? 0) && kandidat.CarClass == klasse,
+                DeltaReference.Anything => true,
                 _ => kandidat.TuneKey == muster.TuneKey,
             };
             if (!passt) { continue; }

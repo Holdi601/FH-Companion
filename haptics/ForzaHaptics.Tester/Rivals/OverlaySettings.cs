@@ -61,10 +61,9 @@ internal sealed class OverlaySettings
     /// </summary>
     /// <remarks>
     /// "tune" dieses Auto in dieser Abstimmung, "car" dieses Auto, "class" diese
-    /// Leistungsklasse, "carclass" dieses Auto in dieser Klasse -- und "dual" zeigt
-    /// ZWEI Zahlen: oben dasselbe Auto auf dieser Strecke, darunter dieselbe
-    /// Leistungsklasse auf derselben Strecke. "any" (die eigene Bestzeit ueber alle
-    /// Klassen) gibt es seit 2026-09-27 nicht mehr; Load macht daraus "class".
+    /// Leistungsklasse, "carclass" dieses Auto in dieser Klasse, "any" die eigene
+    /// Bestzeit ueberhaupt -- und "dual" zeigt ZWEI Zahlen: oben dasselbe Auto auf
+    /// dieser Strecke, darunter dieselbe Leistungsklasse auf derselben Strecke.
     /// </remarks>
     [JsonPropertyName("delta_reference")] public string DeltaReferenceMode { get; set; } = "tune";
 
@@ -880,11 +879,6 @@ internal sealed class OverlaySettings
             // Jede ausgelieferte Datei nennt noch http:// -- ohne diese Zeile bliebe
             // jede bestehende Installation auf dem unverschluesselten Weg.
             loaded.DatasetUrl = UpgradeServer(loaded.DatasetUrl)!;
-            // "any" verglich ueber alle Klassen hinweg -- ab 2026-09-27 die eigene Klasse.
-            if (string.Equals(loaded.DeltaReferenceMode, "any", StringComparison.OrdinalIgnoreCase))
-            {
-                loaded.DeltaReferenceMode = "class";
-            }
             return loaded;
         }
         catch (Exception)

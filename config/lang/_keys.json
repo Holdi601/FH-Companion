@@ -24,7 +24,7 @@
   "Rivals/CarNotesTab.cs:84"
  ],
  "Add it to the Start menu": [
-  "Disclosure.cs:361"
+  "Disclosure.cs:359"
  ],
  "Add point": [
   "BlueprintEditor.cs:1146"
@@ -184,7 +184,7 @@
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:3145"
+  "Rivals/OverlayController.cs:3146"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
@@ -232,7 +232,7 @@
   "Rivals/CarNotesTab.cs:259"
  ],
  "I have read the above and understand what this program does.": [
-  "Disclosure.cs:338"
+  "Disclosure.cs:336"
  ],
  "If you are sure it works anyway: --skip-checks": [
   "scripts/contrib_scan.py:329"
@@ -397,13 +397,13 @@
   "Tuning/TunesTab.cs:422"
  ],
  "Put a shortcut on my desktop": [
-  "Disclosure.cs:352"
+  "Disclosure.cs:350"
  ],
  "Puts a shortcut to this copy of the program on your desktop. One that points to a moved or deleted copy is replaced.": [
   "MainForm.cs:298"
  ],
  "Quit": [
-  "Disclosure.cs:408",
+  "Disclosure.cs:406",
   "MainForm.cs:1218"
  ],
  "Read the running game": [
@@ -533,7 +533,7 @@
   "MainForm.cs:1428"
  ],
  "Start with Forza (waits in the notification area from sign-in)": [
-  "Disclosure.cs:373"
+  "Disclosure.cs:371"
  ],
  "Start with Forza ✓": [
   "MainForm.cs:1356"
@@ -593,7 +593,7 @@
   "Tuning/TunesTab.cs:348"
  ],
  "The desktop shortcut could not be created.": [
-  "Disclosure.cs:272",
+  "Disclosure.cs:270",
   "MainForm.cs:1440"
  ],
  "The file is here, and can be sent by hand:": [
@@ -723,8 +723,8 @@
   "Tuning/TunesTab.cs:378"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:3133",
-  "Rivals/OverlayController.cs:3144"
+  "Rivals/OverlayController.cs:3134",
+  "Rivals/OverlayController.cs:3145"
  ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:244"
@@ -742,7 +742,7 @@
   "MainForm.cs:1467"
  ],
  "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.": [
-  "Disclosure.cs:389"
+  "Disclosure.cs:387"
  ],
  "Wins": [
   "Rivals/OwnTimesTab.cs:250"
@@ -754,8 +754,8 @@
   "Rivals/OwnTimesTab.cs:127"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:3130",
-  "Rivals/OverlayController.cs:3143"
+  "Rivals/OverlayController.cs:3131",
+  "Rivals/OverlayController.cs:3144"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
