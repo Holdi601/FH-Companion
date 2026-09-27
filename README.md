@@ -13,6 +13,8 @@ your laps and times, shows your tuning and tunes, and drives controller haptics
 from the game's telemetry. It comes with a website of car ratings built from the
 public Rivals leaderboards.
 
+A quick overview: https://www.youtube.com/watch?v=YM7poTzjVUk
+
 **Live version:** the car ratings are at
 <https://rradick.duckdns.org:8787/rivals_auto_wertung.html>, and the app can be
 downloaded from <https://rradick.duckdns.org:8787/app>.
