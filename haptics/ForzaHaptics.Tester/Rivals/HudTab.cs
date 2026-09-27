@@ -1227,7 +1227,6 @@ internal sealed class HudPartPanel : Panel
         ("car", "Same car, any tune"),
         ("class", "Same PI class, any car"),
         ("carclass", "Same car in this PI class"),
-        ("any", "My best here with anything"),
         ("dual", "Two figures: same car, and same PI class"),
     };
 

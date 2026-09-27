@@ -53,6 +53,30 @@ internal static class EdgeCaseTest
         StartWithForza();
         LapsWaitForTheServer();
         CelebrationLooksRight();
+        NoCrossClassDelta();
+    }
+
+    /// <summary>
+    /// Kein Delta mehr ueber Klassen hinweg (2026-09-27): ein A-Klasse-Auto lief auf
+    /// Narai gegen die R-Klasse-Zeit eines Skyline. "any" gibt es nicht mehr, und eine
+    /// alte Einstellung wird zur eigenen Klasse.
+    /// </summary>
+    private static void NoCrossClassDelta()
+    {
+        Soll(!Rivals.OverlayController.DeltaModes.Contains("any")
+             && !Rivals.HudPartPanel.References.Any(r => r.Key == "any"),
+             "der klassenuebergreifende Vergleich ist noch waehlbar");
+        var datei = Path.Combine(Path.GetTempPath(), "forza-edge-any-" + Guid.NewGuid().ToString("N")[..8] + ".json");
+        try
+        {
+            File.WriteAllText(datei, """{ "delta_reference": "any" }""");
+            Soll(Rivals.OverlaySettings.Load(datei).DeltaReferenceMode == "class",
+                 "eine alte Einstellung \"any\" wird nicht zur eigenen Klasse");
+            File.WriteAllText(datei, """{ "delta_reference": "carclass" }""");
+            Soll(Rivals.OverlaySettings.Load(datei).DeltaReferenceMode == "carclass",
+                 "eine andere Vergleichsstufe wird beim Laden veraendert");
+        }
+        finally { try { File.Delete(datei); } catch (Exception) { } }
     }
 
     /// <summary>
