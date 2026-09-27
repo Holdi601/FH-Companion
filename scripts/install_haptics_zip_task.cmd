@@ -32,7 +32,10 @@ echo   startet:   %TARGET%
 echo   Rhythmus:  alle %HOURS% Stunden, erstmals um 06:00
 echo.
 
-schtasks /create /tn "%NAME%" /tr "\"%TARGET%\"" /sc HOURLY /mo %HOURS% /st 06:00 /f
+rem  UNSICHTBAR (seit 2026-09-27): ueber conhost --headless, sonst geht bei jedem Lauf
+rem  ein schwarzes Fenster auf -- auch mitten im Spiel. Das Protokoll steht weiter in
+rem  data\runtime\haptics_package.log.
+schtasks /create /tn "%NAME%" /tr "conhost.exe --headless \"%TARGET%\"" /sc HOURLY /mo %HOURS% /st 06:00 /f
 if errorlevel 1 (
   echo.
   echo   Das Eintragen ist gescheitert. Haeufigster Grund: eine Richtlinie verbietet

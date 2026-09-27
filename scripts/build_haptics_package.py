@@ -941,21 +941,28 @@ def _ack_setzen(root: Path, wert: int | None) -> None:
     datei.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def _verwaiste_beenden() -> int:
-    """Uebriggebliebene Instanzen wegraeumen, bevor gemessen wird.
+def _verwaiste_beenden(ordner: Path) -> int:
+    """Uebriggebliebene PRUEFKOPIEN wegraeumen, bevor gemessen wird -- nur aus `ordner`.
 
     WARUM: am 2026-09-15 scheiterte ein Bau mit "gestorben (Code 0)", waehrend eine
     Instanz von 10:08 noch lief -- ein Rest aus einer frueheren Pruefung, deren
-    CloseMainWindow nicht durchkam. Ein sauberer Zusammenhang liess sich nicht
-    belegen (kein Eintrag im Ereignisprotokoll, kein Einzelinstanz-Riegel im Code),
-    aber die alte Instanz haelt UDP 5300 besetzt und stiehlt den Fokus. Eine
-    Messung gegen einen unbekannten Mitbewerber ist keine Messung.
+    CloseMainWindow nicht durchkam. Eine Messung gegen einen unbekannten Mitbewerber
+    ist keine Messung.
+
+    NUR AUS DEM EIGENEN ORDNER (seit 2026-09-27). Bis dahin wurde JEDER Prozess
+    dieses Namens beendet -- auch die App, mit der der Nutzer gerade spielte. Der
+    geplante Bau um 15:00 schoss sie so mitten in einer Meisterschaft ab. Eine
+    installierte Kopie darf daneben laufen: sie belegt zwar UDP 5300, aber die
+    Pruefkopie zeigt dann nur "Could not listen" und laeuft weiter, und seit
+    Einzelinstanz gilt der Riegel je Programmordner.
     """
-    script = ("Get-Process -Name 'FH Companion','Forza Grip Haptics' -ErrorAction SilentlyContinue"
-              " | ForEach-Object { $_.Kill() }; "
+    wurzel = str(ordner.resolve()).replace("'", "''")
+    auswahl = ("Get-Process -Name 'FH Companion','Forza Grip Haptics' -ErrorAction SilentlyContinue"
+               f" | Where-Object {{ $_.Path -and $_.Path.StartsWith('{wurzel}', "
+               "[System.StringComparison]::OrdinalIgnoreCase) }")
+    script = (f"{auswahl} | ForEach-Object {{ $_.Kill() }}; "
               "Start-Sleep -Milliseconds 500; "
-              "(Get-Process -Name 'FH Companion','Forza Grip Haptics' "
-              "-ErrorAction SilentlyContinue | Measure-Object).Count")
+              f"({auswahl} | Measure-Object).Count")
     try:
         r = run(["powershell.exe", "-NoProfile", "-Command", script], timeout=60)
         zeilen = (r.stdout or "").strip().splitlines()
@@ -1004,7 +1011,7 @@ if (-not $p.HasExited) {{
 }}
 'ALIVE ' + $title
 """
-    _verwaiste_beenden()
+    _verwaiste_beenden(exe.parent)
     result = run(["powershell.exe", "-NoProfile", "-Command", script], timeout=120)
     zeilen = (result.stdout or "").strip().splitlines()
     return zeilen[-1].strip() if zeilen else ""
@@ -1293,6 +1300,15 @@ def folder_size(root: Path) -> int:
     return sum(p.stat().st_size for p in root.rglob("*") if p.is_file())
 
 
+def forza_laeuft() -> bool:
+    """Laeuft das Spiel gerade? Dann wird am Rechner gespielt."""
+    try:
+        r = run(["tasklist", "/FI", "IMAGENAME eq forzahorizon6.exe", "/NH"], timeout=30)
+        return "forzahorizon6.exe" in (r.stdout or "").lower()
+    except Exception:
+        return False
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", default=str(DEFAULT_OUT),
@@ -1312,6 +1328,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--keep", type=int, default=5,
                         help="so viele datierte ZIPs behalten (0 = alle)")
     args = parser.parse_args(argv)
+
+    # NICHT WAEHREND GESPIELT WIRD (seit 2026-09-27). Der geplante Lauf baut nach einer
+    # Code-Aenderung voll -- mit zwei Fensterstarts zur Pruefung. Um 15:00 geschah das
+    # mitten in einer Meisterschaft. Der naechste Lauf in drei Stunden versucht es
+    # wieder; von Hand (ohne --auto) baut es weiterhin sofort.
+    if args.auto and forza_laeuft():
+        say("Forza laeuft -- dieser Lauf wird ausgelassen, der naechste versucht es wieder.")
+        return 0
 
     self_contained = not args.framework_dependent
     root = Path(args.out)
