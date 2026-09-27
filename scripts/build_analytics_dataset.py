@@ -32,9 +32,12 @@ from __future__ import annotations
 
 import argparse
 import bisect
+import hashlib
 import json
+import os
 import re
 import statistics
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -72,6 +75,104 @@ COLUMNS = ["rank", "lap_time_seconds", "car_id", "car_codename", "car_name", "pi
 PI_CAPS = {"D": 400, "C": 500, "B": 600, "A": 700, "S1": 800, "S2": 900, "R": 998}
 PI_ORDER = ["D", "C", "B", "A", "S1", "S2", "R"]
 PI_FLOOR = 99
+
+
+# ---------------------------------------------------------------- Namenszuordnung
+#
+# DER TEUERSTE TEIL DES BAUS, gemessen 2026-09-27: 259.100 verschiedene
+# Bildschirmnamen ohne car_id (nicht die 25.000 vom 2026-09-11 -- jede OCR-Variante
+# eines Namens zaehlt einzeln), je Name 7,7 ms unscharfe Suche, nacheinander auf einem
+# Kern. Das Lesen aller Boards dauert dagegen 22 Sekunden.
+#
+# Die Suche ist eine reine Funktion des Namens: dieselbe Fahrzeugliste, dieselben
+# Regeln in build_car_roster.py und dieselben zwei Alias-Tabellen ergeben immer
+# dasselbe Auto. Darum (1) auf alle Kerne verteilt und (2) gemerkt, unter einem
+# Fingerabdruck genau dieser Dateien. Aendert sich eine davon, wird alles neu gesucht;
+# sonst nur, was seit dem letzten Bau neu hinzukam.
+#
+# Gemerkt wird NUR das Suchergebnis (welcher Eintrag der Fahrzeugliste). Die
+# synthetischen Kennungen fuer Autos ohne car_id vergibt weiter der Bau selbst, in der
+# Reihenfolge des ersten Auftretens -- sonst wuerden sie von Bau zu Bau springen.
+NAMEN_CACHE = Path("data/cache/car_name_matches.json")
+ROSTER_HTML = Path("data/car_catalogue/fh6cars.html")
+NAMEN_FORMAT = "1"
+_NAMEN_ARBEITER: dict = {}
+
+
+def _namen_fingerabdruck(roster_html: Path) -> str:
+    import build_car_roster as rt
+    h = hashlib.sha256(NAMEN_FORMAT.encode())
+    for p in (Path(rt.__file__), roster_html, rt.ALIAS_FILE, rt.WIKI_FILE):
+        h.update(Path(p).name.encode())
+        h.update(Path(p).read_bytes() if Path(p).exists() else b"-")
+    return h.hexdigest()
+
+
+def _namen_vorbereiten(roster_html: str) -> None:
+    """Je Arbeitsprozess einmal: Fahrzeugliste laden und die Suchindizes bauen."""
+    import build_car_roster as rt
+    cars = rt.load_roster(Path(roster_html))
+    index = rt.build_index(cars)
+    _NAMEN_ARBEITER.update(rt=rt, index=index, keys=list(index),
+                           years=rt.build_year_index(cars),
+                           pos={id(car): i for i, car in enumerate(cars)})
+
+
+def _namen_suchen(namen: list[str]) -> list[tuple[str, int]]:
+    """(Name, Stelle in der Fahrzeugliste); -1 = kein Auto, -2 = Stelle nicht bestimmbar."""
+    w = _NAMEN_ARBEITER
+    raus = []
+    for name in namen:
+        sauber = w["rt"].clean_ocr_name(name)
+        if not sauber:
+            raus.append((name, -1))
+            continue
+        car, _score = w["rt"].match_car(sauber, w["index"], w["keys"], w["years"])
+        raus.append((name, -1 if car is None else w["pos"].get(id(car), -2)))
+    return raus
+
+
+def namen_zuordnen(namen: list[str], roster_html: Path, log=print) -> dict[str, int]:
+    """Stelle in der Fahrzeugliste je Name -- aus dem Merker, der Rest parallel gesucht."""
+    fingerabdruck = _namen_fingerabdruck(roster_html)
+    gemerkt: dict[str, int] = {}
+    try:
+        daten = json.loads(NAMEN_CACHE.read_text(encoding="utf-8"))
+        if daten.get("fingerprint") == fingerabdruck:
+            gemerkt = {str(k): int(v) for k, v in daten.get("names", {}).items()}
+    except (OSError, ValueError, AttributeError):
+        pass
+    fehlt = [n for n in namen if n not in gemerkt]
+    if fehlt:
+        start = time.time()
+        # Wenige Namen lohnen keinen Prozessstart (je Prozess rund eine Sekunde fuer
+        # die Fahrzeugliste). Viele verteilt -- mit Luft fuer einen laufenden Sweep,
+        # dessen OCR auf derselben Maschine rechnet.
+        if len(fehlt) < 3000:
+            _namen_vorbereiten(str(roster_html))
+            gefunden = _namen_suchen(fehlt)
+        else:
+            from concurrent.futures import ProcessPoolExecutor
+            arbeiter = max(2, min(12, (os.cpu_count() or 4) - 4))
+            stuecke = [fehlt[i:i + 1000] for i in range(0, len(fehlt), 1000)]
+            gefunden = []
+            with ProcessPoolExecutor(max_workers=arbeiter, initializer=_namen_vorbereiten,
+                                     initargs=(str(roster_html),)) as pool:
+                for teil in pool.map(_namen_suchen, stuecke):
+                    gefunden.extend(teil)
+        gemerkt.update(dict(gefunden))
+        log(f"  Namenszuordnung: {len(fehlt):,} neue von {len(namen):,} Namen gesucht "
+            f"in {time.time() - start:.0f} s")
+        try:
+            NAMEN_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            zwischen = NAMEN_CACHE.with_name(NAMEN_CACHE.name + ".tmp")
+            zwischen.write_text(json.dumps({"fingerprint": fingerabdruck, "names": gemerkt},
+                                           ensure_ascii=False, separators=(",", ":")),
+                                encoding="utf-8")
+            zwischen.replace(NAMEN_CACHE)
+        except OSError:
+            pass   # ohne Merker nur langsamer, nie falsch
+    return {n: gemerkt[n] for n in namen}
 
 
 def lap_pi(value, klass: str) -> int | None:
@@ -519,7 +620,7 @@ def build(root: Path, *, drop_invalid: bool = False,
     try:
         import build_car_roster as roster_tools
 
-        roster_cars = roster_tools.load_roster(Path("data/car_catalogue/fh6cars.html"))
+        roster_cars = roster_tools.load_roster(ROSTER_HTML)
         roster_index = roster_tools.build_index(roster_cars)
         roster_keys = list(roster_index)
         roster_years = roster_tools.build_year_index(roster_cars)
@@ -551,11 +652,19 @@ def build(root: Path, *, drop_invalid: bool = False,
         gemerkt[name] = ergebnis
         return ergebnis
 
+    # Vorab gesucht (namen_zuordnen, parallel und gemerkt), gefuellt unten, sobald
+    # alle Boards gelesen sind. Was darin fehlt, sucht die Zeile wie frueher selbst.
+    vorab: dict[str, int] = {}
+
     def _resolve_car_name(name: str) -> int | None:
-        name = roster_tools.clean_ocr_name(name)
-        if not name:
-            return None
-        car, _score = roster_tools.match_car(name, roster_index, roster_keys, roster_years)
+        stelle = vorab.get(name, -2)
+        if stelle == -2:
+            name = roster_tools.clean_ocr_name(name)
+            if not name:
+                return None
+            car, _score = roster_tools.match_car(name, roster_index, roster_keys, roster_years)
+        else:
+            car = roster_cars[stelle] if stelle >= 0 else None
         if car is None:
             # Every car in the game is in the roster, so a name that still does not match
             # after cleaning is a misreading, not a new car. Dropping the row keeps the
@@ -685,6 +794,14 @@ def build(root: Path, *, drop_invalid: bool = False,
                     and round(float(kept["lap_time_seconds"]) * 1000)
                     == round(float(lap) * 1000)):
                 kept["pi"] = row["pi"]
+
+    # ALLE BILDSCHIRMNAMEN AUF EINMAL SUCHEN, bevor die Boards einzeln durchgehen --
+    # parallel und aus dem Merker (siehe namen_zuordnen). Das Ergebnis ist dasselbe wie
+    # die Suche Zeile fuer Zeile; nur die Reihenfolge der Arbeit ist eine andere.
+    if roster_tools is not None:
+        offen = sorted({str(row["car_name"]) for rows in merged.values() for row in rows.values()
+                        if row.get("car_id") is None and row.get("car_name")})
+        vorab.update(namen_zuordnen(offen, ROSTER_HTML))
 
     categories: list[str] = []
     tracks: list[str] = []

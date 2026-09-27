@@ -109,13 +109,16 @@ def navigate_separates_server_error_from_board_failure() -> None:
     Laufzeit umsonst. Seitdem meldet navigate() den Serverfehler getrennt, damit der
     Sweep zurueckweichen und dasselbe Board erneut anfahren kann.
     """
+    # Vier Werte seit 2026-09-18: der vierte sagt "das Spiel ist abgestuerzt" -- kein
+    # Navigationsfehlschlag, den man vom anderen Schirmzustand aus wiederholen koennte.
     cases = [
         ("Server Error / There was an error communicating with the server.",
-         (False, "", True)),
+         (False, "", True, False)),
         ("status: leaderboard_reached route index 7 confirmed on screen as 'Irokawa Circuit'",
-         (True, "Irokawa Circuit", False)),
-        ("FAILED Stuck in state 'rival_detail' after 55 cycles.", (False, "", False)),
-        ("", (False, "", False)),
+         (True, "Irokawa Circuit", False, False)),
+        ("FAILED Stuck in state 'rival_detail' after 55 cycles.", (False, "", False, False)),
+        ("Game crashed: Video Card Crash. FAILED Stuck in state 'unknown'.", (False, "", False, True)),
+        ("", (False, "", False, False)),
     ]
     original = sweep.powershell
     try:

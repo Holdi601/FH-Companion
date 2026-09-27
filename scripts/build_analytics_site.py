@@ -2028,8 +2028,12 @@ function render() {
 
   // Eingereichte Zeiten nachladen. ERST zeichnen, dann holen: die Seite soll
   // nicht auf den Server warten, und ohne Server steht sie da wie vorher.
+  // DEN RUMPF IMMER LESEN, auch bei einem Fehler: eine Antwort, deren Rumpf niemand
+  // liest, haelt Chrome offen -- die Anfrage wird nie fertig, und wer auf ein ruhiges
+  // Netz wartet (test_no_third_party.py), wartet ewig. So war es auf jedem Server mit
+  // abgeschalteter Einreichung (404), bis 2026-09-27.
   fetch("/api/lap/list", { cache: "no-store" })
-    .then(r => r.ok ? r.json() : { laps: [] })
+    .then(r => r.json().then(d => (r.ok ? d : { laps: [] }), () => ({ laps: [] })))
     .then(d => {
       SUBMITTED = buildSubmitted(D, d.laps || []);
       const hinweis = document.getElementById("submitted-note");

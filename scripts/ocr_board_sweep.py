@@ -406,9 +406,9 @@ def catalogue_route(route_index: int, category: str = "Road Racing") -> str:
 
 
 def navigate(vm: str, category: str, route_index: int, klass: str,
-             anchor: str, warm: bool) -> tuple[bool, str, bool]:
-    """Returns whether the board opened, which route it is, AND whether the game
-    answered with "Server Error".
+             anchor: str, warm: bool) -> tuple[bool, str, bool, bool]:
+    """Returns whether the board opened, which route it is, whether the game
+    answered with "Server Error", AND whether the game crashed (see below).
 
     Der dritte Wert existiert, weil ein Serverfehler das Gegenteil eines Boardfehlers
     ist: er sagt nichts ueber Strecke oder Klasse, sondern "spaeter nochmal". Ohne die
