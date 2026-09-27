@@ -98,7 +98,14 @@ internal static class DatasetSync
 
     public sealed record Result(
         Origin Source, string? Path, string? Version, string? BuiltAt,
-        int Boards, string Detail);
+        int Boards, string Detail)
+    {
+        /// <summary>
+        /// The server answered this time -- the data is the newest there is, and
+        /// the server can be reached (the lap queue waits for exactly that).
+        /// </summary>
+        public bool Reached { get; init; }
+    }
 
     internal sealed class Summary
     {
@@ -227,6 +234,7 @@ internal static class DatasetSync
                         BuiltAt = summary.BuiltAt,
                         Boards = summary.Boards,
                         Detail = "already the newest -- nothing to download",
+                        Reached = true,
                     };
                 }
                 else
@@ -268,7 +276,7 @@ internal static class DatasetSync
 
                     return new Result(Origin.Server, CachePath, summary.Version,
                         summary.BuiltAt, summary.Boards,
-                        $"downloaded from {baseUrl}");
+                        $"downloaded from {baseUrl}") { Reached = true };
                 }
             }
             catch (Exception exception)

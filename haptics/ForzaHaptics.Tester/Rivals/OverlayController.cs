@@ -339,6 +339,9 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     private static void LogLap(string text) => Write("laps.log", text);
 
+    /// <summary>Eine Zeile ins Rundenprotokoll -- auch fuer das Nachreichen im Rivals-Tab.</summary>
+    public static void WriteLapLog(string text) => LogLap(text);
+
     /// <summary>Eine Zeile ins Protokoll, auch aus anderen Teilen des Overlays.</summary>
     public static void WriteDiagnostic(string text) => Write("delta.log", text);
 

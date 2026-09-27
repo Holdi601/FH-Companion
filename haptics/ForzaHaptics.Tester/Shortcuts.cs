@@ -75,6 +75,66 @@ internal static class Shortcuts
     /// <summary>Wie die Verknuepfung heisst.</summary>
     public const string Name = AppInfo.Name;
 
+    /// <summary>
+    /// Der Zusatz der Autostart-Verknuepfung: "Mit Forza starten" (seit 2026-09-27).
+    /// </summary>
+    /// <remarks>
+    /// Mit ihm startet die App bei der Anmeldung unsichtbar im Infobereich, wartet auf
+    /// Forza und geht erst dann auf -- siehe MainForm. Ein Programm, das beim Start
+    /// eines ANDEREN Programms startet, laesst Windows ohne Adminrechte nicht zu; das
+    /// Warten im Infobereich kostet dagegen nichts und braucht keine.
+    /// </remarks>
+    public const string TrayArgument = "--tray";
+
+    /// <summary>Was an einem Ort als Aufrufzusatz in der Verknuepfung steht.</summary>
+    public static string ArgumentsFor(ShortcutPlace ort) =>
+        ort == ShortcutPlace.Autostart ? TrayArgument : string.Empty;
+
+    /// <summary>Mit Forza starten: der Autostart zeigt auf diese Kopie und traegt den Zusatz.</summary>
+    public static bool StartsWithForza() =>
+        IsCurrent(ShortcutPlace.Autostart)
+        && string.Equals(ArgumentsOf(PathFor(ShortcutPlace.Autostart))?.Trim(), TrayArgument,
+                         StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Die Verknuepfung an einem Ort entfernen -- nur, wenn sie auf diese Kopie zeigt.</summary>
+    public static bool Remove(ShortcutPlace ort)
+    {
+        var lnk = PathFor(ort);
+        try
+        {
+            if (!File.Exists(lnk)) { return true; }
+            if (!PointsHere(lnk)) { return false; }   // eine fremde Kopie gehoert jemand anderem
+            File.Delete(lnk);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Der Aufrufzusatz einer vorhandenen Verknuepfung -- oder <c>null</c>.</summary>
+    public static string? ArgumentsOf(string lnk)
+    {
+        try
+        {
+            if (!File.Exists(lnk)) { return null; }
+            return MitShell((typ, shell) =>
+            {
+                var obj = typ.InvokeMember("CreateShortcut",
+                    System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { lnk });
+                if (obj is null) { return null; }
+                try
+                {
+                    return obj.GetType().InvokeMember("Arguments",
+                        System.Reflection.BindingFlags.GetProperty, null, obj, null) as string;
+                }
+                finally { Freigeben(obj); }
+            });
+        }
+        catch (Exception) { return null; }
+    }
+
     /// <summary>Der Ordner zu einem Ort.</summary>
     private static Environment.SpecialFolder Ordner(ShortcutPlace ort) => ort switch
     {
@@ -236,9 +296,18 @@ internal static class Shortcuts
         try
         {
             var exe = zielExe ?? ExePath;
+            var argumente = ArgumentsFor(ort);
             if (File.Exists(wohin))
             {
-                if (!ersetzen || SamePath(TargetOf(wohin), exe)) { return true; }
+                // Dieselbe Kopie UND derselbe Zusatz: nichts zu tun. Ein Autostart von
+                // vor 2026-09-27 zeigt zwar hierher, traegt aber noch keinen Zusatz --
+                // der wird beim Ersetzen neu geschrieben.
+                if (!ersetzen || (SamePath(TargetOf(wohin), exe)
+                                  && string.Equals((ArgumentsOf(wohin) ?? string.Empty).Trim(), argumente,
+                                                   StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
                 File.Delete(wohin);
             }
 
@@ -285,6 +354,7 @@ internal static class Shortcuts
                     null, lnk, new[] { wert });
 
                 Setze("TargetPath", exe);
+                if (argumente.Length > 0) { Setze("Arguments", argumente); }
                 // Der Ordner UEBER app: dort liegen config und data, und wer die
                 // Verknuepfung im Explorer "Dateipfad oeffnen" laesst, landet an der
                 // Stelle, die er sucht. OHNE den abschliessenden Schraegstrich: mit

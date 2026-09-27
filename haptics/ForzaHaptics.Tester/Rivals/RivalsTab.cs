@@ -32,6 +32,9 @@ internal sealed class RivalsTab : UserControl
     private readonly Label _lastRead = Caption("", 9.5f, Dim);
     private readonly Label _telemetry = Caption("", 9.5f, Dim);
     private readonly Button _toggle;
+    // Reicht Runden nach, die warten mussten (LapQueue) -- unabhaengig vom
+    // Controller, den es erst gibt, wenn das Overlay einmal lief.
+    private readonly LapAutoSubmit _nachreicher;
 
     [System.ComponentModel.DesignerSerializationVisibility(
         System.ComponentModel.DesignerSerializationVisibility.Hidden)]
@@ -56,6 +59,7 @@ internal sealed class RivalsTab : UserControl
         AutoScroll = true;
 
         _settings = OverlaySettings.Load();
+        _nachreicher = new LapAutoSubmit(() => _advisor, _settings, OverlayController.WriteLapLog);
 
         // Two steps on purpose. First whatever is already on this disk, synchronously,
         // so the tab is usable the moment it appears; then the server, in the
@@ -107,6 +111,8 @@ internal sealed class RivalsTab : UserControl
         {
             _settings.SubmitLaps = einreichen.Checked;
             _settings.Save();
+            // Eingeschaltet: was waehrenddessen gewartet hat, jetzt nachreichen.
+            if (einreichen.Checked) { WartendeAnstossen(); }
         };
         var tag = new TextBox
         {
@@ -122,15 +128,42 @@ internal sealed class RivalsTab : UserControl
             if (neu == (_settings.Gamertag ?? string.Empty)) { return; }
             _settings.Gamertag = neu;
             _settings.Save();
+            WartendeAnstossen();
         };
         layout.Controls.Add(Row(einreichen, tag));
         layout.Controls.Add(Caption(Loc.T("Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site."),
                                     9f, Dim, wrap: 720));
         var submitState = Caption("", 9.5f, Dim, wrap: 720);
         layout.Controls.Add(submitState);
+        // RUNDEN, DIE WARTEN (seit 2026-09-27): schneller als die Bestenliste, aber
+        // nicht abzuschicken -- ausgeschaltet, kein Gamertag, Server weg. Sie gehen
+        // spaeter raus; wer das nicht will, wirft sie hier weg.
+        var wartend = Caption("", 9.5f, Dim, wrap: 520);
+        var verwerfen = Button(Loc.T("Discard waiting laps"), 190);
+        verwerfen.Click += (_, _) =>
+        {
+            var n = LapQueue.Anzahl();
+            if (n == 0) { return; }
+            var ja = MessageBox.Show(this,
+                string.Format(Loc.T("Discard {0} waiting lap(s)? They will not be submitted."), n),
+                AppInfo.Name, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (ja == DialogResult.Yes) { LapQueue.AllesVergessen(); }
+        };
+        var wartendZeile = Row(verwerfen, wartend);
+        wartendZeile.Visible = false;
+        layout.Controls.Add(wartendZeile);
+        var wartendTakt = 0;
         var submitPoll = new System.Windows.Forms.Timer { Interval = 1000 };
         submitPoll.Tick += (_, _) =>
         {
+            if (wartendTakt++ % 5 == 0)
+            {
+                var n = LapQueue.Anzahl();
+                wartendZeile.Visible = n > 0;
+                wartend.Text = n == 0 ? string.Empty : string.Format(
+                    Loc.T("{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on, a gamertag is set and the server answers -- checked again against the leaderboard of that day."),
+                    n);
+            }
             var letzte = LapAutoSubmit.Last;
             submitState.Text = letzte is null
                 ? (_settings.SubmitLaps && string.IsNullOrWhiteSpace(_settings.Gamertag)
@@ -140,6 +173,12 @@ internal sealed class RivalsTab : UserControl
         };
         submitPoll.Start();
         Disposed += (_, _) => submitPoll.Dispose();
+        // Stuendlich nachsehen, solange Runden warten: die App kann jetzt tagelang
+        // im Infobereich laufen, und "irgendwann erreichbar" soll auch dann reichen.
+        var nachreichUhr = new System.Windows.Forms.Timer { Interval = 60 * 60 * 1000 };
+        nachreichUhr.Tick += (_, _) => WartendeAnstossen();
+        nachreichUhr.Start();
+        Disposed += (_, _) => nachreichUhr.Dispose();
         WatchLocalDataset();
         // At startup, quietly: an unreachable server is the normal case and must not
         // put an error in front of someone who only wanted the overlay.
@@ -417,9 +456,27 @@ internal sealed class RivalsTab : UserControl
             && _advisor is not null)
         {
             _dataSource.Text = $"{_advisor.BoardCount} boards · {result.Detail}";
-            return;
         }
-        ApplyDataset(result.Path, result.Detail);
+        else
+        {
+            ApplyDataset(result.Path, result.Detail);
+        }
+        // The server just answered, and the board loaded now is its newest: the
+        // moment to send laps that had to wait (LapQueue) -- not a minute before.
+        if (result.Reached && LapQueue.Anzahl() > 0)
+        {
+            _ = Task.Run(() => _nachreicher.NachreichenAsync());
+        }
+    }
+
+    /// <summary>
+    /// Laps are waiting and nothing on this side stops them: ask the server. If it
+    /// answers, <see cref="SyncFromServer"/> sends them against the fresh board.
+    /// </summary>
+    private void WartendeAnstossen()
+    {
+        if (LapQueue.Anzahl() == 0 || _nachreicher.Hindernis() is not null) { return; }
+        SyncFromServer(announce: false);
     }
 
     /// <summary>

@@ -50,6 +50,235 @@ internal static class EdgeCaseTest
         BrandResources();
         SeriesStatusWords();
         CarNoteGoesWhenDriving();
+        StartWithForza();
+        LapsWaitForTheServer();
+    }
+
+    /// <summary>
+    /// Runden, die warten muessen (2026-09-27): ausgeschaltet, Server weg, Server
+    /// kaputt -- sie bleiben, die schnellste je Auto, und gehen raus, sobald es geht.
+    /// Vor dem Senden zaehlt die Bestenliste DES TAGES; eine Ablehnung haelt an.
+    /// </summary>
+    private static void LapsWaitForTheServer()
+    {
+        var heim = Path.Combine(Path.GetTempPath(), "forza-edge-queue-" + Guid.NewGuid().ToString("N")[..8]);
+        var vorher = Environment.GetEnvironmentVariable("FORZA_SUBMIT_HOME");
+        var pauseVorher = Rivals.LapAutoSubmit.NachreichPause;
+        Environment.SetEnvironmentVariable("FORZA_SUBMIT_HOME", heim);
+        Rivals.LapAutoSubmit.NachreichPause = TimeSpan.Zero;
+
+        static int FreierPort()
+        {
+            var l = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+            l.Start();
+            var port = ((System.Net.IPEndPoint)l.LocalEndpoint).Port;
+            l.Stop();
+            return port;
+        }
+        Rivals.RivalsDataset Board(int bestMs) => new()
+        {
+            Tracks = new List<string> { "Test Circuit" },
+            Classes = new List<string> { "A", "B", "C", "D", "R", "S1", "S2" },
+            CarIds = new List<int> { 1234 },
+            Flags = new List<string> { "clean" },
+            Boards = new List<Rivals.RivalsDataset.Board>
+            {
+                new() { Track = 0, Klass = 0, GroupCar = new[] { 0 }, GroupSignature = new[] { 1 },
+                        LapGroup = new[] { 0 }, LapMs = new[] { bestMs } },
+            },
+        };
+        Rivals.RecordedLap Lap(float sek, int car = 1234)
+        {
+            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = 3 };
+            for (var i = 0; i < 12; i++) { l.Samples.Add(new Rivals.LapSample()); }
+            return l;
+        }
+
+        var port = FreierPort();
+        var totPort = FreierPort();
+        var antworten = new System.Collections.Concurrent.ConcurrentQueue<int>();
+        var einreichungen = 0;
+        using var hoerer = new System.Net.HttpListener();
+        hoerer.Prefixes.Add($"http://localhost:{port}/");
+        hoerer.Start();
+        var schleife = Task.Run(async () =>
+        {
+            while (hoerer.IsListening)
+            {
+                System.Net.HttpListenerContext k;
+                try { k = await hoerer.GetContextAsync().ConfigureAwait(false); }
+                catch (Exception) { break; }
+                var pfad = k.Request.Url?.AbsolutePath ?? string.Empty;
+                using (var r = new StreamReader(k.Request.InputStream)) { await r.ReadToEndAsync().ConfigureAwait(false); }
+                int status;
+                string rumpf;
+                if (pfad.EndsWith("/api/lap/register"))
+                {
+                    status = 200;
+                    rumpf = """{"install_id":"edge","secret":"geheim"}""";
+                }
+                else
+                {
+                    Interlocked.Increment(ref einreichungen);
+                    status = antworten.TryDequeue(out var s) ? s : 200;
+                    rumpf = status == 200 ? """{"ok":true}""" : $$"""{"error":"test {{status}}"}""";
+                }
+                var bytes = System.Text.Encoding.UTF8.GetBytes(rumpf);
+                k.Response.StatusCode = status;
+                k.Response.ContentType = "application/json";
+                await k.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
+                k.Response.Close();
+            }
+        });
+
+        try
+        {
+            Rivals.RivalsDataset? data = Board(60000);
+            var einst = new Rivals.OverlaySettings
+            {
+                SubmitLaps = false,
+                Gamertag = "EdgeTester",
+                DatasetUrl = $"http://localhost:{totPort}",
+                DatasetDownloadSeconds = 20,
+            };
+            var sender = new Rivals.LapAutoSubmit(() => data is null ? null : new Rivals.RivalsAdvisor(data),
+                                                  einst, _ => { });
+            string Fahre(Rivals.RecordedLap l) =>
+                sender.ConsiderAsync(l, "course_test", "Test Circuit").GetAwaiter().GetResult();
+            string? Nachreichen() => sender.NachreichenAsync().GetAwaiter().GetResult();
+            Rivals.LapQueue.Eintrag? Wartend(int car = 1234) =>
+                Rivals.LapQueue.Alle().FirstOrDefault(e => e.Key == "test circuit|A|" + car);
+
+            // AUSGESCHALTET: die schnellere Runde wartet, nichts geht hinaus.
+            Soll(Fahre(Lap(59f)).StartsWith("kept to submit later"), "ausgeschaltet wird eine schnelle Runde nicht vorgemerkt");
+            Soll(Rivals.LapQueue.Anzahl() == 1 && einreichungen == 0, "ausgeschaltet ging etwas hinaus oder nichts wartet");
+            Fahre(Lap(59.5f));
+            Soll(Math.Abs(Wartend()!.Lap.LapSeconds - 59f) < 1e-3, "eine langsamere Runde verdraengt die wartende");
+            Fahre(Lap(58.5f));
+            Soll(Math.Abs(Wartend()!.Lap.LapSeconds - 58.5f) < 1e-3 && Rivals.LapQueue.Anzahl() == 1,
+                 "eine schnellere Runde ersetzt die wartende nicht");
+            Soll(Fahre(Lap(61f)).StartsWith("not submitted") && Rivals.LapQueue.Anzahl() == 1,
+                 "eine Runde, langsamer als die Bestenliste, wird vorgemerkt");
+            Soll(Nachreichen() is null && einreichungen == 0, "ausgeschaltet wird nachgereicht");
+
+            // EINGESCHALTET, SERVER WEG: bleibt, mit einem Versuch mehr.
+            einst.SubmitLaps = true;
+            Nachreichen();
+            Soll(Wartend()?.Attempts == 1, "ohne Server verschwindet die Runde oder zaehlt keinen Versuch");
+
+            // SERVER DA, ABER KAPUTT (503): bleibt.
+            einst.DatasetUrl = $"http://localhost:{port}";
+            antworten.Enqueue(503);
+            Nachreichen();
+            Soll(Wartend()?.Attempts == 2 && einreichungen == 1, "ein 503 verwirft die wartende Runde");
+
+            // SERVER GESUND: raus, ins Buch, aus der Schlange.
+            Nachreichen();
+            Soll(Rivals.LapQueue.Anzahl() == 0 && einreichungen == 2, "die wartende Runde ging nicht hinaus");
+            Soll(Rivals.LapAutoSubmit.LedgerLaden().TryGetValue("test circuit|A|1234", out var imBuch) && imBuch == 58500,
+                 "die nachgereichte Runde steht nicht im Buch");
+
+            // LIVE, SERVER KAPUTT: die Runde wartet, statt verloren zu gehen.
+            antworten.Enqueue(503);
+            Soll(Fahre(Lap(58f)).StartsWith("kept to submit later") && Rivals.LapQueue.Anzahl() == 1,
+                 "eine gescheiterte Einreichung wird nicht vorgemerkt");
+
+            // DIE BESTENLISTE DES TAGES: inzwischen 57 s -- die 58 s gehen still weg,
+            // ohne Anfrage. Das Auto ohne Eintrag geht, der Server sagt 409: raus,
+            // ins Buch, und eine Ablehnung ist gemerkt.
+            einst.SubmitLaps = false;
+            Fahre(Lap(80f, car: 9999));
+            einst.SubmitLaps = true;
+            data = Board(57000);
+            var vorAnfragen = einreichungen;
+            antworten.Enqueue(409);
+            Nachreichen();
+            Soll(Rivals.LapQueue.Anzahl() == 0 && einreichungen == vorAnfragen + 1,
+                 "eine nicht mehr schnellere Runde wurde gesendet oder die 409 blieb liegen");
+            Soll(Rivals.LapAutoSubmit.LedgerLaden().ContainsKey("test circuit|A|9999"),
+                 "eine vom Server abgelehnte Runde steht nicht im Buch");
+
+            // DIE BREMSE: zwei Ablehnungen binnen 24 h -- es ruht, ohne Anfrage.
+            Soll(Rivals.LapQueue.RuhtBis(DateTimeOffset.Now) is null, "nach einer Ablehnung ruht das Nachreichen schon");
+            Rivals.LapQueue.AblehnungMerken(DateTimeOffset.Now);
+            Soll(Rivals.LapQueue.RuhtBis(DateTimeOffset.Now) is { } ruht && ruht > DateTimeOffset.Now.AddHours(23),
+                 "nach zwei Ablehnungen ruht das Nachreichen nicht");
+            Soll(Rivals.LapQueue.RuhtBis(DateTimeOffset.Now.AddHours(25)) is null, "die Bremse loest sich nach 24 h nicht");
+            einst.SubmitLaps = false;
+            Fahre(Lap(56f));
+            einst.SubmitLaps = true;
+            vorAnfragen = einreichungen;
+            Soll((Nachreichen() ?? string.Empty).Contains("paused") && einreichungen == vorAnfragen
+                 && Rivals.LapQueue.Anzahl() == 1, "trotz Bremse wurde nachgereicht");
+
+            // OHNE DATEN: nicht entscheidbar -- wartet, statt verworfen zu werden.
+            Rivals.LapQueue.AllesVergessen();
+            data = null;
+            Soll(Fahre(Lap(55f)).StartsWith("kept to submit later") && Rivals.LapQueue.Anzahl() == 1,
+                 "eine Runde ohne geladene Bestenliste geht verloren");
+            Soll(Rivals.LapQueue.AllesVergessen() == 1 && Rivals.LapQueue.Anzahl() == 0, "Verwerfen laesst Runden liegen");
+
+            Soll(Rivals.LapAutoSubmit.AusgangFuer(200) == Rivals.LapAutoSubmit.Ausgang.Gesendet
+                 && Rivals.LapAutoSubmit.AusgangFuer(409) == Rivals.LapAutoSubmit.Ausgang.NichtSchneller
+                 && Rivals.LapAutoSubmit.AusgangFuer(422) == Rivals.LapAutoSubmit.Ausgang.Ungueltig
+                 && new[] { 401, 403, 429, 500, 503 }.All(c => Rivals.LapAutoSubmit.AusgangFuer(c)
+                                                          == Rivals.LapAutoSubmit.Ausgang.SpaeterNochmal),
+                 "ein Statuscode landet im falschen Ausgang");
+        }
+        finally
+        {
+            hoerer.Stop();
+            try { schleife.Wait(2000); } catch (Exception) { }
+            Environment.SetEnvironmentVariable("FORZA_SUBMIT_HOME", vorher);
+            Rivals.LapAutoSubmit.NachreichPause = pauseVorher;
+            try { Directory.Delete(heim, recursive: true); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// "Mit Forza starten": der Autostart traegt --tray, andere Verknuepfungen nicht,
+    /// ein alter Autostart ohne Zusatz wird beim Ersetzen nachgezogen -- und dieselbe
+    /// Kopie laeuft nur einmal, ein zweiter Start weckt die erste.
+    /// </summary>
+    private static void StartWithForza()
+    {
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-mitforza-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(wurzel);
+        try
+        {
+            var exe = Path.Combine(wurzel, "app", AppInfo.ExeName);
+            var auto = Path.Combine(wurzel, "auto.lnk");
+            var schreib = Path.Combine(wurzel, "desk.lnk");
+            Soll(Shortcuts.Create(ShortcutPlace.Autostart, out _, auto, zielExe: exe), "Mit Forza: Autostart liess sich nicht anlegen");
+            Soll(Shortcuts.ArgumentsOf(auto) == Shortcuts.TrayArgument,
+                 $"Mit Forza: der Autostart traegt '{Shortcuts.ArgumentsOf(auto)}' statt {Shortcuts.TrayArgument}");
+            Soll(Shortcuts.Create(ShortcutPlace.Desktop, out _, schreib, zielExe: exe), "Mit Forza: Schreibtisch liess sich nicht anlegen");
+            Soll(string.IsNullOrEmpty(Shortcuts.ArgumentsOf(schreib)), "Mit Forza: die Schreibtisch-Verknuepfung bekam einen Zusatz");
+
+            // Ein Autostart von vor 2026-09-27: dieselbe Kopie, kein Zusatz.
+            var alt = Path.Combine(wurzel, "alt.lnk");
+            Shortcuts.Create(ShortcutPlace.Desktop, out _, alt, zielExe: exe);
+            Soll(Shortcuts.Create(ShortcutPlace.Autostart, out _, alt, ersetzen: true, zielExe: exe)
+                 && Shortcuts.ArgumentsOf(alt) == Shortcuts.TrayArgument,
+                 "Mit Forza: ein alter Autostart ohne Zusatz wird nicht nachgezogen");
+
+            // Eine Instanz je Programmordner.
+            var a = Einzelinstanz.NameFuer(Path.Combine(wurzel, "app"));
+            Soll(a == Einzelinstanz.NameFuer(Path.Combine(wurzel, "APP") + "\\")
+                 && a != Einzelinstanz.NameFuer(Path.Combine(wurzel, "andere")),
+                 "Mit Forza: der Name je Kopie ist nicht stabil oder nicht verschieden");
+            using var erste = Einzelinstanz.Anmelden(Path.Combine(wurzel, "app"));
+            using var zweite = Einzelinstanz.Anmelden(Path.Combine(wurzel, "app"));
+            Soll(erste.Erste && !zweite.Erste, "Mit Forza: zwei Instanzen derselben Kopie gelten beide als erste");
+            using var geweckt = new ManualResetEventSlim();
+            erste.Horchen(() => geweckt.Set());
+            zweite.ErsteWecken();
+            Soll(geweckt.Wait(TimeSpan.FromSeconds(3)), "Mit Forza: ein zweiter Start weckt die erste Instanz nicht");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
     }
 
     /// <summary>

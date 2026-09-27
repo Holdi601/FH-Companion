@@ -22,6 +22,10 @@ namespace ForzaHaptics.Tester.Rivals;
 /// Anything else is kept on disk and never sent. That keeps traffic to a trickle
 /// (a handful of laps a week for an active player) instead of every lap driven.
 ///
+/// A lap that qualifies but cannot go out now -- the first condition fails, or the
+/// server does not answer -- waits in <see cref="LapQueue"/> and is sent later, after
+/// being checked once more against the leaderboard of that day.
+///
 /// ## Why the server checks again
 ///
 /// A modified app could skip every rule here. The server does not take the app's
@@ -139,7 +143,7 @@ internal sealed class LapAutoSubmit
         {
             return new Befund(false, $"no leaderboard for {track} in class {klasse}");
         }
-        var schluessel = $"{Falte(track)}|{klasse}|{lap.CarOrdinal}";
+        var schluessel = Schluessel(lap, track)!;
         var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
         var bestenliste = BestValidMs(data, board, lap.CarOrdinal);
         ledger.TryGetValue(schluessel, out var frueher);
@@ -186,67 +190,88 @@ internal sealed class LapAutoSubmit
         File.Move(tmp, LedgerPath, overwrite: true);
     }
 
+    /// <summary>The key of a lap in ledger and queue -- also without a leaderboard to check.</summary>
+    internal static string? Schluessel(RecordedLap lap, string? track) =>
+        string.IsNullOrWhiteSpace(track) || lap.CarClass < 0 || lap.CarClass >= PiOrder.Length
+            ? null
+            : $"{Falte(track)}|{PiOrder[lap.CarClass]}|{lap.CarOrdinal}";
+
+    /// <summary>
+    /// Why nothing can be sent right now -- or null if it can. Nothing here is a
+    /// reason to forget a lap, only to keep it until it goes away.
+    /// </summary>
+    internal string? Hindernis()
+    {
+        if (!_settings.SubmitLaps) { return "lap submission is switched off"; }
+        if (_settings.Offline) { return "offline"; }
+        if ((_settings.Gamertag ?? string.Empty).Trim().Length == 0) { return "no gamertag set"; }
+        if (string.IsNullOrWhiteSpace(_settings.DatasetUrl)) { return "no server set"; }
+        return null;
+    }
+
+    /// <summary>How a send ended -- and with it, what becomes of a waiting lap.</summary>
+    internal enum Ausgang
+    {
+        /// <summary>Accepted. Into the ledger, out of the queue.</summary>
+        Gesendet,
+        /// <summary>409: the server knows a faster time. Into the ledger, out of the queue.</summary>
+        NichtSchneller,
+        /// <summary>400/413/422: the lap itself is refused. It never will pass; out of the queue.</summary>
+        Ungueltig,
+        /// <summary>Anything else -- no connection, 5xx, 429, a failed sign-up. Keep it.</summary>
+        SpaeterNochmal,
+    }
+
+    /// <summary>Which outcome a server status is. Public for the tests.</summary>
+    internal static Ausgang AusgangFuer(int status) => status switch
+    {
+        >= 200 and < 300 => Ausgang.Gesendet,
+        409 => Ausgang.NichtSchneller,
+        400 or 413 or 422 => Ausgang.Ungueltig,
+        _ => Ausgang.SpaeterNochmal,
+    };
+
     /// <summary>Consider a finished lap; sends it if (and only if) it beats the leaderboard.</summary>
     /// <returns>What happened, in one line -- also written to the lap log.</returns>
+    /// <remarks>
+    /// A lap that beats the leaderboard but cannot go out now -- switched off,
+    /// offline, no gamertag, no server, or the send fails -- is kept in
+    /// <see cref="LapQueue"/> and sent by <see cref="NachreichenAsync"/> later.
+    /// So is a lap driven before any leaderboard was loaded: that it does not beat
+    /// one is not known yet.
+    /// </remarks>
     public async Task<string> ConsiderAsync(RecordedLap lap, string course, string? track,
                                             bool dryRun = false)
     {
-        if (!_settings.SubmitLaps) { return "lap submission is switched off"; }
-        if (_settings.Offline) { return "offline -- nothing is sent"; }
-        var gamertag = (_settings.Gamertag ?? string.Empty).Trim();
-        if (gamertag.Length == 0) { return "no gamertag set -- laps are not submitted"; }
-        if (string.IsNullOrWhiteSpace(_settings.DatasetUrl)) { return "no server set"; }
-
         await EinerZurZeit.WaitAsync().ConfigureAwait(false);
         try
         {
             var buch = LedgerLaden();
-            var befund = Pruefen(lap, track, _advisor()?.Data, buch);
-            if (!befund.Senden || dryRun)
+            var data = _advisor()?.Data;
+            var befund = Pruefen(lap, track, data, buch);
+            var unentschieden = data is null && !befund.Senden && Schluessel(lap, track) is not null
+                                && lap.Samples is { Count: >= 10 } && lap.LapSeconds > 0;
+            if (dryRun || (!befund.Senden && !unentschieden))
             {
                 var text = (dryRun && befund.Senden ? "would submit: " : "not submitted: ") + befund.Grund;
                 _log(text);
                 return text;
             }
 
-            var timeout = TimeSpan.FromSeconds(Math.Max(20, _settings.DatasetDownloadSeconds / 4));
-            var wer = LapSubmit.Load();
-            // DERSELBE SERVER, NUR JETZT UEBER HTTPS: die Anmeldung behalten und nur
-            // die Adresse nachziehen. Ein blosser Textvergleich hielte http:// und
-            // https:// fuer zwei Server und meldete jede Installation neu an -- mit
-            // neuer Kennung, ohne ihre bisherigen Runden.
-            if (wer is not null && wer.Server != _settings.DatasetUrl
-                && ServerHttp.SameServer(wer.Server, _settings.DatasetUrl))
+            var hindernis = Hindernis() ?? (unentschieden ? befund.Grund : null);
+            if (hindernis is not null)
             {
-                wer.Server = _settings.DatasetUrl;
-                LapSubmit.Save(wer);
+                return Behalten(lap, course, track, hindernis);
             }
-            if (wer is null || wer.Server != _settings.DatasetUrl || wer.Gamertag != gamertag)
+
+            var (ausgang, meldung) = await SendenAsync(lap, course, track!, befund, buch).ConfigureAwait(false);
+            if (ausgang == Ausgang.SpaeterNochmal)
             {
-                wer = await LapSubmit.RegisterAsync(_settings.DatasetUrl!, gamertag, timeout)
-                                     .ConfigureAwait(false);
+                return Behalten(lap, course, track, meldung);
             }
-            lap.Track = track;
-            var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
-            try
-            {
-                await LapSubmit.SubmitAsync(wer, lap, course, timeout).ConfigureAwait(false);
-                buch[befund.Schluessel] = ms;
-                LedgerSichern(buch);
-                var ok = $"submitted: {lap.LapSeconds:0.000} s on {track} -- {befund.Grund}";
-                _log(ok);
-                return ok;
-            }
-            catch (LapSubmit.Rejected r) when (r.Status == 409)
-            {
-                // Der Server kennt eine schnellere Zeit (sein Datensatz ist neuer).
-                // Merken, damit genau diese Runde nie wieder gefragt wird.
-                buch[befund.Schluessel] = ms;
-                LedgerSichern(buch);
-                var nein = "server says not faster: " + r.Message;
-                _log(nein);
-                return nein;
-            }
+            if (ausgang != Ausgang.Gesendet) { LapQueue.AblehnungMerken(DateTimeOffset.Now); }
+            _log(meldung);
+            return meldung;
         }
         catch (Exception e)
         {
@@ -258,5 +283,177 @@ internal sealed class LapAutoSubmit
         {
             EinerZurZeit.Release();
         }
+    }
+
+    private string Behalten(RecordedLap lap, string course, string? track, string grund)
+    {
+        lap.Track ??= track;
+        var neu = LapQueue.Vormerken(lap, course, track, Schluessel(lap, track)!, grund);
+        var text = neu
+            ? $"kept to submit later ({grund}): {lap.LapSeconds:0.000} s on {track}"
+            : $"not kept ({grund}): a faster lap of this car on {track} is already waiting";
+        _log(text);
+        return text;
+    }
+
+    /// <summary>Sign up if needed, send one lap, and say how it ended. Never throws.</summary>
+    private async Task<(Ausgang, string)> SendenAsync(RecordedLap lap, string course, string track,
+                                                      Befund befund, Dictionary<string, int> buch)
+    {
+        var gamertag = (_settings.Gamertag ?? string.Empty).Trim();
+        var timeout = TimeSpan.FromSeconds(Math.Max(20, _settings.DatasetDownloadSeconds / 4));
+        LapSubmit.Identity wer;
+        try
+        {
+            var gemerkt = LapSubmit.Load();
+            // DERSELBE SERVER, NUR JETZT UEBER HTTPS: die Anmeldung behalten und nur
+            // die Adresse nachziehen. Ein blosser Textvergleich hielte http:// und
+            // https:// fuer zwei Server und meldete jede Installation neu an -- mit
+            // neuer Kennung, ohne ihre bisherigen Runden.
+            if (gemerkt is not null && gemerkt.Server != _settings.DatasetUrl
+                && ServerHttp.SameServer(gemerkt.Server, _settings.DatasetUrl))
+            {
+                gemerkt.Server = _settings.DatasetUrl;
+                LapSubmit.Save(gemerkt);
+            }
+            wer = gemerkt is null || gemerkt.Server != _settings.DatasetUrl || gemerkt.Gamertag != gamertag
+                ? await LapSubmit.RegisterAsync(_settings.DatasetUrl!, gamertag, timeout).ConfigureAwait(false)
+                : gemerkt;
+        }
+        catch (Exception e)
+        {
+            // Auch eine abgelehnte ANMELDUNG (gesperrte Maschine, unbrauchbarer
+            // Gamertag, zu viele Anmeldungen) ist kein Grund, die Runde zu
+            // vergessen: an ihr liegt es nicht.
+            return (Ausgang.SpaeterNochmal, "could not sign up with the server: " + e.Message);
+        }
+
+        lap.Track = track;
+        var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
+        try
+        {
+            await LapSubmit.SubmitAsync(wer, lap, course, timeout).ConfigureAwait(false);
+            InsBuch(buch, befund.Schluessel, ms);
+            return (Ausgang.Gesendet, $"submitted: {lap.LapSeconds:0.000} s on {track} -- {befund.Grund}");
+        }
+        catch (LapSubmit.Rejected r) when (AusgangFuer(r.Status) == Ausgang.NichtSchneller)
+        {
+            // Der Server kennt eine schnellere Zeit (sein Datensatz ist neuer).
+            // Merken, damit genau diese Runde nie wieder gefragt wird.
+            InsBuch(buch, befund.Schluessel, ms);
+            return (Ausgang.NichtSchneller, "server says not faster: " + r.Message);
+        }
+        catch (LapSubmit.Rejected r) when (AusgangFuer(r.Status) == Ausgang.Ungueltig)
+        {
+            return (Ausgang.Ungueltig, "server refused the lap: " + r.Message);
+        }
+        catch (Exception e)
+        {
+            return (Ausgang.SpaeterNochmal, "submission failed: " + e.Message);
+        }
+    }
+
+    private static void InsBuch(Dictionary<string, int> buch, string schluessel, int ms)
+    {
+        buch[schluessel] = ms;
+        try { LedgerSichern(buch); } catch (Exception) { }
+    }
+
+    /// <summary>Pause between two waiting laps, so a long queue is not one burst.</summary>
+    internal static TimeSpan NachreichPause { get; set; } = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// Send the waiting laps -- each one only if it STILL beats the leaderboard.
+    /// </summary>
+    /// <returns>One line on what happened, or null if nothing was tried.</returns>
+    /// <remarks>
+    /// ## When
+    ///
+    /// The Rivals tab calls this right after the server answered a dataset check:
+    /// that proves the server is reachable, and the leaderboard just loaded is the
+    /// newest there is. It checks every hour while laps are waiting, and again when
+    /// submission is switched on or a gamertag is set.
+    ///
+    /// ## Checked again, against today's leaderboard
+    ///
+    /// A lap that beat the board in March may be slow by June. Sent anyway, the
+    /// server would refuse it -- and count a strike if it is clearly slower. So each
+    /// waiting lap goes through <see cref="Pruefen"/> once more with the current
+    /// data and ledger, and is dropped quietly if it no longer qualifies.
+    ///
+    /// ## Stops at the first thing that is not a success
+    ///
+    /// No connection: the next lap would fail the same way. A refusal: our picture
+    /// of the board is behind the server's, and every further lap risks a strike.
+    /// Two refusals within 24 hours pause it entirely (see <see cref="LapQueue"/>).
+    /// </remarks>
+    public async Task<string?> NachreichenAsync(CancellationToken token = default)
+    {
+        if (Hindernis() is not null) { return null; }
+        var data = _advisor()?.Data;
+        if (data is null) { return null; }
+        if (LapQueue.RuhtBis(DateTimeOffset.Now) is { } ruht)
+        {
+            return $"waiting laps paused until {ruht.LocalDateTime:yyyy-MM-dd HH:mm} after two refusals";
+        }
+        var warten = LapQueue.Alle();
+        if (warten.Count == 0) { return null; }
+
+        if (!await EinerZurZeit.WaitAsync(0, token).ConfigureAwait(false)) { return null; }
+        int gesendet = 0, verworfen = 0;
+        string? halt = null;
+        try
+        {
+            foreach (var e in warten)
+            {
+                if (token.IsCancellationRequested || Hindernis() is not null) { break; }
+                var buch = LedgerLaden();
+                var befund = Pruefen(e.Lap, e.Track, data, buch);
+                if (!befund.Senden)
+                {
+                    LapQueue.Entfernen(e.Key);
+                    verworfen++;
+                    _log($"waiting lap dropped ({e.Lap.LapSeconds:0.000} s on {e.Track}): {befund.Grund}");
+                    continue;
+                }
+                var (ausgang, meldung) = await SendenAsync(e.Lap, e.Course, e.Track!, befund, buch)
+                                                .ConfigureAwait(false);
+                if (ausgang == Ausgang.SpaeterNochmal)
+                {
+                    e.Attempts++;
+                    e.LastTry = DateTimeOffset.Now;
+                    e.LastResult = meldung;
+                    try { LapQueue.Sichern(e); } catch (Exception) { }
+                    halt = meldung;
+                    break;
+                }
+                LapQueue.Entfernen(e.Key);
+                if (ausgang == Ausgang.Gesendet)
+                {
+                    gesendet++;
+                    _log($"{meldung} (waiting since {e.QueuedAt.LocalDateTime:yyyy-MM-dd})");
+                    await Task.Delay(NachreichPause, token).ConfigureAwait(false);
+                    continue;
+                }
+                LapQueue.AblehnungMerken(DateTimeOffset.Now);
+                halt = meldung;
+                break;
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception e)
+        {
+            halt = "sending waiting laps failed: " + e.Message;
+        }
+        finally
+        {
+            EinerZurZeit.Release();
+        }
+
+        var uebrig = LapQueue.Anzahl();
+        var zusammen = $"waiting laps: {gesendet} submitted, {verworfen} no longer faster, {uebrig} still waiting"
+                       + (halt is null ? string.Empty : " -- " + halt);
+        _log(zusammen);
+        return zusammen;
     }
 }

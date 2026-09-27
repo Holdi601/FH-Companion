@@ -78,6 +78,11 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Lap submission** to the website when a lap beats the leaderboard. This is on
   by default and needs a gamertag. You can switch it off in the Rivals tab or with
   `"submit_laps": false` in `config/overlay.json`.
+  - A lap that cannot be sent at once waits on your disk and is sent later. That
+    covers submission being off, no gamertag, offline mode, or no answer from the
+    server, even for weeks. Before it goes, it is checked again against that
+    day's leaderboard. **Discard waiting laps** in the Rivals tab deletes them
+    instead.
 
 ### Tuning and tunes
 
@@ -119,6 +124,9 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Signed updates.** The app refuses a package that is not signed by the
   publisher.
 - **Idle outside the game.** It stays idle unless Forza runs.
+- **Start with Forza** *(optional)*. From sign-in the app waits in the
+  notification area and opens minimized when Forza starts. Switch it on with the
+  button at the top right or on the first start.
 - **Explains itself.** On first start it says what it does on your PC and what
   leaves it, and asks you to confirm.
 

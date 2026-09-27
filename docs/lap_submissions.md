@@ -143,6 +143,34 @@ Die Admin-Liste gibt **nie** ein Geheimnis heraus und vom Hardware-Hash nur die
 ersten zwölf Zeichen: genug, um zwei Anmeldungen derselben Maschine zu erkennen, zu
 wenig, um damit sonst etwas anzufangen.
 
+## Runden, die warten (seit 2026-09-27)
+
+Eine Runde, die die Bestenliste schlägt, aber gerade nicht hinaus kann, geht nicht
+mehr verloren. Das gilt für ausgeschaltetes Einreichen, einen fehlenden Gamertag,
+den Offline-Betrieb und einen Server, der nicht oder mit einem Fehler antwortet.
+Sie liegt dann in `pending_laps/` neben dem Buch (`LapQueue.cs`), eine Datei je
+Strecke, Klasse und Auto; nur die schnellste bleibt.
+
+- **Wann nachgereicht wird:** direkt nachdem der Server eine Datensatz-Abfrage
+  beantwortet hat. Das beweist die Erreichbarkeit, und die Bestenliste ist dann
+  die neueste. Solange Runden warten, fragt die App stündlich, außerdem beim
+  Einschalten des Einreichens und beim Eintragen eines Gamertags.
+- **Vor dem Senden wird neu entschieden,** mit derselben reinen Prüfung wie nach
+  einer gefahrenen Runde (`Pruefen`), aber gegen die Bestenliste und das Buch
+  *dieses* Tages. Eine inzwischen überholte Runde fällt still weg, ohne Anfrage.
+- **Was eine Runde aus der Schlange nimmt:** angenommen (200), „nicht schneller"
+  (409, dann auch ins Buch) oder als ungültig abgelehnt (400/413/422). Alles
+  andere lässt sie liegen: keine Verbindung, 5xx, 429, 401/403 und eine
+  gescheiterte Anmeldung. Ein Verfallsdatum gibt es nicht.
+- **Die Bremse gegen Strafpunkte:** Jedes Nachreichen hält beim ersten Ergebnis
+  an, das kein Erfolg ist. Nach zwei Ablehnungen binnen 24 Stunden ruht es ganz,
+  bis die ältere aus dem Fenster fällt. Der Server sperrt nach fünf Strafpunkten
+  in 24 Stunden, und eine lange Schlange mit veraltetem Bild der Bestenliste
+  könnte sonst in wenigen Stunden dorthin laufen.
+- **Wer „aus" gewählt hatte,** erfährt es aus dem Hinweis beim ersten Start
+  (Fassung 5): Einschalten reicht die besten Runden aus der Zwischenzeit nach.
+  „Discard waiting laps" im Rivals-Tab wirft sie stattdessen weg.
+
 ## Geprüft wird auf drei Ebenen
 
 ```
@@ -169,13 +197,10 @@ JavaScript der Admin-Seite ab.
 
 ## Was noch fehlt
 
-- **Die Oberfläche in der App.** `LapSubmit.cs` kann anmelden, unterschreiben und
-  einreichen; es gibt noch keinen Knopf dafür.
-- **Der Auslöser.** Gedacht ist: eine Runde, die die Bestenliste für dieses Auto
-  schlägt, oder ein Auto, das dort noch gar nicht steht. Dafür fehlt die Brücke
-  zwischen der *geometrischen* Streckenkennung der App (`course_1300_275`) und dem
-  *Namen*, unter dem die Bestenliste die Strecke führt. Ohne diese Brücke weiß die
-  App nicht, gegen welche Bestzeit sie vergleichen soll.
+- ~~Die Oberfläche in der App~~ und ~~der Auslöser~~: seit 2026-09-24 gebaut.
+  `LapAutoSubmit.cs` reicht eine Runde nach dem Fahren selbst ein, wenn sie die
+  Bestenliste schlägt. Der Streckenname kommt vom Anmeldeschirm oder aus dem
+  gesammelten Kursnamen.
 - **Neue Autos gegen die fh6cars-Liste abgleichen.**
 Beides ist inzwischen gebaut:
 

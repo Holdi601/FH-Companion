@@ -142,5 +142,18 @@ internal static class AppInfo
             try { Shortcuts.Umbenennen(ort); }
             catch (Exception) { }
         }
+
+        // EIN AUTOSTART VON VOR 2026-09-27 wird zu "Mit Forza starten": er zeigt auf
+        // diese Kopie, traegt aber den Zusatz --tray noch nicht. Wer ihn damals
+        // ankreuzte, wollte die App bereit haben -- jetzt wartet sie dafuer im
+        // Infobereich, statt bei jeder Anmeldung ein Fenster aufzumachen.
+        try
+        {
+            if (Shortcuts.IsCurrent(ShortcutPlace.Autostart) && !Shortcuts.StartsWithForza())
+            {
+                Shortcuts.Create(ShortcutPlace.Autostart, out _, ersetzen: true);
+            }
+        }
+        catch (Exception) { }
     }
 }

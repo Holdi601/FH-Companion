@@ -55,7 +55,11 @@ internal static class Disclosure
     // des Spielstand-Ordners (Tunes) und das Loeschen, das Tasten ans Spiel schickt.
     // 5 seit 2026-09-27: die Haptik laeuft ab Werk (Standardgraph, Schalter an) -- und
     // eine Vibration kostet Akku. Wer Fassung 4 zugestimmt hat, kannte einen
-    // Controller, der erst nach eigenem Einschalten vibrierte.
+    // Controller, der erst nach eigenem Einschalten vibrierte. Am selben Tag, noch
+    // vor der Auslieferung, dazu: "Mit Forza starten" und Runden, die warten und
+    // SPAETER gesendet werden -- auch solche, die bei ausgeschaltetem Einreichen
+    // gefahren wurden. Wer "aus" gewaehlt hatte, muss davon lesen, bevor er es
+    // wieder einschaltet.
     public const int Fassung = 5;
 
     private const string Titel = "What " + AppInfo.Name + " does";
@@ -150,6 +154,14 @@ WHAT LEAVES YOUR COMPUTER
   gamertag. Switch it off in the Rivals tab ("Submit my laps ...") or set
   "submit_laps": false in config/overlay.json.
 
+  A lap that beats the leaderboard but cannot be sent right then -- submission
+  switched off, no gamertag, offline, or the server not answering -- is kept on
+  this computer and sent later, once all of that is fine again, even weeks later.
+  Before it goes, it is checked once more against the leaderboard of that day and
+  dropped if it is no longer faster. So switching submission back on also sends
+  the best laps you drove while it was off. "Discard waiting laps" in the Rivals
+  tab deletes them instead.
+
   Nothing else is sent. Your ordinary laps are not uploaded. Your tune is not
   uploaded. There is no account and nothing to sign in to.
 
@@ -194,9 +206,17 @@ WHY WINDOWS MAY CALL IT A TROJAN
 SHORTCUTS, IF YOU WANT THEM
 
   Below this text you can ask for a desktop shortcut, a Start menu entry, and for
-  the program to start when you sign in to Windows. All three are off unless you
-  tick them, all three are just a .lnk file in a folder, and you can delete any of
-  them later without touching the program.
+  the program to start with Forza. All three are off unless you tick them, all
+  three are just a .lnk file in a folder, and you can delete any of them later
+  without touching the program.
+
+  "Start with Forza" puts the program in your Windows startup folder. From
+  sign-in it waits invisibly in the notification area and opens (minimized) when
+  Forza starts; after the game it goes back there. Windows does not let a program
+  start when another program starts without administrator rights -- waiting in
+  the notification area needs none and costs practically nothing. Closing the
+  window keeps it waiting; right-click the icon to quit. The button "Start with
+  Forza" at the top right of the main window switches it on and off.
 
   Windows does not allow a program to pin itself to the taskbar -- that has been
   reserved for you since Windows 10 version 1607, and getting around it means
@@ -339,9 +359,12 @@ top of the main window.
             Visible = erstesMal && !Shortcuts.Exists(ShortcutPlace.StartMenu),
         };
 
+        // Seit 2026-09-27 "Mit Forza starten": dieselbe Autostart-Verknuepfung, aber
+        // mit --tray -- die App wartet unsichtbar im Infobereich und geht erst mit
+        // Forza auf (siehe Shortcuts.TrayArgument).
         var autostart = new CheckBox
         {
-            Text = Loc.T("Start it when I sign in to Windows"),
+            Text = Loc.T("Start with Forza (waits in the notification area from sign-in)"),
             AutoSize = true,
             Checked = false,
             Location = new Point(14, 90),

@@ -20,6 +20,14 @@ On the first start the app explains what it does on your PC and what leaves it,
 and asks you to confirm. The link "What this program does" at the top of the
 window shows that text again.
 
+## Start with Forza
+
+The button **Start with Forza** at the top right of the window puts the app in
+your Windows startup folder. From sign-in it waits invisibly in the notification
+area. When Forza starts, the app opens minimized, and when the game ends it goes
+back to waiting. Closing the window keeps it waiting; right-click the icon and
+choose **Quit** to end it. Click the button again to switch this off.
+
 ## Rivals overlay
 
 Starts and stops the overlay over the game, and holds what the overlay needs:
@@ -30,6 +38,12 @@ Starts and stops the overlay over the game, and holds what the overlay needs:
 - **Submit my laps when they beat the leaderboard.** On by default. Only a lap
   that is faster than the best leaderboard time of the same car, route and class
   is sent. See [lap_submissions.md](lap_submissions.md).
+- **Waiting laps.** A lap that cannot be sent right away waits on your disk, one
+  per car, route and class, and only the fastest is kept. That covers
+  submission being off, no gamertag, offline mode, or no answer from the server.
+  It goes out once all of that is fine again, even weeks later, after one more
+  check against that day's leaderboard. The line under the gamertag counts them,
+  and **Discard waiting laps** deletes them.
 - **Car ratings and updates.** Whether the ratings are current, and a button
   that checks for a newer version of the app.
 

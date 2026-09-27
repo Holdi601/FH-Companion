@@ -1198,6 +1198,19 @@ internal static class Program
         // Davor der Umzug vom alten Namen (siehe AppInfo): die Einstellungen der
         // Overlays liegen im Datenordner, und der muss schon am neuen Platz sein.
         _ = AppInfo.DataFolder;
+
+        // EIN FENSTER JE KOPIE (siehe Einzelinstanz). Laeuft diese Kopie schon --
+        // etwa unsichtbar im Infobereich, weil sie mit Forza startet --, holt ein
+        // zweiter Start sie nach vorne und endet. Vor der Erklaerung: die hat die
+        // erste Instanz schon gezeigt.
+        var imHintergrund = args.Contains(Shortcuts.TrayArgument, StringComparer.OrdinalIgnoreCase);
+        using var instanz = Einzelinstanz.Anmelden();
+        if (!instanz.Erste)
+        {
+            if (!imHintergrund) { instanz.ErsteWecken(); }
+            return;
+        }
+
         var einstellungen = Rivals.OverlaySettings.Load();
 
         // Die Sprache VOR dem ersten Fenster. WinForms liest die Beschriftungen
@@ -1213,7 +1226,13 @@ internal static class Program
 
         try
         {
-            Application.Run(new MainForm());
+            var fenster = new MainForm(imHintergrund);
+            instanz.Horchen(() =>
+            {
+                try { fenster.BeginInvoke(fenster.VonAussenZeigen); }
+                catch (Exception) { }
+            });
+            Application.Run(fenster);
         }
         finally
         {

@@ -21,6 +21,7 @@ internal sealed class MainForm : Form, ITelemetryHost
     // Verknuepfungen aus dem Kopf des Fensters (2026-09-25). Siehe VerknuepfungenZeigen.
     private readonly Button _desktopKnopf;
     private readonly Button _anheftKnopf;
+    private readonly Button _mitForzaKnopf;
     private readonly ToolTip _kopfTipps = new() { AutoPopDelay = 15000 };
     private System.Windows.Forms.Timer? _anheftUhr;
     private DateTime _anheftBis;
@@ -105,8 +106,26 @@ internal sealed class MainForm : Form, ITelemetryHost
     private bool _updatingControllerSelector;
     private Task<(bool Steam, bool Generic, bool DualSense)>? _hardwareConnectionTask;
 
-    public MainForm()
+    /// <param name="imHintergrund">
+    /// Gestartet mit "--tray" (Autostart "Mit Forza starten"): unsichtbar im
+    /// Infobereich beginnen und erst aufgehen, wenn Forza startet. Siehe HintergrundBeginnen.
+    /// </param>
+    public MainForm(bool imHintergrund = false)
     {
+        _imHintergrund = imHintergrund;
+        if (imHintergrund)
+        {
+            // Unsichtbar, aber ECHT gezeigt: an "Shown" haengen der Controller, die
+            // Telemetrie und der zuletzt benutzte Graph. Ein nie gezeigtes Fenster
+            // bekaeme nichts davon -- darum durchsichtig zeigen und dann verstecken.
+            //
+            // NICHT ShowInTaskbar = false: ohne Taskleisten-Knopf landet ein
+            // minimiertes Fenster als kleine Titelleiste unten links auf dem
+            // Schreibtisch, und zurueckschalten baut das Fenster neu auf (siehe
+            // HintergrundBeginnen). Der Knopf blitzt bei der Anmeldung kurz auf.
+            Opacity = 0;
+            WindowState = FormWindowState.Minimized;
+        }
         Text = AppInfo.Name;
         Icon = Marke.Symbol() ?? Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         ClientSize = new Size(1100, 700);
@@ -122,10 +141,12 @@ internal sealed class MainForm : Form, ITelemetryHost
         // Sprache und Verknuepfungen). Vorher sass die Sprachwahl links unter dem
         // Link bei y=76 -- in einer Flaeche von 78 Pixeln Hoehe, also unsichtbar bis
         // auf einen zwei Pixel hohen Strich.
+        // 153 seit 2026-09-27: eine dritte Zeile rechts ("Start with Forza"), 27 Pixel
+        // Knopf und 6 Abstand.
         var header = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 120,
+            Height = 153,
             Padding = new Padding(10, 6, 0, 4)
         };
 
@@ -278,6 +299,11 @@ internal sealed class MainForm : Form, ITelemetryHost
         _anheftKnopf = KopfKnopf(Loc.T("Pin to taskbar"));
         _anheftKnopf.Click += (_, _) => AnTaskleiste();
         _kopfTipps.SetToolTip(_anheftKnopf, Loc.T("Windows leaves pinning to you. This prepares everything and shows the one click it takes."));
+        // MIT FORZA STARTEN (seit 2026-09-27): eine eigene dritte Zeile -- in der
+        // zweiten ist auf Franzoesisch kein Platz mehr (617 Pixel).
+        _mitForzaKnopf = KopfKnopf(Loc.T("Start with Forza"));
+        _mitForzaKnopf.Click += (_, _) => MitForzaUmschalten();
+        _kopfTipps.SetToolTip(_mitForzaKnopf, Loc.T("Starts with Windows, waits invisibly in the notification area and opens when Forza starts. Click again to switch it off."));
         VerknuepfungenZeigen(sofort: true);
         // Beim Zurueckkehren ins Fenster neu nachsehen: die Verknuepfung wurde
         // vielleicht geloescht, die Anheftung vielleicht gerade gesetzt.
@@ -292,8 +318,17 @@ internal sealed class MainForm : Form, ITelemetryHost
         programmZeile.Controls.Add(sprachWahl);
         programmZeile.Controls.Add(_desktopKnopf);
         programmZeile.Controls.Add(_anheftKnopf);
+        var startZeile = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0, 6, 0, 0)
+        };
+        startZeile.Controls.Add(_mitForzaKnopf);
         reconnectHost.Controls.Add(controllerZeile);
         reconnectHost.Controls.Add(programmZeile);
+        reconnectHost.Controls.Add(startZeile);
         textPanel.Controls.Add(title);
         textPanel.Controls.Add(whatItDoes);
         header.Controls.Add(textPanel);
@@ -1114,6 +1149,163 @@ internal sealed class MainForm : Form, ITelemetryHost
             _gamepads.Dispose();
             _dualSense.Dispose();
         };
+
+        // ALS LETZTES an "Shown": erst laufen Controller, Telemetrie und Graph an,
+        // dann geht das Fenster (im Hintergrundbetrieb) in den Infobereich.
+        Shown += (_, _) => HintergrundBeginnen();
+    }
+
+    // ------------------------------------------------------------------ //
+    // Mit Forza starten: unsichtbar im Infobereich warten (seit 2026-09-27)
+    // ------------------------------------------------------------------ //
+
+    private readonly bool _imHintergrund;
+    private NotifyIcon? _tray;
+    private System.Windows.Forms.Timer? _forzaWache;
+    private GameWatch? _forzaSicht;
+    private bool _forzaLief;
+    private bool _wirklichBeenden;
+    private bool _schliessHinweisGezeigt;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    /// <summary>Minimiert zeigen, OHNE das Fenster zu aktivieren (SW_SHOWMINNOACTIVE).</summary>
+    private const int NurMinimiertZeigen = 7;
+
+    /// <summary>
+    /// Nach dem ersten, durchsichtigen Zeigen: Symbol in den Infobereich, auf Forza warten.
+    /// </summary>
+    /// <remarks>
+    /// Alles andere laeuft wie immer weiter -- die Haptik und die Overlays warten
+    /// ohnehin, bis Forza laeuft (siehe GraphMayDrive). Neu ist nur, dass das Fenster
+    /// dabei nicht im Weg ist: unsichtbar, bis Forza startet, dann minimiert in der
+    /// Taskleiste, damit man sieht, dass die App bereit ist -- und nach dem Spiel
+    /// wieder unsichtbar, solange niemand das Fenster geoeffnet hat.
+    ///
+    /// Fenster ein- und ausblenden statt ShowInTaskbar umzuschalten: das Umschalten
+    /// baut das Fenster in WinForms neu auf, und am Fenster haengen die
+    /// Geraetebenachrichtigungen fuer den Controller.
+    /// </remarks>
+    private void HintergrundBeginnen()
+    {
+        if (!_imHintergrund || _tray is not null) { return; }
+        _tray = new NotifyIcon
+        {
+            Icon = Marke.Symbol() ?? Icon,
+            Text = AppInfo.Name,
+            Visible = true,
+            ContextMenuStrip = TrayMenue(),
+        };
+        _tray.DoubleClick += (_, _) => VonAussenZeigen();
+        _forzaSicht = new GameWatch(_rivals?.Settings.ForzaProcess);
+        _forzaLief = _forzaSicht.Running;
+        if (_forzaLief) { MinimiertZeigen(); }
+        else { Hide(); }
+        Opacity = 1;
+        TrayTextSetzen();
+        _forzaWache = new System.Windows.Forms.Timer { Interval = 3000 };
+        _forzaWache.Tick += (_, _) => ForzaPruefen();
+        _forzaWache.Start();
+    }
+
+    private ContextMenuStrip TrayMenue()
+    {
+        var menue = new ContextMenuStrip();
+        menue.Items.Add(Loc.T("Open FH Companion"), null, (_, _) => VonAussenZeigen());
+        menue.Items.Add(new ToolStripSeparator());
+        menue.Items.Add(Loc.T("Quit"), null, (_, _) =>
+        {
+            _wirklichBeenden = true;
+            Close();
+        });
+        return menue;
+    }
+
+    private void TrayTextSetzen()
+    {
+        if (_tray is null) { return; }
+        var text = AppInfo.Name + " · " + (_forzaLief ? Loc.T("Forza is running") : Loc.T("waiting for Forza"));
+        // NotifyIcon.Text wirft ueber 63 Zeichen -- in manchen Sprachen ist der Satz lang.
+        _tray.Text = text.Length > 63 ? text[..63] : text;
+    }
+
+    /// <summary>Alle drei Sekunden: Forza gestartet oder beendet?</summary>
+    private void ForzaPruefen()
+    {
+        var laeuft = _forzaSicht?.Running == true;
+        if (laeuft == _forzaLief) { return; }
+        _forzaLief = laeuft;
+        TrayTextSetzen();
+        if (laeuft)
+        {
+            if (!Visible) { MinimiertZeigen(); }
+        }
+        else if (Visible && WindowState == FormWindowState.Minimized)
+        {
+            // Nur, wenn niemand das Fenster geoeffnet hat: wer gerade darin arbeitet,
+            // dem nimmt das Spielende es nicht weg.
+            Hide();
+        }
+    }
+
+    /// <summary>Minimiert in die Taskleiste, ohne das Spiel aus dem Vordergrund zu holen.</summary>
+    private void MinimiertZeigen()
+    {
+        WindowState = FormWindowState.Minimized;
+        ShowWindow(Handle, NurMinimiertZeigen);
+    }
+
+    /// <summary>
+    /// Das Fenster nach vorne holen: Doppelklick auf das Symbol, der Menuepunkt, oder
+    /// ein zweiter Start derselben Kopie (siehe Einzelinstanz).
+    /// </summary>
+    public void VonAussenZeigen()
+    {
+        if (!Visible) { Show(); }
+        if (WindowState == FormWindowState.Minimized) { WindowState = FormWindowState.Normal; }
+        Activate();
+        BringToFront();
+    }
+
+    /// <summary>
+    /// Im Hintergrundbetrieb schliesst das X nur das Fenster -- die App wartet weiter.
+    /// </summary>
+    /// <remarks>
+    /// Sonst liefe "Mit Forza starten" nur bis zum ersten Schliessen und dann erst
+    /// wieder nach der naechsten Anmeldung. Beenden geht ueber das Menue am Symbol;
+    /// Abmelden und Herunterfahren beenden immer. Ohne base-Aufruf laeuft der
+    /// FormClosing-Ereignisweg gar nicht erst -- Telemetrie und Controller bleiben an.
+    /// </remarks>
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (_imHintergrund && !_wirklichBeenden && e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            Hide();
+            if (!_schliessHinweisGezeigt && _tray is not null)
+            {
+                _schliessHinweisGezeigt = true;
+                _tray.ShowBalloonTip(6000, AppInfo.Name,
+                    Loc.T("Still waiting for Forza in the notification area. Right-click the icon to quit."),
+                    ToolTipIcon.Info);
+            }
+            return;
+        }
+        base.OnFormClosing(e);
+    }
+
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        _forzaWache?.Stop();
+        if (_tray is not null)
+        {
+            // Sonst bleibt ein totes Symbol stehen, bis jemand mit der Maus darueberfaehrt.
+            _tray.Visible = false;
+            _tray.Dispose();
+            _tray = null;
+        }
+        base.OnFormClosed(e);
     }
 
     private static Button CreateButton(string text, Point location, Size size) =>
@@ -1157,11 +1349,14 @@ internal sealed class MainForm : Form, ITelemetryHost
         _verknuepfungGeprueft = DateTime.UtcNow;
         var desktop = Shortcuts.IsCurrent(ShortcutPlace.Desktop);
         var angeheftet = Shortcuts.IsPinned();
+        var mitForza = Shortcuts.StartsWithForza();
         _desktopKnopf.Text = desktop ? Loc.T("Desktop shortcut ✓") : Loc.T("Desktop shortcut");
         _anheftKnopf.Text = angeheftet ? Loc.T("Pinned to taskbar ✓") : Loc.T("Pin to taskbar");
+        _mitForzaKnopf.Text = mitForza ? Loc.T("Start with Forza ✓") : Loc.T("Start with Forza");
         var fertig = Color.FromArgb(130, 215, 150);
         _desktopKnopf.ForeColor = desktop ? fertig : Color.White;
         _anheftKnopf.ForeColor = angeheftet ? fertig : Color.White;
+        _mitForzaKnopf.ForeColor = mitForza ? fertig : Color.White;
         if (angeheftet || DateTime.UtcNow > _anheftBis) { _anheftUhr?.Stop(); }
     }
 
@@ -1215,6 +1410,23 @@ internal sealed class MainForm : Form, ITelemetryHost
                    - b2 - _anheftKnopf.Margin.Horizontal
                    - sprachWahl.Margin.Horizontal;
         sprachWahl.Width = Math.Clamp(frei, 110, sprachWahl.Width);
+    }
+
+    /// <summary>"Mit Forza starten" an oder aus: die Autostart-Verknuepfung mit "--tray".</summary>
+    private void MitForzaUmschalten()
+    {
+        if (Shortcuts.StartsWithForza())
+        {
+            Shortcuts.Remove(ShortcutPlace.Autostart);
+        }
+        else if (!Shortcuts.Create(ShortcutPlace.Autostart, out var fehler, ersetzen: true))
+        {
+            MessageBox.Show(this,
+                Loc.T("The autostart entry could not be created.")
+                + Environment.NewLine + Environment.NewLine + fehler,
+                Loc.T("Start with Forza"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        VerknuepfungenZeigen(sofort: true);
     }
 
     private void DesktopVerknuepfen()
