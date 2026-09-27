@@ -1416,6 +1416,30 @@ internal static class EdgeCaseTest
         Soll(Rivals.LapAutoSubmit.RouteName(new Rivals.RecordedLap { Track = "course_1_2_to_1_2" },
                                             Path.GetTempPath()) is null,
              "ein Ordnername gilt als Streckenname");
+
+        // DIE ZEIT ZUM SCHLAGEN (2026-09-27): dieselbe Regel wie beim Einreichen --
+        // die beste GUELTIGE Zeit des Autos (60 s, nicht die ungueltigen 50 s), oder die
+        // schon eingereichte, wenn sie schneller ist.
+        Soll(Rivals.LapAutoSubmit.ZuSchlagen(data, "Test Circuit", 3, 1234, leer) == new Rivals.LapAutoSubmit.Ziel(60000, false),
+             "die Zeit zum Schlagen ist nicht die beste gueltige der Website");
+        Soll(Rivals.LapAutoSubmit.ZuSchlagen(data, "test circuit", 3, 1234,
+                                             new Dictionary<string, int> { ["test circuit|A|1234"] = 58000 })
+             == new Rivals.LapAutoSubmit.Ziel(58000, true),
+             "eine schon eingereichte schnellere Zeit ist nicht die zu schlagende");
+        Soll(Rivals.LapAutoSubmit.ZuSchlagen(data, "Test Circuit", 3, 9999, leer) == new Rivals.LapAutoSubmit.Ziel(null, false),
+             "ein Auto ohne Eintrag bekommt eine Zeit zum Schlagen");
+        Soll(Rivals.LapAutoSubmit.ZuSchlagen(data, "Nowhere Ring", 3, 1234, leer) is null
+             && Rivals.LapAutoSubmit.ZuSchlagen(data, "Test Circuit", 2, 1234, leer) is null
+             && Rivals.LapAutoSubmit.ZuSchlagen(data, null, 3, 1234, leer) is null,
+             "ohne Board oder Strecke steht trotzdem eine Zeit zum Schlagen da");
+        Soll(Rivals.OverlayController.ZielText(new Rivals.LapAutoSubmit.Ziel(60000, false)) == "to beat: 1:00.000 -- website best, this car"
+             && Rivals.OverlayController.ZielText(new Rivals.LapAutoSubmit.Ziel(58000, true)).Contains("your submitted time")
+             && Rivals.OverlayController.ZielText(new Rivals.LapAutoSubmit.Ziel(null, false)).Contains("not on the website")
+             && Rivals.OverlayController.ZielText(null) == string.Empty,
+             "die Zeile \"to beat\" sagt etwas anderes als die Regel");
+        Soll(Rivals.OverlayController.KlassenName(6) == "R" && Rivals.OverlayController.KlassenName(3) == "A"
+             && Rivals.OverlayController.KlassenName(7) is null,
+             "die Klasse einer fremden Referenz wird falsch benannt");
     }
 
     // ------------------------------------------------------------ car notes

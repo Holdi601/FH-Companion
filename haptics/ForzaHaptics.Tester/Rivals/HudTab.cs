@@ -808,6 +808,10 @@ internal sealed class HudPartPanel : Panel
                  v => _settings.CarNoteTune = v);
         // DIE FEIER (seit 2026-09-27): ab Werk an, hier abzuschalten -- und zum
         // Ausprobieren, ohne erst eine Rekordrunde fahren zu muessen.
+        Schalter(Loc.T("Show the time to beat for the website's leaderboard"), settings.HudTarget,
+                 v => _settings.HudTarget = v);
+        stapel.Controls.Add(Note("A line under the delta: your car's best time on the website for this route "
+                                 + "and class. Beat it and the lap goes onto the leaderboard."));
         Schalter(Loc.T("Celebrate when a lap beats the website's time"), settings.CelebrateRecord,
                  v => _settings.CelebrateRecord = v);
         Schalter(Loc.T("Play a sound with it"), settings.CelebrateSound, v => _settings.CelebrateSound = v);

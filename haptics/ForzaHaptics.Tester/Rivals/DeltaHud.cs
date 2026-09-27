@@ -127,6 +127,7 @@ internal sealed class DeltaHud : Form
 
     private float? _delta;
     private string _label = string.Empty;
+    private string _target = string.Empty;
     private float? _secondDelta;
     private string _secondLabel = string.Empty;
     private float _ghostLeft;
@@ -399,16 +400,22 @@ internal sealed class DeltaHud : Form
     }
 
     /// <summary>What to show. A null delta means: no reference of that kind yet.</summary>
+    /// <param name="target">
+    /// The time to beat for the website's leaderboard, as one line -- or empty
+    /// (see OverlayController.ZielZeile, since 2026-09-27).
+    /// </param>
     public void Update(float? delta, string label, float ghostSecondsLeft,
-                       float? secondDelta = null, string secondLabel = "")
+                       float? secondDelta = null, string secondLabel = "", string target = "")
     {
         var changed = _delta != delta || _label != label
                       || _secondDelta != secondDelta || _secondLabel != secondLabel
+                      || _target != target
                       || Math.Abs(_ghostLeft - ghostSecondsLeft) > 0.05f;
         _delta = delta;
         _label = label;
         _secondDelta = secondDelta;
         _secondLabel = secondLabel;
+        _target = target;
         _ghostLeft = ghostSecondsLeft;
         if (changed) { Render(); }
     }
@@ -731,6 +738,7 @@ internal sealed class DeltaHud : Form
             var colour = _delta is null ? neutral : (_delta < 0 ? ahead : behind);
             var height = Draw(g, deltaPlace, Format(_delta), colour, _label,
                               deltaFont, labelFont);
+            var unten = deltaPlace.Y + (height / Math.Max(1, Height)) + 0.004f;
 
             if (!string.IsNullOrEmpty(_secondLabel))
             {
@@ -746,8 +754,18 @@ internal sealed class DeltaHud : Form
                 var secondColour = _secondDelta is null
                     ? neutral
                     : (_secondDelta < 0 ? ahead : behind);
-                Draw(g, second, Format(_secondDelta), secondColour, _secondLabel,
-                     secondFont, secondLabelFont);
+                var zweiteHoehe = Draw(g, second, Format(_secondDelta), secondColour, _secondLabel,
+                                       secondFont, secondLabelFont);
+                unten = second.Y + (zweiteHoehe / Math.Max(1, Height)) + 0.004f;
+            }
+
+            // DIE ZEIT ZUM SCHLAGEN (seit 2026-09-27): eine Zeile darunter, in Gold wie
+            // die Feier, die kommt, wenn sie geschlagen ist.
+            if (!string.IsNullOrEmpty(_target))
+            {
+                using var zielFont = new Font("Segoe UI Semibold", _unit * 0.8f * deltaPlace.Scale);
+                Draw(g, deltaPlace with { Y = unten }, _target, Color.FromArgb(255, 209, 102), string.Empty,
+                     zielFont, zielFont);
             }
         }
     }

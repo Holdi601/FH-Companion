@@ -131,6 +131,32 @@ internal sealed class LapAutoSubmit
         return null;
     }
 
+    /// <summary>What a lap has to beat to get onto the website -- see <see cref="ZuSchlagen"/>.</summary>
+    /// <param name="Ms">The time to beat, or null: the car is not on that board yet, any lap counts.</param>
+    /// <param name="Eigene">True when that time is your own, already submitted, not the board's.</param>
+    internal readonly record struct Ziel(int? Ms, bool Eigene);
+
+    /// <summary>
+    /// The time a lap of this car on this route and class has to beat to be sent --
+    /// the same rule as <see cref="Pruefen"/>: the car's best VALID board time, or the
+    /// time this installation already sent, whichever is faster. Null if there is no
+    /// board for that route and class at all. For the line under the delta (since
+    /// 2026-09-27).
+    /// </summary>
+    internal static Ziel? ZuSchlagen(RivalsDataset? data, string? track, int carClass, int ordinal,
+                                     IReadOnlyDictionary<string, int> ledger)
+    {
+        if (data is null || string.IsNullOrWhiteSpace(track) || carClass < 0 || carClass >= PiOrder.Length) { return null; }
+        var t = data.Tracks.FindIndex(x => Falte(x) == Falte(track));
+        var k = data.Classes.IndexOf(PiOrder[carClass]);
+        var board = t < 0 || k < 0 ? null : data.Boards.FirstOrDefault(b => b.Track == t && b.Klass == k);
+        if (board is null) { return null; }
+        var bestenliste = BestValidMs(data, board, ordinal);
+        ledger.TryGetValue($"{Falte(track)}|{PiOrder[carClass]}|{ordinal}", out var frueher);
+        if (frueher > 0 && (bestenliste is null || frueher < bestenliste)) { return new Ziel(frueher, true); }
+        return new Ziel(bestenliste, false);
+    }
+
     /// <summary>Pure decision -- no network, no disk. Also used by the tests.</summary>
     internal static Befund Pruefen(RecordedLap lap, string? track, RivalsDataset? data,
                                    IReadOnlyDictionary<string, int> ledger)

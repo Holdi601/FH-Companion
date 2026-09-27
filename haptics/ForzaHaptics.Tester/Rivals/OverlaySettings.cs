@@ -212,6 +212,12 @@ internal sealed class OverlaySettings
     /// <summary>Dazu der kurze Ton (CelebrationSound). Fuer sich abschaltbar.</summary>
     [JsonPropertyName("celebrate_sound")] public bool CelebrateSound { get; set; } = true;
 
+    /// <summary>
+    /// Unter dem Delta die Zeit, die eine Runde schlagen muss, um auf die Website zu
+    /// kommen (seit 2026-09-27). Ab Werk an.
+    /// </summary>
+    [JsonPropertyName("hud_target")] public bool HudTarget { get; set; } = true;
+
     // ---- TUNE-SPEICHER (seit 2026-09-26) ---------------------------------------
     //
     // Das Spiel nimmt nur eine begrenzte Zahl heruntergeladener Tunes. Die Grenze

@@ -57,7 +57,12 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   same place on track, not after the same number of seconds.
   - The reference can be the same car and tune, the same car, the same PI class,
     the same car and class, or any lap.
-  - In the PI-class and any-lap modes, the label names the reference car.
+  - The label always starts with the selected reference. In the PI-class and
+    any-lap modes it also names the reference car, with its class when that
+    differs from yours.
+  - **Time to beat.** A line under the delta shows your car's best time on the
+    website for this route and class, or your own submitted time if that is
+    faster. Beat it and the lap goes onto the leaderboard.
 - **Input strip.** Throttle, brake, clutch, steering and gear.
 - **Live map.** The current lap drawn as you drive, with adjustable thickness and
   smoothing. Jumps are drawn as gaps.

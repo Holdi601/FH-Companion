@@ -180,6 +180,9 @@ internal sealed class OverlayController : IDisposable
             {
                 var kurs = LapArchive.CourseKey(lap);
                 var routeName = LapAutoSubmit.RouteName(lap, LapArchive.Root, kurs);
+                // Fuer die Zeile "to beat" der naechsten Runde dieses Rennens.
+                _rundenStrecke = routeName ?? _rundenStrecke;
+                _zielBerechnet = DateTime.MinValue;
                 _ = _submitter.ConsiderAsync(lap, kurs, routeName);
             }
             catch (Exception e)
@@ -552,6 +555,8 @@ internal sealed class OverlayController : IDisposable
     private DateTime _rennenStillSeit = DateTime.MinValue;
     private int _rundenImRennen;
     private string? _letzteStrecke;
+    /// <summary>Der Streckenname der zuletzt beendeten Runde dieses Rennens, wie ihn das Einreichen nimmt.</summary>
+    private string? _rundenStrecke;
     private readonly System.Windows.Forms.Timer _meisterschaftWeg = new() { Interval = 20_000 };
 
     // DIE ANZEIGEDAUER DER KARTEN, je Angebot (siehe ShapeDisplayClock).
@@ -584,6 +589,8 @@ internal sealed class OverlayController : IDisposable
                 _rennenLaeuft = true;
                 _rundenImRennen = 0;
                 _letzteStrecke = null;
+                _rundenStrecke = null;
+                _zielBerechnet = DateTime.MinValue;
                 _meisterschaftWeg.Stop();
                 _umrisseUhr.RaceStarted();
                 // DAS RENNEN BEGINNT: die Umrisse gehoeren davor, nicht darueber --
@@ -760,12 +767,106 @@ internal sealed class OverlayController : IDisposable
     /// ", this course" faellt dafuer weg -- die Zeile ist klein, und dass es um diese
     /// Strecke geht, versteht sich.
     /// </remarks>
-    private string MitReferenzAuto(string beschriftung, int ordinal, ForzaPacket packet)
+    private string MitReferenzAuto(string beschriftung, RecordedLap referenz, ForzaPacket packet)
     {
+        var ordinal = referenz.CarOrdinal;
         if (ordinal <= 0) { return beschriftung; }
         var eigenes = (int)packet.Get("CarOrdinal");
         var name = ordinal == eigenes ? "this car" : AutoName(ordinal);
+        // EINE ANDERE KLASSE WIRD GENANNT: "any car" darf eine R-Klasse-Zeit gegen ein
+        // A-Klasse-Auto stellen -- aber nicht, ohne es zu sagen.
+        var klasse = (int)packet.Get("CarClass");
+        if (referenz.CarClass != klasse && KlassenName(referenz.CarClass) is { } fremd)
+        {
+            name += $" ({fremd})";
+        }
         return beschriftung.Replace(", this course", string.Empty) + " · " + name;
+    }
+
+    private static readonly string[] Klassen = { "D", "C", "B", "A", "S1", "S2", "R" };
+
+    /// <summary>Der Name einer Klasse aus der Telemetrie (0..6 = D bis R) -- oder null.</summary>
+    internal static string? KlassenName(int klasse) =>
+        klasse >= 0 && klasse < Klassen.Length ? Klassen[klasse] : null;
+
+    // ------------------------------------------------------------------ //
+    // Die Zeit zum Schlagen (seit 2026-09-27)
+    // ------------------------------------------------------------------ //
+
+    private DateTime _zielBerechnet = DateTime.MinValue;
+    private string _zielZeile = string.Empty;
+
+    /// <summary>
+    /// Die Zeile unter dem Delta: welche Zeit diese Runde schlagen muss, um auf die
+    /// Website zu kommen -- dieselbe Regel wie beim Einreichen (LapAutoSubmit.ZuSchlagen).
+    /// Hoechstens einmal je Sekunde gerechnet; leer, solange die Strecke unklar ist.
+    /// </summary>
+    private string ZielZeile(ForzaPacket packet)
+    {
+        if (!_settings.HudTarget) { return string.Empty; }
+        if (DateTime.UtcNow - _zielBerechnet < TimeSpan.FromSeconds(1)) { return _zielZeile; }
+        _zielBerechnet = DateTime.UtcNow;
+        try
+        {
+            var strecke = StreckeImRennen();
+            var ziel = LapAutoSubmit.ZuSchlagen(_advisor.Data, strecke, (int)packet.Get("CarClass"),
+                                                _ordinal ?? (int)packet.Get("CarOrdinal"), LapAutoSubmit.LedgerLaden());
+            _zielZeile = ZielText(ziel);
+        }
+        catch (Exception)
+        {
+            _zielZeile = string.Empty;
+        }
+        return _zielZeile;
+    }
+
+    /// <summary>Der Text der Zeile -- English, wie alles, was im Spiel steht.</summary>
+    internal static string ZielText(LapAutoSubmit.Ziel? ziel) => ziel switch
+    {
+        null => string.Empty,
+        { Ms: null } => "to beat: nothing -- this car is not on the website's board yet",
+        { Eigene: true } z => $"to beat: {RivalsAdvisor.LapText(z.Ms)} -- your submitted time",
+        { } z => $"to beat: {RivalsAdvisor.LapText(z.Ms)} -- website best, this car",
+    };
+
+    /// <summary>
+    /// Welche Strecke gerade gefahren wird -- waehrend der Runde, also bevor ihre
+    /// Laenge sie verraet. Null, wenn es nicht eindeutig ist.
+    /// </summary>
+    /// <remarks>
+    /// Der Reihe nach: die Strecke der schon beendeten Runde DIESES Rennens; der
+    /// Anmeldeschirm (die naechste Strecke einer Reihe, oder die einzige angebotene);
+    /// sonst die eigenen Runden von derselben Startlinie, wenn sie alle dieselbe
+    /// Strecke nennen.
+    /// </remarks>
+    private string? StreckeImRennen()
+    {
+        if (_rennenLaeuft && (_letzteStrecke ?? _rundenStrecke) is { Length: > 0 } gefahren) { return gefahren; }
+        if (_letzterSchirm is { } schirm && DateTime.UtcNow - schirm.Seen <= SchirmGilt && schirm.Routen.Count > 0
+            && (string.IsNullOrEmpty(schirm.Klass)
+                || string.Equals(LapArchive.ClassOf(_pi ?? 0), schirm.Klass, StringComparison.OrdinalIgnoreCase)))
+        {
+            if (_schirmReihe && ErwarteteStrecke(schirm.Routen.Count, _schirmAb, _erledigt) is var i and >= 0)
+            {
+                return schirm.Routen[i].Name;
+            }
+            if (schirm.Routen.Count == 1) { return schirm.Routen[0].Name; }
+        }
+        var muster = new RecordedLap
+        {
+            StartX = _recorder.StartX,
+            StartZ = _recorder.StartZ,
+            StandingStart = _recorder.StandingStart,
+        };
+        if (!muster.HasStart) { return null; }
+        var namen = _laps.Laps
+            .Where(l => l.StandingStart == muster.StandingStart && !l.FreeRoam
+                        && !string.IsNullOrWhiteSpace(l.Track) && !OwnTimes.IsFolderKey(l.Track!)
+                        && RecordedLap.StartsTogether(l, muster))
+            .Select(l => l.Track!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return namen.Count == 1 ? namen[0] : null;
     }
 
     /// <summary>Der Name eines Autos nach seiner Kennung -- gelernt, sonst Datensatz, sonst die Kennung.</summary>
@@ -1166,6 +1267,7 @@ internal sealed class OverlayController : IDisposable
         float? delta = null;
         float? zweites = null;
         var zweiteBeschriftung = string.Empty;
+        var ziel = string.Empty;
         var beschriftung = DeltaModeLabel(DeltaMode);
         // Ob die Laenge dieser Strecke ueberhaupt bekannt ist -- erst eine fertige
         // Runde beantwortet das, und davon haengt ab, ob umgerechnet werden kann.
@@ -1228,41 +1330,46 @@ internal sealed class OverlayController : IDisposable
                 // lassen; er bleibt stehen und wird als endgueltig beschriftet.
                 delta = _letztesDelta;
             }
+            // WELCHES AUTO DIE REFERENZ IST -- wo es ein anderes sein kann (Nutzerwunsch
+            // vom 2026-09-26). Gegen "dieselbe Klasse" zu fahren heisst gegen das beste
+            // Auto der Klasse; welches das ist, sagte der Streifen bis dahin nicht.
+            // Seit 2026-09-27 auch seine KLASSE, wenn sie nicht die eigene ist.
+            if (_reference is { } referenz
+                && DeltaMode is DeltaReference.SameClass or DeltaReference.Anything)
+            {
+                beschriftung = MitReferenzAuto(beschriftung, referenz, packet);
+            }
+            // DIE GEWAEHLTE STUFE STEHT IMMER VORN (Nutzerwunsch 2026-09-27). Bis dahin
+            // ersetzten die Zustaende unten die Beschriftung ganz -- "off the reference
+            // line · Nissan Skyline" liess nicht erkennen, dass "personal best, any car"
+            // gewaehlt war, und eine R-Klasse-Zeit gegen ein A-Klasse-Auto sah aus wie
+            // ein Fehler.
             if (_reference is null)
             {
                 // Keine Referenz heisst KEINE ZAHL. Vorher lief hier eine Zahl mit,
                 // die aus einer fremden Strecke stammte und einfach hochzaehlte --
                 // das ist schlimmer als eine leere Anzeige, weil es wie eine Auskunft
                 // aussieht.
-                beschriftung = _recorder.StandingStart
-                    ? "no lap from a standing start here yet -- recording"
-                    : "no flying lap of yours here yet -- recording";
-                beschriftung += $" ({_recorder.CurrentMetres:0} m)";
+                beschriftung += (_recorder.StandingStart
+                    ? " -- no standing-start lap here yet, recording"
+                    : " -- no flying lap here yet, recording")
+                    + $" ({_recorder.CurrentMetres:0} m)";
             }
             else if (hinterDemEnde)
             {
-                beschriftung = _letztesDelta is null
-                    ? "reference lap ended here"
-                    : beschriftung + " -- final";
+                beschriftung += _letztesDelta is null ? " -- reference lap ended here" : " -- final";
             }
             else if (_abseits)
             {
                 // Abseits der Linie gibt es keine ehrliche Zahl: der naechste Punkt
                 // der Bestzeit liegt dann irgendwo, und "irgendwo" ist kein Vergleich.
-                beschriftung = "off the reference line";
+                beschriftung += " -- off the reference line";
             }
             else if (_recorder.StandingStart)
             {
                 beschriftung += " (standing start)";
             }
-            // WELCHES AUTO DIE REFERENZ IST -- wo es ein anderes sein kann (Nutzerwunsch
-            // vom 2026-09-26). Gegen "dieselbe Klasse" zu fahren heisst gegen das beste
-            // Auto der Klasse; welches das ist, sagte der Streifen bis dahin nicht.
-            if (_reference is { } referenz
-                && DeltaMode is DeltaReference.SameClass or DeltaReference.Anything)
-            {
-                beschriftung = MitReferenzAuto(beschriftung, referenz.CarOrdinal, packet);
-            }
+            ziel = ZielZeile(packet);
 
             if (DualDelta)
             {
@@ -1278,7 +1385,7 @@ internal sealed class OverlayController : IDisposable
                 }
                 zweiteBeschriftung = DeltaModeLabel(DeltaReference.SameClass);
                 if (klassenBeste is null) { zweiteBeschriftung += " -- none yet"; }
-                else { zweiteBeschriftung = MitReferenzAuto(zweiteBeschriftung, klassenBeste.CarOrdinal, packet); }
+                else { zweiteBeschriftung = MitReferenzAuto(zweiteBeschriftung, klassenBeste, packet); }
             }
         }
         else if (_recorder.InFreeRoam)
@@ -1310,7 +1417,7 @@ internal sealed class OverlayController : IDisposable
 
         try
         {
-            _hud.Update(delta, beschriftung, geist, zweites, zweiteBeschriftung);
+            _hud.Update(delta, beschriftung, geist, zweites, zweiteBeschriftung, ziel);
         }
         catch (Exception)
         {
@@ -1617,7 +1724,8 @@ internal sealed class OverlayController : IDisposable
             _hudPreview = true;
             EnsureHud();
             _hud?.Update(-0.734f, "preview -- same car, this course", 12.4f,
-                         0.286f, "preview -- same PI class");
+                         0.286f, "preview -- same PI class",
+                         _settings.HudTarget ? "preview -- to beat: 1:24.012 -- website best, this car" : string.Empty);
             _hud?.Note("preview: lap stored: 83.706 s, 5949 m", 20);
 
             // Umriss und Notiz gehoeren dazu: genau die richtet man in diesem Reiter

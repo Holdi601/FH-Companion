@@ -71,8 +71,19 @@ Everything drawn over the game while you drive, and where it sits:
   - the same car and class;
   - any lap.
 
-  In the PI-class and any-lap modes the delta names the reference car. The
-  automatic source takes your own laps first and the Rivals times otherwise.
+  The label under the delta always starts with the selected reference, so a
+  wrong selection is visible at once. In the PI-class and any-lap modes it also
+  names the reference car, with its class in brackets when that is not yours,
+  for example "personal best, any car · Nissan Skyline (R)". The automatic
+  source takes your own laps first and the Rivals times otherwise.
+- **Show the time to beat for the website's leaderboard.** On by default. A
+  gold line under the delta, for example "to beat: 1:24.012 -- website best,
+  this car". It is your car's best valid time on the website for this route
+  and class, or your own submitted time if that is faster. Beat it and the lap
+  is submitted and celebrated. If the car is not on that board yet, any lap
+  counts. The line appears once the route is known: from the lap you just
+  finished in this race, from the sign-up screen (the next route of a series,
+  or the only route offered), or from your own laps on the same start line.
 - **Input strip.** Throttle, brake, clutch, steering and gear.
 - **Live map.** The lap drawn as you drive, with line thickness and smoothing.
   Jumps appear as gaps.
