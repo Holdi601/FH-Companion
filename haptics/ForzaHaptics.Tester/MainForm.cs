@@ -477,6 +477,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             () => _rivals.Controller?.RefreshHud(),
             show => _rivals.PreviewHud(show));
         hudTab.Controls.Add(hudEinstellungen);
+        hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
         // Wird die Stufe im Rennen per Taste gewechselt, muss der Reiter das zeigen --
         // sonst schreibt die naechste Aenderung hier die alte Stufe zurueck.
         if (_rivals.Controller is not null)

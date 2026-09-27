@@ -1181,6 +1181,44 @@ internal static class Program
             }
         }
 
+        if (args.Length >= 2 && string.Equals(args[0], "--celebration-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // DIE FEIER ALS EINZELBILDER -- zum Ansehen, ohne ein Fenster ueber das
+            // Spiel zu legen ("never test windows while gaming"). Dieselbe Zeichnung
+            // wie im Fenster (CelebrationHud.Male), dazu der Ton als WAV.
+            //   --celebration-frames <ordner> [hintergrund.png]
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var flaeche = new System.Drawing.Size(1920, 1080);
+            using var grund = args.Length >= 3 && File.Exists(args[2])
+                ? new System.Drawing.Bitmap(System.Drawing.Image.FromFile(args[2]), flaeche)
+                : null;
+            var anlass = new CelebrationHud.Anlass("You beat the leaderboard!", "1:23.456", 0.556,
+                                                   "Website best 1:24.012", "Goliath · Porsche 911 GT3 RS '19 · S1 900");
+            var konfetti = new CelebrationHud.Konfetti(1234);
+            foreach (var t in new[] { 0.08, 0.2, 0.35, 0.6, 0.9, 1.4, 2.0, 2.8, 3.6, 4.6, 5.0 })
+            {
+                using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
+                                                           System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using var g = System.Drawing.Graphics.FromImage(bild);
+                if (grund is not null) { g.DrawImage(grund, 0, 0); }
+                else
+                {
+                    // Himmel ueber Asphalt -- genug, um Farben und Lesbarkeit zu beurteilen.
+                    using var himmel = new System.Drawing.Drawing2D.LinearGradientBrush(
+                        new System.Drawing.Rectangle(0, 0, flaeche.Width, flaeche.Height),
+                        System.Drawing.Color.FromArgb(120, 170, 215), System.Drawing.Color.FromArgb(58, 62, 68), 90f);
+                    g.FillRectangle(himmel, 0, 0, flaeche.Width, flaeche.Height);
+                }
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                CelebrationHud.Male(g, flaeche, anlass, konfetti, t);
+                bild.Save(Path.Combine(ordner, $"feier_{t:0.00}.png".Replace(',', '.')));
+            }
+            File.WriteAllBytes(Path.Combine(ordner, "feier.wav"), CelebrationSound.Wav);
+            Console.WriteLine(ordner);
+            return;
+        }
+
         if (args.Contains("--self-test", StringComparer.OrdinalIgnoreCase))
         {
             SelfTest.Run();

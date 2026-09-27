@@ -68,6 +68,17 @@ internal sealed class LapAutoSubmit
         };
     }
 
+    /// <summary>A lap beat the website's best valid time for its car, route and class.</summary>
+    internal sealed record Rekord(string Track, int LapMs, int BestenlisteMs, string? CarName, string Klasse);
+
+    /// <summary>
+    /// Raised when a lap beats the website's time (see CelebrationHud) -- whether it is
+    /// then sent or has to wait. Not for a lap no faster than one already sent or
+    /// already waiting: that record was celebrated when it was driven. Raised on a
+    /// worker thread.
+    /// </summary>
+    public event Action<Rekord>? RekordGefahren;
+
     /// <summary>The last decision, for the status line in the Rivals tab.</summary>
     public static string? Last { get; private set; }
     public static DateTime LastAt { get; private set; }
@@ -95,6 +106,13 @@ internal sealed class LapAutoSubmit
             if (beste is null || ms < beste) { beste = ms; }
         }
         return beste;
+    }
+
+    /// <summary>The car's name from the dataset -- or null if it has none there.</summary>
+    internal static string? AutoName(RivalsDataset data, int ordinal)
+    {
+        var i = data.CarIds.IndexOf(ordinal);
+        return i >= 0 && i < data.CarNames.Count && !string.IsNullOrWhiteSpace(data.CarNames[i]) ? data.CarNames[i] : null;
     }
 
     /// <summary>
@@ -252,6 +270,20 @@ internal sealed class LapAutoSubmit
             var befund = Pruefen(lap, track, data, buch);
             var unentschieden = data is null && !befund.Senden && Schluessel(lap, track) is not null
                                 && lap.Samples is { Count: >= 10 } && lap.LapSeconds > 0;
+            if (!dryRun && befund.Senden && befund.BestenlisteMs is int bestenliste && data is not null
+                && !(LapQueue.WartendeSekunden(befund.Schluessel) is float wartet && wartet <= lap.LapSeconds))
+            {
+                try
+                {
+                    RekordGefahren?.Invoke(new Rekord(track!, (int)Math.Round(lap.LapSeconds * 1000.0), bestenliste,
+                                                      AutoName(data, lap.CarOrdinal),
+                                                      $"{PiOrder[lap.CarClass]} {lap.PerformanceIndex}"));
+                }
+                catch (Exception)
+                {
+                    // Eine Feier darf keine Einreichung verhindern.
+                }
+            }
             if (dryRun || (!befund.Senden && !unentschieden))
             {
                 var text = (dryRun && befund.Senden ? "would submit: " : "not submitted: ") + befund.Grund;

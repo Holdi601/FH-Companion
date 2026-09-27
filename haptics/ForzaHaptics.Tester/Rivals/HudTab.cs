@@ -33,6 +33,9 @@ internal sealed class HudTab : UserControl
     private readonly HudPartPanel _side;
     private bool _shown;
 
+    /// <summary>"Try it" bei der Feier: das Hauptfenster reicht es an das Overlay weiter.</summary>
+    public event Action? FeierProbe;
+
     public HudTab(OverlaySettings settings, Action changed, Action<bool> preview)
     {
         _settings = settings;
@@ -56,6 +59,7 @@ internal sealed class HudTab : UserControl
             Repaint();
         };
         _side.QuelleGeaendert += () => _canvas.VorschauVergessen();
+        _side.FeierProbe += () => FeierProbe?.Invoke();
         _side.Select(HudPart.Delta);
 
         var hint = new Label
@@ -701,6 +705,8 @@ internal sealed class HudPartPanel : Panel
     public event Action? Changed;
     /// <summary>Die Kartenquelle wurde umgestellt -- die Vorschau muss neu laden.</summary>
     public event Action? QuelleGeaendert;
+    /// <summary>"Try it" bei der Feier gedrueckt.</summary>
+    public event Action? FeierProbe;
 
     public HudPartPanel(OverlaySettings settings)
     {
@@ -800,6 +806,17 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Car note"), settings.CarNotes, v => _settings.CarNotes = v);
         Schalter(Loc.T("Show the applied tune's name and description in the car note"), settings.CarNoteTune,
                  v => _settings.CarNoteTune = v);
+        // DIE FEIER (seit 2026-09-27): ab Werk an, hier abzuschalten -- und zum
+        // Ausprobieren, ohne erst eine Rekordrunde fahren zu muessen.
+        Schalter(Loc.T("Celebrate when a lap beats the website's time"), settings.CelebrateRecord,
+                 v => _settings.CelebrateRecord = v);
+        Schalter(Loc.T("Play a sound with it"), settings.CelebrateSound, v => _settings.CelebrateSound = v);
+        var probe = Small(Loc.T("Try it"), () => FeierProbe?.Invoke());
+        probe.Width = 110;
+        probe.Margin = new Padding(0, 2, 0, 4);
+        stapel.Controls.Add(probe);
+        stapel.Controls.Add(Note("A card with your time, confetti and a short sound, near the top of the "
+                                 + "screen for about five seconds."));
 
         stapel.Controls.Add(Note("Where the sign-up maps come from"));
         var quelle = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };

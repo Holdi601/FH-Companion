@@ -128,7 +128,9 @@ WHAT IT DOES ON YOUR PC
 
   Draws an overlay on top of the game.
       The lap delta, the maps, the car notes and the rivals panels are separate
-      windows drawn over Forza.
+      windows drawn over Forza. When a lap beats the website's time, a short
+      celebration with confetti and a sound appears for about five seconds; you
+      can switch it off in the Lap delta HUD tab.
 
   Records your laps -- on your disk.
       Times, positions and speeds are written into the program's own folder so it

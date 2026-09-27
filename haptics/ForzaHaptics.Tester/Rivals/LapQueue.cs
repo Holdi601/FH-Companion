@@ -89,6 +89,14 @@ internal static class LapQueue
         return true;
     }
 
+    /// <summary>Die Zeit der Runde, die fuer diesen Schluessel wartet -- oder null.</summary>
+    public static float? WartendeSekunden(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) { return null; }
+        var pfad = PfadFuer(key);
+        return File.Exists(pfad) && Lesen(pfad) is { } e && e.Key == key ? e.Lap.LapSeconds : null;
+    }
+
     public static void Sichern(Eintrag e)
     {
         Directory.CreateDirectory(Folder);

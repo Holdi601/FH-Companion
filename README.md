@@ -65,6 +65,11 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   plus the applied tune's name, tuner and description.
 - **Messages.** A short note when a lap or sprint is stored, and a warning when
   you get close to the game's limit for downloaded tunes.
+- **Celebration.** When a lap beats the website's best time for that car, route
+  and class: a card with your time and the gap, confetti and a short sound, for
+  about five seconds near the top of the screen. On by default; the switch and a
+  **Try it** button are in the Lap delta HUD tab, and the sound can be turned
+  off on its own.
 - **Layout editor.** Drag every block where you want it and resize it with the
   mouse wheel. You can preview the result on the real screen.
 

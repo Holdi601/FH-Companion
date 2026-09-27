@@ -634,6 +634,13 @@ internal sealed class RivalsTab : UserControl
         if (show) { Controller?.ShowHudPreview(); } else { Controller?.HideHudPreview(); }
     }
 
+    /// <summary>Die Feier einmal zeigen (Knopf "Try it" im Reiter "Lap delta HUD").</summary>
+    public void PreviewCelebration()
+    {
+        EnsureController();
+        Controller?.FeierProbe();
+    }
+
     /// <summary>Den Controller anlegen, ohne die Panels zu starten.</summary>
     private void EnsureController()
     {

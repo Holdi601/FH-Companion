@@ -70,6 +70,7 @@ internal sealed class OverlayController : IDisposable
     private readonly System.Windows.Forms.Timer _menueTick = new();
     private readonly System.Windows.Forms.Timer _tuneTick = new();
     private MessageHud _meldung = null!;
+    private CelebrationHud _feier = null!;
     private int _tuneStufeGezeigt;
 
     private readonly HashSet<int> _keysDown = new();
@@ -384,6 +385,13 @@ internal sealed class OverlayController : IDisposable
         _shapes = new CourseShapeHud(_settings, screen);
         _carNote = new CarNoteHud(_settings, screen);
         _meldung = new MessageHud(screen);
+        _feier = new CelebrationHud(screen);
+        // DIE FEIER (seit 2026-09-27): der Einreicher meldet eine Runde, die die
+        // Website schlaegt, aus einem Hintergrundfaden -- gezeigt wird im Fenster-Faden.
+        _submitter.RekordGefahren += r =>
+        {
+            try { _owner.BeginInvoke(() => Feiern(r)); } catch (Exception) { }
+        };
         _liveMap = new LiveMapHud(_settings, screen);
 
         _tick.Interval = Math.Max(250, (int)(_settings.PollSeconds * 1000));
@@ -1569,6 +1577,7 @@ internal sealed class OverlayController : IDisposable
         _shapes.SetArea(jetzt);
         _carNote.SetArea(jetzt);
         _meldung.SetArea(jetzt);
+        _feier.SetArea(jetzt);
         _liveMap.SetArea(jetzt);
         // Der Streifen rechnet seine Einheit einmal aus der Flaeche; neu anlegen.
         if (_hud is not null && !_hud.IsDisposed)
@@ -3102,6 +3111,52 @@ internal sealed class OverlayController : IDisposable
             try { _hud.Close(); _hud.Dispose(); } catch (Exception) { }
         }
         _hud = null;
+        // Die Feier ebenso: ein neuer Controller (frischer Datensatz) darf keine
+        // halbe Feier des alten stehen lassen.
+        try { _feier.Beenden(); _feier.Close(); _feier.Dispose(); } catch (Exception) { }
+    }
+
+    // ------------------------------------------------------------------ //
+    // Feier (seit 2026-09-27)
+    // ------------------------------------------------------------------ //
+
+    /// <summary>Eine Runde hat die Bestzeit der Website geschlagen -- feiern, wenn gewollt.</summary>
+    private void Feiern(LapAutoSubmit.Rekord r)
+    {
+        if (!_settings.CelebrateRecord) { return; }
+        var vorsprung = (r.BestenlisteMs - r.LapMs) / 1000.0;
+        var detail = string.Join(" · ", new[] { r.Track, r.CarName, r.Klasse }
+                                            .Where(x => !string.IsNullOrWhiteSpace(x)));
+        ZeigeFeier(new CelebrationHud.Anlass(
+            Loc.T("You beat the leaderboard!"),
+            RivalsAdvisor.LapText(r.LapMs),
+            vorsprung,
+            string.Format(Loc.T("Website best {0}"), RivalsAdvisor.LapText(r.BestenlisteMs)),
+            detail));
+        LogLap($"record: {RivalsAdvisor.LapText(r.LapMs)} beats the website's {RivalsAdvisor.LapText(r.BestenlisteMs)} on {r.Track}");
+    }
+
+    /// <summary>
+    /// Der Knopf "Try it": dieselbe Feier mit Beispielwerten -- auch bei abgeschalteter
+    /// Feier, denn danach wurde ausdruecklich gefragt. Der Ton folgt seinem Schalter.
+    /// </summary>
+    public void FeierProbe() => ZeigeFeier(new CelebrationHud.Anlass(
+        Loc.T("You beat the leaderboard!"), "1:23.456", 0.556,
+        string.Format(Loc.T("Website best {0}"), "1:24.012"),
+        Loc.T("Example: this is how it looks when a lap beats the website's time.")));
+
+    private void ZeigeFeier(CelebrationHud.Anlass anlass)
+    {
+        try
+        {
+            FollowGameArea();
+            _feier.Zeige(anlass, Environment.TickCount);
+            if (_settings.CelebrateSound) { CelebrationSound.Play(); }
+        }
+        catch (Exception e)
+        {
+            WriteDiagnostic("Feier: " + e.Message);
+        }
     }
 }
 

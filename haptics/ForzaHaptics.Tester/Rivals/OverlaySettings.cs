@@ -203,6 +203,15 @@ internal sealed class OverlaySettings
     /// </summary>
     [JsonPropertyName("car_note_tune")] public bool CarNoteTune { get; set; } = true;
 
+    /// <summary>
+    /// Konfetti und Karte, wenn eine Runde die Bestzeit der Website schlaegt
+    /// (CelebrationHud, seit 2026-09-27). Ab Werk AN, abschaltbar -- so gewollt.
+    /// </summary>
+    [JsonPropertyName("celebrate_record")] public bool CelebrateRecord { get; set; } = true;
+
+    /// <summary>Dazu der kurze Ton (CelebrationSound). Fuer sich abschaltbar.</summary>
+    [JsonPropertyName("celebrate_sound")] public bool CelebrateSound { get; set; } = true;
+
     // ---- TUNE-SPEICHER (seit 2026-09-26) ---------------------------------------
     //
     // Das Spiel nimmt nur eine begrenzte Zahl heruntergeladener Tunes. Die Grenze

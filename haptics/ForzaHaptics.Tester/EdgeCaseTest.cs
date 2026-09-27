@@ -52,6 +52,81 @@ internal static class EdgeCaseTest
         CarNoteGoesWhenDriving();
         StartWithForza();
         LapsWaitForTheServer();
+        CelebrationLooksRight();
+    }
+
+    /// <summary>
+    /// Die Feier (2026-09-27): der Ton hat seine Lautstaerke und endet leise, die
+    /// Karte steht auf jeder Aufloesung im Band, und am Ende ist nichts mehr zu sehen.
+    /// </summary>
+    private static void CelebrationLooksRight()
+    {
+        var proben = Rivals.CelebrationSound.Proben();
+        var spitze = proben.Max(Math.Abs);
+        Soll(Math.Abs(spitze - Rivals.CelebrationSound.Spitze) < 0.005, $"der Feierton hat nicht seine Lautstaerke ({spitze:0.000})");
+        Soll(proben.All(float.IsFinite), "der Feierton enthaelt ungueltige Werte");
+        var rate = Rivals.CelebrationSound.Rate;
+        double Rms(double von, double bis)
+        {
+            var a = (int)(von * rate);
+            var b = Math.Min(proben.Length, (int)(bis * rate));
+            var summe = 0.0;
+            for (var i = a; i < b; i++) { summe += proben[i] * proben[i]; }
+            return Math.Sqrt(summe / Math.Max(1, b - a));
+        }
+        Soll(Rms(0.15, 0.7) > 0.03, "der Glockenklang des Feiertons ist nicht zu hoeren");
+        Soll(Rms(1.95, 2.0) < 0.003, "der Feierton endet nicht leise");
+        var wav = Rivals.CelebrationSound.Wav;
+        Soll(wav.Length == 44 + (proben.Length * 2) && System.Text.Encoding.ASCII.GetString(wav, 0, 4) == "RIFF"
+             && System.Text.Encoding.ASCII.GetString(wav, 8, 4) == "WAVE" && BitConverter.ToInt32(wav, 24) == rate,
+             "der Feierton ist kein gueltiges WAV");
+
+        var anlass = new Rivals.CelebrationHud.Anlass("You beat the leaderboard!", "1:23.456", 0.556,
+                                                      "Website best 1:24.012", "Goliath · Porsche 911 GT3 RS '19 · S1 900");
+        var konfetti = new Rivals.CelebrationHud.Konfetti(1);
+        Soll(anlass.Vorsprung.StartsWith('−') && anlass.Vorsprung.EndsWith(" s"), "der Vorsprung traegt kein Minuszeichen");
+        foreach (var groesse in new[] { new Size(1280, 720), new Size(1920, 1080), new Size(3840, 2160) })
+        {
+            var buehne = Rivals.CelebrationHud.Buehne(groesse);
+            (int Sichtbar, int Unterhalb, int Deckend) Zaehle(double t)
+            {
+                using var bild = new Bitmap(groesse.Width, groesse.Height, PixelFormat.Format32bppPArgb);
+                using (var g = Graphics.FromImage(bild))
+                {
+                    g.Clear(Color.Transparent);
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    Rivals.CelebrationHud.Male(g, groesse, anlass, konfetti, t);
+                }
+                var daten = bild.LockBits(new Rectangle(Point.Empty, groesse), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+                try
+                {
+                    var zeile = new byte[daten.Stride];
+                    int sichtbar = 0, unterhalb = 0, deckend = 0;
+                    var grenze = (int)Math.Ceiling(buehne.Bottom) + 2;
+                    for (var y = 0; y < groesse.Height; y++)
+                    {
+                        System.Runtime.InteropServices.Marshal.Copy(daten.Scan0 + (y * daten.Stride), zeile, 0, daten.Stride);
+                        for (var x = 0; x < groesse.Width; x++)
+                        {
+                            var alpha = zeile[(x * 4) + 3];
+                            if (alpha <= 8) { continue; }
+                            sichtbar++;
+                            if (alpha > 230) { deckend++; }
+                            if (y > grenze) { unterhalb++; }
+                        }
+                    }
+                    return (sichtbar, unterhalb, deckend);
+                }
+                finally { bild.UnlockBits(daten); }
+            }
+            var mitten = Zaehle(1.0);
+            Soll(mitten.Deckend > groesse.Width * groesse.Height / 200,
+                 $"bei {groesse.Width}x{groesse.Height} steht mitten in der Feier keine Karte");
+            Soll(mitten.Unterhalb == 0, $"bei {groesse.Width}x{groesse.Height} zeichnet die Feier unter ihr Band ({mitten.Unterhalb} Pixel)");
+            Soll(Zaehle(Rivals.CelebrationHud.Dauer - 0.01).Deckend == 0,
+                 $"bei {groesse.Width}x{groesse.Height} steht am Ende der Feier noch etwas deckend da");
+            Soll(Zaehle(Rivals.CelebrationHud.Dauer).Sichtbar == 0, $"bei {groesse.Width}x{groesse.Height} bleibt nach der Feier etwas stehen");
+        }
     }
 
     /// <summary>
@@ -151,6 +226,10 @@ internal static class EdgeCaseTest
             };
             var sender = new Rivals.LapAutoSubmit(() => data is null ? null : new Rivals.RivalsAdvisor(data),
                                                   einst, _ => { });
+            // DIE FEIER haengt an derselben Entscheidung: nur eine Runde, die die
+            // Website schlaegt, und nicht zweimal fuer dieselbe Zeit.
+            var rekorde = new List<Rivals.LapAutoSubmit.Rekord>();
+            sender.RekordGefahren += rekorde.Add;
             string Fahre(Rivals.RecordedLap l) =>
                 sender.ConsiderAsync(l, "course_test", "Test Circuit").GetAwaiter().GetResult();
             string? Nachreichen() => sender.NachreichenAsync().GetAwaiter().GetResult();
@@ -167,6 +246,10 @@ internal static class EdgeCaseTest
                  "eine schnellere Runde ersetzt die wartende nicht");
             Soll(Fahre(Lap(61f)).StartsWith("not submitted") && Rivals.LapQueue.Anzahl() == 1,
                  "eine Runde, langsamer als die Bestenliste, wird vorgemerkt");
+            Soll(rekorde.Count == 2 && rekorde[0].LapMs == 59000 && rekorde[0].BestenlisteMs == 60000
+                 && rekorde[1].LapMs == 58500 && rekorde[0].Track == "Test Circuit" && rekorde[0].Klasse.StartsWith("A"),
+                 $"gefeiert wurde nicht genau 59 s und 58,5 s ({rekorde.Count} Feiern) -- auch eine langsamere als die wartende, "
+                 + "oder eine langsamer als die Bestenliste?");
             Soll(Nachreichen() is null && einreichungen == 0, "ausgeschaltet wird nachgereicht");
 
             // EINGESCHALTET, SERVER WEG: bleibt, mit einem Versuch mehr.
@@ -249,6 +332,11 @@ internal static class EdgeCaseTest
             Fahre(Lap(69f, car: 9999));
             Soll(angemeldetAls == "unberuehrt" && eingereichtAls == "Spaeter",
                  "ein geaenderter Gamertag meldet die Installation neu an");
+
+            // Gefeiert: 59, 58,5, 58 (live, dann wartend), 56 und 50 s -- nie das Auto ohne
+            // Bestenlisten-Eintrag (9999) und nie eine Runde ohne geladene Bestenliste.
+            Soll(rekorde.Count == 5 && rekorde.All(r => r.LapMs < r.BestenlisteMs),
+                 $"die Feier kam {rekorde.Count}-mal statt 5-mal");
 
             Soll(Rivals.LapAutoSubmit.AusgangFuer(200) == Rivals.LapAutoSubmit.Ausgang.Gesendet
                  && Rivals.LapAutoSubmit.AusgangFuer(409) == Rivals.LapAutoSubmit.Ausgang.NichtSchneller

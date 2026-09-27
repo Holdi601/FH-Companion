@@ -88,6 +88,13 @@ Everything drawn over the game while you drive, and where it sits:
     still drive, and names your laps after the route that is up next.
 - **Car note.** Whether the note in the car menu also shows the applied tune's
   name and description.
+- **Celebrate when a lap beats the website's time.** On by default. A card with
+  your time, the gap to the website's best, route, car and class appears near
+  the top of the screen, with confetti and a short sound, for about five
+  seconds. It never takes the focus and cannot be clicked. **Play a sound with
+  it** turns the sound off on its own, and **Try it** shows the celebration
+  once. A lap no faster than one you already sent or that is already waiting
+  is not celebrated again.
 - **Archive every lap for heatmaps.**
 - **Layout editor.** Drag every block where you want it, resize with the mouse
   wheel, and optionally show it on the real screen while you set it up.
