@@ -49,6 +49,29 @@ internal static class EdgeCaseTest
         RenameMigration();
         BrandResources();
         SeriesStatusWords();
+        CarNoteGoesWhenDriving();
+    }
+
+    /// <summary>
+    /// Die Autonotiz geht beim Losfahren weg: laenger als drei Sekunden ueber 30 km/h,
+    /// ohne Unterbrechung -- ein Anrollen am Startplatz zaehlt nicht.
+    /// </summary>
+    private static void CarNoteGoesWhenDriving()
+    {
+        var t0 = new DateTime(2026, 9, 27, 12, 0, 0, DateTimeKind.Utc);
+        var w = new Rivals.LosfahrWaechter();
+        Soll(!w.Update(0, t0) && !w.Update(5, t0.AddSeconds(10)), "Notiz: Stillstand und Schritttempo gelten als Losfahren");
+        Soll(!w.Update(20, t0.AddSeconds(11)) && !w.Update(20, t0.AddSeconds(13.5)),
+             "Notiz: weg, bevor drei Sekunden schnelle Fahrt vergangen sind");
+        Soll(w.Update(20, t0.AddSeconds(14.2)), "Notiz: nach ueber drei Sekunden ueber 30 km/h nicht weg");
+        // Unterbrochen: ein Bremsen unter 30 km/h setzt die Zeit zurueck.
+        var u = new Rivals.LosfahrWaechter();
+        u.Update(20, t0);
+        u.Update(20, t0.AddSeconds(2));
+        u.Update(4, t0.AddSeconds(2.5));
+        Soll(!u.Update(20, t0.AddSeconds(3.2)) && !u.Update(20, t0.AddSeconds(5.9)),
+             "Notiz: ein Anhalten zwischendurch setzt die Uhr nicht zurueck");
+        Soll(u.Update(20, t0.AddSeconds(6.4)), "Notiz: nach der Unterbrechung und drei neuen Sekunden nicht weg");
     }
 
     /// <summary>

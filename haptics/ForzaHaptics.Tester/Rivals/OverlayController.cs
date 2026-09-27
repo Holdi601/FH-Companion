@@ -575,8 +575,10 @@ internal sealed class OverlayController : IDisposable
                 _letzteStrecke = null;
                 _meisterschaftWeg.Stop();
                 _umrisseUhr.RaceStarted();
-                // DAS RENNEN BEGINNT: die Umrisse gehoeren davor, nicht darueber.
+                // DAS RENNEN BEGINNT: die Umrisse gehoeren davor, nicht darueber --
+                // und die Autonotiz samt Tune ebenso (Nutzermeldung 2026-09-27).
                 HideShapes();
+                NotizWeg();
             }
             return;
         }
@@ -810,6 +812,12 @@ internal sealed class OverlayController : IDisposable
         // Telemetrie nennt dort weiter das Auto, mit dem man hereinkam.
         if (_menueAuto is not null) { return; }
 
+        // WEG, SOBALD GEFAHREN WIRD (2026-09-27). Die Notiz ist eine Auskunft fuer die
+        // Wahl des Autos, nicht fuers Fahren -- und in der freien Fahrt gibt es keinen
+        // Rennstart, der sie wegnaehme. Drei Sekunden ueber 30 km/h: ein Rangieren am
+        // Startplatz ist kein Losfahren.
+        if (_losfahren.Update(packet.Get("Speed"), DateTime.UtcNow)) { NotizWeg(); }
+
         var key = CarNotes.Fingerprint(ordinal, pi, _drivetrain ?? 0,
                                        _cylinders ?? 0, maxRpm, idleRpm);
         if (key == _carKey) { return; }
@@ -832,7 +840,34 @@ internal sealed class OverlayController : IDisposable
         if (pi > 0) { kopf += $"  ·  PI {pi}"; }
         if (eintrag.Kilowatts > 0) { kopf += $"  ·  {eintrag.HorsePower} hp"; }
 
+        // GERADE IM AUTOMENUE GEWAEHLT: dort stand die Notiz schon. Bis 2026-09-27 kam
+        // sie nach dem Verlassen des Menues sofort wieder -- fuer das eben gewaehlte
+        // Auto, sobald die Telemetrie es meldete -- und blieb bis ins Rennen stehen.
+        // Der Reiter "Car notes" folgt dem gefahrenen Auto trotzdem.
+        if (_nachAuswahl)
+        {
+            SetzeAktuell(ordinal, name ?? $"car {ordinal}", "driven");
+            return;
+        }
         ZeigeNotiz(ordinal, name ?? $"car {ordinal}", key, "driven", kopf);
+    }
+
+    /// <summary>Nach der Autowahl im Menue: keine Notiz fuer das gefahrene Auto zeigen.</summary>
+    /// <remarks>Endet mit dem Losfahren oder dem Rennstart (NotizWeg).</remarks>
+    private bool _nachAuswahl;
+
+    private readonly LosfahrWaechter _losfahren = new();
+
+    /// <summary>Die Autonotiz wegnehmen: Rennstart oder Losfahren.</summary>
+    /// <remarks>
+    /// Die Kennung des Autos bleibt stehen: dasselbe Auto zeigt seine Notiz danach
+    /// nicht wieder. Erst ein anderes Auto -- ohne Umweg ueber das Automenue, etwa ein
+    /// vom Rennen gestelltes -- oder das naechste Automenue zeigt wieder eine.
+    /// </remarks>
+    private void NotizWeg()
+    {
+        _nachAuswahl = false;
+        if (_carNote.Visible) { _carNote.Hide(); }
     }
 
     // ------------------------------------------------------------------ //
@@ -1029,8 +1064,10 @@ internal sealed class OverlayController : IDisposable
         _menueAbdruck = null;
         if (_carNote.Visible) { _carNote.Hide(); }
         _carNote.SetNote(string.Empty, string.Empty);
-        // Beim naechsten Paket gilt wieder das gefahrene Auto.
+        // Beim naechsten Paket gilt wieder das gefahrene Auto -- fuer den Reiter. Ein
+        // Overlay zeigt es erst nach dem Losfahren wieder (siehe _nachAuswahl).
         _carKey = string.Empty;
+        _nachAuswahl = true;
         CurrentCar = null;
         CurrentCarChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -3062,5 +3099,35 @@ internal sealed class OverlayController : IDisposable
             try { _hud.Close(); _hud.Dispose(); } catch (Exception) { }
         }
         _hud = null;
+    }
+}
+
+/// <summary>Faehrt das Auto los? Laenger als drei Sekunden schneller als 30 km/h.</summary>
+/// <remarks>
+/// Seit 2026-09-27 nimmt das die Autonotiz weg -- auch in der freien Fahrt, wo kein
+/// Rennstart es tut. Ein kurzes Anrollen oder Rangieren am Startplatz zaehlt nicht:
+/// die Geschwindigkeit muss durchgehend darueber bleiben.
+/// </remarks>
+internal sealed class LosfahrWaechter
+{
+    public const double GrenzeMs = 30 / 3.6;
+    public static readonly TimeSpan Dauer = TimeSpan.FromSeconds(3);
+
+    private DateTime _seit = DateTime.MinValue;
+
+    /// <summary>Ein Paket: true, sobald die Dauer ueberschritten ist (und danach bei jedem schnellen Paket).</summary>
+    public bool Update(double geschwindigkeitMs, DateTime jetzt)
+    {
+        if (geschwindigkeitMs <= GrenzeMs)
+        {
+            _seit = DateTime.MinValue;
+            return false;
+        }
+        if (_seit == DateTime.MinValue)
+        {
+            _seit = jetzt;
+            return false;
+        }
+        return jetzt - _seit > Dauer;
     }
 }
