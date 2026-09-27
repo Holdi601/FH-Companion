@@ -196,8 +196,15 @@ internal static class LapSubmit
     }
 
     /// <summary>Eine Runde einreichen. Gibt die Antwort des Servers als Text zurueck.</summary>
+    /// <param name="gamertag">
+    /// Der Name, unter dem die Runde erscheinen soll -- leer fuer keinen, null fuer
+    /// "nichts sagen" (dann bleibt der des Kontos). Er reist UNTERSCHRIEBEN mit, und
+    /// der Server uebernimmt ihn fuer die Installation (seit 2026-09-27): ein spaeter
+    /// eingetragener Gamertag braucht so keine neue Anmeldung.
+    /// </param>
     public static async Task<string> SubmitAsync(Identity wer, RecordedLap lap,
-                                                 string course, TimeSpan timeout)
+                                                 string course, TimeSpan timeout,
+                                                 string? gamertag = null)
     {
         if (string.IsNullOrWhiteSpace(wer.Server) || string.IsNullOrWhiteSpace(wer.Secret)
             || string.IsNullOrWhiteSpace(wer.InstallId))
@@ -210,8 +217,9 @@ internal static class LapSubmit
         // eingereicht EINE Datei ergibt und nicht zwei.
         var knoten = JsonSerializer.SerializeToNode(lap, Lesbar)!.AsObject();
         knoten["course"] = course;
-        var rumpf = JsonSerializer.SerializeToUtf8Bytes(
-            new JsonObject { ["lap"] = knoten }, Lesbar);
+        var gesamt = new JsonObject { ["lap"] = knoten };
+        if (gamertag is not null) { gesamt["gamertag"] = gamertag.Trim(); }
+        var rumpf = JsonSerializer.SerializeToUtf8Bytes(gesamt, Lesbar);
 
         const string pfad = "/api/lap/submit";
         var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();

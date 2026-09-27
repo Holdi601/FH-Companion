@@ -437,7 +437,10 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     and it will be removed.</b> The gamertag is the search key, so this is easy to
     do.</p>
     <p><b>Laps you submit yourself.</b> Submitting through the app sends your
-    gamertag (in the clear &mdash; it is the name the time appears under), a
+    gamertag if you set one (in the clear &mdash; it is the name your times appear
+    under; without one they appear under a temporary name such as
+    &ldquo;Player-7F3A2C&rdquo;, derived from the hashed identifier, and a gamertag
+    sent later replaces it on all your laps), a
     <i>peppered</i> SHA-256 of a hardware identifier (never the identifier itself,
     and it cannot be reversed without a server-side secret that never leaves the
     machine), the telemetry of the lap, and a random installation id. The basis is
@@ -461,8 +464,9 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     <p><b>Your rights</b> &mdash; access, correction, deletion, restriction,
     objection, and complaint to a supervisory authority &mdash; all through the
     address above. One honest limit: for submitted laps the operator cannot identify
-    anyone. There is a gamertag and a peppered hash, nothing else. So a deletion
-    request has to name <i>which gamertag</i>; there is nothing else to search by.
+    anyone. There is a gamertag (if one was given) and a peppered hash, nothing
+    else. So a deletion request has to name <i>which gamertag</i> &mdash; or the
+    temporary player name; there is nothing else to search by.
     That is the situation Art.&nbsp;11(2) GDPR describes.</p>
     <p class="endnote"><a href="/app">FH Companion</a> &middot; <a href="https://discord.gg/A9ssnMXPZf" rel="noopener noreferrer">Discord</a>__SOURCE_END__</p>
   </footer>

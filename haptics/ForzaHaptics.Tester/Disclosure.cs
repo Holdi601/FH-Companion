@@ -59,7 +59,9 @@ internal static class Disclosure
     // vor der Auslieferung, dazu: "Mit Forza starten" und Runden, die warten und
     // SPAETER gesendet werden -- auch solche, die bei ausgeschaltetem Einreichen
     // gefahren wurden. Wer "aus" gewaehlt hatte, muss davon lesen, bevor er es
-    // wieder einschaltet.
+    // wieder einschaltet. Und: ohne Gamertag wird jetzt AUCH eingereicht (als
+    // vorlaeufiger Spielername) -- Fassung 4 versprach "Nothing is sent without a
+    // gamertag".
     public const int Fassung = 5;
 
     private const string Titel = "What " + AppInfo.Name + " does";
@@ -144,18 +146,20 @@ WHAT LEAVES YOUR COMPUTER
       3. To download that new version, when you press the update button.
       4. To submit a lap that BEATS the leaderboard -- ON unless you switch it off.
 
-  About 4: when you set a gamertag in the Rivals tab, a lap is sent only if it is
-  faster than the best leaderboard time of that same car on that route and class,
-  and faster than anything you sent for it before. Sent are: your gamertag, the
-  car, the route, the class, the time, and the lap's telemetry (positions and
-  speeds along the lap, so the server can check the time is real), plus a hashed
-  identifier of this PC so abuse can be blocked. The server checks the lap again
-  and shows it on the website under your gamertag. Nothing is sent without a
-  gamertag. Switch it off in the Rivals tab ("Submit my laps ...") or set
-  "submit_laps": false in config/overlay.json.
+  About 4: a lap is sent only if it is faster than the best leaderboard time of
+  that same car on that route and class, and faster than anything you sent for it
+  before. Sent are: the car, the route, the class, the time, and the lap's
+  telemetry (positions and speeds along the lap, so the server can check the time
+  is real), plus a hashed identifier of this PC so abuse can be blocked -- and your
+  gamertag, if you set one in the Rivals tab. A gamertag is not required: without
+  one the lap is still sent and appears on the website under a temporary player
+  name. A gamertag you set later replaces it on all your laps, also the earlier
+  ones, and emptying the field later keeps the last name. The server checks the
+  lap again before it shows it. Switch it off in the Rivals tab
+  ("Submit my laps ...") or set "submit_laps": false in config/overlay.json.
 
   A lap that beats the leaderboard but cannot be sent right then -- submission
-  switched off, no gamertag, offline, or the server not answering -- is kept on
+  switched off, offline, or the server not answering -- is kept on
   this computer and sent later, once all of that is fine again, even weeks later.
   Before it goes, it is checked once more against the leaderboard of that day and
   dropped if it is no longer faster. So switching submission back on also sends

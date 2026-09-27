@@ -13,6 +13,13 @@ App eines:
     POST /api/lap/register   {"hardware": "<Hash>", "gamertag": "..."}
     ->                       {"install_id": "...", "secret": "..."}
 
+Der Gamertag ist freiwillig (seit 2026-09-27): gesperrt wird ueber Kennung und
+Hardware-Hash, nicht ueber einen Namen. Die App schickt ihn mit jeder Einreichung
+(set_gamertag), und angezeigt wird er erst beim Ausliefern der Liste (spielernamen):
+ein Spieler ist ein Hardware-Hash, sein Name der zuletzt geschickte, und der gilt
+fuer ALLE seine Runden, auch die frueheren. Ohne je einen Namen bekommt er einen
+vorlaeufigen ("Player-7F3A2C"); ein leeres Feld spaeter loescht den Namen nicht.
+
 Das Geheimnis wird EINMAL uebertragen und danach nie wieder -- jede Einreichung
 rechnet damit, statt es mitzuschicken.
 
@@ -70,7 +77,8 @@ CLOCK_SKEW = 300
 SECRET_BYTES = 32
 MAX_BODY = 8 * 1024 * 1024
 
-GAMERTAG_RE = re.compile(r"^[\w][\w .'-]{0,29}$", re.UNICODE)
+# Mit '#': neuere Xbox-Gamertags tragen eine Nummer ("Name#1234").
+GAMERTAG_RE = re.compile(r"^[\w][\w .'#-]{0,29}$", re.UNICODE)
 HARDWARE_RE = re.compile(r"^[0-9a-f]{32,128}$")
 INSTALL_RE = re.compile(r"^[A-Za-z0-9_-]{16,64}$")
 
@@ -279,8 +287,9 @@ def _register(hardware: str, gamertag: str, path: Path | None = None,
     gamertag = (gamertag or "").strip()
     if not HARDWARE_RE.match(hardware):
         raise SubmitError(400, "'hardware' muss ein Hex-Hash aus 32 bis 128 Zeichen sein.")
-    if not GAMERTAG_RE.match(gamertag):
-        raise SubmitError(400, "'gamertag' fehlt oder enthaelt unerlaubte Zeichen.")
+    # OHNE GAMERTAG GEHT ES AUCH -- siehe oben. Nur ein unbrauchbarer wird abgewiesen.
+    if gamertag and not GAMERTAG_RE.match(gamertag):
+        raise SubmitError(400, "'gamertag' enthaelt unerlaubte Zeichen.")
 
     gepfeffert = hardware_id(hardware, path)
     data = load_keys(path)
@@ -313,15 +322,17 @@ def _register(hardware: str, gamertag: str, path: Path | None = None,
                                % gleiche)
 
     install_id = secrets.token_urlsafe(24)[:32]
+    angelegt = datetime.fromtimestamp(now or time.time(), timezone.utc).isoformat(timespec="seconds")
     data["installs"][install_id] = {
         "secret": secrets.token_urlsafe(SECRET_BYTES),
         "hw": gepfeffert,
         "gamertag": gamertag,
-        "created": datetime.fromtimestamp(now or time.time(), timezone.utc)
-                           .isoformat(timespec="seconds"),
+        "created": angelegt,
         "banned": False,
         "laps": 0,
     }
+    if gamertag:
+        data["installs"][install_id]["gamertag_set"] = angelegt
     save_keys(data, path)
     ergebnis = {"install_id": install_id,
                 "secret": data["installs"][install_id]["secret"]}
@@ -334,6 +345,90 @@ def _register(hardware: str, gamertag: str, path: Path | None = None,
         # Eine Anmeldung darf nicht daran scheitern, dass das Aufraeumen stolpert.
         pass
     return ergebnis
+
+
+# --------------------------------------------------------------------------- #
+# Namen
+
+
+def set_gamertag(install_id: str, gamertag, eintrag: dict | None = None,
+                 path: Path | None = None, now: float | None = None) -> bool:
+    """Den Namen einer Installation nachziehen -- aus einer UNTERSCHRIEBENEN Einreichung.
+
+    Fehlt das Feld (aeltere App) oder ist es LEER, bleibt der bisherige Name: wer
+    das Feld in der App leert, behaelt auf der Seite den Namen, den er hatte. Ein
+    unbrauchbarer wird still uebergangen -- die Runde selbst ist deswegen nicht
+    falsch und soll nicht abgewiesen werden. `eintrag` (aus verify) wird mit
+    geaendert, damit store() schon den neuen Namen ablegt.
+    """
+    if not isinstance(gamertag, str):
+        return False
+    gamertag = gamertag.strip()
+    if not gamertag or not GAMERTAG_RE.match(gamertag):
+        return False
+    with _SCHLOSS:
+        data = load_keys(path)
+        e = data["installs"].get(install_id)
+        if not e or (e.get("gamertag") or "") == gamertag:
+            return False
+        e["gamertag"] = gamertag
+        e["gamertag_set"] = (datetime.fromtimestamp(now or time.time(), timezone.utc)
+                             .isoformat(timespec="seconds"))
+        save_keys(data, path)
+    if eintrag is not None:
+        eintrag["gamertag"] = gamertag
+    return True
+
+
+def vorlaeufiger_name(schluessel: str) -> str:
+    """Ein Anzeigename fuer einen Spieler, der nie einen Gamertag geschickt hat.
+
+    Aus dem (gepfefferten) Hardware-Hash, noch einmal gehasht: immer derselbe fuer
+    dieselbe Maschine, und nichts daran fuehrt zum Hash zurueck.
+    """
+    roh = ("anzeige|" + (schluessel or "")).encode("utf-8")
+    return "Player-" + hashlib.sha256(roh).hexdigest()[:6].upper()
+
+
+def spielernamen(keys_path: Path | None = None) -> dict:
+    """Installation -> (Anzeigename, vorlaeufig?) -- so, wie die Seite ihn zeigt.
+
+    EIN SPIELER IST EIN HARDWARE-HASH, nicht eine Installation: eine Neuinstallation
+    oder (bei aelteren Fassungen der App) ein neuer Gamertag legte eine neue
+    Kennung an, und doch ist es derselbe Mensch. Sein Name ist der zuletzt
+    geschickte unter allen seinen Kennungen, und der gilt fuer alle seine Runden --
+    wer sich umbenennt, dessen fruehere Zeiten tragen den neuen Namen. Darum wird
+    der Name beim Ausliefern eingesetzt und nicht aus der abgelegten Runde gelesen.
+    """
+    installs = load_keys(keys_path)["installs"]
+    letzter: dict = {}
+    for kennung, e in installs.items():
+        name = (e.get("gamertag") or "").strip()
+        if not name:
+            continue
+        spieler = e.get("hw") or kennung
+        wann = e.get("gamertag_set") or e.get("created") or ""
+        if spieler not in letzter or wann >= letzter[spieler][0]:
+            letzter[spieler] = (wann, name)
+    namen = {}
+    for kennung, e in installs.items():
+        spieler = e.get("hw") or kennung
+        namen[kennung] = ((letzter[spieler][1], False) if spieler in letzter
+                          else (vorlaeufiger_name(spieler), True))
+    return namen
+
+
+def mit_spielernamen(runden: list, keys_path: Path | None = None) -> list:
+    """Jede Runde mit dem HEUTIGEN Namen ihres Spielers (siehe spielernamen)."""
+    namen = spielernamen(keys_path)
+    for r in runden:
+        kennung = r.get("install_id") or ""
+        if kennung in namen:
+            r["gamertag"], r["gamertag_temporary"] = namen[kennung]
+        elif not (r.get("gamertag") or "").strip():
+            # Eine Runde, deren Kennung nicht mehr bekannt ist (aufgeraeumt).
+            r["gamertag"], r["gamertag_temporary"] = vorlaeufiger_name(kennung or r.get("id", "")), True
+    return runden
 
 
 # --------------------------------------------------------------------------- #
@@ -857,11 +952,16 @@ def installs(keys_path: Path | None = None) -> list:
     versehentlich in einem Protokoll landen.
     """
     data = load_keys(keys_path)
+    namen = spielernamen(keys_path)
     raus = []
     for kennung, e in sorted(data["installs"].items()):
         raus.append({
             "install_id": kennung,
             "gamertag": e.get("gamertag"),
+            # So, wie die Seite ihn zeigt: der letzte Name dieser Maschine, oder
+            # ein vorlaeufiger (siehe spielernamen).
+            "display_name": namen.get(kennung, ("", True))[0],
+            "name_temporary": namen.get(kennung, ("", True))[1],
             "created": e.get("created"),
             "laps": e.get("laps", 0),
             "banned": bool(e.get("banned")),

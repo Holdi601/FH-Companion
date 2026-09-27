@@ -526,10 +526,12 @@ function rundenZeichnen() {
     + '<th>Car</th><th>PI</th><th>Received</th><th>Flags</th><th></th><th></th></tr>'
     + reihen.map(function (r) {
         var s = rundeSekunden(r);
+        // Ein vorlaeufiger Name (Spieler ohne Gamertag) ist als solcher erkennbar.
+        var vorlaeufig = r.gamertag_temporary === true ? " <i>(temporary)</i>" : "";
         var lap = r.lap || {};
         return '<tr><td class="' + (r.hidden ? "hid" : "") + '">'
           + (s === undefined || isNaN(Number(s)) ? "?" : esc(Number(s).toFixed(3)) + " s")
-          + "</td><td>" + esc(r.gamertag || "?")
+          + "</td><td>" + esc(r.gamertag || "(no gamertag)") + vorlaeufig
           + "</td><td>" + esc(lap.track || "-")
           + "</td><td>" + esc(KLASSEN[Number(lap.carClass)] || "-")
           + "</td><td>" + esc(lap.carOrdinal !== undefined ? lap.carOrdinal : "?")
@@ -587,7 +589,9 @@ function sperrenLaden() {
       ? '<table class="laps"><tr><th>Player</th><th>Install</th><th>State</th><th>Strikes 24h</th>'
         + '<th>Reason / last strike</th><th>Since</th><th></th></tr>'
         + inst.map(function (x) {
-            return "<tr><td>" + esc(x.gamertag || "?") + "</td><td>"
+            var vorlaeufig = x.name_temporary === true ? " <i>(temporary)</i>" : "";
+            return "<tr><td>" + esc(x.display_name || x.gamertag || "(no gamertag)")
+              + vorlaeufig + "</td><td>"
               + esc(String(x.install_id || "").slice(0, 10)) + "...</td><td>"
               + (x.banned ? (x.banned_auto ? "banned (auto)" : "banned") : "watching")
               + "</td><td>" + esc(x.strikes_24h) + "</td><td>"

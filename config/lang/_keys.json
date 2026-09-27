@@ -24,7 +24,7 @@
   "Rivals/CarNotesTab.cs:84"
  ],
  "Add it to the Start menu": [
-  "Disclosure.cs:343"
+  "Disclosure.cs:356"
  ],
  "Add point": [
   "BlueprintEditor.cs:1146"
@@ -36,11 +36,11 @@
   "Tuning/TunesTab.cs:293"
  ],
  "Also enable the haptic tone": [
-  "MainForm.cs:855"
+  "MainForm.cs:859"
  ],
  "Always on Top": [
   "Loc.cs:12",
-  "MainForm.cs:226"
+  "MainForm.cs:230"
  ],
  "Apply": [
   "Rivals/OwnTimesTab.cs:461"
@@ -129,26 +129,26 @@
   "Tuning/TunesTab.cs:107"
  ],
  "Desktop shortcut": [
-  "MainForm.cs:292",
-  "MainForm.cs:1349",
-  "MainForm.cs:1400",
-  "MainForm.cs:1437"
+  "MainForm.cs:296",
+  "MainForm.cs:1353",
+  "MainForm.cs:1404",
+  "MainForm.cs:1441"
  ],
  "Desktop shortcut ✓": [
-  "MainForm.cs:1349",
-  "MainForm.cs:1400"
+  "MainForm.cs:1353",
+  "MainForm.cs:1404"
  ],
  "Details: {0}": [
   "Tuning/TunesTab.cs:397"
  ],
  "Discard waiting laps": [
-  "Rivals/RivalsTab.cs:142"
+  "Rivals/RivalsTab.cs:141"
  ],
  "Discard {0} waiting lap(s)? They will not be submitted.": [
-  "Rivals/RivalsTab.cs:148"
+  "Rivals/RivalsTab.cs:147"
  ],
  "Discovering controllers...": [
-  "MainForm.cs:1639"
+  "MainForm.cs:1643"
  ],
  "Done": [
   "BlueprintEditor.cs:1150"
@@ -157,7 +157,7 @@
   "scripts/contrib_scan.py:368"
  ],
  "Double-click: add a point  |  Right-click an inner point: remove it": [
-  "MainForm.cs:983"
+  "MainForm.cs:987"
  ],
  "Drag from a node's right port to another node's left port.\n\nDrag headers to move nodes. Right-click a node to delete it.": [
   "BlueprintEditor.cs:121"
@@ -166,16 +166,16 @@
   "Rivals/HudTab.cs:67"
  ],
  "Drag the yellow end points vertically and the grey Bézier handles anywhere. Left is 0% grip, right is 100%.": [
-  "MainForm.cs:785"
+  "MainForm.cs:789"
  ],
  "Draw the grip → haptics curve": [
-  "MainForm.cs:777"
+  "MainForm.cs:781"
  ],
  "Enable live mapping": [
-  "MainForm.cs:848"
+  "MainForm.cs:852"
  ],
  "Enable lock mapping": [
-  "MainForm.cs:991"
+  "MainForm.cs:995"
  ],
  "Every tune": [
   "Tuning/TunesTab.cs:105"
@@ -184,19 +184,19 @@
   "scripts/contrib_scan.py:278"
  ],
  "FH6 reports a slip ratio for each tyre. Negative slip under braking is normalised here to a lock level of 0-100%.": [
-  "MainForm.cs:955"
+  "MainForm.cs:959"
  ],
  "FH6: Data Out On  |  IP 127.0.0.1  |  Format Sled  |  Port must match below": [
-  "MainForm.cs:653"
+  "MainForm.cs:657"
  ],
  "Feel wheel lock separately": [
-  "MainForm.cs:947"
+  "MainForm.cs:951"
  ],
  "Filter by name": [
   "Rivals/CarNotesTab.cs:64"
  ],
  "Forza is running": [
-  "MainForm.cs:1224"
+  "MainForm.cs:1228"
  ],
  "Free roam": [
   "Rivals/OwnTimes.cs:410"
@@ -214,19 +214,19 @@
   "BlueprintEditor.cs:72"
  ],
  "Grip L/R: -- / --   Vibration: -- / --   Tone: -- / --": [
-  "MainForm.cs:885"
+  "MainForm.cs:889"
  ],
  "Haptic output": [
-  "MainForm.cs:588"
+  "MainForm.cs:592"
  ],
  "Haptic tone on the trackpads": [
-  "MainForm.cs:801"
+  "MainForm.cs:805"
  ],
  "Highlight a car in My Cars, drive one, or add your whole garage below.": [
   "Rivals/CarNotesTab.cs:259"
  ],
  "I have read the above and understand what this program does.": [
-  "Disclosure.cs:320"
+  "Disclosure.cs:333"
  ],
  "If you are sure it works anyway: --skip-checks": [
   "scripts/contrib_scan.py:329"
@@ -238,7 +238,7 @@
   "scripts/contrib_scan.py:70"
  ],
  "Language": [
-  "MainForm.cs:284"
+  "MainForm.cs:288"
  ],
  "Last checked {0:yyyy-MM-dd HH:mm}: {1} tunes are on a car. Tunes saved after that show \"?\".": [
   "Tuning/TunesTab.cs:186"
@@ -247,7 +247,7 @@
   "Tuning/TunesTab.cs:55"
  ],
  "Live FH6 telemetry connected.": [
-  "MainForm.cs:2016"
+  "MainForm.cs:2020"
  ],
  "Live map during the race": [
   "Rivals/HudTab.cs:796"
@@ -259,21 +259,21 @@
   "Rivals/HudTab.cs:892"
  ],
  "Live mapping is sending through the four native haptic channels.": [
-  "MainForm.cs:2295"
+  "MainForm.cs:2299"
  ],
  "Live mapping off.": [
-  "MainForm.cs:894",
-  "MainForm.cs:1005"
+  "MainForm.cs:898",
+  "MainForm.cs:1009"
  ],
  "Lock L/R: -- / --   Output: -- / --": [
-  "MainForm.cs:1029"
+  "MainForm.cs:1033"
  ],
  "Lock mapping off.": [
-  "MainForm.cs:1038",
-  "MainForm.cs:1054"
+  "MainForm.cs:1042",
+  "MainForm.cs:1058"
  ],
  "Looking for a Steam Controller...": [
-  "MainForm.cs:176"
+  "MainForm.cs:180"
  ],
  "Make": [
   "Rivals/OwnTimesTab.cs:103"
@@ -305,13 +305,13 @@
   "Tuning/TunesTab.cs:619"
  ],
  "No native haptic channel is open.": [
-  "MainForm.cs:2221"
+  "MainForm.cs:2225"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
  ],
  "Normalized combined tire slip": [
-  "MainForm.cs:703"
+  "MainForm.cs:707"
  ],
  "Not checked yet -- reads the game's memory while it runs, takes up to a minute.": [
   "Tuning/TunesTab.cs:185"
@@ -320,7 +320,7 @@
   "Tuning/TunesTab.cs:311"
  ],
  "Not listening.": [
-  "MainForm.cs:686"
+  "MainForm.cs:690"
  ],
  "Note": [
   "Rivals/CarNotesTab.cs:80"
@@ -345,41 +345,41 @@
   "Tuning/TunesTab.cs:250"
  ],
  "Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site.": [
-  "Rivals/RivalsTab.cs:134"
+  "Rivals/RivalsTab.cs:133"
  ],
  "Only tunes that are on no car": [
   "Tuning/TunesTab.cs:91"
  ],
  "Open FH Companion": [
-  "MainForm.cs:1211"
+  "MainForm.cs:1215"
  ],
  "Packets: --   Rate: --   Race: --": [
-  "MainForm.cs:695"
+  "MainForm.cs:699"
  ],
  "Pick a car on the left": [
   "Rivals/CarNotesTab.cs:108",
   "Rivals/CarNotesTab.cs:293"
  ],
  "Pin to taskbar": [
-  "MainForm.cs:295",
-  "MainForm.cs:1350",
-  "MainForm.cs:1401",
-  "MainForm.cs:1455",
-  "MainForm.cs:1463"
+  "MainForm.cs:299",
+  "MainForm.cs:1354",
+  "MainForm.cs:1405",
+  "MainForm.cs:1459",
+  "MainForm.cs:1467"
  ],
  "Pinned to taskbar ✓": [
-  "MainForm.cs:1350",
-  "MainForm.cs:1401"
+  "MainForm.cs:1354",
+  "MainForm.cs:1405"
  ],
  "Point +": [
-  "MainForm.cs:826",
-  "MainForm.cs:838",
-  "MainForm.cs:973"
- ],
- "Point -": [
   "MainForm.cs:830",
   "MainForm.cs:842",
   "MainForm.cs:977"
+ ],
+ "Point -": [
+  "MainForm.cs:834",
+  "MainForm.cs:846",
+  "MainForm.cs:981"
  ],
  "Points": [
   "Rivals/OwnTimesTab.cs:248"
@@ -388,14 +388,14 @@
   "Tuning/TunesTab.cs:422"
  ],
  "Put a shortcut on my desktop": [
-  "Disclosure.cs:334"
+  "Disclosure.cs:347"
  ],
  "Puts a shortcut to this copy of the program on your desktop. One that points to a moved or deleted copy is replaced.": [
-  "MainForm.cs:294"
+  "MainForm.cs:298"
  ],
  "Quit": [
-  "Disclosure.cs:390",
-  "MainForm.cs:1213"
+  "Disclosure.cs:403",
+  "MainForm.cs:1217"
  ],
  "Read the running game": [
   "Tuning/TuningTab.cs:85",
@@ -405,10 +405,10 @@
   "Rivals/CarNotesTab.cs:94"
  ],
  "Ready": [
-  "MainForm.cs:613"
+  "MainForm.cs:617"
  ],
  "Reconnect controllers": [
-  "MainForm.cs:232"
+  "MainForm.cs:236"
  ],
  "Remove selected": [
   "BlueprintEditor.cs:1148"
@@ -417,13 +417,13 @@
   "Rivals/OwnTimesTab.cs:178"
  ],
  "Reset curve": [
-  "MainForm.cs:969"
+  "MainForm.cs:973"
  ],
  "Reset tone": [
-  "MainForm.cs:834"
+  "MainForm.cs:838"
  ],
  "Reset vibration": [
-  "MainForm.cs:822"
+  "MainForm.cs:826"
  ],
  "Rivals": [
   "Rivals/OwnTimes.cs:405"
@@ -445,13 +445,10 @@
   "scripts/contrib_scan.py:277"
  ],
  "Select a force and start the test.": [
-  "MainForm.cs:621"
+  "MainForm.cs:625"
  ],
  "Select a node to edit it.": [
   "BlueprintEditor.cs:620"
- ],
- "Set your gamertag above -- without it no lap is submitted.": [
-  "Rivals/RivalsTab.cs:170"
  ],
  "Show it on the real screen while I set it up": [
   "Rivals/HudTab.cs:77"
@@ -511,10 +508,10 @@
   "Rivals/OwnTimesTab.cs:263"
  ],
  "Start listening": [
-  "MainForm.cs:675"
+  "MainForm.cs:679"
  ],
  "Start overlay": [
-  "Rivals/RivalsTab.cs:336"
+  "Rivals/RivalsTab.cs:335"
  ],
  "Start the game first -- the garage is read from its memory.": [
   "Rivals/CarNotesTab.cs:339",
@@ -522,32 +519,32 @@
   "Tuning/TunesTab.cs:583"
  ],
  "Start with Forza": [
-  "MainForm.cs:300",
-  "MainForm.cs:1351",
-  "MainForm.cs:1423"
+  "MainForm.cs:304",
+  "MainForm.cs:1355",
+  "MainForm.cs:1427"
  ],
  "Start with Forza (waits in the notification area from sign-in)": [
-  "Disclosure.cs:355"
+  "Disclosure.cs:368"
  ],
  "Start with Forza ✓": [
-  "MainForm.cs:1351"
+  "MainForm.cs:1355"
  ],
  "Starts with Windows, waits invisibly in the notification area and opens when Forza starts. Click again to switch it off.": [
-  "MainForm.cs:302"
+  "MainForm.cs:306"
  ],
  "Still waiting for Forza in the notification area. Right-click the icon to quit.": [
-  "MainForm.cs:1286"
+  "MainForm.cs:1290"
  ],
  "Stop": [
-  "MainForm.cs:679",
+  "MainForm.cs:683",
   "Tuning/TunesTab.cs:370"
  ],
  "Stop now": [
   "Loc.cs:20",
-  "MainForm.cs:606"
+  "MainForm.cs:610"
  ],
  "Stop overlay": [
-  "Rivals/RivalsTab.cs:356"
+  "Rivals/RivalsTab.cs:355"
  ],
  "Submit my laps when they beat the leaderboard": [
   "Rivals/RivalsTab.cs:108"
@@ -563,16 +560,16 @@
   "Tuning/TunesTab.cs:357"
  ],
  "Test running. Press Stop now at any time.": [
-  "MainForm.cs:1851"
+  "MainForm.cs:1855"
  ],
  "Test the exact vibration force": [
-  "MainForm.cs:533"
+  "MainForm.cs:537"
  ],
  "Test tone": [
-  "MainForm.cs:879"
+  "MainForm.cs:883"
  ],
  "The Start menu entry could not be created.": [
-  "MainForm.cs:1453"
+  "MainForm.cs:1457"
  ],
  "The app will delete {0} tunes on {1} cars in the game.": [
   "Tuning/TunesTab.cs:358"
@@ -581,14 +578,14 @@
   "Rivals/OverlayController.cs:454"
  ],
  "The autostart entry could not be created.": [
-  "MainForm.cs:1421"
+  "MainForm.cs:1425"
  ],
  "The car list is not loaded yet -- wait a moment and try again.": [
   "Tuning/TunesTab.cs:348"
  ],
  "The desktop shortcut could not be created.": [
-  "Disclosure.cs:254",
-  "MainForm.cs:1435"
+  "Disclosure.cs:267",
+  "MainForm.cs:1439"
  ],
  "The file is here, and can be sent by hand:": [
   "scripts/contrib_scan.py:264"
@@ -609,10 +606,10 @@
   "Tuning/TunesTab.cs:174"
  ],
  "The language changes when the program next starts.": [
-  "MainForm.cs:283"
+  "MainForm.cs:287"
  ],
  "The next tab will map these live grip values through your Bézier curve to the haptics.": [
-  "MainForm.cs:740"
+  "MainForm.cs:744"
  ],
  "The note shows over the game while this car is highlighted in My Cars or driven.": [
   "Rivals/CarNotesTab.cs:128",
@@ -628,7 +625,7 @@
   "TelemetryInspector.cs:87"
  ],
  "There is no speaker: audible sound comes straight out of the haptic motors, so it sounds more like a synth than a recording.": [
-  "MainForm.cs:903"
+  "MainForm.cs:907"
  ],
  "This PC now belongs to the scanner. Do not click, do not type,": [
   "scripts/contrib_scan.py:332"
@@ -637,7 +634,7 @@
   "scripts/contrib_scan.py:326"
  ],
  "This stays inside the final tool so you can calibrate the controller at any time.": [
-  "MainForm.cs:541"
+  "MainForm.cs:545"
  ],
  "Time": [
   "Rivals/OwnTimesTab.cs:259"
@@ -681,7 +678,7 @@
   "Rivals/OwnTimesTab.cs:104"
  ],
  "UDP port": [
-  "MainForm.cs:661"
+  "MainForm.cs:665"
  ],
  "Unnamed course": [
   "Rivals/OwnTimes.cs:444"
@@ -690,22 +687,22 @@
   "Tuning/TunesTab.cs:293"
  ],
  "Update failed": [
-  "Rivals/RivalsTab.cs:571"
+  "Rivals/RivalsTab.cs:570"
  ],
  "Uploading to {server} ...": [
   "scripts/contrib_scan.py:383"
  ],
  "Verify FH6 grip data": [
-  "MainForm.cs:645"
+  "MainForm.cs:649"
  ],
  "Vibrate for 10 seconds": [
-  "MainForm.cs:602"
+  "MainForm.cs:606"
  ],
  "Vibration in the grips": [
-  "MainForm.cs:793"
+  "MainForm.cs:797"
  ],
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": [
-  "MainForm.cs:2229"
+  "MainForm.cs:2233"
  ],
  "Waiting for telemetry...": [
   "TelemetryInspector.cs:27"
@@ -714,25 +711,28 @@
   "Tuning/TunesTab.cs:378"
  ],
  "What this program does, and what leaves your computer": [
-  "MainForm.cs:240"
+  "MainForm.cs:244"
  ],
  "Wheel-lock detection from braking slip ratio": [
-  "MainForm.cs:722"
+  "MainForm.cs:726"
  ],
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": [
-  "MainForm.cs:1020"
+  "MainForm.cs:1024"
  ],
  "Windows leaves pinning to you. This prepares everything and shows the one click it takes.": [
-  "MainForm.cs:297"
+  "MainForm.cs:301"
  ],
  "Windows only lets you pin programs yourself, so this takes one click from you: right-click this program's icon in the taskbar and choose “Pin to taskbar”. The Start menu entry it needs is in place, and this button shows a tick once the pin is there.": [
-  "MainForm.cs:1462"
+  "MainForm.cs:1466"
  ],
  "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.": [
-  "Disclosure.cs:371"
+  "Disclosure.cs:384"
  ],
  "Wins": [
   "Rivals/OwnTimesTab.cs:250"
+ ],
+ "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.": [
+  "Rivals/RivalsTab.cs:169"
  ],
  "Year": [
   "Rivals/OwnTimesTab.cs:127"
@@ -744,7 +744,7 @@
   "Rivals/HudTab.cs:807"
  ],
  "a newer version is ready (skipped)": [
-  "Rivals/RivalsTab.cs:524"
+  "Rivals/RivalsTab.cs:523"
  ],
  "a note for whoever receives this": [
   "scripts/contrib_scan.py:300"
@@ -765,7 +765,7 @@
   "Rivals/OwnTimesTab.cs:142"
  ],
  "asking the server ...": [
-  "Rivals/RivalsTab.cs:506"
+  "Rivals/RivalsTab.cs:505"
  ],
  "automatic": [
   "Rivals/OwnTimes.cs:404"
@@ -774,7 +774,7 @@
   "Rivals/OwnTimesTab.cs:171"
  ],
  "checking the server ...": [
-  "Rivals/RivalsTab.cs:438"
+  "Rivals/RivalsTab.cs:437"
  ],
  "comma separated, e.g. D,C,B,A,S1,S2,R": [
   "scripts/contrib_scan.py:285"
@@ -824,7 +824,7 @@
   "Rivals/OwnTimesTab.cs:150"
  ],
  "later": [
-  "Rivals/RivalsTab.cs:551"
+  "Rivals/RivalsTab.cs:550"
  ],
  "next": [
   "Rivals/CourseShapeHud.cs:224"
@@ -833,7 +833,7 @@
   "Tuning/TunesTab.cs:258"
  ],
  "no dataset — set dataset_url, or restore the shipped ": [
-  "Rivals/RivalsTab.cs:368"
+  "Rivals/RivalsTab.cs:367"
  ],
  "no map harvested": [
   "Rivals/CourseShapeHud.cs:188"
@@ -860,7 +860,7 @@
   "scripts/contrib_scan.py:259"
  ],
  "replacing ...": [
-  "Rivals/RivalsTab.cs:563"
+  "Rivals/RivalsTab.cs:562"
  ],
  "saved": [
   "Rivals/CarNotesTab.cs:313"
@@ -891,7 +891,7 @@
   "Rivals/OwnTimesTab.cs:117"
  ],
  "telemetry: not connected to the app's listener": [
-  "Rivals/RivalsTab.cs:676"
+  "Rivals/RivalsTab.cs:675"
  ],
  "the clipboard refused the text.": [
   "Tuning/TuningTab.cs:412"
@@ -900,7 +900,7 @@
   "Tuning/TuningTab.cs:321"
  ],
  "this version stays skipped": [
-  "Rivals/RivalsTab.cs:546"
+  "Rivals/RivalsTab.cs:545"
  ],
  "to": [
   "Rivals/OwnTimesTab.cs:129"
@@ -916,12 +916,12 @@
   "Rivals/OwnTimesTab.cs:118"
  ],
  "waiting for Forza": [
-  "MainForm.cs:1224"
+  "MainForm.cs:1228"
  ],
  "yes": [
   "Tuning/TunesTab.cs:258"
  ],
- "your gamertag": [
+ "your gamertag (optional)": [
   "Rivals/RivalsTab.cs:121"
  ],
  "{0} -- {1} tunes": [
@@ -939,8 +939,8 @@
  "{0} cars; {1} tunes on no car. Start at the top when you delete in the game.": [
   "Tuning/TunesTab.cs:310"
  ],
- "{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on, a gamertag is set and the server answers -- checked again against the leaderboard of that day.": [
-  "Rivals/RivalsTab.cs:164"
+ "{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on and the server answers -- checked again against the leaderboard of that day.": [
+  "Rivals/RivalsTab.cs:163"
  ],
  "{0} lap(s) on {1} course(s), of {2} recorded. Assists, gearbox and valid/invalid are leaderboard facts the telemetry does not send, so they cannot filter your own laps.": [
   "Rivals/OwnTimesTab.cs:376"

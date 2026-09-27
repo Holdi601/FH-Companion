@@ -11,8 +11,10 @@ namespace ForzaHaptics.Tester.Rivals;
 /// All of these, checked here before anything leaves the computer:
 ///
 ///   * the switch is on (<c>submit_laps</c>, on by default -- the user asked for
-///     opt-out, and the first-start notice says so), the app is not offline, and a
-///     gamertag is set;
+///     opt-out, and the first-start notice says so) and the app is not offline. A
+///     gamertag is NOT needed (since 2026-09-27): a ban hangs on the installation
+///     and the peppered hardware hash, not on a name. Without one the lap shows on
+///     the site as "a player";
 ///   * the lap has a time, telemetry and a route name the leaderboard knows;
 ///   * it is FASTER than the fastest VALID leaderboard time of that same car on that
 ///     route and class -- the same comparison the server repeats (server/
@@ -204,7 +206,6 @@ internal sealed class LapAutoSubmit
     {
         if (!_settings.SubmitLaps) { return "lap submission is switched off"; }
         if (_settings.Offline) { return "offline"; }
-        if ((_settings.Gamertag ?? string.Empty).Trim().Length == 0) { return "no gamertag set"; }
         if (string.IsNullOrWhiteSpace(_settings.DatasetUrl)) { return "no server set"; }
         return null;
     }
@@ -235,7 +236,7 @@ internal sealed class LapAutoSubmit
     /// <returns>What happened, in one line -- also written to the lap log.</returns>
     /// <remarks>
     /// A lap that beats the leaderboard but cannot go out now -- switched off,
-    /// offline, no gamertag, no server, or the send fails -- is kept in
+    /// offline, no server, or the send fails -- is kept in
     /// <see cref="LapQueue"/> and sent by <see cref="NachreichenAsync"/> later.
     /// So is a lap driven before any leaderboard was loaded: that it does not beat
     /// one is not known yet.
@@ -316,8 +317,12 @@ internal sealed class LapAutoSubmit
                 gemerkt.Server = _settings.DatasetUrl;
                 LapSubmit.Save(gemerkt);
             }
-            wer = gemerkt is null || gemerkt.Server != _settings.DatasetUrl || gemerkt.Gamertag != gamertag
-                ? await LapSubmit.RegisterAsync(_settings.DatasetUrl!, gamertag, timeout).ConfigureAwait(false)
+            // EIN GEAENDERTER GAMERTAG IST KEIN GRUND FUER EINE NEUE ANMELDUNG
+            // (seit 2026-09-27): er reist mit jeder Einreichung mit. Frueher meldete
+            // jeder neue Name die Installation neu an -- neue Kennung, und nach fuenf
+            // davon nahm der Server diese Maschine gar nicht mehr an.
+            wer = gemerkt is null || gemerkt.Server != _settings.DatasetUrl
+                ? await Anmelden(gamertag, timeout).ConfigureAwait(false)
                 : gemerkt;
         }
         catch (Exception e)
@@ -332,7 +337,7 @@ internal sealed class LapAutoSubmit
         var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
         try
         {
-            await LapSubmit.SubmitAsync(wer, lap, course, timeout).ConfigureAwait(false);
+            await LapSubmit.SubmitAsync(wer, lap, course, timeout, gamertag).ConfigureAwait(false);
             InsBuch(buch, befund.Schluessel, ms);
             return (Ausgang.Gesendet, $"submitted: {lap.LapSeconds:0.000} s on {track} -- {befund.Grund}");
         }
@@ -350,6 +355,24 @@ internal sealed class LapAutoSubmit
         catch (Exception e)
         {
             return (Ausgang.SpaeterNochmal, "submission failed: " + e.Message);
+        }
+    }
+
+    /// <summary>
+    /// Anmelden -- und weist der Server den GAMERTAG ab (unerlaubte Zeichen), ohne
+    /// ihn. Die Runde soll trotzdem hinaus; gesperrt wird ohnehin ueber Kennung und
+    /// Hardware-Hash, nicht ueber den Namen.
+    /// </summary>
+    private async Task<LapSubmit.Identity> Anmelden(string gamertag, TimeSpan timeout)
+    {
+        try
+        {
+            return await LapSubmit.RegisterAsync(_settings.DatasetUrl!, gamertag, timeout).ConfigureAwait(false);
+        }
+        catch (LapSubmit.Rejected r) when (r.Status == 400 && gamertag.Length > 0)
+        {
+            _log($"the server refused the gamertag ({r.Message}) -- signing up without it");
+            return await LapSubmit.RegisterAsync(_settings.DatasetUrl!, string.Empty, timeout).ConfigureAwait(false);
         }
     }
 
@@ -372,7 +395,7 @@ internal sealed class LapAutoSubmit
     /// The Rivals tab calls this right after the server answered a dataset check:
     /// that proves the server is reachable, and the leaderboard just loaded is the
     /// newest there is. It checks every hour while laps are waiting, and again when
-    /// submission is switched on or a gamertag is set.
+    /// submission is switched on.
     ///
     /// ## Checked again, against today's leaderboard
     ///

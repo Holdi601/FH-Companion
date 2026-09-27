@@ -76,11 +76,13 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Time attack in free roam.** The game runs no clock outside a race; this does.
   Start and finish lines come from your own laps, and `F10` sets one of your own.
 - **Lap submission** to the website when a lap beats the leaderboard. This is on
-  by default and needs a gamertag. You can switch it off in the Rivals tab or with
-  `"submit_laps": false` in `config/overlay.json`.
+  by default. A gamertag is optional. Without one the lap appears under a
+  temporary player name, and a gamertag set later replaces it on all your laps.
+  You can switch it off in the Rivals tab or with `"submit_laps": false` in
+  `config/overlay.json`.
   - A lap that cannot be sent at once waits on your disk and is sent later. That
-    covers submission being off, no gamertag, offline mode, or no answer from the
-    server, even for weeks. Before it goes, it is checked again against that
+    covers submission being off, offline mode, or no answer from the server, even
+    for weeks. Before it goes, it is checked again against that
     day's leaderboard. **Discard waiting laps** in the Rivals tab deletes them
     instead.
 

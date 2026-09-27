@@ -107,9 +107,66 @@ with tempfile.TemporaryDirectory() as tmp:
     print("\nAnmelden weist Unsinn ab")
     wirft(400, lambda: laps.register("kein-hash", "TestDriver", path=schluessel),
           "kein Hex-Hash")
-    wirft(400, lambda: laps.register(HW, "", path=schluessel), "kein Gamertag")
     wirft(400, lambda: laps.register(HW, "boese<script>", path=schluessel),
           "Gamertag mit Sonderzeichen")
+
+    print("\nOhne Gamertag geht es auch -- und der Name kommt spaeter nach")
+    # Gesperrt wird ueber Kennung und Hardware-Hash; ein Name ist dafuer nicht noetig.
+    anonym = laps.register("b" * 64, "", path=schluessel)
+    anonym_eintrag = lambda: json.loads(schluessel.read_text(encoding="utf-8"))["installs"][anonym["install_id"]]
+    pruefe(anonym["install_id"] and anonym_eintrag()["gamertag"] == "",
+           "eine Anmeldung ohne Gamertag wird angenommen")
+    pruefe(laps.register("c" * 64, "Name#1234", path=schluessel)["install_id"],
+           "ein neuer Xbox-Gamertag mit Nummer (#1234) wird angenommen")
+    mitgefuehrt = {"gamertag": ""}
+    pruefe(laps.set_gamertag(anonym["install_id"], "Spaeter", mitgefuehrt, path=schluessel)
+           and anonym_eintrag()["gamertag"] == "Spaeter" and mitgefuehrt["gamertag"] == "Spaeter",
+           "ein spaeter eingetragener Name gilt ohne neue Anmeldung")
+    pruefe(not laps.set_gamertag(anonym["install_id"], None, path=schluessel)
+           and anonym_eintrag()["gamertag"] == "Spaeter",
+           "fehlt das Feld (aeltere App), bleibt der Name")
+    pruefe(not laps.set_gamertag(anonym["install_id"], "boese<script>", path=schluessel)
+           and anonym_eintrag()["gamertag"] == "Spaeter",
+           "ein unbrauchbarer Name wird uebergangen, nicht uebernommen")
+    pruefe(not laps.set_gamertag(anonym["install_id"], "", path=schluessel)
+           and anonym_eintrag()["gamertag"] == "Spaeter",
+           "ein leeres Feld laesst den bisherigen Namen stehen")
+    pruefe(not laps.set_gamertag("gibt-es-nicht-0000000", "X", path=schluessel),
+           "eine unbekannte Kennung bekommt keinen Namen")
+
+    print("\nAngezeigt wird der Name des SPIELERS -- je Maschine, der zuletzt geschickte")
+    import re as _re
+    ohne = laps.register("d" * 64, "", path=schluessel)["install_id"]
+    vorlaeufig, ist_vorlaeufig = laps.spielernamen(schluessel)[ohne]
+    pruefe(ist_vorlaeufig and _re.match(r"^Player-[0-9A-F]{6}$", vorlaeufig),
+           "wer nie einen Namen schickte, bekommt einen vorlaeufigen (%s)" % vorlaeufig)
+    pruefe(laps.spielernamen(schluessel)[ohne][0] == vorlaeufig,
+           "der vorlaeufige Name bleibt derselbe")
+    pruefe("d" * 12 not in vorlaeufig and laps.vorlaeufiger_name("x") != laps.vorlaeufiger_name("y"),
+           "er verraet den Hash nicht und unterscheidet Spieler")
+    pruefe(laps.spielernamen(schluessel)[anonym["install_id"]] == ("Spaeter", False),
+           "wer einmal einen Namen schickte, heisst so -- auch nach einem leeren Feld")
+    # Dieselbe Maschine meldet sich neu an (Neuinstallation), ohne Namen: sie ist
+    # derselbe Spieler und behaelt seinen Namen.
+    zweite = laps.register("b" * 64, "", path=schluessel)["install_id"]
+    pruefe(laps.spielernamen(schluessel)[zweite] == ("Spaeter", False),
+           "eine neue Kennung derselben Maschine traegt den bisherigen Namen")
+    # Umbenennen auf der neuen Kennung: auch die Runden der alten heissen jetzt so.
+    laps.set_gamertag(zweite, "Neuer Name", path=schluessel, now=time.time() + 60)
+    namen = laps.spielernamen(schluessel)
+    pruefe(namen[anonym["install_id"]] == ("Neuer Name", False) and namen[zweite] == ("Neuer Name", False),
+           "ein neuer Name gilt fuer ALLE Kennungen dieser Maschine")
+    runden = laps.mit_spielernamen([{"install_id": anonym["install_id"], "gamertag": "Spaeter"},
+                                    {"install_id": ohne, "gamertag": ""},
+                                    {"install_id": "laengst-aufgeraeumt-000", "gamertag": ""},
+                                    {"install_id": "laengst-aufgeraeumt-001", "gamertag": "Alt"}],
+                                   schluessel)
+    pruefe(runden[0]["gamertag"] == "Neuer Name" and runden[0]["gamertag_temporary"] is False,
+           "eine fruehere Runde zeigt den heutigen Namen")
+    pruefe(runden[1]["gamertag"] == vorlaeufig and runden[1]["gamertag_temporary"] is True,
+           "eine Runde ohne Namen zeigt den vorlaeufigen")
+    pruefe(runden[2]["gamertag"].startswith("Player-") and runden[3]["gamertag"] == "Alt",
+           "eine Runde einer aufgeraeumten Kennung behaelt ihren Namen oder bekommt einen vorlaeufigen")
 
     print("\nEine Maschine bekommt nicht beliebig viele Kennungen")
     for i in range(laps.MAX_INSTALLS_JE_MASCHINE - 1):
@@ -310,7 +367,8 @@ with tempfile.TemporaryDirectory() as tmp:
 
     print("\nDie Admin-Liste gibt keine Geheimnisse heraus")
     liste = laps.installs(schluessel)
-    pruefe(len(liste) == laps.MAX_INSTALLS_JE_MASCHINE, "alle Kennungen sind dabei")
+    pruefe(len(liste) == len(json.loads(schluessel.read_text(encoding="utf-8"))["installs"]),
+           "alle Kennungen sind dabei")
     roh = json.dumps(liste)
     pruefe("secret" not in roh and konto["secret"] not in roh,
            "kein Geheimnis in der Ausgabe")

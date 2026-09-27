@@ -91,6 +91,28 @@ Mit Pfeffer geht das nur, wenn man auch den Pfeffer hat — und der liegt in
 Der Gamertag steht dagegen im Klartext da. Er ist der Name, unter dem die Zeit
 erscheinen soll; ihn zu verbergen wäre sinnlos.
 
+**Der Gamertag ist freiwillig (seit 2026-09-27).** Gesperrt wird über Kennung und
+gepfefferten Hardware-Hash, nicht über einen Namen. Ohne Gamertag wird trotzdem
+eingereicht.
+
+- **Der Name reist mit jeder Einreichung.** Die App schickt ihn unterschrieben
+  (`"gamertag"` neben `"lap"`), und der Server übernimmt ihn für die Installation
+  (`set_gamertag`). Ein später eingetragener oder geänderter Name braucht so keine
+  neue Anmeldung. Früher kostete jeder neue Name eine Kennung, und nach fünf je
+  Maschine nahm der Server keine mehr an.
+- **Ein leeres Feld löscht nichts.** Der zuletzt geschickte Name bleibt.
+- **Ein Spieler ist ein Hardware-Hash.** Angezeigt wird der Name beim Ausliefern
+  der Liste (`spielernamen`, `mit_spielernamen`), nicht aus der abgelegten Runde:
+  der zuletzt geschickte Name unter allen Kennungen derselben Maschine. So tragen
+  nach einer Umbenennung auch die früheren Runden den neuen Namen, und eine
+  Neuinstallation bleibt derselbe Spieler.
+- **Ohne je einen Namen** zeigt die Seite einen vorläufigen, `Player-` und sechs
+  Hex-Zeichen aus einem weiteren Hash des gepfefferten Hardware-Hashes. Er bleibt
+  für diese Maschine gleich und führt nicht zum Hash zurück. Die Liste markiert ihn
+  mit `gamertag_temporary`, die Verwaltungsseite mit „(temporary)".
+- Weist der Server einen Namen wegen seiner Zeichen ab, meldet die App sich ohne
+  ihn an. Neuere Xbox-Gamertags mit Nummer (`Name#1234`) sind erlaubt.
+
 ## Was als Betrugsschutz geprüft wird — und was nicht
 
 Die Prüfungen finden **Unmögliches**, nicht Unwahrscheinliches:
@@ -146,15 +168,15 @@ wenig, um damit sonst etwas anzufangen.
 ## Runden, die warten (seit 2026-09-27)
 
 Eine Runde, die die Bestenliste schlägt, aber gerade nicht hinaus kann, geht nicht
-mehr verloren. Das gilt für ausgeschaltetes Einreichen, einen fehlenden Gamertag,
-den Offline-Betrieb und einen Server, der nicht oder mit einem Fehler antwortet.
+mehr verloren. Das gilt für ausgeschaltetes Einreichen, den Offline-Betrieb und
+einen Server, der nicht oder mit einem Fehler antwortet.
 Sie liegt dann in `pending_laps/` neben dem Buch (`LapQueue.cs`), eine Datei je
 Strecke, Klasse und Auto; nur die schnellste bleibt.
 
 - **Wann nachgereicht wird:** direkt nachdem der Server eine Datensatz-Abfrage
   beantwortet hat. Das beweist die Erreichbarkeit, und die Bestenliste ist dann
   die neueste. Solange Runden warten, fragt die App stündlich, außerdem beim
-  Einschalten des Einreichens und beim Eintragen eines Gamertags.
+  Einschalten des Einreichens.
 - **Vor dem Senden wird neu entschieden,** mit derselben reinen Prüfung wie nach
   einer gefahrenen Runde (`Pruefen`), aber gegen die Bestenliste und das Buch
   *dieses* Tages. Eine inzwischen überholte Runde fällt still weg, ohne Anfrage.

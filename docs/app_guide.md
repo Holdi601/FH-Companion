@@ -34,13 +34,17 @@ Starts and stops the overlay over the game, and holds what the overlay needs:
 
 - **Start overlay / Stop overlay.** The app remembers whether it was running and
   starts it again next time.
-- **Your gamertag.** It is used to mark your own laps and to submit laps.
+- **Your gamertag** *(optional)*. It marks your own laps and is the name your
+  submitted laps appear under. Without one they are still submitted and appear
+  under a temporary player name. A gamertag entered later replaces that name on
+  all your laps, including the earlier ones. Emptying the field keeps the last
+  name.
 - **Submit my laps when they beat the leaderboard.** On by default. Only a lap
   that is faster than the best leaderboard time of the same car, route and class
   is sent. See [lap_submissions.md](lap_submissions.md).
 - **Waiting laps.** A lap that cannot be sent right away waits on your disk, one
   per car, route and class, and only the fastest is kept. That covers
-  submission being off, no gamertag, offline mode, or no answer from the server.
+  submission being off, offline mode, or no answer from the server.
   It goes out once all of that is fine again, even weeks later, after one more
   check against that day's leaderboard. The line under the gamertag counts them,
   and **Discard waiting laps** deletes them.

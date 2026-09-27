@@ -98,6 +98,8 @@ internal static class EdgeCaseTest
         var totPort = FreierPort();
         var antworten = new System.Collections.Concurrent.ConcurrentQueue<int>();
         var einreichungen = 0;
+        string? angemeldetAls = null;
+        string? eingereichtAls = null;
         using var hoerer = new System.Net.HttpListener();
         hoerer.Prefixes.Add($"http://localhost:{port}/");
         hoerer.Start();
@@ -109,16 +111,22 @@ internal static class EdgeCaseTest
                 try { k = await hoerer.GetContextAsync().ConfigureAwait(false); }
                 catch (Exception) { break; }
                 var pfad = k.Request.Url?.AbsolutePath ?? string.Empty;
-                using (var r = new StreamReader(k.Request.InputStream)) { await r.ReadToEndAsync().ConfigureAwait(false); }
+                string anfrage;
+                using (var r = new StreamReader(k.Request.InputStream)) { anfrage = await r.ReadToEndAsync().ConfigureAwait(false); }
+                var name = System.Text.Json.Nodes.JsonNode.Parse(anfrage)?["gamertag"]?.GetValue<string>();
                 int status;
                 string rumpf;
                 if (pfad.EndsWith("/api/lap/register"))
                 {
-                    status = 200;
-                    rumpf = """{"install_id":"edge","secret":"geheim"}""";
+                    // Wie der echte Server: ein Name mit unerlaubten Zeichen wird abgewiesen.
+                    status = (name ?? string.Empty).Contains('@') ? 400 : 200;
+                    rumpf = status == 200 ? """{"install_id":"edge","secret":"geheim"}"""
+                                          : """{"error":"'gamertag' enthaelt unerlaubte Zeichen."}""";
+                    if (status == 200) { angemeldetAls = name; }
                 }
                 else
                 {
+                    eingereichtAls = name;
                     Interlocked.Increment(ref einreichungen);
                     status = antworten.TryDequeue(out var s) ? s : 200;
                     rumpf = status == 200 ? """{"ok":true}""" : $$"""{"error":"test {{status}}"}""";
@@ -217,6 +225,30 @@ internal static class EdgeCaseTest
             Soll(Fahre(Lap(55f)).StartsWith("kept to submit later") && Rivals.LapQueue.Anzahl() == 1,
                  "eine Runde ohne geladene Bestenliste geht verloren");
             Soll(Rivals.LapQueue.AllesVergessen() == 1 && Rivals.LapQueue.Anzahl() == 0, "Verwerfen laesst Runden liegen");
+
+            // OHNE GAMERTAG (seit 2026-09-27): wird trotzdem eingereicht -- gesperrt
+            // wird ueber Kennung und Hardware-Hash. Der Name reist in der
+            // unterschriebenen Einreichung mit, hier also leer.
+            data = Board(57000);
+            einst.Gamertag = string.Empty;
+            Soll(sender.Hindernis() is null, "ohne Gamertag gilt das Einreichen als verhindert");
+            Soll(Fahre(Lap(50f)).StartsWith("submitted") && eingereichtAls == string.Empty,
+                 "ohne Gamertag wird nicht eingereicht, oder der leere Name reist nicht mit");
+
+            // EIN NAME, DEN DER SERVER ABWEIST: ohne ihn anmelden, die Runde geht trotzdem.
+            File.Delete(Rivals.LapSubmit.IdentityPath);
+            einst.Gamertag = "bad@tag";
+            Soll(Fahre(Lap(70f, car: 9999)).StartsWith("submitted") && angemeldetAls == string.Empty,
+                 "ein abgewiesener Gamertag verhindert die Anmeldung");
+            Soll(eingereichtAls == "bad@tag", "der eingetragene Name reist nicht mit der Einreichung");
+
+            // EIN SPAETER GEAENDERTER NAME braucht keine neue Anmeldung.
+            angemeldetAls = "unberuehrt";
+            einst.Gamertag = "Spaeter";
+            antworten.Enqueue(409);
+            Fahre(Lap(69f, car: 9999));
+            Soll(angemeldetAls == "unberuehrt" && eingereichtAls == "Spaeter",
+                 "ein geaenderter Gamertag meldet die Installation neu an");
 
             Soll(Rivals.LapAutoSubmit.AusgangFuer(200) == Rivals.LapAutoSubmit.Ausgang.Gesendet
                  && Rivals.LapAutoSubmit.AusgangFuer(409) == Rivals.LapAutoSubmit.Ausgang.NichtSchneller

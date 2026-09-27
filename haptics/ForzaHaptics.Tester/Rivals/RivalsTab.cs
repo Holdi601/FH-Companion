@@ -118,7 +118,7 @@ internal sealed class RivalsTab : UserControl
         {
             Width = 190,
             Text = _settings.Gamertag ?? string.Empty,
-            PlaceholderText = Loc.T("your gamertag"),
+            PlaceholderText = Loc.T("your gamertag (optional)"),
             MaxLength = 30,
             Margin = new Padding(12, 4, 0, 4),
         };
@@ -128,7 +128,6 @@ internal sealed class RivalsTab : UserControl
             if (neu == (_settings.Gamertag ?? string.Empty)) { return; }
             _settings.Gamertag = neu;
             _settings.Save();
-            WartendeAnstossen();
         };
         layout.Controls.Add(Row(einreichen, tag));
         layout.Controls.Add(Caption(Loc.T("Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site."),
@@ -136,7 +135,7 @@ internal sealed class RivalsTab : UserControl
         var submitState = Caption("", 9.5f, Dim, wrap: 720);
         layout.Controls.Add(submitState);
         // RUNDEN, DIE WARTEN (seit 2026-09-27): schneller als die Bestenliste, aber
-        // nicht abzuschicken -- ausgeschaltet, kein Gamertag, Server weg. Sie gehen
+        // nicht abzuschicken -- ausgeschaltet, offline, Server weg. Sie gehen
         // spaeter raus; wer das nicht will, wirft sie hier weg.
         var wartend = Caption("", 9.5f, Dim, wrap: 520);
         var verwerfen = Button(Loc.T("Discard waiting laps"), 190);
@@ -161,13 +160,13 @@ internal sealed class RivalsTab : UserControl
                 var n = LapQueue.Anzahl();
                 wartendZeile.Visible = n > 0;
                 wartend.Text = n == 0 ? string.Empty : string.Format(
-                    Loc.T("{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on, a gamertag is set and the server answers -- checked again against the leaderboard of that day."),
+                    Loc.T("{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on and the server answers -- checked again against the leaderboard of that day."),
                     n);
             }
             var letzte = LapAutoSubmit.Last;
             submitState.Text = letzte is null
                 ? (_settings.SubmitLaps && string.IsNullOrWhiteSpace(_settings.Gamertag)
-                    ? Loc.T("Set your gamertag above -- without it no lap is submitted.")
+                    ? Loc.T("Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.")
                     : string.Empty)
                 : $"{LapAutoSubmit.LastAt:HH:mm} {letzte}";
         };

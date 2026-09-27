@@ -12,8 +12,8 @@ namespace ForzaHaptics.Tester.Rivals;
 /// ## Why (2026-09-27)
 ///
 /// A lap that beat the leaderboard used to be lost for the site whenever it could
-/// not be sent at that moment: submission switched off, no gamertag yet, offline, or
-/// the server unreachable. Wanted: send it later -- once submission is on, once the
+/// not be sent at that moment: submission switched off, offline, or the server
+/// unreachable. Wanted: send it later -- once submission is on, once the
 /// server answers again -- even if that is weeks or months away.
 ///
 /// ## One file per route, class and car

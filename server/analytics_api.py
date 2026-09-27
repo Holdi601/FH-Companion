@@ -570,7 +570,8 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
                 if e.status == 401:
                     ip_bans.fehlversuch(client, "lap signature", now)
                 raise
-            runde = rumpf().get("lap")
+            anfrage = rumpf()
+            runde = anfrage.get("lap")
             if not isinstance(runde, dict):
                 laps.strafpunkt(install_id, "no lap object", now)
                 raise ApiError(400, "'lap' fehlt im Rumpf.")
@@ -590,6 +591,9 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
                     laps.strafpunkt(install_id, e.message, now)
                 raise ApiError(e.status, e.message) from None
             laps.tageskontingent(install_id, now=now)
+            # Der Name kommt mit jeder (unterschriebenen) Einreichung -- freiwillig;
+            # angezeigt wird er ueber mit_spielernamen, auch an frueheren Runden.
+            laps.set_gamertag(install_id, anfrage.get("gamertag"), eintrag)
             if befund.get("newCar"):
                 auffaellig = list(auffaellig) + ["car not on this leaderboard yet"]
             abgelegt = laps.store(install_id, eintrag, runde, auffaellig, now=now)
@@ -603,7 +607,7 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
         if method == "GET" and path == "/api/lap/list":
             return as_json(200, {"laps": [
                 {k: v for k, v in laps.ohne_telemetrie(runde).items() if k != "install_id"}
-                for runde in laps.list_laps()]})
+                for runde in laps.mit_spielernamen(laps.list_laps())]})
 
         # --- ab hier nur mit Admin-Unterschrift ---
         # Dieselben Schluessel wie der Rest von handle(), nicht frisch von Platte:
@@ -625,7 +629,7 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             require_admin(keys, method, path, headers, body, now)
             return as_json(200, {"laps": [
                 {k: v for k, v in laps.ohne_telemetrie(runde).items() if k != "install_id"}
-                for runde in laps.list_laps(include_hidden=True)]})
+                for runde in laps.mit_spielernamen(laps.list_laps(include_hidden=True))]})
 
         if method == "POST" and path in ("/api/admin/lap/hide",
                                          "/api/admin/lap/show"):

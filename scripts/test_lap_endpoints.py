@@ -95,12 +95,12 @@ def admin_kopf(secret: str, method: str, pfad: str, body: bytes) -> dict:
     }
 
 
-def runde() -> dict:
+def runde(sekunden: float = 100.0) -> dict:
     punkte = 40
-    proben = [{"Seconds": 100.0 * i / (punkte - 1), "Metres": 3000.0 * i / (punkte - 1),
+    proben = [{"Seconds": sekunden * i / (punkte - 1), "Metres": 3000.0 * i / (punkte - 1),
                "X": 3000.0 * i / (punkte - 1), "Z": 0.0} for i in range(punkte)]
     # Strecke und Klasse braucht der Abgleich mit der Bestenliste (seit 2026-09-24).
-    return {"course": "course_100_200", "lapSeconds": 100.0, "lengthMetres": 3000.0,
+    return {"course": "course_100_200", "lapSeconds": sekunden, "lengthMetres": 3000.0,
             "track": "Test Circuit", "carClass": 4,
             "carOrdinal": 1234, "performanceIndex": 800,
             "recordedAt": "2026-09-13T18:00:00+02:00", "samples": proben}
@@ -244,6 +244,47 @@ with tempfile.TemporaryDirectory() as tmp:
         roh = json.dumps(antwort)
         pruefe(secret not in roh and "secret" not in roh,
                "sie enthaelt kein Geheimnis")
+        print("\nOhne Gamertag -- und der Name kommt spaeter, auch an fruehere Runden")
+        status, antwort = ruf(port, "POST", "/api/lap/register",
+                              json.dumps({"hardware": "c" * 64, "gamertag": ""}).encode("utf-8"))
+        pruefe(status == 200, "eine Anmeldung ohne Gamertag wird angenommen (war %d: %s)"
+               % (status, antwort.get("error", "")))
+        anon_id, anon_secret = antwort.get("install_id", ""), antwort.get("secret", "")
+
+        def anon_einreichen(sekunden: float, nonce: str, name=None) -> int:
+            nutzlast = {"lap": runde(sekunden)}
+            if name is not None:
+                nutzlast["gamertag"] = name
+            b = json.dumps(nutzlast).encode("utf-8")
+            st, _ = ruf(port, "POST", "/api/lap/submit", b,
+                        unterschrieben(anon_secret, anon_id, "/api/lap/submit", b, nonce))
+            return st
+
+        def namen_in_liste() -> list:
+            _, a = ruf(port, "GET", "/api/lap/list")
+            return sorted((r.get("gamertag"), r.get("gamertag_temporary"),
+                           (r.get("lap") or {}).get("lapSeconds")) for r in a.get("laps", []))
+
+        pruefe(anon_einreichen(90.0, "nonce-anon-1", "") == 200, "ohne Namen eingereicht: 200")
+        liste = namen_in_liste()
+        pruefe(len(liste) == 1 and str(liste[0][0]).startswith("Player-") and liste[0][1] is True,
+               "die Seite zeigt einen vorlaeufigen Namen (%s)" % (liste[:1],))
+        vorlaeufig = liste[0][0] if liste else ""
+        pruefe(anon_einreichen(80.0, "nonce-anon-2", "Spaeterer") == 200, "mit Namen eingereicht: 200")
+        liste = namen_in_liste()
+        pruefe(len(liste) == 2 and all(n == "Spaeterer" and v is False for n, v, _ in liste),
+               "der neue Name steht auch an der frueheren Runde (%s)" % liste)
+        pruefe(anon_einreichen(70.0, "nonce-anon-3", "") == 200, "wieder ohne Namen: 200")
+        liste = namen_in_liste()
+        pruefe(len(liste) == 3 and all(n == "Spaeterer" for n, _, _ in liste),
+               "ein leeres Feld laesst den Namen stehen (%s)" % liste)
+        status, antwort = ruf(port, "GET", "/api/admin/installs", None,
+                              admin_kopf(ADMIN, "GET", "/api/admin/installs", b""))
+        eintrag = [x for x in antwort.get("installs", []) if x.get("install_id") == anon_id]
+        pruefe(bool(eintrag) and eintrag[0].get("display_name") == "Spaeterer"
+               and eintrag[0].get("name_temporary") is False and vorlaeufig != "Spaeterer",
+               "die Verwaltung zeigt denselben Namen")
+
         print("\nOhne den Schalter ist nichts davon da")
         # DIE WICHTIGSTE PRUEFUNG DIESER DATEI.
         #
