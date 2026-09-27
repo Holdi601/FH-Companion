@@ -76,6 +76,12 @@ internal static class EdgeCaseTest
         }
         Soll(Rms(0.15, 0.7) > 0.03, "der Glockenklang des Feiertons ist nicht zu hoeren");
         Soll(Rms(1.95, 2.0) < 0.003, "der Feierton endet nicht leise");
+        // Der Ton fuer ein neues Auto: leiser, ohne Knall, endet ebenso leise.
+        var neuTon = Rivals.CelebrationSound.ProbenNeuesAuto();
+        Soll(Math.Abs(neuTon.Max(Math.Abs) - (Rivals.CelebrationSound.Spitze * 0.85f)) < 0.005 && neuTon.All(float.IsFinite),
+             "der Ton fuer ein neues Auto hat nicht seine Lautstaerke");
+        Soll(neuTon[^((int)(0.05 * rate))..].Max(Math.Abs) < 0.01, "der Ton fuer ein neues Auto endet nicht leise");
+        Soll(Rivals.CelebrationSound.WavNeuesAuto.Length == 44 + (neuTon.Length * 2), "der Ton fuer ein neues Auto ist kein gueltiges WAV");
         var wav = Rivals.CelebrationSound.Wav;
         Soll(wav.Length == 44 + (proben.Length * 2) && System.Text.Encoding.ASCII.GetString(wav, 0, 4) == "RIFF"
              && System.Text.Encoding.ASCII.GetString(wav, 8, 4) == "WAVE" && BitConverter.ToInt32(wav, 24) == rate,
@@ -83,10 +89,16 @@ internal static class EdgeCaseTest
 
         var anlass = new Rivals.CelebrationHud.Anlass("You beat the leaderboard!", "1:23.456", 0.556,
                                                       "Website best 1:24.012", "Goliath · Porsche 911 GT3 RS '19 · S1 900");
-        var konfetti = new Rivals.CelebrationHud.Konfetti(1);
         Soll(anlass.Vorsprung.StartsWith('−') && anlass.Vorsprung.EndsWith(" s"), "der Vorsprung traegt kein Minuszeichen");
+        var neuesAuto = new Rivals.CelebrationHud.Anlass("New car on the leaderboard!", "1:31.208", 0,
+                                                         "Its first time here on the website -- thanks to you!",
+                                                         "Goliath \u00b7 Toyota Supra RZ '98 \u00b7 A 800",
+                                                         Rivals.CelebrationHud.FeierArt.NeuesAuto, "NEW");
+        Soll(neuesAuto.Vorsprung == "NEW", "der feste Chip einer Meldung wird nicht gezeigt");
+        foreach (var jetzt in new[] { anlass, neuesAuto })
         foreach (var groesse in new[] { new Size(1280, 720), new Size(1920, 1080), new Size(3840, 2160) })
         {
+            var konfetti = new Rivals.CelebrationHud.Konfetti(1, jetzt.Art);
             var buehne = Rivals.CelebrationHud.Buehne(groesse);
             (int Sichtbar, int Unterhalb, int Deckend) Zaehle(double t)
             {
@@ -95,7 +107,7 @@ internal static class EdgeCaseTest
                 {
                     g.Clear(Color.Transparent);
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    Rivals.CelebrationHud.Male(g, groesse, anlass, konfetti, t);
+                    Rivals.CelebrationHud.Male(g, groesse, jetzt, konfetti, t);
                 }
                 var daten = bild.LockBits(new Rectangle(Point.Empty, groesse), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
                 try
@@ -337,6 +349,25 @@ internal static class EdgeCaseTest
             // Bestenlisten-Eintrag (9999) und nie eine Runde ohne geladene Bestenliste.
             Soll(rekorde.Count == 5 && rekorde.All(r => r.LapMs < r.BestenlisteMs),
                  $"die Feier kam {rekorde.Count}-mal statt 5-mal");
+
+            // EIN NEUES AUTO AUF DER LISTE (2026-09-27): gemeldet erst, wenn der Server
+            // angenommen hat, nur beim ersten Mal -- und nachgereicht als solches erkennbar.
+            var neueAutos = new List<Rivals.LapAutoSubmit.NeuesAuto>();
+            sender.NeuesAutoEingetragen += neueAutos.Add;
+            Soll(Fahre(Lap(90f, car: 7777)).StartsWith("submitted") && neueAutos.Count == 1
+                 && !neueAutos[0].Nachgereicht && neueAutos[0].LapMs == 90000 && neueAutos[0].CarOrdinal == 7777,
+                 "ein neues Auto auf der Liste wird nicht gemeldet");
+            Fahre(Lap(89f, car: 7777));
+            Soll(neueAutos.Count == 1, "die zweite Runde desselben neuen Autos wird noch einmal als neu gemeldet");
+            antworten.Enqueue(503);
+            Fahre(Lap(92f, car: 7778));
+            Soll(neueAutos.Count == 1, "ein neues Auto wird gemeldet, obwohl der Server nicht angenommen hat");
+            // Die wartende 7778 geht nach -- die Bremse vorher loesen, sie stammt aus den Schritten oben.
+            File.Delete(Path.Combine(Rivals.LapQueue.Folder, "refusals.json"));
+            Nachreichen();
+            Soll(neueAutos.Count == 2 && neueAutos[1].Nachgereicht && neueAutos[1].CarOrdinal == 7778,
+                 "ein nachgereichtes neues Auto wird nicht (als nachgereicht) gemeldet");
+            Soll(rekorde.Count == 5, "ein neues Auto wurde als Rekord gefeiert");
 
             Soll(Rivals.LapAutoSubmit.AusgangFuer(200) == Rivals.LapAutoSubmit.Ausgang.Gesendet
                  && Rivals.LapAutoSubmit.AusgangFuer(409) == Rivals.LapAutoSubmit.Ausgang.NichtSchneller

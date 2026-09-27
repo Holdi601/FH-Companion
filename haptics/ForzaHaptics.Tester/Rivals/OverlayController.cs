@@ -395,6 +395,10 @@ internal sealed class OverlayController : IDisposable
         {
             try { _owner.BeginInvoke(() => Feiern(r)); } catch (Exception) { }
         };
+        _submitter.NeuesAutoEingetragen += r =>
+        {
+            try { _owner.BeginInvoke(() => NeuesAutoFeiern(r)); } catch (Exception) { }
+        };
         _liveMap = new LiveMapHud(_settings, screen);
 
         _tick.Interval = Math.Max(250, (int)(_settings.PollSeconds * 1000));
@@ -3245,6 +3249,36 @@ internal sealed class OverlayController : IDisposable
     }
 
     /// <summary>
+    /// Eine eingereichte Runde hat ein Auto NEU auf eine Bestenliste gebracht -- die
+    /// ruhigere Feier mit Dank. Oeffentlich: das Nachreichen im Rivals-Tab meldet sich
+    /// ebenfalls hier.
+    /// </summary>
+    /// <remarks>
+    /// Eine NACHGEREICHTE Runde nur, waehrend Forza laeuft: sonst stuende die Feier
+    /// Stunden spaeter ueber dem Schreibtisch, ohne Zusammenhang mit irgendetwas.
+    /// </remarks>
+    public void NeuesAutoFeiern(LapAutoSubmit.NeuesAuto r)
+    {
+        LogLap($"new car on the leaderboard: {r.CarName ?? AutoName(r.CarOrdinal)} on {r.Track} ({r.Klasse})");
+        if (!_settings.CelebrateNewCar) { return; }
+        if (r.Nachgereicht && !_game.Running) { return; }
+        var auto = r.CarName ?? AutoName(r.CarOrdinal);
+        var detail = string.Join(" · ", new[] { r.Track, auto, r.Klasse }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        ZeigeFeier(new CelebrationHud.Anlass(
+            Loc.T("New car on the leaderboard!"),
+            RivalsAdvisor.LapText(r.LapMs), 0,
+            Loc.T("Its first time here on the website -- thanks to you!"),
+            detail, CelebrationHud.FeierArt.NeuesAuto, Loc.T("NEW")));
+    }
+
+    /// <summary>"Try it" fuer die Meldung "neues Auto" -- mit Beispielwerten.</summary>
+    public void NeuesAutoProbe() => ZeigeFeier(new CelebrationHud.Anlass(
+        Loc.T("New car on the leaderboard!"), "1:31.208", 0,
+        Loc.T("Its first time here on the website -- thanks to you!"),
+        Loc.T("Example: this is how it looks when your lap adds a new car to the leaderboard."),
+        CelebrationHud.FeierArt.NeuesAuto, Loc.T("NEW")));
+
+    /// <summary>
     /// Der Knopf "Try it": dieselbe Feier mit Beispielwerten -- auch bei abgeschalteter
     /// Feier, denn danach wurde ausdruecklich gefragt. Der Ton folgt seinem Schalter.
     /// </summary>
@@ -3259,7 +3293,7 @@ internal sealed class OverlayController : IDisposable
         {
             FollowGameArea();
             _feier.Zeige(anlass, Environment.TickCount);
-            if (_settings.CelebrateSound) { CelebrationSound.Play(); }
+            if (_settings.CelebrateSound) { CelebrationSound.Play(anlass.Art); }
         }
         catch (Exception e)
         {

@@ -35,6 +35,8 @@ internal sealed class HudTab : UserControl
 
     /// <summary>"Try it" bei der Feier: das Hauptfenster reicht es an das Overlay weiter.</summary>
     public event Action? FeierProbe;
+    /// <summary>"Try it" bei der Meldung "neues Auto".</summary>
+    public event Action? NeuesAutoProbe;
 
     public HudTab(OverlaySettings settings, Action changed, Action<bool> preview)
     {
@@ -60,6 +62,7 @@ internal sealed class HudTab : UserControl
         };
         _side.QuelleGeaendert += () => _canvas.VorschauVergessen();
         _side.FeierProbe += () => FeierProbe?.Invoke();
+        _side.NeuesAutoProbe += () => NeuesAutoProbe?.Invoke();
         _side.Select(HudPart.Delta);
 
         var hint = new Label
@@ -707,6 +710,8 @@ internal sealed class HudPartPanel : Panel
     public event Action? QuelleGeaendert;
     /// <summary>"Try it" bei der Feier gedrueckt.</summary>
     public event Action? FeierProbe;
+    /// <summary>"Try it" bei der Meldung "neues Auto" gedrueckt.</summary>
+    public event Action? NeuesAutoProbe;
 
     public HudPartPanel(OverlaySettings settings)
     {
@@ -821,6 +826,14 @@ internal sealed class HudPartPanel : Panel
         stapel.Controls.Add(probe);
         stapel.Controls.Add(Note("A card with your time, confetti and a short sound, near the top of the "
                                  + "screen for about five seconds."));
+        Schalter(Loc.T("Say thanks when your lap adds a new car to the leaderboard"), settings.CelebrateNewCar,
+                 v => _settings.CelebrateNewCar = v);
+        var probeNeu = Small(Loc.T("Try it"), () => NeuesAutoProbe?.Invoke());
+        probeNeu.Width = 110;
+        probeNeu.Margin = new Padding(0, 2, 0, 4);
+        stapel.Controls.Add(probeNeu);
+        stapel.Controls.Add(Note("Calmer, in teal: when the server accepts a lap of a car that was not on "
+                                 + "that route and class board yet."));
 
         stapel.Controls.Add(Note("Where the sign-up maps come from"));
         var quelle = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };

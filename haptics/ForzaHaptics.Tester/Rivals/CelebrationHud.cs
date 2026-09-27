@@ -32,11 +32,20 @@ namespace ForzaHaptics.Tester.Rivals;
 /// </remarks>
 internal sealed class CelebrationHud : LayeredHud
 {
+    /// <summary>
+    /// Welche Feier: die Rekordrunde (Gold, Pokal) -- oder ein Auto, das durch die eigene
+    /// Runde NEU auf eine Bestenliste kommt (Tuerkis, ein Auto mit Plus, ruhiger;
+    /// seit 2026-09-27, auf Wunsch "a bit celebratory but more like thanks to you").
+    /// </summary>
+    internal enum FeierArt { Rekord, NeuesAuto }
+
     /// <summary>Was die Karte sagt -- fertig formuliert, in der Sprache des Nutzers.</summary>
-    internal sealed record Anlass(string Titel, string Zeit, double VorsprungSekunden, string Vergleich, string Detail)
+    /// <param name="Chip">Fester Text fuer den Chip (etwa "NEW"); sonst zaehlt der Vorsprung hoch.</param>
+    internal sealed record Anlass(string Titel, string Zeit, double VorsprungSekunden, string Vergleich, string Detail,
+                                  FeierArt Art = FeierArt.Rekord, string? Chip = null)
     {
-        /// <summary>Der fertige Vorsprung, wie der Chip ihn am Ende zeigt.</summary>
-        public string Vorsprung => VorsprungText(VorsprungSekunden);
+        /// <summary>Der fertige Chip, wie er am Ende steht.</summary>
+        public string Vorsprung => Chip ?? VorsprungText(VorsprungSekunden);
     }
 
     /// <summary>"−0.556 s" -- mit echtem Minuszeichen, im Zahlenformat des Nutzers.</summary>
@@ -62,7 +71,7 @@ internal sealed class CelebrationHud : LayeredHud
     public void Zeige(Anlass anlass, int zufall)
     {
         _anlass = anlass;
-        _konfetti = new Konfetti(zufall);
+        _konfetti = new Konfetti(zufall, anlass.Art);
         _beginn = DateTime.UtcNow;
         _t = 0;
         Render();
@@ -179,6 +188,14 @@ internal sealed class CelebrationHud : LayeredHud
     private static readonly Color GoldHell = Color.FromArgb(255, 236, 170);
     private static readonly Color GoldTief = Color.FromArgb(217, 119, 6);
 
+    /// <summary>Die Farben einer Feier. Alpha steht jeweils in der Zeichnung.</summary>
+    private readonly record struct Palette(Color Titel, Color Hell, Color Tief, Color Licht, Color Chip, int StrahlAlpha);
+
+    private static Palette PaletteFuer(FeierArt art) => art == FeierArt.NeuesAuto
+        ? new Palette(Color.FromArgb(94, 234, 212), Color.FromArgb(167, 243, 229), Color.FromArgb(13, 148, 136),
+                      Color.FromArgb(120, 232, 214), Color.FromArgb(13, 148, 136), 44)
+        : new Palette(Gold, GoldHell, GoldTief, Color.FromArgb(255, 214, 120), Color.FromArgb(16, 185, 129), 70);
+
     private static Color A(Color c, float f) =>
         Color.FromArgb(Math.Clamp((int)(c.A * f), 0, 255), c.R, c.G, c.B);
 
@@ -209,16 +226,17 @@ internal sealed class CelebrationHud : LayeredHud
         var mitte = new PointF(karte.Kasten.X + (karte.Kasten.Width / 2f), karte.Kasten.Y + (karte.Kasten.Height / 2f));
         var zeit = (float)t;
 
-        Strahlen(g, buehne, mitte, zeit, ganz);
-        Ringe(g, buehne, karte.Kasten, mitte, zeit, ganz, s);
+        var farben = PaletteFuer(a.Art);
+        Strahlen(g, buehne, mitte, zeit, ganz, farben);
+        Ringe(g, buehne, karte.Kasten, mitte, zeit, ganz, s, farben);
         k.Male(g, buehne, karte.Kasten, zeit, ganz, s, vorne: false);
-        KarteMalen(g, a, f, karte, mitte, zeit, ganz, s);
-        Funkeln(g, k, karte.Kasten, zeit, ganz, s);
+        KarteMalen(g, a, f, karte, mitte, zeit, ganz, s, farben);
+        Funkeln(g, k, karte.Kasten, zeit, ganz, s, farben);
         k.Male(g, buehne, karte.Kasten, zeit, ganz, s, vorne: true);
     }
 
     /// <summary>Sanfte Lichtstrahlen hinter der Karte, langsam drehend.</summary>
-    private static void Strahlen(Graphics g, RectangleF buehne, PointF mitte, float t, float ganz)
+    private static void Strahlen(Graphics g, RectangleF buehne, PointF mitte, float t, float ganz, Palette farben)
     {
         var staerke = t < 0.4f ? t / 0.4f : t < 2.2f ? 1f : Math.Max(0f, 1f - ((t - 2.2f) / 1.0f));
         if (staerke <= 0f) { return; }
@@ -230,8 +248,8 @@ internal sealed class CelebrationHud : LayeredHud
         using var pinsel = new PathGradientBrush(huelle)
         {
             CenterPoint = mitte,
-            CenterColor = A(Color.FromArgb(70, 255, 214, 120), staerke * ganz),
-            SurroundColors = new[] { Color.FromArgb(0, 255, 214, 120) },
+            CenterColor = A(Color.FromArgb(farben.StrahlAlpha, farben.Licht), staerke * ganz),
+            SurroundColors = new[] { Color.FromArgb(0, farben.Licht) },
         };
         using var strahlen = new GraphicsPath();
         const int anzahl = 14;
@@ -252,7 +270,8 @@ internal sealed class CelebrationHud : LayeredHud
     }
 
     /// <summary>Zwei Lichtringe, die aus der Karte heraus auseinanderlaufen.</summary>
-    private static void Ringe(Graphics g, RectangleF buehne, RectangleF kasten, PointF mitte, float t, float ganz, float s)
+    private static void Ringe(Graphics g, RectangleF buehne, RectangleF kasten, PointF mitte, float t, float ganz, float s,
+                              Palette farben)
     {
         var zustand = g.Save();
         g.SetClip(buehne);
@@ -263,7 +282,7 @@ internal sealed class CelebrationHud : LayeredHud
             var e = Raus(u);
             var rx = (kasten.Width / 2f) * (0.7f + (0.75f * e));
             var ry = (kasten.Height / 2f) * (0.7f + (1.6f * e));
-            using var stift = new Pen(A(Color.FromArgb(200, 255, 225, 150), (1f - u) * ganz), Math.Max(1f, 4f * s * (1f - u)));
+            using var stift = new Pen(A(Color.FromArgb(200, farben.Hell), (1f - u) * ganz), Math.Max(1f, 4f * s * (1f - u)));
             g.DrawEllipse(stift, mitte.X - rx, mitte.Y - ry, 2 * rx, 2 * ry);
         }
         g.Restore(zustand);
@@ -282,7 +301,7 @@ internal sealed class CelebrationHud : LayeredHud
     }
 
     private static void KarteMalen(Graphics g, Anlass a, Schriften f, Karte karte, PointF mitte,
-                                   float t, float ganz, float s)
+                                   float t, float ganz, float s, Palette farben)
     {
         // HERAUSSPRINGEN: von 60 % auf etwas ueber 100 % und zurueck, in einer halben Sekunde.
         var u = Klemme(t / 0.5);
@@ -303,7 +322,7 @@ internal sealed class CelebrationHud : LayeredHud
         {
             var aussen = RectangleF.Inflate(kasten, i * 5f * s, i * 5f * s);
             using var schein = Abgerundet(aussen, radius + (i * 5f * s));
-            using var scheinPinsel = new SolidBrush(A(Color.FromArgb(34 / i, 255, 200, 90), sicht));
+            using var scheinPinsel = new SolidBrush(A(Color.FromArgb(34 / i, farben.Licht), sicht));
             g.FillPath(scheinPinsel, schein);
         }
 
@@ -340,21 +359,29 @@ internal sealed class CelebrationHud : LayeredHud
             g.Restore(innen);
         }
 
-        using (var rahmen = new LinearGradientBrush(kasten, A(GoldHell, sicht), A(GoldTief, sicht), LinearGradientMode.ForwardDiagonal))
+        using (var rahmen = new LinearGradientBrush(kasten, A(farben.Hell, sicht), A(farben.Tief, sicht), LinearGradientMode.ForwardDiagonal))
         using (var stift = new Pen(rahmen, Math.Max(1.5f, 2.2f * s)))
         {
             g.DrawPath(stift, form);
         }
 
-        // POKAL, mit einem kleinen gedaempften Wackeln.
-        var wackeln = t < 0.25f ? 0f : 9f * MathF.Sin(13f * (t - 0.25f)) * MathF.Exp(-2.6f * (t - 0.25f));
-        Pokal(g, karte.Pokal, wackeln, sicht, s);
+        if (a.Art == FeierArt.NeuesAuto)
+        {
+            // EIN AUTO FAEHRT HEREIN, dann springt das Plus auf.
+            NeuesAutoSymbol(g, karte.Pokal, t, sicht, farben);
+        }
+        else
+        {
+            // POKAL, mit einem kleinen gedaempften Wackeln.
+            var wackeln = t < 0.25f ? 0f : 9f * MathF.Sin(13f * (t - 0.25f)) * MathF.Exp(-2.6f * (t - 0.25f));
+            Pokal(g, karte.Pokal, wackeln, sicht, s);
+        }
 
         // TEXT
         var y = kasten.Top + karte.Rand + Math.Max(0f, (kasten.Height - (2 * karte.Rand)
                 - (karte.TitelH + karte.ZeitGroesse.Height + karte.VergleichH + karte.DetailH)) / 2f);
         var textBreite = kasten.Right - karte.Rand - karte.TextX;
-        using (var titel = new SolidBrush(A(Gold, sicht)))
+        using (var titel = new SolidBrush(A(farben.Titel, sicht)))
         {
             g.DrawString(a.Titel, f.Titel, titel, new RectangleF(karte.TextX, y, textBreite, karte.TitelH));
         }
@@ -367,10 +394,13 @@ internal sealed class CelebrationHud : LayeredHud
                                   y + ((karte.ZeitGroesse.Height - karte.ChipGroesse.Height) / 2f),
                                   karte.ChipGroesse.Width, karte.ChipGroesse.Height);
         // Der Vorsprung ZAEHLT HOCH, in der ersten Sekunde; die Breite steht schon fest.
+        // Ein fester Chip ("NEW") zaehlt nicht.
         var zaehlen = Klemme((t - 0.2f) / 0.8f);
-        var vorsprung = zaehlen >= 1f ? a.Vorsprung : VorsprungText(a.VorsprungSekunden * Raus(zaehlen));
+        var vorsprung = zaehlen >= 1f || a.Chip is not null
+            ? a.Vorsprung
+            : VorsprungText(a.VorsprungSekunden * Raus(zaehlen));
         using (var pille = Abgerundet(chip, chip.Height / 2f))
-        using (var gruen = new SolidBrush(A(Color.FromArgb(235, 16, 185, 129), sicht)))
+        using (var gruen = new SolidBrush(A(Color.FromArgb(235, farben.Chip), sicht)))
         using (var chipText = new SolidBrush(A(Color.White, sicht)))
         using (var mittig = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
         {
@@ -435,6 +465,71 @@ internal sealed class CelebrationHud : LayeredHud
         g.Restore(zustand);
     }
 
+    /// <summary>
+    /// Ein Auto von der Seite, das in einer halben Sekunde hereinrollt, und ein goldenes
+    /// Plus, das danach aufspringt -- "neu auf der Liste".
+    /// </summary>
+    private static void NeuesAutoSymbol(Graphics g, RectangleF box, float t, float sicht, Palette farben)
+    {
+        var p = box.Width;
+        var rein = Raus(Klemme(t / 0.55));
+        var zustand = g.Save();
+        g.SetClip(RectangleF.Inflate(box, p * 0.12f, p * 0.12f));
+        g.TranslateTransform(box.X - (p * 0.9f * (1f - rein)), box.Y);
+        PointF P(float x, float y) => new(x * p, y * p);
+
+        using var lack = new LinearGradientBrush(new RectangleF(0, 0.3f * p, p, 0.5f * p), A(farben.Hell, sicht),
+                                                 A(farben.Tief, sicht), LinearGradientMode.Vertical);
+        using (var koerper = new GraphicsPath())
+        {
+            koerper.AddLine(P(0.06f, 0.74f), P(0.06f, 0.6f));
+            koerper.AddBezier(P(0.06f, 0.6f), P(0.08f, 0.53f), P(0.16f, 0.52f), P(0.26f, 0.51f));
+            koerper.AddLine(P(0.26f, 0.51f), P(0.37f, 0.37f));
+            koerper.AddLine(P(0.37f, 0.37f), P(0.63f, 0.37f));
+            koerper.AddLine(P(0.63f, 0.37f), P(0.76f, 0.51f));
+            koerper.AddBezier(P(0.76f, 0.51f), P(0.86f, 0.52f), P(0.94f, 0.55f), P(0.94f, 0.62f));
+            koerper.AddLine(P(0.94f, 0.62f), P(0.94f, 0.74f));
+            koerper.CloseFigure();
+            g.FillPath(lack, koerper);
+        }
+        using (var scheibe = new SolidBrush(A(Color.FromArgb(215, 20, 30, 44), sicht)))
+        {
+            g.FillPolygon(scheibe, new[] { P(0.31f, 0.5f), P(0.39f, 0.41f), P(0.49f, 0.41f), P(0.49f, 0.5f) });
+            g.FillPolygon(scheibe, new[] { P(0.53f, 0.5f), P(0.53f, 0.41f), P(0.61f, 0.41f), P(0.7f, 0.5f) });
+        }
+        using (var reifen = new SolidBrush(A(Color.FromArgb(17, 24, 39), sicht)))
+        using (var felge = new SolidBrush(A(Color.FromArgb(203, 213, 225), sicht)))
+        {
+            foreach (var x in new[] { 0.27f, 0.73f })
+            {
+                g.FillEllipse(reifen, (x - 0.1f) * p, 0.64f * p, 0.2f * p, 0.2f * p);
+                g.FillEllipse(felge, (x - 0.045f) * p, 0.695f * p, 0.09f * p, 0.09f * p);
+            }
+        }
+        using (var licht = new SolidBrush(A(Color.FromArgb(255, 250, 225), sicht)))
+        {
+            g.FillEllipse(licht, 0.86f * p, 0.57f * p, 0.06f * p, 0.04f * p);
+        }
+
+        // Das Plus: springt nach dem Hereinrollen auf, mit etwas Schwung.
+        var plus = RausMitSchwung(Klemme((t - 0.45f) / 0.35f));
+        if (plus > 0f)
+        {
+            var r = 0.15f * p * plus;
+            var m = P(0.8f, 0.22f);
+            using var schein = new SolidBrush(A(Color.FromArgb(70, 255, 209, 102), sicht));
+            g.FillEllipse(schein, m.X - (r * 1.45f), m.Y - (r * 1.45f), r * 2.9f, r * 2.9f);
+            using var gold = new LinearGradientBrush(new RectangleF(m.X - r, m.Y - r, 2 * r, 2 * r),
+                                                     A(GoldHell, sicht), A(GoldTief, sicht), LinearGradientMode.ForwardDiagonal);
+            g.FillEllipse(gold, m.X - r, m.Y - r, 2 * r, 2 * r);
+            using var weiss = new SolidBrush(A(Color.White, sicht));
+            var b = r * 0.28f;
+            g.FillRectangle(weiss, m.X - (r * 0.58f), m.Y - (b / 2f), r * 1.16f, b);
+            g.FillRectangle(weiss, m.X - (b / 2f), m.Y - (r * 0.58f), b, r * 1.16f);
+        }
+        g.Restore(zustand);
+    }
+
     private static void Stern(Graphics g, Brush pinsel, float x, float y, float r, float drehung)
     {
         var innen = r * 0.24f;
@@ -449,7 +544,7 @@ internal sealed class CelebrationHud : LayeredHud
     }
 
     /// <summary>Funkelnde Sterne rund um die Karte.</summary>
-    private static void Funkeln(Graphics g, Konfetti k, RectangleF kasten, float t, float ganz, float s)
+    private static void Funkeln(Graphics g, Konfetti k, RectangleF kasten, float t, float ganz, float s, Palette farben)
     {
         foreach (var f in k.Funken)
         {
@@ -458,7 +553,7 @@ internal sealed class CelebrationHud : LayeredHud
             var groesse = MathF.Sin(MathF.PI * u) * f.Groesse * s;
             var x = kasten.Left + (f.X * kasten.Width);
             var y = kasten.Top + (f.Y * kasten.Height);
-            using var schein = new SolidBrush(A(Color.FromArgb(70, 255, 220, 140), ganz));
+            using var schein = new SolidBrush(A(Color.FromArgb(70, farben.Licht), ganz));
             Stern(g, schein, x, y, groesse * 1.9f, 45f * u);
             using var kern = new SolidBrush(A(Color.FromArgb(245, 255, 250, 225), ganz));
             Stern(g, kern, x, y, groesse, 45f * u);
@@ -472,11 +567,18 @@ internal sealed class CelebrationHud : LayeredHud
     /// <summary>Alle Teilchen einer Feier, einmal ausgewuerfelt; die Lage rechnet <see cref="Lage"/>.</summary>
     internal sealed class Konfetti
     {
-        private static readonly Color[] Farben =
+        private static readonly Color[] Bunt =
         {
             Color.FromArgb(255, 209, 102), Color.FromArgb(255, 107, 107), Color.FromArgb(45, 212, 191),
             Color.FromArgb(96, 165, 250), Color.FromArgb(167, 139, 250), Color.FromArgb(244, 114, 182),
             Color.FromArgb(248, 250, 252), Color.FromArgb(251, 146, 60),
+        };
+
+        // Ruhiger fuer ein neues Auto: Tuerkis, Himmelblau, Weiss und ein wenig Gold.
+        private static readonly Color[] Ruhig =
+        {
+            Color.FromArgb(45, 212, 191), Color.FromArgb(94, 234, 212), Color.FromArgb(125, 211, 252),
+            Color.FromArgb(248, 250, 252), Color.FromArgb(255, 209, 102),
         };
 
         /// <summary>Art: 0 Streifen, 1 Punkt, 2 Luftschlange. Quelle: -1/+1 Knallbonbon links/rechts, 0 von oben.</summary>
@@ -490,16 +592,18 @@ internal sealed class CelebrationHud : LayeredHud
         public readonly Teil[] Teile;
         public readonly Funke[] Funken;
 
-        public Konfetti(int zufall)
+        public Konfetti(int zufall, FeierArt stil = FeierArt.Rekord)
         {
             var r = new Random(zufall);
+            var ruhig = stil == FeierArt.NeuesAuto;
+            var Farben = ruhig ? Ruhig : Bunt;
             float Z(float a, float b) => a + ((float)r.NextDouble() * (b - a));
             var teile = new List<Teil>();
             // ZWEI KNALLBONBONS an den unteren Ecken der Karte -- passend zu den zwei
             // Knallen im Ton (CelebrationSound), links zuerst.
             foreach (var (quelle, zuend) in new[] { (-1, 0.05f), (1, 0.11f) })
             {
-                for (var i = 0; i < 85; i++)
+                for (var i = 0; i < (ruhig ? 34 : 85); i++)
                 {
                     var art = r.NextDouble() < 0.62 ? 0 : r.NextDouble() < 0.7 ? 1 : 2;
                     var zug = art == 1 ? Z(2.3f, 3.0f) : Z(3.2f, 4.2f);
@@ -512,7 +616,7 @@ internal sealed class CelebrationHud : LayeredHud
                 }
             }
             // UND EIN LEICHTER REGEN von oben, verteilt ueber gut eine Sekunde.
-            for (var i = 0; i < 90; i++)
+            for (var i = 0; i < (ruhig ? 55 : 90); i++)
             {
                 var art = r.NextDouble() < 0.7 ? 0 : 1;
                 teile.Add(new Teil(art, 0, Farben[r.Next(Farben.Length)], Z(0.03f, 0.97f),

@@ -79,6 +79,34 @@ internal sealed class LapAutoSubmit
     /// </summary>
     public event Action<Rekord>? RekordGefahren;
 
+    /// <summary>A lap put a car onto a board it was not on -- ACCEPTED by the server.</summary>
+    /// <param name="Nachgereicht">Sent later from the queue, not right after the lap.</param>
+    internal sealed record NeuesAuto(string Track, int LapMs, int CarOrdinal, string? CarName, string Klasse,
+                                     bool Nachgereicht);
+
+    /// <summary>
+    /// Raised when the server accepted a lap of a car that was not on that route and
+    /// class board -- the first one this installation sent for it, not every faster
+    /// one after (see CelebrationHud.FeierArt.NeuesAuto, since 2026-09-27). Only after
+    /// acceptance: "added thanks to you" is not true before. Raised on a worker thread.
+    /// </summary>
+    public event Action<NeuesAuto>? NeuesAutoEingetragen;
+
+    private void MeldeNeuesAuto(Befund befund, RecordedLap lap, string track, RivalsDataset data, bool nachgereicht)
+    {
+        if (befund.BestenlisteMs is not null || befund.FrueherMs is not null) { return; }
+        try
+        {
+            NeuesAutoEingetragen?.Invoke(new NeuesAuto(track, (int)Math.Round(lap.LapSeconds * 1000.0), lap.CarOrdinal,
+                                                       AutoName(data, lap.CarOrdinal),
+                                                       $"{PiOrder[lap.CarClass]} {lap.PerformanceIndex}", nachgereicht));
+        }
+        catch (Exception)
+        {
+            // Eine Meldung darf keine Einreichung stoeren.
+        }
+    }
+
     /// <summary>The last decision, for the status line in the Rivals tab.</summary>
     public static string? Last { get; private set; }
     public static DateTime LastAt { get; private set; }
@@ -329,6 +357,7 @@ internal sealed class LapAutoSubmit
                 return Behalten(lap, course, track, meldung);
             }
             if (ausgang != Ausgang.Gesendet) { LapQueue.AblehnungMerken(DateTimeOffset.Now); }
+            else if (data is not null) { MeldeNeuesAuto(befund, lap, track!, data, nachgereicht: false); }
             _log(meldung);
             return meldung;
         }
@@ -512,6 +541,7 @@ internal sealed class LapAutoSubmit
                 if (ausgang == Ausgang.Gesendet)
                 {
                     gesendet++;
+                    MeldeNeuesAuto(befund, e.Lap, e.Track!, data, nachgereicht: true);
                     _log($"{meldung} (waiting since {e.QueuedAt.LocalDateTime:yyyy-MM-dd})");
                     await Task.Delay(NachreichPause, token).ConfigureAwait(false);
                     continue;

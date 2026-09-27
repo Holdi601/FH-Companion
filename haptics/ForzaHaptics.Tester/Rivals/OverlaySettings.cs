@@ -213,6 +213,12 @@ internal sealed class OverlaySettings
     [JsonPropertyName("celebrate_sound")] public bool CelebrateSound { get; set; } = true;
 
     /// <summary>
+    /// Die ruhigere Meldung, wenn eine eingereichte Runde ein Auto NEU auf eine
+    /// Bestenliste bringt (seit 2026-09-27). Ab Werk an. Der Ton folgt celebrate_sound.
+    /// </summary>
+    [JsonPropertyName("celebrate_new_car")] public bool CelebrateNewCar { get; set; } = true;
+
+    /// <summary>
     /// Unter dem Delta die Zeit, die eine Runde schlagen muss, um auf die Website zu
     /// kommen (seit 2026-09-27). Ab Werk an.
     /// </summary>

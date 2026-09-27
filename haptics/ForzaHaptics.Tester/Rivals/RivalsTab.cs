@@ -60,6 +60,11 @@ internal sealed class RivalsTab : UserControl
 
         _settings = OverlaySettings.Load();
         _nachreicher = new LapAutoSubmit(() => _advisor, _settings, OverlayController.WriteLapLog);
+        // Bringt eine NACHGEREICHTE Runde ein Auto neu auf die Liste, meldet das Overlay es.
+        _nachreicher.NeuesAutoEingetragen += r =>
+        {
+            try { BeginInvoke(() => Controller?.NeuesAutoFeiern(r)); } catch (Exception) { }
+        };
 
         // Two steps on purpose. First whatever is already on this disk, synchronously,
         // so the tab is usable the moment it appears; then the server, in the
@@ -639,6 +644,13 @@ internal sealed class RivalsTab : UserControl
     {
         EnsureController();
         Controller?.FeierProbe();
+    }
+
+    /// <summary>Die Meldung "neues Auto" einmal zeigen (ihr eigener Knopf "Try it").</summary>
+    public void PreviewNewCar()
+    {
+        EnsureController();
+        Controller?.NeuesAutoProbe();
     }
 
     /// <summary>Den Controller anlegen, ohne die Panels zu starten.</summary>

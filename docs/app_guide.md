@@ -106,6 +106,13 @@ Everything drawn over the game while you drive, and where it sits:
   it** turns the sound off on its own, and **Try it** shows the celebration
   once. A lap no faster than one you already sent or that is already waiting
   is not celebrated again.
+- **Say thanks when your lap adds a new car to the leaderboard.** On by
+  default. When the server accepts a lap of a car that was not on that route
+  and class board, a calmer notice in teal appears: "New car on the
+  leaderboard!" with your time, a "NEW" chip, the route, car and class, a
+  little confetti and a soft chime. It appears only after the server accepted
+  the lap, and only for the first lap of that car there. A lap sent later from
+  the waiting queue shows it only while Forza runs. **Try it** shows it once.
 - **Archive every lap for heatmaps.**
 - **Layout editor.** Drag every block where you want it, resize with the mouse
   wheel, and optionally show it on the real screen while you set it up.

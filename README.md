@@ -75,6 +75,11 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   about five seconds near the top of the screen. On by default; the switch and a
   **Try it** button are in the Lap delta HUD tab, and the sound can be turned
   off on its own.
+- **New car on the leaderboard.** When the server accepts your lap of a car
+  that was not on that route and class board yet, a calmer notice in teal says
+  thanks: a car rolls in, a "NEW" chip, a little confetti and a soft chime. Only
+  for the first lap of that car there; a lap sent later from the queue shows it
+  only while Forza runs. It has its own switch, on by default.
 - **Layout editor.** Drag every block where you want it and resize it with the
   mouse wheel. You can preview the result on the real screen.
 

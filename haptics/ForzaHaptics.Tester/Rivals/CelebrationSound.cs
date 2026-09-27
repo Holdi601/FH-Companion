@@ -16,20 +16,25 @@ internal static class CelebrationSound
     internal const float Spitze = 0.32f;
 
     private static readonly Lazy<byte[]> _wav = new(() => AlsWav(Proben()));
+    private static readonly Lazy<byte[]> _wavNeu = new(() => AlsWav(ProbenNeuesAuto()));
     private static System.Media.SoundPlayer? _spieler;
 
     /// <summary>Der Ton als WAV (16 Bit, mono).</summary>
     public static byte[] Wav => _wav.Value;
 
+    /// <summary>Der Ton fuer ein neues Auto auf der Liste: ruhiger, ohne Knall.</summary>
+    public static byte[] WavNeuesAuto => _wavNeu.Value;
+
     /// <summary>Abspielen, ohne zu warten. Ein Fehler (kein Ausgabegeraet) bleibt still.</summary>
-    public static void Play()
+    public static void Play(CelebrationHud.FeierArt art = CelebrationHud.FeierArt.Rekord)
     {
         try
         {
             _spieler?.Stop();
             _spieler?.Dispose();
             // Das Objekt BEHALTEN: es haelt den Puffer, aus dem Windows gerade spielt.
-            _spieler = new System.Media.SoundPlayer(new MemoryStream(Wav, writable: false));
+            var wav = art == CelebrationHud.FeierArt.NeuesAuto ? WavNeuesAuto : Wav;
+            _spieler = new System.Media.SoundPlayer(new MemoryStream(wav, writable: false));
             _spieler.Play();
         }
         catch (Exception)
@@ -73,6 +78,52 @@ internal static class CelebrationSound
         {
             var ende = Math.Min(1f, (y.Length - i) / (float)auslauf);
             y[i] *= faktor * ende;
+        }
+        return y;
+    }
+
+    /// <summary>
+    /// Der Ton fuer ein neues Auto: ein weiches Anrollen (gefiltertes Rauschen, das
+    /// anschwillt), dann A-Dur aufwaerts, heller und kuerzer als der Rekord, und ein
+    /// wenig Funkeln. Spitze etwas leiser als beim Rekord.
+    /// </summary>
+    internal static float[] ProbenNeuesAuto()
+    {
+        var y = new float[(int)(Rate * 1.8)];
+        var r = new Random(5);
+        double tief = 0;
+        var ende = (int)(Rate * 0.42);
+        for (var i = 0; i < ende; i++)
+        {
+            var t = i / (double)Rate;
+            tief += 0.08 * ((r.NextDouble() * 2) - 1 - tief);
+            var huelle = Math.Sin(Math.PI * t / 0.42) * Math.Sin(Math.PI * t / 0.42);
+            y[i] += (float)(0.5 * tief * huelle);
+        }
+        double[] noten = { 659.25, 880.00, 1108.73, 1318.51 };
+        for (var i = 0; i < noten.Length; i++)
+        {
+            var letzter = i == noten.Length - 1;
+            Glocke(y, 0.3 + (i * 0.075), noten[i], letzter ? 0.5 : 0.28, letzter ? 0.8f : 0.55f);
+        }
+        double[] funken = { 2637.0, 2960.0, 3520.0 };
+        for (var i = 0; i < 5; i++)
+        {
+            Glocke(y, 0.62 + (i * 0.11) + (r.NextDouble() * 0.03), funken[r.Next(funken.Length)], 0.06, 0.1f);
+        }
+        return Normiert(y, Spitze * 0.85f);
+    }
+
+    /// <summary>Auf eine Spitze bringen und die letzten 0,3 s sanft auslaufen lassen.</summary>
+    private static float[] Normiert(float[] y, float spitze)
+    {
+        var hoechst = 0f;
+        foreach (var v in y) { hoechst = Math.Max(hoechst, Math.Abs(v)); }
+        var faktor = hoechst > 0 ? spitze / hoechst : 0f;
+        var auslauf = (int)(Rate * 0.3);
+        for (var i = 0; i < y.Length; i++)
+        {
+            y[i] *= faktor * Math.Min(1f, (y.Length - i) / (float)auslauf);
         }
         return y;
     }

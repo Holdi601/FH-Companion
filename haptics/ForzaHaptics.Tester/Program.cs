@@ -1194,9 +1194,14 @@ internal static class Program
                 : null;
             var anlass = new CelebrationHud.Anlass("You beat the leaderboard!", "1:23.456", 0.556,
                                                    "Website best 1:24.012", "Goliath · Porsche 911 GT3 RS '19 · S1 900");
-            var konfetti = new CelebrationHud.Konfetti(1234);
+            var neu = new CelebrationHud.Anlass("New car on the leaderboard!", "1:31.208", 0,
+                                                "Its first time here on the website -- thanks to you!",
+                                                "Goliath \u00b7 Toyota Supra RZ '98 \u00b7 A 800",
+                                                CelebrationHud.FeierArt.NeuesAuto, "NEW");
+            foreach (var (name, anlassJetzt) in new[] { ("feier", anlass), ("neu", neu) })
             foreach (var t in new[] { 0.08, 0.2, 0.35, 0.6, 0.9, 1.4, 2.0, 2.8, 3.6, 4.6, 5.0 })
             {
+                var konfetti = new CelebrationHud.Konfetti(1234, anlassJetzt.Art);
                 using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
                                                            System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
                 using var g = System.Drawing.Graphics.FromImage(bild);
@@ -1211,10 +1216,11 @@ internal static class Program
                 }
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                CelebrationHud.Male(g, flaeche, anlass, konfetti, t);
-                bild.Save(Path.Combine(ordner, $"feier_{t:0.00}.png".Replace(',', '.')));
+                CelebrationHud.Male(g, flaeche, anlassJetzt, konfetti, t);
+                bild.Save(Path.Combine(ordner, $"{name}_{t:0.00}.png".Replace(',', '.')));
             }
             File.WriteAllBytes(Path.Combine(ordner, "feier.wav"), CelebrationSound.Wav);
+            File.WriteAllBytes(Path.Combine(ordner, "neu.wav"), CelebrationSound.WavNeuesAuto);
             Console.WriteLine(ordner);
             return;
         }
