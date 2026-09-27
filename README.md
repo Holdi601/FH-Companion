@@ -105,6 +105,10 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - A vibration test, live grip telemetry, a view of all telemetry and outputs, and
   a node editor with Bézier curves that decides how each signal drives each
   actuator.
+- **Battery:** vibration costs power. A wireless controller will likely run out
+  of battery noticeably faster while the haptics are on, and the stronger and
+  faster (higher frequency) you set the vibration, the more power it draws.
+  Untick `Graph output enabled` in the Blueprint editor to switch it off.
 
 ### The app itself
 

@@ -140,6 +140,11 @@ the side that slides and a locking wheel into a short buzz. Untick
 `Graph output enabled` in the Blueprint editor to switch it off; the app
 remembers the choice.
 
+**Battery:** vibration costs power. A wireless controller will likely run out of
+battery noticeably faster while the haptics are on. The stronger and faster
+(higher frequency) you set the vibration in the Blueprint editor, the more power
+it draws.
+
 ## Updating
 
 The app asks on start whether a newer version exists, and the update button does

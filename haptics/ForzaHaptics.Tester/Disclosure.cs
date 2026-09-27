@@ -53,7 +53,10 @@ internal static class Disclosure
     // Tuning gelesen -- inzwischen auch in "Tunes" und "Car notes" (je auf Knopf).
     // Neu genannt: das Lesen des Spielbilds (Anmeldeschirm, Automenue), das Lesen
     // des Spielstand-Ordners (Tunes) und das Loeschen, das Tasten ans Spiel schickt.
-    public const int Fassung = 4;
+    // 5 seit 2026-09-27: die Haptik laeuft ab Werk (Standardgraph, Schalter an) -- und
+    // eine Vibration kostet Akku. Wer Fassung 4 zugestimmt hat, kannte einen
+    // Controller, der erst nach eigenem Einschalten vibrierte.
+    public const int Fassung = 5;
 
     private const string Titel = "What " + AppInfo.Name + " does";
 
@@ -102,6 +105,15 @@ WHAT IT DOES ON YOUR PC
       program: reading another process's memory is what a cheat or a password
       stealer does. Here it reads the part list of your own car in a single-player
       racing game.
+
+  Makes your controller vibrate -- and that drains its battery faster.
+      While Forza runs and sends telemetry, the program drives the vibration of
+      your controller: tyre grip becomes rumble, a locking wheel a short buzz. This
+      is on from the start. A wireless controller will run out of battery
+      noticeably sooner while it vibrates, and the stronger and faster (higher
+      frequency) you set the vibration in the Blueprint editor, the more power it
+      draws. Untick "Graph output enabled" in the Blueprint editor to switch it
+      off; the program remembers that.
 
   Watches for key presses.
       Only to catch the hotkeys -- F10 sets a start/finish line in free roam.

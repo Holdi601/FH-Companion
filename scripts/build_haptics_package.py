@@ -580,7 +580,9 @@ What it does
   locking wheel a short buzz, without setting anything up. For the
   2026 Steam Controller (four actuators), DualSense (including the adaptive
   triggers), and Xbox, PlayStation and 8BitDo pads. The signal editor maps
-  telemetry to haptics as a node graph (saved as .fhgraph.json).
+  telemetry to haptics as a node graph (saved as .fhgraph.json). Vibration
+  costs power: a wireless controller runs out of battery faster, the more so
+  the stronger and higher-frequency you set it.
 
 
 So that telemetry arrives (once, in the game)
