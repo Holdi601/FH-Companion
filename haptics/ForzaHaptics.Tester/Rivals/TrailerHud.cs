@@ -77,7 +77,10 @@ internal static class TrailerHud
         {
             DeltaHud = true, HudInputs = teile.Contains("inputs"), LiveMap = true, HudTyres = true,
             HudDeltaY = 0.13,
-            HudTyresX = 0.015, HudTyresY = 0.20, HudTyresAlign = "left",
+            // Reifen links unter der Zeitenbox von Rivals; die Eingabespuren links in der
+            // Mitte (rechts unten sitzt der Tacho, links unten die Karte des Spiels).
+            HudTyresX = 0.015, HudTyresY = 0.30, HudTyresAlign = "left",
+            HudInputsX = 0.02, HudInputsY = 0.40, HudInputsAlign = "left",
         };
         if (string.Equals(Wert("--layout"), "dashboard", StringComparison.OrdinalIgnoreCase))
         {
@@ -204,6 +207,16 @@ internal static class TrailerHud
         if (g0 >= 0 && g0 + 1 < args.Length && args[g0 + 1].Split('x') is { Length: 2 } wh) { groesse = new Size(int.Parse(wh[0]), int.Parse(wh[1])); }
         var s = OverlaySettings.Load();
         s.CarNotes = true;
+        // --pos x,y[,scale]: wohin die Notiz kommt (Bruchteile der Flaeche), wie im Editor.
+        var p0 = Array.FindIndex(args, a => string.Equals(a, "--pos", StringComparison.OrdinalIgnoreCase));
+        if (p0 >= 0 && p0 + 1 < args.Length)
+        {
+            var teile = args[p0 + 1].Split(',');
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            s.HudCarNoteX = double.Parse(teile[0], inv);
+            s.HudCarNoteY = double.Parse(teile[1], inv);
+            if (teile.Length > 2) { s.HudCarNoteScale = double.Parse(teile[2], inv); }
+        }
         using var bild = new Bitmap(groesse.Width, groesse.Height, PixelFormat.Format32bppPArgb);
         using (var g = Graphics.FromImage(bild))
         {
