@@ -21,6 +21,42 @@ internal sealed class VorschauForm : Form
     }
 
     protected override bool ShowWithoutActivation => true;
+
+    /// <summary>"x2" unter den Argumenten: das Bild doppelt so gross, fuer 4K.</summary>
+    internal static float Faktor(string[] args) =>
+        args.Contains("x2", StringComparer.OrdinalIgnoreCase) ? 2f : 1f;
+
+    /// <summary>
+    /// Alles um den Faktor f groesser zeichnen -- Schriften, Spalten, Abstaende.
+    /// Die Schriften werden vorher eingesammelt: eine geerbte Schrift wuerde beim
+    /// Kind sonst ein zweites Mal vergroessert.
+    /// </summary>
+    internal void Vergroessern(float f)
+    {
+        if (Math.Abs(f - 1f) < 0.01f) { return; }
+        var alle = new List<(Control C, Font F)>();
+        void Sammeln(Control c)
+        {
+            alle.Add((c, c.Font));
+            foreach (Control k in c.Controls) { Sammeln(k); }
+        }
+        Sammeln(this);
+        SuspendLayout();
+        foreach (var (c, schrift) in alle)
+        {
+            c.Font = new Font(schrift.FontFamily, schrift.Size * f, schrift.Style, schrift.Unit);
+            if (c.MaximumSize != Size.Empty)
+            {
+                c.MaximumSize = new Size((int)(c.MaximumSize.Width * f), (int)(c.MaximumSize.Height * f));
+            }
+            if (c is ListView liste)
+            {
+                foreach (ColumnHeader kopf in liste.Columns) { kopf.Width = (int)(kopf.Width * f); }
+            }
+        }
+        Scale(new SizeF(f, f));
+        ResumeLayout(true);
+    }
 }
 
 internal static class Program
@@ -372,6 +408,7 @@ internal static class Program
             var ansicht = mp + 2 < args.Length ? args[mp + 2].ToLowerInvariant() : "";
             if (ansicht == "points") { tab.ShowView(1); }
             if (ansicht == "time") { tab.ShowView(2); }
+            form.Vergroessern(VorschauForm.Faktor(args));
             Application.DoEvents();
             using var bild = new Bitmap(form.Width, form.Height);
             form.DrawToBitmap(bild, new Rectangle(0, 0, form.Width, form.Height));
@@ -608,6 +645,37 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--tuning-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--tuning-preview <garage.db> <auto>": den Tuning-Inspektor mit einer
+            // Garage aus einem alten Abzug zeichnen -- ohne laufendes Spiel.
+            Application.EnableVisualStyles();
+            var tp = Array.FindIndex(args, a => string.Equals(a, "--tuning-preview", StringComparison.OrdinalIgnoreCase));
+            if (tp + 2 >= args.Length || !File.Exists(args[tp + 1]) || !int.TryParse(args[tp + 2], out var auto))
+            {
+                Console.WriteLine("usage: --tuning-preview <garage.db> <car id>");
+                return;
+            }
+            // "... en": Zahlen wie im englischen Windows (0.190 statt 0,190).
+            if (args.Contains("en", StringComparer.OrdinalIgnoreCase))
+            {
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+            }
+            using var form = new VorschauForm { Width = 960, Height = 1120, Text = "Tuning" };
+            var tab = new Tuning.TuningTab(() => null);
+            form.Controls.Add(tab);
+            form.Show();
+            tab.Vorschau(args[tp + 1], auto);
+            form.Vergroessern(VorschauForm.Faktor(args));
+            Application.DoEvents();
+            using var bild = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
+            tab.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));
+            var ziel = Path.Combine(Path.GetTempPath(), "forza-tuning.png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            return;
+        }
+
         if (args.Contains("--tunes-preview", StringComparer.OrdinalIgnoreCase))
         {
             // Den Reiter "Tunes" zeichnen -- mit dem echten Spielstand, nur gelesen.
@@ -620,6 +688,10 @@ internal static class Program
             var echt = Rivals.OverlaySettings.Load();
             if (echt.Path is not null && File.Exists(echt.Path)) { File.Copy(echt.Path, kopie, overwrite: true); }
             var einst = Rivals.OverlaySettings.Load(kopie);
+            if (args.Contains("en", StringComparer.OrdinalIgnoreCase))
+            {
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+            }
             using var form = new VorschauForm { Width = 1300, Height = 820, Text = "Tunes" };
             var tab = new Tuning.TunesTab(einst, () => rat);
             form.Controls.Add(tab);
@@ -639,6 +711,7 @@ internal static class Program
                    : args.Contains("tunecount", StringComparer.OrdinalIgnoreCase) ? 3
                    : args.Contains("plan", StringComparer.OrdinalIgnoreCase) ? 4 : 1);
             }
+            form.Vergroessern(VorschauForm.Faktor(args));
             Application.DoEvents();
             using var bild = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             tab.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));

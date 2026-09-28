@@ -89,7 +89,7 @@ internal sealed class TuningTab : UserControl
         _kopieren.AutoSize = true;
         _kopieren.Enabled = false;
         _kopieren.Click += (_, _) => Kopieren();
-        _wagen.Width = 220;
+        _wagen.Width = 380;
         _wagen.DropDownStyle = ComboBoxStyle.DropDownList;
         _wagen.SelectedIndexChanged += (_, _) => WagenGewaehlt();
 
@@ -227,6 +227,18 @@ internal sealed class TuningTab : UserControl
         });
     }
 
+    /// <summary>
+    /// Eine Garage aus einem alten Abzug zeigen, als waere sie eben gelesen --
+    /// nur fuer das Vorschaubild; das Spiel muss dafuer nicht laufen.
+    /// </summary>
+    internal void Vorschau(string garage, int carId)
+    {
+        var autos = GarageReader.Cars(garage);
+        Fertig(garage, autos, $"garage read: {autos.Count} car(s).");
+        var stelle = autos.IndexOf(carId);
+        if (stelle >= 0) { _wagen.SelectedIndex = stelle; }
+    }
+
     private void BeiUns(Action was)
     {
         if (IsHandleCreated && InvokeRequired) { BeginInvoke(was); }
@@ -242,7 +254,7 @@ internal sealed class TuningTab : UserControl
         _lesen.Enabled = true;
 
         _wagen.Items.Clear();
-        foreach (var a in autos) { _wagen.Items.Add($"car {a}"); }
+        foreach (var a in autos) { _wagen.Items.Add(Bezeichnung(a)); }
 
         var paket = _telemetrie();
         var ordinal = paket is null ? 0 : (int)paket.Get("CarOrdinal");
@@ -304,6 +316,13 @@ internal sealed class TuningTab : UserControl
         return _garageAutos.Contains((int)nummer) ? $"car {nummer}" : null;
     }
 
+    /// <summary>"Audi R8 Coupe V10 plus 5.2 FSI quattro '13 (2010)" -- die Nummer allein sagt niemandem etwas.</summary>
+    private string Bezeichnung(int carId)
+    {
+        var name = AutoName(carId);
+        return name is null || name == $"car {carId}" ? $"car {carId}" : $"{name} ({carId})";
+    }
+
     private void WagenGewaehlt()
     {
         if (_garageDb is null || _wagen.SelectedIndex < 0
@@ -338,7 +357,7 @@ internal sealed class TuningTab : UserControl
         var pi = paket is null ? 0 : (int)paket.Get("CarPerformanceIndex");
         var gefahren = paket is not null && (int)paket.Get("CarOrdinal") == tune.CarId;
         _auto.Text =
-            $"car {tune.CarId}   class {tune.ClassName}   "
+            $"{Bezeichnung(tune.CarId)}   class {tune.ClassName}   "
             + (gefahren && pi > 0 ? $"PI {pi} (from telemetry)   " : string.Empty)
             + $"parts bought for {tune.PartsValue:N0} CR"
             + (string.IsNullOrWhiteSpace(tune.TuneFileName)

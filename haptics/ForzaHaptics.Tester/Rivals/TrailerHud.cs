@@ -40,7 +40,7 @@ internal static class TrailerHud
         var i = Array.FindIndex(args, a => string.Equals(a, "--trailer-hud", StringComparison.OrdinalIgnoreCase));
         if (i < 0 || i + 2 >= args.Length)
         {
-            Console.WriteLine("usage: --trailer-hud <lap.json> <outdir> [--ref <lap.json>] [--size WxH] [--parts delta,inputs,tyres,map]");
+            Console.WriteLine("usage: --trailer-hud <lap.json> <outdir> [--ref <lap.json>] [--size WxH] [--parts delta,inputs,tyres,map,ghost]");
             return 2;
         }
         var pfad = Path.GetFullPath(args[i + 1]);
@@ -92,6 +92,11 @@ internal static class TrailerHud
         }
         // Kein Geister-Countdown: hinter der Einblendphase zeichnet der Streifen keinen.
         var keinGeist = -(float)(s.PopInSeconds + 1);
+        // "--parts ghost": der Countdown wie im Rennen -- dieselbe Regel wie im
+        // OverlayController (GhostSeconds - CurrentRaceTime, nur mit einer Platzierung).
+        // Ohne "delta" steht er allein da: ein Rennstart hat keine Vergleichsrunde.
+        var mitGeist = teile.Contains("ghost");
+        var nurGeist = mitGeist && !teile.Contains("delta");
         using var streifen = new DeltaHud(new Rectangle(Point.Empty, groesse), s);
         var karte = (referenz ?? lap).Samples.Select(p => new PointF(p.X, p.Z)).ToList();
         var spur = new List<PointF>();
@@ -121,7 +126,10 @@ internal static class TrailerHud
                                     (float)paket.Get("Clutch") / 255f, (float)paket.Get("Steer") / 127f,
                                     (float)paket.Get("Gear"), referenz, refSek);
             }
-            streifen.Update(delta, bezeichnung, keinGeist);
+            var geist = mitGeist && (int)paket.Get("RacePosition") >= 1
+                ? (float)Math.Max(s.GhostSeconds - paket.Get("CurrentRaceTime"), -(s.PopInSeconds + 1))
+                : keinGeist;
+            streifen.Update(nurGeist ? null : delta, nurGeist ? string.Empty : bezeichnung, geist);
             spur.Add(new PointF((float)paket.Get("PositionX"), (float)paket.Get("PositionZ")));
             if (t < von - 1e-6 || t > bis + 1e-6) { continue; }
 
@@ -130,7 +138,7 @@ internal static class TrailerHud
                 gfx.Clear(Color.Transparent);
                 gfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                if (teile.Contains("delta") || teile.Contains("inputs")) { streifen.PaintInto(gfx); }
+                if (teile.Contains("delta") || teile.Contains("inputs") || mitGeist) { streifen.PaintInto(gfx); }
                 if (teile.Contains("tyres")) { TyreHud.Male(gfx, s, groesse, TyreHud.AusPaket(paket)); }
                 if (teile.Contains("map")) { LiveMapHud.Male(gfx, s, groesse, karte, spur, spur[^1], auchWennAus: true); }
             }
