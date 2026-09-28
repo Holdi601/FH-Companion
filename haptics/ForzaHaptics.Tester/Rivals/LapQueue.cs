@@ -51,12 +51,19 @@ internal static class LapQueue
         Path.Combine(Folder, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)))
                                     .ToLowerInvariant()[..16] + ".json");
 
+    /// <summary>Die volle Spur einer wartenden Runde, neben ihrer Datei.</summary>
+    private static string SpurFuer(string key) =>
+        Path.ChangeExtension(PfadFuer(key), null) + TelemetryTrack.Suffix;
+
     private static Eintrag? Lesen(string pfad)
     {
         try
         {
             var e = JsonSerializer.Deserialize<Eintrag>(File.ReadAllText(pfad));
-            return e is null || string.IsNullOrWhiteSpace(e.Key) || !(e.Lap.LapSeconds > 0) ? null : e;
+            if (e is null || string.IsNullOrWhiteSpace(e.Key) || !(e.Lap.LapSeconds > 0)) { return null; }
+            var spur = SpurFuer(e.Key);
+            e.Lap.TelemetrieDatei = File.Exists(spur) ? spur : null;
+            return e;
         }
         catch (Exception)
         {
@@ -68,7 +75,8 @@ internal static class LapQueue
     /// Keep a lap for later. Returns false when an equal or faster lap of the same
     /// route, class and car is already waiting -- the new one would add nothing.
     /// </summary>
-    public static bool Vormerken(RecordedLap lap, string course, string? track, string key, string grund)
+    public static bool Vormerken(RecordedLap lap, string course, string? track, string key, string grund,
+                                 byte[]? spur = null)
     {
         if (string.IsNullOrWhiteSpace(key)) { return false; }
         var pfad = PfadFuer(key);
@@ -77,6 +85,14 @@ internal static class LapQueue
         {
             return false;
         }
+        // Die volle Spur reist mit der Runde (seit 2026-09-28): daneben ablegen. Eine
+        // alte Spur einer langsameren Runde desselben Schluessels muss dabei weg --
+        // sonst ginge die neue Runde mit der Telemetrie der alten hinaus.
+        var spurDatei = SpurFuer(key);
+        try { if (File.Exists(spurDatei)) { File.Delete(spurDatei); } } catch (Exception) { }
+        Directory.CreateDirectory(Folder);
+        var gepackt = spur ?? LapSubmit.VolleSpur(lap);
+        if (gepackt is not null) { File.WriteAllBytes(spurDatei, gepackt); }
         Sichern(new Eintrag
         {
             Key = key,
@@ -141,6 +157,7 @@ internal static class LapQueue
     public static void Entfernen(string key)
     {
         try { File.Delete(PfadFuer(key)); } catch (Exception) { }
+        try { File.Delete(SpurFuer(key)); } catch (Exception) { }
     }
 
     /// <summary>Throw every waiting lap away -- the button in the Rivals tab.</summary>

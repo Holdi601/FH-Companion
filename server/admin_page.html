@@ -523,7 +523,7 @@ function rundenZeichnen() {
   }
   ziel.innerHTML = '<table class="laps"><tr><th>Time</th><th>Player</th>'
     + '<th>Track</th><th>Class</th>'
-    + '<th>Car</th><th>PI</th><th>Received</th><th>Flags</th><th></th><th></th></tr>'
+    + '<th>Car</th><th>PI</th><th>Received</th><th>Flags</th><th>Telemetry</th><th></th><th></th></tr>'
     + reihen.map(function (r) {
         var s = rundeSekunden(r);
         // Ein vorlaeufiger Name (Spieler ohne Gamertag) ist als solcher erkennbar.
@@ -538,12 +538,36 @@ function rundenZeichnen() {
           + "</td><td>" + esc(lap.performanceIndex !== undefined ? lap.performanceIndex : "-")
           + "</td><td>" + esc(String(r.received || "").replace("T", " ").replace("+00:00", ""))
           + '</td><td class="flag">' + esc((r.flags || []).join(", ") || "")
+          + '</td><td class="tele">'
+          + (r.fullTelemetry
+             ? '<button class="tele" data-tele="' + esc(r.id) + '" data-fmt="full" title="'
+               + esc((r.fullTelemetry.rows || 0) + " packets x " + (r.fullTelemetry.columns || 0)
+                     + " fields") + '">full csv</button> '
+             : '')
+          + '<button class="tele" data-tele="' + esc(r.id) + '" data-fmt="json" title="'
+          + esc((lap.samplesCount || 0) + " samples") + '">json</button> '
+          + '<button class="tele" data-tele="' + esc(r.id) + '" data-fmt="csv">csv</button>'
           + '</td><td><button data-id="' + esc(r.id) + '" data-hide="'
           + (r.hidden ? "0" : "1") + '">'
           + (r.hidden ? "restore" : "delete") + "</button></td>"
           + '<td><button class="ban" data-ban="' + esc(r.id) + '">ban player</button></td></tr>';
       }).join("") + "</table>";
 
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-tele]"), function (b) {
+    b.addEventListener("click", function () {
+      b.disabled = true;
+      var fmt = b.getAttribute("data-fmt");
+      var id = b.getAttribute("data-tele");
+      var r = alleRunden.filter(function (x) { return x.id === id; })[0] || { id: id };
+      (fmt === "full"
+        ? schicke("/api/admin/lap/fulltelemetry", { id: id })
+            .then(function (spur) { volleSpurSpeichern(r, spur); })
+        : schicke("/api/admin/lap/telemetry", { id: id })
+            .then(function (d) { telemetrieSpeichern(d, fmt); }))
+        .catch(function (e) { alert("Failed: " + e.message); })
+        .then(function () { b.disabled = false; });
+    });
+  });
   Array.prototype.forEach.call(ziel.querySelectorAll("button[data-ban]"), function (b) {
     b.addEventListener("click", function () {
       if (!confirm("Ban this player from submitting? Their laps are hidden too.")) { return; }
@@ -570,6 +594,58 @@ function rundenZeichnen() {
 }
 
 var KLASSEN = ["D", "C", "B", "A", "S1", "S2", "R"];
+
+// Eine Runde als Datei: JSON so, wie sie auf dem Server liegt, oder CSV mit einer
+// Zeile je Messpunkt (Spalten = alle vorkommenden Felder, in der Reihenfolge des
+// ersten Punkts) -- fuer eine Tabellenkalkulation.
+// Die volle Telemetrie (jedes Paket, alle Felder) als CSV: die Spalten stehen im
+// Kopf der Datei, die Zeilen sind reine Zahlenreihen -- so wie die App sie ablegt.
+function volleSpurSpeichern(r, spur) {
+  var lap = r.lap || {};
+  var s = Number(lap.lapSeconds);
+  var name = [r.gamertag || "player", lap.track || lap.course || "track",
+              isNaN(s) ? "lap" : s.toFixed(3) + "s", r.id, "full"]
+    .map(function (t) { return String(t).replace(/[^A-Za-z0-9._-]+/g, "_"); }).join("_") + ".csv";
+  var teile = [(spur.columns || []).join(",") + "\n"];
+  (spur.data || []).forEach(function (z) { teile.push(z.join(",") + "\n"); });
+  herunterladen(new Blob(teile, { type: "text/csv" }), name);
+}
+
+function herunterladen(blob, name) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+function telemetrieSpeichern(d, fmt) {
+  var lap = d.lap || {};
+  var s = Number(lap.lapSeconds);
+  var name = [d.gamertag || "player", lap.track || lap.course || "track",
+              isNaN(s) ? "lap" : s.toFixed(3) + "s", d.id]
+    .map(function (t) { return String(t).replace(/[^A-Za-z0-9._-]+/g, "_"); }).join("_");
+  var inhalt, typ;
+  if (fmt === "csv") {
+    var proben = lap.samples || [];
+    var spalten = [];
+    proben.forEach(function (p) {
+      Object.keys(p).forEach(function (k) { if (spalten.indexOf(k) < 0) { spalten.push(k); } });
+    });
+    inhalt = spalten.join(",") + "\n" + proben.map(function (p) {
+      return spalten.map(function (k) { return p[k] === undefined ? "" : String(p[k]); }).join(",");
+    }).join("\n") + "\n";
+    typ = "text/csv";
+    name += ".csv";
+  } else {
+    inhalt = JSON.stringify(d, null, 1);
+    typ = "application/json";
+    name += ".json";
+  }
+  herunterladen(new Blob([inhalt], { type: typ }), name);
+}
 
 function sperrenLaden() {
   var spieler = document.getElementById("bans-installs");

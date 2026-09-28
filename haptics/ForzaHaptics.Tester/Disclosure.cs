@@ -62,7 +62,10 @@ internal static class Disclosure
     // wieder einschaltet. Und: ohne Gamertag wird jetzt AUCH eingereicht (als
     // vorlaeufiger Spielername) -- Fassung 4 versprach "Nothing is sent without a
     // gamertag".
-    public const int Fassung = 5;
+    // 6 seit 2026-09-28: mit jeder eingereichten Runde geht ihre VOLLE Telemetrie
+    // hinaus (jedes Paket: Ort, Lage, Tempo, Eingaben, Motor, je Rad Temperatur,
+    // Schlupf, Federweg) -- Fassung 5 nannte nur "positions and speeds".
+    public const int Fassung = 6;
 
     private const string Titel = "What " + AppInfo.Name + " does";
 
@@ -150,9 +153,12 @@ WHAT LEAVES YOUR COMPUTER
 
   About 4: a lap is sent only if it is faster than the best leaderboard time of
   that same car on that route and class, and faster than anything you sent for it
-  before. Sent are: the car, the route, the class, the time, and the lap's
-  telemetry (positions and speeds along the lap, so the server can check the time
-  is real), plus a hashed identifier of this PC so abuse can be blocked -- and your
+  before. Sent are: the car, the route, the class, the time, and the lap's FULL
+  telemetry -- every packet the game sent during that lap: position and
+  orientation, speed, your throttle, brake, clutch and steering, gear, engine, and
+  per wheel the tyre temperature, slip and suspension -- so the server can check
+  the time is real and a person can look at a lap that seems wrong. Plus a hashed
+  identifier of this PC so abuse can be blocked -- and your
   gamertag, if you set one in the Rivals tab. A gamertag is not required: without
   one the lap is still sent and appears on the website under a temporary player
   name. A gamertag you set later replaces it on all your laps, also the earlier

@@ -204,7 +204,7 @@ internal static class LapSubmit
     /// </param>
     public static async Task<string> SubmitAsync(Identity wer, RecordedLap lap,
                                                  string course, TimeSpan timeout,
-                                                 string? gamertag = null)
+                                                 string? gamertag = null, byte[]? volleSpur = null)
     {
         if (string.IsNullOrWhiteSpace(wer.Server) || string.IsNullOrWhiteSpace(wer.Secret)
             || string.IsNullOrWhiteSpace(wer.InstallId))
@@ -212,14 +212,7 @@ internal static class LapSubmit
             throw new InvalidOperationException("Diese Installation ist nicht angemeldet.");
         }
 
-        // Die Runde so, wie das Archiv sie ablegt -- plus den Streckenschluessel.
-        // Der Server bildet daraus die Kennung, damit dieselbe Runde zweimal
-        // eingereicht EINE Datei ergibt und nicht zwei.
-        var knoten = JsonSerializer.SerializeToNode(lap, Lesbar)!.AsObject();
-        knoten["course"] = course;
-        var gesamt = new JsonObject { ["lap"] = knoten };
-        if (gamertag is not null) { gesamt["gamertag"] = gamertag.Trim(); }
-        var rumpf = JsonSerializer.SerializeToUtf8Bytes(gesamt, Lesbar);
+        var rumpf = Rumpf(lap, course, gamertag, volleSpur ?? VolleSpur(lap));
 
         const string pfad = "/api/lap/submit";
         var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
@@ -245,6 +238,46 @@ internal static class LapSubmit
             throw new Rejected((int)antwort.StatusCode, Fehlertext(antwort.StatusCode, text));
         }
         return text;
+    }
+
+    /// <summary>Was an /api/lap/submit geht -- unterschrieben wird genau diese Bytefolge.</summary>
+    /// <remarks>
+    /// Die Runde so, wie das Archiv sie ablegt, plus den Streckenschluessel: der
+    /// Server bildet daraus die Kennung, damit dieselbe Runde zweimal eingereicht
+    /// EINE Datei ergibt. Dazu die volle Telemetrie (seit 2026-09-28) -- die gepackte
+    /// .tele.gz, unveraendert, als Base64: jedes Paket der Runde, damit eine
+    /// verdaechtige Zeit von einem Menschen nachgesehen werden kann.
+    /// </remarks>
+    internal static byte[] Rumpf(RecordedLap lap, string course, string? gamertag, byte[]? volleSpur)
+    {
+        var knoten = JsonSerializer.SerializeToNode(lap, Lesbar)!.AsObject();
+        knoten["course"] = course;
+        var gesamt = new JsonObject { ["lap"] = knoten };
+        if (gamertag is not null) { gesamt["gamertag"] = gamertag.Trim(); }
+        if (volleSpur is { Length: > 0 })
+        {
+            gesamt["telemetry"] = new JsonObject
+            {
+                ["encoding"] = "gzip+base64",
+                ["format"] = "fhc-tele-" + TelemetryTrack.Version,
+                ["data"] = Convert.ToBase64String(volleSpur),
+            };
+        }
+        return JsonSerializer.SerializeToUtf8Bytes(gesamt, Lesbar);
+    }
+
+    /// <summary>Die gepackte volle Spur einer Runde -- aus dem Speicher oder von der Platte, sonst null.</summary>
+    internal static byte[]? VolleSpur(RecordedLap lap)
+    {
+        if (lap.FullTrack?.Gepackt() is { Length: > 0 } imSpeicher) { return imSpeicher; }
+        try
+        {
+            return lap.TelemetrieDatei is { } pfad && File.Exists(pfad) ? File.ReadAllBytes(pfad) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>

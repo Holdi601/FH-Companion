@@ -162,6 +162,13 @@ internal sealed class RecordedLap
     [JsonIgnore] public TelemetryTrack? FullTrack { get; set; }
 
     /// <summary>
+    /// Die gepackte volle Spur auf der Platte, wenn sie nicht mehr im Speicher ist
+    /// (eine wartende Runde, siehe LapQueue). Nur lokal -- NIE in einer Einreichung:
+    /// ein Pfad traegt den Windows-Benutzernamen.
+    /// </summary>
+    [JsonIgnore] public string? TelemetrieDatei { get; set; }
+
+    /// <summary>
     /// Die Fahrt endete am Ziel (oder mit dem Rennen), nicht an einer Rundenlinie.
     /// </summary>
     /// <remarks>

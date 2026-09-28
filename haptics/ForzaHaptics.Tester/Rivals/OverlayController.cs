@@ -191,11 +191,16 @@ internal sealed class OverlayController : IDisposable
             // 1,5 MB je Runde. Weggeworfen wird sie hier und nicht im Aufzeichner:
             // dort wird sie ohnehin gesammelt, und ein zweiter Schalter mitten im
             // Paketpfad waere eine zweite Stelle, an der man ihn vergessen kann.
+            // Die Einreichung braucht sie trotzdem (seit 2026-09-28): jede Runde, die
+            // an die Seite geht, traegt ihre volle Telemetrie. Der Schalter betrifft
+            // nur das Archiv auf dieser Platte.
+            var volleSpur = lap.FullTrack;
             if (!_settings.FullTelemetry) { lap.FullTrack = null; }
 
             var abgelegt = _settings.ArchiveLaps
                 ? LapArchive.Save(lap, _settings.LapTag)
                 : null;
+            lap.FullTrack = volleSpur;
 
             // DIE EIGENE BESTENLISTE: war das ein persoenlicher Rekord? (seit 2026-09-28)
             if (abgelegt is not null) { EigenerRekord(abgelegt, lap); }

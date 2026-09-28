@@ -95,6 +95,17 @@ def admin_kopf(secret: str, method: str, pfad: str, body: bytes) -> dict:
     }
 
 
+def volle_spur(sekunden: float = 100.0) -> dict:
+    """Die volle Telemetrie, wie die App sie schickt: gepacktes JSON als Base64."""
+    import base64
+    import gzip
+    zeilen = 60
+    inhalt = {"version": 1, "rows": zeilen, "columns": ["t", "metres", "Speed"],
+              "data": [[sekunden * i / (zeilen - 1), 50.0 * i, 30.0] for i in range(zeilen)]}
+    return {"encoding": "gzip+base64", "format": "fhc-tele-1",
+            "data": base64.b64encode(gzip.compress(json.dumps(inhalt).encode("utf-8"))).decode("ascii")}
+
+
 def runde(sekunden: float = 100.0) -> dict:
     punkte = 40
     proben = [{"Seconds": sekunden * i / (punkte - 1), "Metres": 3000.0 * i / (punkte - 1),
@@ -173,7 +184,7 @@ with tempfile.TemporaryDirectory() as tmp:
         laps.ANMELDE_VERSUCHE.unlink(missing_ok=True)
 
         print("\nEinreichen ueber HTTP")
-        rumpf = json.dumps({"lap": runde()}).encode("utf-8")
+        rumpf = json.dumps({"lap": runde(), "telemetry": volle_spur()}).encode("utf-8")
         status, antwort = ruf(port, "POST", "/api/lap/submit", rumpf,
                               unterschrieben(secret, install_id, "/api/lap/submit",
                                              rumpf, "nonce-0001"))
@@ -181,6 +192,8 @@ with tempfile.TemporaryDirectory() as tmp:
                % (status, antwort.get("error", "")))
         lap_id = antwort.get("id", "")
         pruefe(bool(lap_id), "der Server nennt eine Kennung fuer die Runde")
+        pruefe(antwort.get("kept") is not False and "no full telemetry" not in antwort.get("flags", []),
+               "mit voller Telemetrie: aufgehoben und ohne Hinweis")
 
         status, antwort = ruf(port, "POST", "/api/lap/submit", rumpf,
                               unterschrieben("falsch", install_id, "/api/lap/submit",
@@ -208,6 +221,36 @@ with tempfile.TemporaryDirectory() as tmp:
         pruefe("install_id" not in roh,
                "die Installationskennung wird NICHT oeffentlich ausgegeben")
         pruefe(secret not in roh, "und das Geheimnis erst recht nicht")
+
+        print("\nAdmin: volle Telemetrie holen")
+        koerper = json.dumps({"id": lap_id}).encode("utf-8")
+        status, antwort = ruf(port, "POST", "/api/admin/lap/fulltelemetry", koerper,
+                              admin_kopf(ADMIN, "POST", "/api/admin/lap/fulltelemetry", koerper))
+        pruefe(status == 200 and antwort.get("columns") == ["t", "metres", "Speed"]
+               and len(antwort.get("data") or []) == 60,
+               "jede Zeile kommt zurueck (war %d: %s)" % (status, antwort.get("error", "")))
+        status, _ = ruf(port, "POST", "/api/admin/lap/fulltelemetry", koerper,
+                        {"X-Forza-Timestamp": str(int(time.time())),
+                         "X-Forza-Signature": "0" * 64})
+        pruefe(status == 401, "ohne gueltige Admin-Unterschrift: 401 (war %d)" % status)
+
+        print("\nAdmin: Telemetrie holen")
+        koerper = json.dumps({"id": lap_id}).encode("utf-8")
+        status, antwort = ruf(port, "POST", "/api/admin/lap/telemetry", koerper,
+                              admin_kopf(ADMIN, "POST", "/api/admin/lap/telemetry", koerper))
+        pruefe(status == 200, "mit Admin-Unterschrift: 200 (war %d: %s)"
+               % (status, antwort.get("error", "")))
+        pruefe(len((antwort.get("lap") or {}).get("samples") or []) >= 10,
+               "die Messpunkte sind dabei")
+        pruefe("install_id" not in antwort, "install_id bleibt draussen")
+        status, _ = ruf(port, "POST", "/api/admin/lap/telemetry", koerper,
+                        {"X-Forza-Timestamp": str(int(time.time())),
+                         "X-Forza-Signature": "0" * 64})
+        pruefe(status == 401, "ohne gueltige Admin-Unterschrift: 401 (war %d)" % status)
+        koerper = json.dumps({"id": "../../config/contrib_keys"}).encode("utf-8")
+        status, _ = ruf(port, "POST", "/api/admin/lap/telemetry", koerper,
+                        admin_kopf(ADMIN, "POST", "/api/admin/lap/telemetry", koerper))
+        pruefe(status == 400, "eine Kennung, die kein Dateiname von uns ist: 400 (war %d)" % status)
 
         print("\nAdmin: ausblenden")
         koerper = json.dumps({"id": lap_id, "reason": "Probe"}).encode("utf-8")
@@ -251,8 +294,10 @@ with tempfile.TemporaryDirectory() as tmp:
                % (status, antwort.get("error", "")))
         anon_id, anon_secret = antwort.get("install_id", ""), antwort.get("secret", "")
 
-        def anon_einreichen(sekunden: float, nonce: str, name=None) -> int:
-            nutzlast = {"lap": runde(sekunden)}
+        def anon_einreichen(sekunden: float, nonce: str, name=None, wagen: int = 1234) -> int:
+            # Je Auto, Strecke und Klasse bleibt nur die schnellste Runde eines
+            # Menschen (seit 2026-09-28) -- darum hier jede Runde auf einem eigenen Auto.
+            nutzlast = {"lap": dict(runde(sekunden), carOrdinal=wagen)}
             if name is not None:
                 nutzlast["gamertag"] = name
             b = json.dumps(nutzlast).encode("utf-8")
@@ -265,16 +310,16 @@ with tempfile.TemporaryDirectory() as tmp:
             return sorted((r.get("gamertag"), r.get("gamertag_temporary"),
                            (r.get("lap") or {}).get("lapSeconds")) for r in a.get("laps", []))
 
-        pruefe(anon_einreichen(90.0, "nonce-anon-1", "") == 200, "ohne Namen eingereicht: 200")
+        pruefe(anon_einreichen(90.0, "nonce-anon-1", "", wagen=2001) == 200, "ohne Namen eingereicht: 200")
         liste = namen_in_liste()
         pruefe(len(liste) == 1 and str(liste[0][0]).startswith("Player-") and liste[0][1] is True,
                "die Seite zeigt einen vorlaeufigen Namen (%s)" % (liste[:1],))
         vorlaeufig = liste[0][0] if liste else ""
-        pruefe(anon_einreichen(80.0, "nonce-anon-2", "Spaeterer") == 200, "mit Namen eingereicht: 200")
+        pruefe(anon_einreichen(80.0, "nonce-anon-2", "Spaeterer", wagen=2002) == 200, "mit Namen eingereicht: 200")
         liste = namen_in_liste()
         pruefe(len(liste) == 2 and all(n == "Spaeterer" and v is False for n, v, _ in liste),
                "der neue Name steht auch an der frueheren Runde (%s)" % liste)
-        pruefe(anon_einreichen(70.0, "nonce-anon-3", "") == 200, "wieder ohne Namen: 200")
+        pruefe(anon_einreichen(70.0, "nonce-anon-3", "", wagen=2003) == 200, "wieder ohne Namen: 200")
         liste = namen_in_liste()
         pruefe(len(liste) == 3 and all(n == "Spaeterer" for n, _, _ in liste),
                "ein leeres Feld laesst den Namen stehen (%s)" % liste)

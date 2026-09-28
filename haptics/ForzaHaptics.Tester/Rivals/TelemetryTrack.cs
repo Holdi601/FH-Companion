@@ -262,44 +262,7 @@ internal sealed class TelemetryTrack
         var ziel = lapPath + Suffix;
         try
         {
-            using var datei = File.Create(ziel);
-            using var packer = new GZipStream(datei, CompressionLevel.Optimal);
-            using var schreiber = new StreamWriter(packer, new UTF8Encoding(false));
-
-            // Von Hand gebaut statt ueber einen Serialisierer: das sind Zehntausende
-            // Zeilen, und die Zahlen sollen mit fester Stellenzahl und PUNKT als
-            // Dezimaltrennzeichen herauskommen, unabhaengig von der
-            // Spracheinstellung. "1,234" in einer Zahlenreihe waere zwei Werte.
-            schreiber.Write("{\"version\":");
-            schreiber.Write(Version);
-            schreiber.Write(",\"rows\":");
-            schreiber.Write(_reihen.Count);
-            schreiber.Write(",\"duplicatesDropped\":");
-            schreiber.Write(Duplicates);
-            schreiber.Write(",\"truncated\":");
-            schreiber.Write(Truncated ? "true" : "false");
-            schreiber.Write(",\"columns\":[");
-            for (var i = 0; i < Columns.Length; i++)
-            {
-                if (i > 0) { schreiber.Write(','); }
-                schreiber.Write('"');
-                schreiber.Write(Columns[i]);
-                schreiber.Write('"');
-            }
-            schreiber.Write("],\"data\":[");
-            for (var r = 0; r < _reihen.Count; r++)
-            {
-                if (r > 0) { schreiber.Write(','); }
-                schreiber.Write('[');
-                var reihe = _reihen[r];
-                for (var c = 0; c < reihe.Length; c++)
-                {
-                    if (c > 0) { schreiber.Write(','); }
-                    schreiber.Write(Kurz(reihe[c]));
-                }
-                schreiber.Write(']');
-            }
-            schreiber.Write("]}");
+            using (var datei = File.Create(ziel)) { Packen(datei); }
             return ziel;
         }
         catch (Exception)
@@ -307,6 +270,62 @@ internal sealed class TelemetryTrack
             try { if (File.Exists(ziel)) { File.Delete(ziel); } } catch (Exception) { }
             return null;
         }
+    }
+
+    /// <summary>
+    /// Die Spur gepackt im Speicher -- genau die Bytes, die <see cref="Save"/> schreibt.
+    /// </summary>
+    /// <remarks>
+    /// Fuer die Einreichung (seit 2026-09-28): jede Runde, die an die Seite geht,
+    /// traegt ihre volle Telemetrie mit, auch wenn sie nicht archiviert wird.
+    /// </remarks>
+    public byte[]? Gepackt()
+    {
+        if (_reihen.Count == 0) { return null; }
+        using var speicher = new MemoryStream();
+        Packen(speicher);
+        return speicher.ToArray();
+    }
+
+    private void Packen(Stream ausgabe)
+    {
+        using var packer = new GZipStream(ausgabe, CompressionLevel.Optimal, leaveOpen: true);
+        using var schreiber = new StreamWriter(packer, new UTF8Encoding(false));
+
+        // Von Hand gebaut statt ueber einen Serialisierer: das sind Zehntausende
+        // Zeilen, und die Zahlen sollen mit fester Stellenzahl und PUNKT als
+        // Dezimaltrennzeichen herauskommen, unabhaengig von der
+        // Spracheinstellung. "1,234" in einer Zahlenreihe waere zwei Werte.
+        schreiber.Write("{\"version\":");
+        schreiber.Write(Version);
+        schreiber.Write(",\"rows\":");
+        schreiber.Write(_reihen.Count);
+        schreiber.Write(",\"duplicatesDropped\":");
+        schreiber.Write(Duplicates);
+        schreiber.Write(",\"truncated\":");
+        schreiber.Write(Truncated ? "true" : "false");
+        schreiber.Write(",\"columns\":[");
+        for (var i = 0; i < Columns.Length; i++)
+        {
+            if (i > 0) { schreiber.Write(','); }
+            schreiber.Write('"');
+            schreiber.Write(Columns[i]);
+            schreiber.Write('"');
+        }
+        schreiber.Write("],\"data\":[");
+        for (var r = 0; r < _reihen.Count; r++)
+        {
+            if (r > 0) { schreiber.Write(','); }
+            schreiber.Write('[');
+            var reihe = _reihen[r];
+            for (var c = 0; c < reihe.Length; c++)
+            {
+                if (c > 0) { schreiber.Write(','); }
+                schreiber.Write(Kurz(reihe[c]));
+            }
+            schreiber.Write(']');
+        }
+        schreiber.Write("]}");
     }
 
     /// <summary>

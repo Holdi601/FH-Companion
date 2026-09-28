@@ -57,6 +57,9 @@ Telemetrie ansieht. Genau dafuer wird sie mitgespeichert.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import gzip
 import hashlib
 import hmac
 import json
@@ -66,6 +69,7 @@ import re
 import secrets
 import threading
 import time
+import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,7 +79,9 @@ LAPS_DIR = WORKSPACE / "data" / "submissions" / "laps"
 
 CLOCK_SKEW = 300
 SECRET_BYTES = 32
-MAX_BODY = 8 * 1024 * 1024
+# 16 MB: seit 2026-09-28 reist die volle Telemetrie mit (gepackt, als Base64). Eine
+# 214-s-Runde sind 1,8 MB gepackt, eine Viertelstunde waeren rund 8 MB.
+MAX_BODY = 16 * 1024 * 1024
 
 # Mit '#': neuere Xbox-Gamertags tragen eine Nummer ("Name#1234").
 GAMERTAG_RE = re.compile(r"^[\w][\w .'#-]{0,29}$", re.UNICODE)
@@ -142,6 +148,20 @@ RUNDEN_JE_INSTALL_TAG = 100
 # Die meisten Messpunkte, die eine Runde tragen darf: alle 5 m einer, also reicht
 # das fuer 250 km -- laenger als jede Strecke im Spiel.
 MAX_PROBEN = 50_000
+
+# Die volle Telemetrie (die .tele.gz der App): gepackt hoechstens so gross, und beim
+# Entpacken nie mehr als das -- eine kleine Datei, die zu Gigabytes aufgeht, soll
+# den Server nicht in die Knie zwingen.
+MAX_TELE_GEPACKT = 12 * 1024 * 1024
+MAX_TELE_ENTPACKT = 200 * 1024 * 1024
+MAX_TELE_ZEILEN = 60_000     # die App kappt bei 54 000 (TelemetryTrack.MaxRows)
+MAX_TELE_SPALTEN = 256
+
+# Wie viele Runden je Auto, Strecke und Leistungsklasse aufgehoben werden -- und
+# davon hoechstens EINE je Mensch (Hardware-Kennung). Wer zehn gefaelschte Runden
+# schickt, belegt so einen Platz, nicht alle: die neun davor bleiben als Rueckfall,
+# wenn seine Runde ausgeblendet oder er gesperrt wird.
+BEHALTEN_JE_GRUPPE = 10
 
 
 def _atomar_schreiben(path: Path, text: str) -> None:
@@ -750,6 +770,86 @@ def tageskontingent(install_id: str, now: float | None = None,
         save_keys(data, keys_path)
 
 
+def _entpacken(gepackt: bytes) -> bytes:
+    """gzip entpacken, aber nie ueber MAX_TELE_ENTPACKT hinaus."""
+    d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    teile, summe = [], 0
+    rest = gepackt
+    while rest:
+        stueck = d.decompress(rest, 1 << 20)
+        summe += len(stueck)
+        if summe > MAX_TELE_ENTPACKT:
+            raise SubmitError(413, "Die Telemetrie waere entpackt groesser als %d MB."
+                                   % (MAX_TELE_ENTPACKT // (1024 * 1024)))
+        teile.append(stueck)
+        rest = d.unconsumed_tail
+        if d.eof:
+            break
+    return b"".join(teile)
+
+
+def pruefe_telemetrie(tele, runde: dict):
+    """Die volle Telemetrie einer Einreichung pruefen.
+
+    Gibt (gepackte Bytes, Kurzinfo, Auffaelligkeiten) zurueck. Fehlt sie, ist das
+    kein Grund zur Ablehnung -- aeltere Fassungen der App schicken sie nicht --,
+    aber die Runde traegt dann einen Hinweis. Ist sie DA und kaputt oder passt
+    nicht zur Runde, wird abgelehnt: dann stimmt an der Einreichung etwas nicht.
+    """
+    if tele is None:
+        return None, None, ["no full telemetry"]
+    if not isinstance(tele, dict) or tele.get("encoding") != "gzip+base64" \
+            or not isinstance(tele.get("data"), str):
+        raise SubmitError(400, "'telemetry' muss {encoding: gzip+base64, data} sein.")
+    if len(tele["data"]) > MAX_TELE_GEPACKT * 4 // 3 + 4:
+        raise SubmitError(413, "Die Telemetrie ist gepackt groesser als %d MB."
+                               % (MAX_TELE_GEPACKT // (1024 * 1024)))
+    try:
+        gepackt = base64.b64decode(tele["data"], validate=True)
+    except (binascii.Error, ValueError):
+        raise SubmitError(400, "Die Telemetrie ist kein gueltiges Base64.") from None
+    try:
+        roh = _entpacken(gepackt)
+        spur = json.loads(roh.decode("utf-8"))
+    except SubmitError:
+        raise
+    except Exception:
+        raise SubmitError(400, "Die Telemetrie ist kein gepacktes JSON.") from None
+    if not isinstance(spur, dict):
+        raise SubmitError(400, "Die Telemetrie muss ein Objekt sein.")
+    spalten, daten = spur.get("columns"), spur.get("data")
+    if not isinstance(spalten, list) or not 1 <= len(spalten) <= MAX_TELE_SPALTEN \
+            or not all(isinstance(c, str) and _FELDNAME.match(c) for c in spalten):
+        raise SubmitError(400, "Die Spalten der Telemetrie sind unbrauchbar.")
+    if not isinstance(daten, list) or not 10 <= len(daten) <= MAX_TELE_ZEILEN:
+        raise SubmitError(422, "Die Telemetrie hat %s Zeilen -- erwartet 10 bis %d."
+                               % (len(daten) if isinstance(daten, list) else "keine",
+                                  MAX_TELE_ZEILEN))
+    breite = len(spalten)
+    for i, zeile in enumerate(daten):
+        if not isinstance(zeile, list) or len(zeile) != breite:
+            raise SubmitError(400, "Zeile %d der Telemetrie hat nicht %d Werte." % (i, breite))
+        if not all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                   and math.isfinite(v) for v in zeile):
+            raise SubmitError(400, "Zeile %d der Telemetrie enthaelt keine Zahl." % i)
+    # Sie muss zu DIESER Runde gehoeren: ihre Uhr laeuft vorwaerts und endet bei der
+    # Rundenzeit -- sonst laege die Telemetrie einer anderen Fahrt unter der Zeit.
+    if "t" in spalten:
+        k = spalten.index("t")
+        letzte = -1.0
+        for i, zeile in enumerate(daten):
+            if zeile[k] < letzte - 1e-6:
+                raise SubmitError(422, "Die Uhr der Telemetrie laeuft bei Zeile %d rueckwaerts." % i)
+            letzte = zeile[k]
+        sekunden = float(runde.get("lapSeconds") or 0)
+        if sekunden > 0 and abs(letzte - sekunden) > max(2.0, 0.05 * sekunden):
+            raise SubmitError(422, "Die Telemetrie endet bei %.1f s, die Runde bei %.1f s."
+                                   % (letzte, sekunden))
+    info = {"rows": len(daten), "columns": breite, "bytes": len(gepackt),
+            "format": str(tele.get("format") or "")[:40]}
+    return gepackt, info, []
+
+
 def ohne_telemetrie(datensatz: dict) -> dict:
     """Eine Runde fuer Listen: alles ausser den Messpunkten.
 
@@ -778,7 +878,8 @@ def lap_id(install_id: str, runde: dict) -> str:
 
 def store(install_id: str, eintrag: dict, runde: dict, auffaellig: list,
           root: Path | None = None, keys_path: Path | None = None,
-          now: float | None = None) -> dict:
+          now: float | None = None, volle_spur: bytes | None = None,
+          spur_info: dict | None = None) -> dict:
     root = root or LAPS_DIR
     root.mkdir(parents=True, exist_ok=True)
     kennung = lap_id(install_id, runde)
@@ -795,6 +896,14 @@ def store(install_id: str, eintrag: dict, runde: dict, auffaellig: list,
         "hidden": False,
         "lap": runde,
     }
+    if volle_spur is not None:
+        # Die volle Spur DANEBEN, wie bei der App: die Rundendatei lesen alle
+        # Listen, und die sollen keine Megabytes durch den Parser schieben.
+        ziel = root / (kennung + ".tele.gz")
+        tmp = ziel.with_suffix(".gz.tmp")
+        tmp.write_bytes(volle_spur)
+        os.replace(tmp, ziel)
+        datensatz["fullTelemetry"] = spur_info or {}
     _atomar_schreiben(root / (kennung + ".json"),
                       json.dumps(datensatz, ensure_ascii=False, indent=1))
 
@@ -823,6 +932,87 @@ def list_laps(root: Path | None = None, include_hidden: bool = False) -> list:
             continue
         raus.append(d)
     return raus
+
+
+def get_lap(kennung: str, root: Path | None = None) -> dict:
+    """Eine Runde vollstaendig, MIT den Messpunkten -- fuer die Verwaltung.
+
+    Die Listen lassen die Messpunkte weg (ohne_telemetrie); wer eine verdaechtige
+    Zeit beurteilen will, braucht sie aber ganz. install_id bleibt draussen wie
+    ueberall, wo etwas die Seite verlaesst.
+    """
+    root = root or LAPS_DIR
+    # Die Kennung wird zum Dateinamen -- nur, was lap_id() selbst erzeugt.
+    if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
+        raise SubmitError(400, "Keine gueltige Kennung.")
+    p = root / (kennung + ".json")
+    if not p.exists():
+        raise SubmitError(404, "Keine Runde mit der Kennung %r." % kennung)
+    d = json.loads(p.read_text(encoding="utf-8-sig"))
+    return {k: v for k, v in d.items() if k != "install_id"}
+
+
+def gruppe_von(runde: dict) -> tuple:
+    """Auto, Strecke und Klasse -- dieselbe Einteilung wie der Abgleich mit der Bestenliste."""
+    strecke = " ".join(str(runde.get("track") or runde.get("course") or "").strip().lower().split())
+    return (strecke, str(runde.get("carClass")), str(runde.get("carOrdinal")))
+
+
+def _mensch(install_id: str, installs: dict) -> str:
+    """Wer eine Runde gefahren hat: die (gepfefferte) Hardware-Kennung der Installation.
+
+    Eine Neuinstallation bekommt eine neue install_id, aber dieselbe Hardware -- sie
+    ist derselbe Mensch. Ist die Installation nicht mehr bekannt (aufgeraeumt), zaehlt
+    ihre Kennung allein.
+    """
+    hw = (installs.get(install_id) or {}).get("hw")
+    return "hw:" + hw if hw else "install:" + str(install_id)
+
+
+def nur_die_besten(gruppe: tuple, root: Path | None = None,
+                   keys_path: Path | None = None) -> list:
+    """Eine Gruppe auf die BEHALTEN_JE_GRUPPE schnellsten Runden stutzen, je Mensch eine.
+
+    Gibt die Kennungen der entfernten Runden zurueck. Ausgeblendete Runden zaehlen
+    nicht mit und werden nie entfernt: sie sind der Beleg dafuer, WAS ausgeblendet
+    wurde (dieselbe Regel wie beim Ausblenden selbst). Entfernt wird mit der
+    Rundendatei auch ihre volle Telemetrie.
+    """
+    root = root or LAPS_DIR
+    with _SCHLOSS:
+        installs = load_keys(keys_path).get("installs", {})
+        sichtbar = [d for d in list_laps(root)
+                    if d.get("id") and gruppe_von(d.get("lap") or {}) == gruppe]
+        sichtbar.sort(key=lambda d: (float((d.get("lap") or {}).get("lapSeconds") or 9e9),
+                                     str(d.get("received") or "")))
+        gesehen, behalten, weg = set(), 0, []
+        for d in sichtbar:
+            wer = _mensch(d.get("install_id") or "", installs)
+            if wer in gesehen or behalten >= BEHALTEN_JE_GRUPPE:
+                weg.append(d["id"])
+                continue
+            gesehen.add(wer)
+            behalten += 1
+        for kennung in weg:
+            if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
+                continue
+            for datei in (root / (kennung + ".json"), root / (kennung + ".tele.gz")):
+                try:
+                    datei.unlink()
+                except FileNotFoundError:
+                    pass
+        return weg
+
+
+def get_full_telemetry(kennung: str, root: Path | None = None) -> dict:
+    """Die volle Telemetrie einer Runde, entpackt -- fuer die Verwaltung."""
+    root = root or LAPS_DIR
+    if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
+        raise SubmitError(400, "Keine gueltige Kennung.")
+    p = root / (kennung + ".tele.gz")
+    if not p.exists():
+        raise SubmitError(404, "Zu dieser Runde liegt keine volle Telemetrie vor.")
+    return json.loads(gzip.decompress(p.read_bytes()).decode("utf-8"))
 
 
 def set_hidden(kennung: str, hidden: bool, grund: str = "",

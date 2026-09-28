@@ -579,6 +579,10 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             # die Bestenliste wirklich schlaegt. Nichts davon wird der App geglaubt.
             try:
                 auffaellig = laps.pruefe_runde(runde)
+                # Die volle Telemetrie (seit 2026-09-28): geprueft wie die Runde selbst.
+                volle_spur, spur_info, ohne_spur = laps.pruefe_telemetrie(
+                    anfrage.get("telemetry"), runde)
+                auffaellig = list(auffaellig) + ohne_spur
                 runde = laps.saeubere_runde(runde)
                 befund = bestenliste.pruefe(runde, DATASET_FILE, laps.list_laps())
             except laps.SubmitError as e:
@@ -596,7 +600,16 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             laps.set_gamertag(install_id, anfrage.get("gamertag"), eintrag)
             if befund.get("newCar"):
                 auffaellig = list(auffaellig) + ["car not on this leaderboard yet"]
-            abgelegt = laps.store(install_id, eintrag, runde, auffaellig, now=now)
+            abgelegt = laps.store(install_id, eintrag, runde, auffaellig, now=now,
+                                  volle_spur=volle_spur, spur_info=spur_info)
+            # Je Auto, Strecke und Klasse nur die zehn schnellsten, je Mensch eine.
+            entfernt = laps.nur_die_besten(laps.gruppe_von(runde))
+            if abgelegt["id"] in entfernt:
+                return as_json(200, {"ok": True, "id": abgelegt["id"], "kept": False,
+                                     "flags": auffaellig,
+                                     "note": ("Angenommen, aber nicht aufgehoben: von dir "
+                                              "liegt hier schon eine schnellere Runde, oder "
+                                              "sie ist nicht unter den zehn schnellsten.")})
             return as_json(200, {"ok": True, "id": abgelegt["id"],
                                  "flags": auffaellig,
                                  # Ehrlich sagen, was noch aussteht: die Runde ist
@@ -630,6 +643,19 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             return as_json(200, {"laps": [
                 {k: v for k, v in laps.ohne_telemetrie(runde).items() if k != "install_id"}
                 for runde in laps.mit_spielernamen(laps.list_laps(include_hidden=True))]})
+
+        if method == "POST" and path == "/api/admin/lap/fulltelemetry":
+            # Jedes Paket der Runde (die .tele.gz der App), entpackt.
+            require_admin(keys, method, path, headers, body, now)
+            return as_json(200, laps.get_full_telemetry(str(rumpf().get("id") or "")))
+
+        if method == "POST" and path == "/api/admin/lap/telemetry":
+            # Die ganze Runde samt Messpunkten, zum Herunterladen in der Verwaltung.
+            # POST und unterschrieben wie alles hier: die Messpunkte sind das, was
+            # die oeffentliche Liste absichtlich nicht herausgibt.
+            require_admin(keys, method, path, headers, body, now)
+            runde = laps.get_lap(str(rumpf().get("id") or ""))
+            return as_json(200, laps.mit_spielernamen([runde])[0])
 
         if method == "POST" and path in ("/api/admin/lap/hide",
                                          "/api/admin/lap/show"):

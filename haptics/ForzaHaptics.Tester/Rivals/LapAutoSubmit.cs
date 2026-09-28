@@ -361,16 +361,31 @@ internal sealed class LapAutoSubmit
                 return text;
             }
 
+            // JEDE EINGEREICHTE RUNDE TRAEGT IHRE VOLLE TELEMETRIE (seit 2026-09-28).
+            // Ohne sie geht keine hinaus -- die Seite soll jede Zeit nachpruefen koennen.
+            //
+            // GEPACKT WIRD ABSEITS DES UI-THREADS: bis hierher laeuft diese Methode
+            // noch auf dem Thread, der die Runde beendet hat, und eine lange Runde zu
+            // packen kostet Zehntelsekunden -- ein Ruckler genau an der Ziellinie.
+            // Einmal packen, dann dieselben Bytes fuer Warteschlange und Einreichung.
+            var spur = await Task.Run(() => LapSubmit.VolleSpur(lap)).ConfigureAwait(false);
+            if (spur is null)
+            {
+                var ohne = "not submitted: the full telemetry of this lap is missing";
+                _log(ohne);
+                return ohne;
+            }
+
             var hindernis = Hindernis() ?? (unentschieden ? befund.Grund : null);
             if (hindernis is not null)
             {
-                return Behalten(lap, course, track, hindernis);
+                return Behalten(lap, course, track, hindernis, spur);
             }
 
-            var (ausgang, meldung) = await SendenAsync(lap, course, track!, befund, buch).ConfigureAwait(false);
+            var (ausgang, meldung) = await SendenAsync(lap, course, track!, befund, buch, spur).ConfigureAwait(false);
             if (ausgang == Ausgang.SpaeterNochmal)
             {
-                return Behalten(lap, course, track, meldung);
+                return Behalten(lap, course, track, meldung, spur);
             }
             if (ausgang != Ausgang.Gesendet) { LapQueue.AblehnungMerken(DateTimeOffset.Now); }
             else if (data is not null) { MeldeNeuesAuto(befund, lap, track!, data, nachgereicht: false); }
@@ -389,10 +404,10 @@ internal sealed class LapAutoSubmit
         }
     }
 
-    private string Behalten(RecordedLap lap, string course, string? track, string grund)
+    private string Behalten(RecordedLap lap, string course, string? track, string grund, byte[] spur)
     {
         lap.Track ??= track;
-        var neu = LapQueue.Vormerken(lap, course, track, Schluessel(lap, track)!, grund);
+        var neu = LapQueue.Vormerken(lap, course, track, Schluessel(lap, track)!, grund, spur);
         var text = neu
             ? $"kept to submit later ({grund}): {lap.LapSeconds:0.000} s on {track}"
             : $"not kept ({grund}): a faster lap of this car on {track} is already waiting";
@@ -402,7 +417,8 @@ internal sealed class LapAutoSubmit
 
     /// <summary>Sign up if needed, send one lap, and say how it ended. Never throws.</summary>
     private async Task<(Ausgang, string)> SendenAsync(RecordedLap lap, string course, string track,
-                                                      Befund befund, Dictionary<string, int> buch)
+                                                      Befund befund, Dictionary<string, int> buch,
+                                                      byte[] spur)
     {
         var gamertag = (_settings.Gamertag ?? string.Empty).Trim();
         var timeout = TimeSpan.FromSeconds(Math.Max(20, _settings.DatasetDownloadSeconds / 4));
@@ -440,7 +456,7 @@ internal sealed class LapAutoSubmit
         var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
         try
         {
-            await LapSubmit.SubmitAsync(wer, lap, course, timeout, gamertag).ConfigureAwait(false);
+            await LapSubmit.SubmitAsync(wer, lap, course, timeout, gamertag, spur).ConfigureAwait(false);
             InsBuch(buch, befund.Schluessel, ms);
             return (Ausgang.Gesendet, $"submitted: {lap.LapSeconds:0.000} s on {track} -- {befund.Grund}");
         }
@@ -535,6 +551,13 @@ internal sealed class LapAutoSubmit
                 if (token.IsCancellationRequested || Hindernis() is not null) { break; }
                 var buch = LedgerLaden();
                 var befund = Pruefen(e.Lap, e.Track, data, buch);
+                var spur = befund.Senden ? LapSubmit.VolleSpur(e.Lap) : null;
+                if (befund.Senden && spur is null)
+                {
+                    // Aus der Zeit vor 2026-09-28: gewartet ohne Spur. Ohne volle
+                    // Telemetrie geht keine Runde mehr hinaus.
+                    befund = befund with { Senden = false, Grund = "the full telemetry of this lap is missing" };
+                }
                 if (!befund.Senden)
                 {
                     LapQueue.Entfernen(e.Key);
@@ -542,7 +565,7 @@ internal sealed class LapAutoSubmit
                     _log($"waiting lap dropped ({e.Lap.LapSeconds:0.000} s on {e.Track}): {befund.Grund}");
                     continue;
                 }
-                var (ausgang, meldung) = await SendenAsync(e.Lap, e.Course, e.Track!, befund, buch)
+                var (ausgang, meldung) = await SendenAsync(e.Lap, e.Course, e.Track!, befund, buch, spur!)
                                                 .ConfigureAwait(false);
                 if (ausgang == Ausgang.SpaeterNochmal)
                 {

@@ -135,6 +135,58 @@ Merkwürdiges gleich wegwirft, verliert genau die Fälle, aus denen sich lernen 
 > Dagegen hilft nur ein Mensch, der sich die Telemetrie ansieht. Genau dafür wird sie
 > mitgespeichert.
 
+## Die volle Telemetrie reist mit (seit 2026-09-28)
+
+Die Messpunkte der Runde (`samples`: Zeit, Weg, Ort, Tempo, Eingaben, G, Gang) reichen
+für die Prüfungen oben — nicht aber, um eine verdächtige Zeit wirklich zu beurteilen.
+Darum schickt die App mit **jeder** eingereichten Runde ihre ganze `.tele.gz` mit:
+jedes Paket der Runde, alle 73 Felder (Ort und Lage, Tempo, Eingaben, Motor, je Rad
+Temperatur, Schlupf und Federweg).
+
+```json
+{"lap": {...}, "gamertag": "...",
+ "telemetry": {"encoding": "gzip+base64", "format": "fhc-tele-1", "data": "<Base64>"}}
+```
+
+- **Ohne volle Telemetrie reicht die App keine Runde ein.** Der Schalter „volle
+  Telemetrie" betrifft nur das Archiv auf der Platte; für die Einreichung wird die
+  Spur trotzdem behalten. Eine wartende Runde legt sie als Nebendatei neben sich
+  (`pending_laps/<schlüssel>.tele.gz`). Gepackt wird abseits des UI-Threads — eine
+  lange Runde kostet Zehntelsekunden, und das wäre ein Ruckler an der Ziellinie.
+- **Der Server prüft sie wie die Runde selbst** (`pruefe_telemetrie`): gültiges
+  Base64, gepackt höchstens 12 MB, **entpackt nie über 200 MB** (eine kleine Datei,
+  die zu Gigabytes aufgeht, wird beim Entpacken gestoppt), 10 bis 60 000 Zeilen, jede
+  Zeile gleich breit und nur Zahlen, die Uhr `t` läuft vorwärts und **endet bei der
+  Rundenzeit**. Sonst: abgewiesen.
+- **Fehlt sie, wird die Runde angenommen, aber markiert** (`no full telemetry`) —
+  ältere Fassungen der App schicken sie nicht.
+- Abgelegt wird sie **unverändert neben** der Rundendatei (`<id>.tele.gz`); die Runde
+  trägt nur eine Kurzinfo (`fullTelemetry`: Zeilen, Spalten, Bytes). Die Listen lesen
+  sie nie.
+- Die Grenze für einen Rumpf liegt darum bei 16 MB (vorher 8). Eine 214-s-Runde sind
+  1,8 MB gepackt.
+- Der Zustimmungstext nennt das seit **Fassung 6** — wer 5 zugestimmt hatte, kannte
+  nur „positions and speeds".
+
+## Je Auto, Strecke und Klasse die zehn schnellsten — je Mensch eine (seit 2026-09-28)
+
+Nach jeder Annahme stutzt der Server die Gruppe (Strecke, Klasse, Auto — dieselbe
+Einteilung wie der Abgleich mit der Bestenliste) auf **zehn Runden**, und davon
+**höchstens eine je Mensch**. Mensch heißt: der gepfefferte Hardware-Hash der
+Installation. Eine Neuinstallation auf derselben Maschine ist also derselbe Mensch.
+
+Der Zweck: schickt jemand zehn gefälschte Runden, belegt er **einen** Platz, nicht
+alle. Wird seine Runde ausgeblendet oder er gesperrt, stehen die neun davor noch da.
+
+- **Ausgeblendete Runden zählen nicht mit und werden nie entfernt** — sie sind der
+  Beleg dafür, was ausgeblendet wurde.
+- Entfernt wird mit der Rundendatei auch ihre volle Telemetrie.
+- Fällt die gerade eingereichte Runde selbst heraus, antwortet der Server trotzdem
+  200, aber mit `"kept": false` — sie war gültig, nur nicht unter den zehn.
+
+Weil der Server ohnehin nur Runden annimmt, die schneller sind als alles, was für
+diese Gruppe schon eingereicht wurde, sind die zehn die letzten zehn Rekordhalter.
+
 ## Verwalten
 
 ```
@@ -142,8 +194,15 @@ POST /api/admin/lap/hide     {"id": "...", "reason": "..."}
 POST /api/admin/lap/show     {"id": "..."}
 POST /api/admin/lap/ban      {"install_id": "...", "reason": "..."}
 POST /api/admin/lap/unban    {"install_id": "..."}
+POST /api/admin/lap/telemetry      {"id": "..."}   die Runde samt Messpunkten
+POST /api/admin/lap/fulltelemetry  {"id": "..."}   jedes Paket, alle Felder
 GET  /api/admin/installs
 ```
+
+In der Admin-Ansicht stehen dafür je Runde drei Knöpfe: **full csv** (jedes Paket,
+alle Felder — nur, wenn die Runde ihre volle Telemetrie mitbrachte), **json** (die
+Runde, wie sie auf dem Server liegt) und **csv** (die Messpunkte, eine Zeile je
+Punkt).
 
 Alle mit Admin-Unterschrift (dasselbe Verfahren wie die übrige Admin-Ansicht).
 

@@ -61,6 +61,7 @@ internal static class EdgeCaseTest
         PersonalRecordsDecide();
         CelebrationsWaitWhileDriving();
         ConsoleModeReadsItsSource();
+        FullTelemetryTravelsWithTheLap();
     }
 
     /// <summary>Eine Bildquelle zum Testen: ein festes Bild.</summary>
@@ -76,6 +77,81 @@ internal static class EdgeCaseTest
     /// Konsolenmodus (2026-09-28): ohne Videoquelle wird nichts gelesen; mit einer liest
     /// GameArea aus IHREM Bild -- Flaeche, Ausschnitt und Farbe stimmen.
     /// </summary>
+    /// <summary>
+    /// Jede eingereichte Runde traegt ihre volle Telemetrie (seit 2026-09-28) -- aus dem
+    /// Speicher, und fuer eine wartende Runde aus ihrer Nebendatei. Kein lokaler Pfad
+    /// darf dabei in den Rumpf geraten.
+    /// </summary>
+    private static Rivals.TelemetryTrack TestSpur()
+    {
+        var spur = new Rivals.TelemetryTrack();
+        var paket = new byte[324];
+        BitConverter.GetBytes(1).CopyTo(paket, 0);
+        for (var i = 0; i < 40; i++)
+        {
+            BitConverter.GetBytes(1000u + (uint)i * 16).CopyTo(paket, 4);
+            Soll(ForzaPacket.TryParse(paket, out var p), "Testpaket parst nicht");
+            spur.Add(p, i * 0.016f, i * 0.5f);
+        }
+        return spur;
+    }
+
+    private static void FullTelemetryTravelsWithTheLap()
+    {
+        var spur = TestSpur();
+        var lap = new Rivals.RecordedLap { LapSeconds = 0.64f, FullTrack = spur };
+        var gepackt = Rivals.LapSubmit.VolleSpur(lap);
+        Soll(gepackt is { Length: > 0 }, "keine gepackte Spur aus dem Speicher");
+
+        // Genau die Bytes, die das Archiv schreibt.
+        var ordner = Path.Combine(Path.GetTempPath(), "fhc-edge-tele-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(ordner);
+        var alteHeimat = Environment.GetEnvironmentVariable("FORZA_SUBMIT_HOME");
+        try
+        {
+            var datei = spur.Save(Path.Combine(ordner, "runde.json"));
+            Soll(datei is not null && File.ReadAllBytes(datei).AsSpan().SequenceEqual(gepackt),
+                 "gepackt im Speicher ist nicht dasselbe wie die .tele.gz");
+
+            // Der Rumpf: Telemetrie als Base64, dieselben Bytes; kein Pfad darin.
+            lap.TelemetrieDatei = datei;
+            var rumpf = Rivals.LapSubmit.Rumpf(lap, "course_1_2_to_3_4", "Tester", gepackt);
+            var knoten = System.Text.Json.Nodes.JsonNode.Parse(rumpf)!;
+            var b64 = knoten["telemetry"]?["data"]?.GetValue<string>();
+            Soll(b64 is not null && Convert.FromBase64String(b64).AsSpan().SequenceEqual(gepackt),
+                 "die Telemetrie im Rumpf ist nicht die gepackte Spur");
+            var text = System.Text.Encoding.UTF8.GetString(rumpf);
+            Soll(!text.Contains(ordner.Replace("\\", "\\\\")) && !text.Contains("fhc-edge-tele"),
+                 "ein lokaler Pfad steht im Rumpf");
+
+            // Eine wartende Runde: die Spur liegt als Nebendatei und kommt wieder.
+            Environment.SetEnvironmentVariable("FORZA_SUBMIT_HOME", ordner);
+            var wartend = new Rivals.RecordedLap { LapSeconds = 0.64f, FullTrack = spur };
+            Soll(Rivals.LapQueue.Vormerken(wartend, "c", "Testkurs", "schluessel-1", "Probe"),
+                 "Vormerken schlug fehl");
+            var zurueck = Rivals.LapQueue.Alle().Single(e => e.Key == "schluessel-1");
+            Soll(zurueck.Lap.FullTrack is null && zurueck.Lap.TelemetrieDatei is not null,
+                 "die wartende Runde kennt ihre Nebendatei nicht");
+            Soll(Rivals.LapSubmit.VolleSpur(zurueck.Lap)?.AsSpan().SequenceEqual(gepackt) == true,
+                 "die Nebendatei traegt nicht die Spur der Runde");
+            // Eine schnellere Runde OHNE Spur darf die alte Spur nicht erben.
+            var ohne = new Rivals.RecordedLap { LapSeconds = 0.5f };
+            Soll(Rivals.LapQueue.Vormerken(ohne, "c", "Testkurs", "schluessel-1", "Probe"),
+                 "die schnellere Runde wurde nicht vorgemerkt");
+            var neu = Rivals.LapQueue.Alle().Single(e => e.Key == "schluessel-1");
+            Soll(Rivals.LapSubmit.VolleSpur(neu.Lap) is null,
+                 "die schnellere Runde erbte die Spur der langsameren");
+            Rivals.LapQueue.Entfernen("schluessel-1");
+            Soll(Directory.GetFiles(Rivals.LapQueue.Folder).Length == 0,
+                 "Entfernen liess eine Datei zurueck");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FORZA_SUBMIT_HOME", alteHeimat);
+            try { Directory.Delete(ordner, recursive: true); } catch (Exception) { }
+        }
+    }
+
     private static void ConsoleModeReadsItsSource()
     {
         var s = new Rivals.OverlaySettings();
@@ -611,7 +687,9 @@ internal static class EdgeCaseTest
         };
         Rivals.RecordedLap Lap(float sek, int car = 1234)
         {
-            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = 3, Mode = "rivals" };
+            // Mit voller Spur: ohne sie geht seit 2026-09-28 keine Runde mehr hinaus.
+            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = 3, Mode = "rivals",
+                                             FullTrack = TestSpur() };
             for (var i = 0; i < 12; i++) { l.Samples.Add(new Rivals.LapSample()); }
             return l;
         }
@@ -620,6 +698,7 @@ internal static class EdgeCaseTest
         var totPort = FreierPort();
         var antworten = new System.Collections.Concurrent.ConcurrentQueue<int>();
         var einreichungen = 0;
+        var ohneSpur = 0;
         string? angemeldetAls = null;
         string? eingereichtAls = null;
         using var hoerer = new System.Net.HttpListener();
@@ -650,6 +729,9 @@ internal static class EdgeCaseTest
                 {
                     eingereichtAls = name;
                     Interlocked.Increment(ref einreichungen);
+                    // Jede Einreichung traegt ihre volle Telemetrie (seit 2026-09-28).
+                    var b64 = System.Text.Json.Nodes.JsonNode.Parse(anfrage)?["telemetry"]?["data"]?.GetValue<string>();
+                    if (string.IsNullOrEmpty(b64)) { Interlocked.Increment(ref ohneSpur); }
                     status = antworten.TryDequeue(out var s) ? s : 200;
                     rumpf = status == 200 ? """{"ok":true}""" : $$"""{"error":"test {{status}}"}""";
                 }
@@ -682,6 +764,14 @@ internal static class EdgeCaseTest
             string? Nachreichen() => sender.NachreichenAsync().GetAwaiter().GetResult();
             Rivals.LapQueue.Eintrag? Wartend(int car = 1234) =>
                 Rivals.LapQueue.Alle().FirstOrDefault(e => e.Key == "test circuit|A|" + car);
+
+            // OHNE VOLLE SPUR geht keine Runde hinaus und keine wartet (seit 2026-09-28).
+            var nackt = Lap(58f);
+            nackt.FullTrack = null;
+            Soll(Fahre(nackt).Contains("full telemetry") && Rivals.LapQueue.Anzahl() == 0,
+                 "eine Runde ohne volle Telemetrie wurde vorgemerkt oder anders beschieden");
+            // Die Feier davor zaehlt hier nicht mit: eine echte Runde hat ihre Spur immer.
+            rekorde.Clear();
 
             // AUSGESCHALTET: die schnellere Runde wartet, nichts geht hinaus.
             Soll(Fahre(Lap(59f)).StartsWith("kept to submit later"), "ausgeschaltet wird eine schnelle Runde nicht vorgemerkt");
@@ -810,6 +900,8 @@ internal static class EdgeCaseTest
                  && new[] { 401, 403, 429, 500, 503 }.All(c => Rivals.LapAutoSubmit.AusgangFuer(c)
                                                           == Rivals.LapAutoSubmit.Ausgang.SpaeterNochmal),
                  "ein Statuscode landet im falschen Ausgang");
+            Soll(einreichungen > 0 && ohneSpur == 0,
+                 $"{ohneSpur} von {einreichungen} Einreichungen gingen ohne volle Telemetrie hinaus");
         }
         finally
         {
