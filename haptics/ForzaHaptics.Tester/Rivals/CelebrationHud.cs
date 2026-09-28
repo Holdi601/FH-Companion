@@ -62,6 +62,8 @@ internal sealed class CelebrationHud : LayeredHud
     private DateTime _beginn;
     private double _t;
 
+    public override int Ebene => 5;
+
     public CelebrationHud(Rectangle flaeche) : base(flaeche)
     {
         _takt.Tick += (_, _) => Weiter();

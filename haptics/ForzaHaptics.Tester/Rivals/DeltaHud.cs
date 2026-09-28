@@ -25,7 +25,7 @@ internal sealed record HudPlacement(float X, float Y, string Align, float Scale)
 ///
 /// Die Texte sind ENGLISCH, wie alles, was im Spiel steht.
 /// </remarks>
-internal sealed class DeltaHud : Form
+internal sealed class DeltaHud : Form, IAufnahmeQuelle
 {
     private const int WsExLayered = 0x00080000;
     private const int WsExTransparent = 0x00000020;
@@ -125,6 +125,95 @@ internal sealed class DeltaHud : Form
     private readonly OverlaySettings _settings;
     private readonly float _unit;
 
+    // NUR SO GROSS WIE DER INHALT (seit 2026-09-28). Bis dahin lag der Streifen als
+    // Fenster ueber dem ganzen Schirm, und jedes Zeichnen leerte die ganze Flaeche und
+    // reichte sie dem Fenstermanager: auf 4K 33 MB, bei eingeschalteten Eingabespuren
+    // ZWEIMAL je Telemetrie-Takt -- gemessen 15 ms Prozessorzeit je Takt, und 20
+    // bildschirmgrosse Uebergaben je Sekunde an DWM, waehrend das Spiel rendert.
+    // Jetzt wird gemerkt, was gezeichnet wurde: nur das wird geleert, nur das Rechteck
+    // darum uebergeben, und das Fenster ist nur so gross wie dieses Rechteck.
+    private readonly Point _ursprung;
+    private readonly Size _flaeche;
+    private Rectangle _bereich;
+    private Rectangle _vorher;
+    private bool _eingabenNeu;
+
+    // DIE EINGABESPUREN IN EIGENEM FENSTER: sie liegen meist unten links, das Delta oben
+    // in der Mitte -- ein gemeinsamer Block waere fast der halbe Schirm (gemessen
+    // 2561x1579 auf 4K). Zwei kleine Bloecke statt eines grossen.
+
+    // ---- Aufnahmefenster und "Overlays ueber dem Spiel" (seit 2026-09-28) ----------
+    //
+    // Gewollt ist, was das Overlay zeigen WILL; ueber dem Spiel erscheint es nur, wenn
+    // die Overlays dort eingeschaltet sind. "Visible" meint hier das Gewollte: Stellen
+    // wie "if (Visible) Hide()" sollen auch dann richtig entscheiden, wenn ueber dem
+    // Spiel nichts gezeigt wird -- sonst bliebe eine Meldung im Aufnahmefenster ewig.
+    private bool _gewollt;
+
+    public bool Gewollt => _gewollt && !IsDisposed;
+
+    public new bool Visible => Gewollt;
+
+    protected override void SetVisibleCore(bool value)
+    {
+        _gewollt = value;
+        base.SetVisibleCore(value && OverlayAusgabe.ImSpiel);
+    }
+
+    public void AusgabeAnwenden()
+    {
+        if (IsDisposed) { return; }
+        base.SetVisibleCore(_gewollt && OverlayAusgabe.ImSpiel);
+        if (base.Visible) { TopMost = true; }
+    }
+
+    public int Ebene => 3;
+
+    public void MaleFuerAufnahme(Graphics g)
+    {
+        if (Gewollt) { PaintInto(g); }
+    }
+
+    private Spurfenster? _spur;
+    private Rectangle _spurBereich;
+    private Rectangle _spurVorher;
+    private bool _merkeSpur;
+
+    /// <summary>Das Fenster der Eingabespuren: nur ein Traeger fuer UpdateLayeredWindow.</summary>
+    private sealed class Spurfenster : Form
+    {
+        public Spurfenster()
+        {
+            FormBorderStyle = FormBorderStyle.None;
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.Manual;
+            Bounds = new Rectangle(-32000, -32000, 1, 1);
+            TopMost = true;
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.ExStyle |= WsExLayered | WsExTransparent | WsExNoActivate | WsExToolWindow;
+                return cp;
+            }
+        }
+
+        protected override bool ShowWithoutActivation => true;
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            try { SetWindowDisplayAffinity(Handle, WdaExcludeFromCapture); } catch (Exception) { }
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e) { }
+
+        protected override void OnPaint(PaintEventArgs e) { }
+    }
+
     private float? _delta;
     private string _label = string.Empty;
     private string _target = string.Empty;
@@ -161,6 +250,9 @@ internal sealed class DeltaHud : Form
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;
         Bounds = screen;
+        OverlayAusgabe.Melde(this);
+        _ursprung = screen.Location;
+        _flaeche = screen.Size;
         TopMost = true;
         DoubleBuffered = true;
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
@@ -203,10 +295,10 @@ internal sealed class DeltaHud : Form
         var kopf = new BitmapInfoHeader
         {
             biSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<BitmapInfoHeader>(),
-            biWidth = Math.Max(1, Width),
+            biWidth = Math.Max(1, _flaeche.Width),
             // Negativ: von oben nach unten, wie GDI+ zeichnet. Positiv stuende das
             // Bild auf dem Kopf, und zwar erst auf dem Schirm.
-            biHeight = -Math.Max(1, Height),
+            biHeight = -(Math.Max(1, _flaeche.Height) + 1),
             biPlanes = 1,
             biBitCount = 32,
             biCompression = BiRgb,
@@ -222,8 +314,8 @@ internal sealed class DeltaHud : Form
             // PArgb: die Farben liegen mit ihrem Alpha vormultipliziert vor -- genau
             // das erwartet UpdateLayeredWindow, und genau das liefert GDI+ beim
             // Zeichnen in eine solche Flaeche.
-            _surface = new Bitmap(Math.Max(1, Width), Math.Max(1, Height),
-                                  Math.Max(1, Width) * 4,
+            _surface = new Bitmap(Math.Max(1, _flaeche.Width), Math.Max(1, _flaeche.Height) + 1,
+                                  Math.Max(1, _flaeche.Width) * 4,
                                   System.Drawing.Imaging.PixelFormat.Format32bppPArgb,
                                   bits);
         }
@@ -255,6 +347,8 @@ internal sealed class DeltaHud : Form
     {
         if (disposing)
         {
+            try { _spur?.Close(); _spur?.Dispose(); } catch (Exception) { }
+            _spur = null;
             DisposeSurface();
             System.Threading.Interlocked.Decrement(ref _offen);
         }
@@ -264,16 +358,27 @@ internal sealed class DeltaHud : Form
     /// <summary>Alles neu zeichnen und dem Fenstermanager hinlegen.</summary>
     private void Render()
     {
-        if (!IsHandleCreated || IsDisposed || _surface is null || _memDc == IntPtr.Zero)
+        if (!IsHandleCreated || IsDisposed || _surface is null || _memDc == IntPtr.Zero || !base.Visible)
         {
             return;
         }
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             using (var g = Graphics.FromImage(_surface))
             {
                 // Durchsichtig anfangen: was nicht gezeichnet wird, bleibt das Spiel.
-                g.Clear(Color.Transparent);
+                // Geleert wird nur, was beim letzten Mal gezeichnet wurde -- der Rest
+                // der Flaeche ist schon durchsichtig (eine neue DIB ist genullt).
+                foreach (var alt in new[] { _vorher, _spurVorher })
+                {
+                    if (alt.IsEmpty) { continue; }
+                    g.SetClip(alt);
+                    g.Clear(Color.Transparent);
+                    g.ResetClip();
+                }
+                _bereich = Rectangle.Empty;
+                _spurBereich = Rectangle.Empty;
                 // KEIN ClearType auf einer durchsichtigen Flaeche -- die
                 // Subpixelglaettung rechnet mit einem deckenden Hintergrund und
                 // hinterlaesst sonst farbige Raender. Graustufenglaettung kann mit
@@ -281,11 +386,20 @@ internal sealed class DeltaHud : Form
                 g.TextRenderingHint = TextRenderingHint.AntiAlias;
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 Paint(g);
+                // Die Reservezeile unter der Flaeche bleibt durchsichtig, was auch immer
+                // ueber den Rand gezeichnet wurde.
+                g.SetClip(new Rectangle(0, _flaeche.Height, 1, 1));
+                g.Clear(Color.Transparent);
+                g.ResetClip();
             }
+            UebergibSpur();
 
-            var lage = new Point(Left, Top);
-            var groesse = new Size(_surface.Width, _surface.Height);
-            var quelle = new Point(0, 0);
+            // Nichts gezeichnet: das durchsichtige Pixel der Reservezeile.
+            var block = _bereich.IsEmpty ? new Rectangle(0, _flaeche.Height, 1, 1) : _bereich;
+            var lage = new Point(_ursprung.X + block.X, _ursprung.Y + block.Y);
+            var groesse = block.Size;
+            var quelle = block.Location;
+            _vorher = _bereich;
             var mischen = new BlendFunction
             {
                 BlendOp = AcSrcOver,
@@ -331,6 +445,7 @@ internal sealed class DeltaHud : Form
         {
             // Ein Anzeigefehler darf das Rennen nicht stoeren.
         }
+        Leistung.Gezeichnet(uhr.ElapsedTicks);
     }
 
     /// <summary>
@@ -352,7 +467,8 @@ internal sealed class DeltaHud : Form
         // Grund, warum man ueberhaupt hinsieht.
         _refLap = reference;
         _refSeconds = referenceSeconds;
-        if (_settings.HudInputs) { Render(); }
+        // Gezeichnet wird im Update, das im selben Takt folgt -- EINMAL statt zweimal.
+        _eingabenNeu = _settings.HudInputs;
     }
 
     /// <summary>Die Spuren leeren -- neue Runde, neuer Vergleich.</summary>
@@ -375,8 +491,86 @@ internal sealed class DeltaHud : Form
         Render();
     }
 
-    /// <summary>Den Inhalt in ein Bild zeichnen -- fuer den Selbsttest, ohne Fenster.</summary>
-    internal void PaintInto(Graphics g) => Paint(g);
+    /// <summary>Den Inhalt in ein Bild zeichnen -- fuer den Selbsttest und das Aufnahmefenster.</summary>
+    internal void PaintInto(Graphics g)
+    {
+        var gemerkt = _bereich;
+        var gemerktSpur = _spurBereich;
+        Paint(g);
+        _bereich = gemerkt;
+        _spurBereich = gemerktSpur;
+    }
+
+    /// <summary>Die Spielflaeche, in deren Koordinaten gezeichnet wird.</summary>
+    internal Size Flaeche => _flaeche;
+
+    /// <summary>Was zuletzt gezeichnet wurde, in Koordinaten der Spielflaeche (fuer den Selbsttest).</summary>
+    internal Rectangle Bereich => _vorher;
+
+    /// <summary>Was zuletzt als Eingabespur gezeichnet wurde (fuer den Selbsttest).</summary>
+    internal Rectangle SpurBereich => _spurVorher;
+
+    /// <summary>Ein gezeichnetes Rechteck zum Bereich nehmen -- mit Rand fuer die Glaettung.</summary>
+    private void Merke(float x, float y, float w, float h)
+    {
+        var r = Rectangle.FromLTRB((int)Math.Floor(x) - 3, (int)Math.Floor(y) - 3,
+                                   (int)Math.Ceiling(x + w) + 3, (int)Math.Ceiling(y + h) + 3);
+        r.Intersect(new Rectangle(Point.Empty, _flaeche));
+        if (r.IsEmpty) { return; }
+        if (_merkeSpur) { _spurBereich = _spurBereich.IsEmpty ? r : Rectangle.Union(_spurBereich, r); }
+        else { _bereich = _bereich.IsEmpty ? r : Rectangle.Union(_bereich, r); }
+    }
+
+    /// <summary>Den Block der Eingabespuren an ihr eigenes Fenster geben.</summary>
+    private void UebergibSpur()
+    {
+        if (_spur is null)
+        {
+            if (_spurBereich.IsEmpty || !base.Visible) { return; }
+            _spur = new Spurfenster();
+            _spur.Show();
+            _spur.TopMost = true;
+        }
+        if (_spur.IsDisposed || !_spur.IsHandleCreated) { return; }
+        var block = _spurBereich.IsEmpty ? new Rectangle(0, _flaeche.Height, 1, 1) : _spurBereich;
+        var lage = new Point(_ursprung.X + block.X, _ursprung.Y + block.Y);
+        var groesse = block.Size;
+        var quelle = block.Location;
+        var mischen = new BlendFunction
+        {
+            BlendOp = AcSrcOver,
+            BlendFlags = 0,
+            SourceConstantAlpha = 255,
+            AlphaFormat = AcSrcAlpha,
+        };
+        var schirmDc = GetDC(IntPtr.Zero);
+        try
+        {
+            UpdateLayeredWindow(_spur.Handle, schirmDc, ref lage, ref groesse, _memDc, ref quelle, 0,
+                                ref mischen, UlwAlpha);
+        }
+        finally
+        {
+            ReleaseDC(IntPtr.Zero, schirmDc);
+        }
+        _spurVorher = _spurBereich;
+    }
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        if (base.Visible) { Render(); }
+        if (_spur is null || _spur.IsDisposed) { return; }
+        if (base.Visible && !_spur.Visible)
+        {
+            _spur.Show();
+            _spur.TopMost = true;
+        }
+        else if (!base.Visible && _spur.Visible)
+        {
+            _spur.Hide();
+        }
+    }
 
     /// <summary>Steht gerade eine Meldung?</summary>
     public bool NoteActive => DateTime.UtcNow < _noteUntil && _note.Length > 0;
@@ -417,7 +611,11 @@ internal sealed class DeltaHud : Form
         _secondLabel = secondLabel;
         _target = target;
         _ghostLeft = ghostSecondsLeft;
-        if (changed) { Render(); }
+        if (changed || _eingabenNeu)
+        {
+            _eingabenNeu = false;
+            Render();
+        }
     }
 
     // Ein vertippter Farbwert darf den Streifen nicht schwarz lassen -- die Regel
@@ -437,14 +635,15 @@ internal sealed class DeltaHud : Form
         var width = Math.Max(bigSize.Width, smallSize.Width) + 4 * _unit;
         var height = bigSize.Height + smallSize.Height + _unit;
 
-        var left = Width * place.X;
+        var left = _flaeche.Width * place.X;
         left = place.Align.ToLowerInvariant() switch
         {
             "left" => left,
             "right" => left - width,
             _ => left - width / 2,
         };
-        var top = Height * place.Y;
+        var top = _flaeche.Height * place.Y;
+        Merke(left, top, width, height);
 
         using (var shade = new SolidBrush(
                    plate ?? Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16))))
@@ -490,14 +689,17 @@ internal sealed class DeltaHud : Form
         var luft = _unit * 0.30f * place.Scale;
         var hoehe = 5 * spurHoehe + 4 * luft + _unit * 0.5f;
 
-        var links = Width * place.X;
+        var links = _flaeche.Width * place.X;
         links = place.Align.ToLowerInvariant() switch
         {
             "left" => links,
             "right" => links - breite,
             _ => links - breite / 2,
         };
-        var oben = Height * place.Y;
+        var oben = _flaeche.Height * place.Y;
+        _merkeSpur = true;
+        Merke(links, oben, breite, hoehe);
+        _merkeSpur = false;
 
         using (var platte = new SolidBrush(
                    Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16))))
@@ -636,32 +838,29 @@ internal sealed class DeltaHud : Form
                               bool stufen = false)
     {
         if (werte.Count < 2) { return; }
-        PointF? vorher = null;
+        // ALS LINIENZUG, nicht Strich fuer Strich (seit 2026-09-28): ein DrawLines je
+        // zusammenhaengendem Stueck statt hunderter DrawLine -- die Spuren waren der
+        // teuerste Teil des Streifens.
+        var lauf = new List<PointF>(werte.Count * (stufen ? 2 : 1));
+        void Zieh()
+        {
+            if (lauf.Count >= 2) { g.DrawLines(stift, lauf.ToArray()); }
+            lauf.Clear();
+        }
         for (var i = 0; i < werte.Count; i++)
         {
             var wert = werte[i];
-            if (wert is null) { vorher = null; continue; }
+            if (wert is null) { Zieh(); continue; }
             var anteil = werte.Count == 1 ? 1f : (float)i / (werte.Count - 1);
             var v = mittig
                 ? 0.5f - Math.Clamp(wert.Value, -1f, 1f) / 2f
                 : 1f - Math.Clamp(wert.Value, 0f, 1f);
             var punkt = new PointF(x0 + breite * anteil, y0 + hoehe * v);
-            if (vorher is not null)
-            {
-                if (stufen)
-                {
-                    // Erst halten, dann springen: ein Gang wechselt schlagartig.
-                    var ecke = new PointF(punkt.X, vorher.Value.Y);
-                    g.DrawLine(stift, vorher.Value, ecke);
-                    g.DrawLine(stift, ecke, punkt);
-                }
-                else
-                {
-                    g.DrawLine(stift, vorher.Value, punkt);
-                }
-            }
-            vorher = punkt;
+            // Erst halten, dann springen: ein Gang wechselt schlagartig.
+            if (stufen && lauf.Count > 0) { lauf.Add(new PointF(punkt.X, lauf[^1].Y)); }
+            lauf.Add(punkt);
         }
+        Zieh();
     }
 
     private static string Format(float? delta) =>
@@ -738,7 +937,7 @@ internal sealed class DeltaHud : Form
             var colour = _delta is null ? neutral : (_delta < 0 ? ahead : behind);
             var height = Draw(g, deltaPlace, Format(_delta), colour, _label,
                               deltaFont, labelFont);
-            var unten = deltaPlace.Y + (height / Math.Max(1, Height)) + 0.004f;
+            var unten = deltaPlace.Y + (height / Math.Max(1, _flaeche.Height)) + 0.004f;
 
             if (!string.IsNullOrEmpty(_secondLabel))
             {
@@ -746,7 +945,7 @@ internal sealed class DeltaHud : Form
                 // eine andere Frage und darf die erste nicht ueberstrahlen.
                 var second = _settings.DeltaPlacement with
                 {
-                    Y = deltaPlace.Y + height / Math.Max(1, Height) + 0.004f,
+                    Y = deltaPlace.Y + height / Math.Max(1, _flaeche.Height) + 0.004f,
                     Scale = deltaPlace.Scale * 0.62f,
                 };
                 using var secondFont = new Font("Segoe UI Semibold", _unit * 2.2f * second.Scale);
@@ -756,7 +955,7 @@ internal sealed class DeltaHud : Form
                     : (_secondDelta < 0 ? ahead : behind);
                 var zweiteHoehe = Draw(g, second, Format(_secondDelta), secondColour, _secondLabel,
                                        secondFont, secondLabelFont);
-                unten = second.Y + (zweiteHoehe / Math.Max(1, Height)) + 0.004f;
+                unten = second.Y + (zweiteHoehe / Math.Max(1, _flaeche.Height)) + 0.004f;
             }
 
             // DIE ZEIT ZUM SCHLAGEN (seit 2026-09-27): eine Zeile darunter, in Gold wie

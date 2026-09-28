@@ -59,6 +59,8 @@ internal sealed class RivalsTab : UserControl
         AutoScroll = true;
 
         _settings = OverlaySettings.Load();
+        // Wo die Overlays erscheinen, gilt ab dem ersten Fenster (siehe OverlayAusgabe).
+        OverlayAusgabe.SetzeImSpiel(_settings.OverlayInGame);
         _nachreicher = new LapAutoSubmit(() => _advisor, _settings, OverlayController.WriteLapLog);
         // Bringt eine NACHGEREICHTE Runde ein Auto neu auf die Liste, meldet das Overlay es.
         _nachreicher.NeuesAutoEingetragen += r =>
@@ -644,6 +646,32 @@ internal sealed class RivalsTab : UserControl
     {
         EnsureController();
         Controller?.FeierProbe();
+    }
+
+    private AufnahmeFenster? _aufnahme;
+
+    /// <summary>Das Aufnahmefenster oeffnen -- oder das offene nach vorne holen.</summary>
+    public void OeffneAufnahmefenster()
+    {
+        if (_aufnahme is null || _aufnahme.IsDisposed)
+        {
+            _aufnahme = new AufnahmeFenster(_settings);
+            _aufnahme.FormClosing += (_, e) =>
+            {
+                // Nur wer es selbst schliesst, will es beim naechsten Start nicht wieder.
+                if (e.CloseReason == CloseReason.UserClosing)
+                {
+                    _settings.RecordingWindow = false;
+                    _settings.Save();
+                }
+            };
+            _aufnahme.Show();
+            _settings.RecordingWindow = true;
+            _settings.Save();
+            return;
+        }
+        if (_aufnahme.WindowState == FormWindowState.Minimized) { _aufnahme.WindowState = FormWindowState.Normal; }
+        _aufnahme.Activate();
     }
 
     /// <summary>Die Meldung "neues Auto" einmal zeigen (ihr eigener Knopf "Try it").</summary>

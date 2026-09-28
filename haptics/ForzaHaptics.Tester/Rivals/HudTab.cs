@@ -37,6 +37,8 @@ internal sealed class HudTab : UserControl
     public event Action? FeierProbe;
     /// <summary>"Try it" bei der Meldung "neues Auto".</summary>
     public event Action? NeuesAutoProbe;
+    /// <summary>Das Aufnahmefenster oeffnen (Hauptfenster -> Rivals-Reiter).</summary>
+    public event Action? AufnahmeFensterWunsch;
 
     public HudTab(OverlaySettings settings, Action changed, Action<bool> preview)
     {
@@ -63,6 +65,7 @@ internal sealed class HudTab : UserControl
         _side.QuelleGeaendert += () => _canvas.VorschauVergessen();
         _side.FeierProbe += () => FeierProbe?.Invoke();
         _side.NeuesAutoProbe += () => NeuesAutoProbe?.Invoke();
+        _side.AufnahmeFensterWunsch += () => AufnahmeFensterWunsch?.Invoke();
         _side.Select(HudPart.Delta);
 
         var hint = new Label
@@ -712,6 +715,8 @@ internal sealed class HudPartPanel : Panel
     public event Action? FeierProbe;
     /// <summary>"Try it" bei der Meldung "neues Auto" gedrueckt.</summary>
     public event Action? NeuesAutoProbe;
+    /// <summary>"Open the recording window" gedrueckt.</summary>
+    public event Action? AufnahmeFensterWunsch;
 
     public HudPartPanel(OverlaySettings settings)
     {
@@ -834,6 +839,28 @@ internal sealed class HudPartPanel : Panel
         stapel.Controls.Add(probeNeu);
         stapel.Controls.Add(Note("Calmer, in teal: when the server accepts a lap of a car that was not on "
                                  + "that route and class board yet."));
+
+        // ---- AUFNAHME UND STREAM (seit 2026-09-28): die Overlays halten sich aus
+        // Aufnahmen heraus; das Aufnahmefenster zeigt sie fuer OBS. Und wer ganz sicher
+        // gehen will, dass nichts ueber dem Spiel liegt, schaltet sie dort ab.
+        stapel.Controls.Add(Head("Recording and streaming"));
+        Schalter(Loc.T("Show overlays over the game"), settings.OverlayInGame, v =>
+        {
+            _settings.OverlayInGame = v;
+            OverlayAusgabe.SetzeImSpiel(v);
+        });
+        stapel.Controls.Add(Note("Off: nothing is drawn over Forza, so the overlays cannot affect its frames. "
+                                 + "The recording window still shows them -- for example on a second screen."));
+        var fenster = Small(Loc.T("Open the recording window"), () => AufnahmeFensterWunsch?.Invoke());
+        fenster.Width = 232;
+        fenster.Margin = new Padding(0, 4, 0, 4);
+        stapel.Controls.Add(fenster);
+        Wahl(Loc.T("Key colour for OBS"),
+             new[] { ("green", Loc.T("Green")), ("magenta", Loc.T("Magenta")), ("black", Loc.T("Black")) },
+             settings.RecordingKey, v => _settings.RecordingKey = v);
+        stapel.Controls.Add(Note("OBS: add a Window Capture of this window above the game capture, then a "
+                                 + "Color Key filter in the same colour. Keep the window open -- on another "
+                                 + "screen or behind the game, not minimised."));
 
         stapel.Controls.Add(Note("Where the sign-up maps come from"));
         var quelle = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };

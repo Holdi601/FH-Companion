@@ -405,7 +405,7 @@ internal static class SelfTest
     /// nur im alten Feld bewegt, prueft damit nichts mehr -- und genau so ist er
     /// beim ersten Lauf nach der Aenderung durchgefallen.
     /// </remarks>
-    private static byte[] LapPacket(int raceOn, int lapNumber, float distance,
+    internal static byte[] LapPacket(int raceOn, int lapNumber, float distance,
                                     float lapTime, float lastLap, int ordinal,
                                     int pi, int carClass, float maxRpm = 7000f,
                                     int cylinders = 6, int drivetrain = 1,

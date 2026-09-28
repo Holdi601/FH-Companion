@@ -1146,8 +1146,12 @@ internal static class Program
             // Spaltenaufteilung, die es so gar nicht gibt.
             var breite = (int)(schirm.Width * einst.SideWidthFraction);
             var hoehe = schirm.Height;
+            // AUSSERHALB DES SCHIRMS (seit 2026-09-28): das Panel ist ein echtes,
+            // oberstes Overlay-Fenster. An (0,0) blitzte es beim Erzeugen der
+            // Trailer-Bilder ueber dem Schirm auf -- mitten in dem, was der Nutzer
+            // gerade tat. DrawToBitmap braucht nur das Fenster, nicht den Platz.
             using var panel = new Rivals.OverlayPanel(
-                new Rectangle(0, 0, breite, hoehe), 1.0);
+                new Rectangle(-32000, -32000, breite, hoehe), 1.0);
             panel.SetContent($"Class {klasse} – what to drive",
                              string.Join(" · ", namen), zeilen,
                              "your best lap on each of the three routes above");
@@ -1179,6 +1183,151 @@ internal static class Program
                 Console.WriteLine(ausnahme.Message);
                 Environment.Exit(1);
             }
+        }
+
+        if (args.Contains("--perf-bench", StringComparer.OrdinalIgnoreCase))
+        {
+            // WAS KOSTET FHC, WAEHREND FORZA LAEUFT? (seit 2026-09-28)
+            // Der Delta-Streifen in der Groesse des Hauptschirms -- ausserhalb des
+            // Schirms, also unsichtbar -- und die beiden periodischen Bildschirmgriffe.
+            // Gemessen wird Wandzeit und Prozessorzeit je Vorgang.
+            var schirm = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+            var proc = System.Diagnostics.Process.GetCurrentProcess();
+            (double Wand, double Cpu) Messe(int n, Action tun)
+            {
+                tun();
+                proc.Refresh();
+                var cpu0 = proc.TotalProcessorTime;
+                var uhr = System.Diagnostics.Stopwatch.StartNew();
+                for (var i = 0; i < n; i++) { tun(); }
+                uhr.Stop();
+                proc.Refresh();
+                return (uhr.Elapsed.TotalMilliseconds / n, (proc.TotalProcessorTime - cpu0).TotalMilliseconds / n);
+            }
+            var einst = new OverlaySettings { HudInputs = true };
+            using (var hud = new DeltaHud(new Rectangle(-32000, -32000, schirm.Width, schirm.Height), einst))
+            {
+                hud.Show();
+                Application.DoEvents();
+                var i = 0;
+                var (wand, cpu) = Messe(150, () =>
+                {
+                    i++;
+                    hud.PushInputs((i % 10) / 10f, 0f, 0f, (float)Math.Sin(i / 5.0), 3, null, null);
+                    hud.Update(-0.3f + (i % 7) * 0.01f, "same car, same tune", 20f, null, string.Empty,
+                               "to beat: 39.325 -- website best, this car");
+                });
+                Console.WriteLine($"Delta-Streifen {schirm.Width}x{schirm.Height}, je Telemetrie-Takt: {wand:0.00} ms Wand, {cpu:0.00} ms CPU -- Spur {hud.SpurBereich.Width}x{hud.SpurBereich.Height}"
+                                  + $" -- uebergeben {hud.Bereich.Width}x{hud.Bereich.Height} statt {schirm.Width}x{schirm.Height}");
+                hud.Hide();
+            }
+            using (var hud = new DeltaHud(new Rectangle(-32000, -32000, schirm.Width, schirm.Height), new OverlaySettings { HudInputs = false }))
+            {
+                hud.Show();
+                Application.DoEvents();
+                var i = 0;
+                var (wand, cpu) = Messe(150, () =>
+                {
+                    i++;
+                    hud.Update(-0.3f + (i % 7) * 0.01f, "same car, same tune", 20f, null, string.Empty,
+                               "to beat: 39.325 -- website best, this car");
+                });
+                Console.WriteLine($"  ohne Eingabespuren: {wand:0.00} ms Wand, {cpu:0.00} ms CPU");
+                hud.Hide();
+            }
+            // DER TELEMETRIE-INSPEKTOR, zehnmal je Sekunde gefuettert -- sichtbar und versteckt.
+            if (ForzaPacket.TryParse(SelfTest.LapPacket(1, 1, 1234f, 45.6f, 0f, 2542, 700, 3), out var paket))
+            {
+                using var form = new VorschauForm { ClientSize = new Size(1100, 700) };
+                var inspektor = new TelemetryInspector(ForzaPacket.AllDescriptors) { Dock = DockStyle.Fill };
+                form.Controls.Add(inspektor);
+                form.Show();
+                Application.DoEvents();
+                var ausgaben = new[] { new HapticOutputState(0, "Left", 0.4, 120, true), new HapticOutputState(1, "Right", 0.2, 80, true) };
+                var (wi, ci) = Messe(60, () => { inspektor.UpdateValues(paket, ausgaben, null, 60); Application.DoEvents(); });
+                inspektor.Visible = false;
+                var (wv, cv) = Messe(60, () => { inspektor.UpdateValues(paket, ausgaben, null, 60); Application.DoEvents(); });
+                Console.WriteLine($"Telemetrie-Inspektor je Aktualisierung (10/s): sichtbar {wi:0.00} ms Wand / {ci:0.00} ms CPU, versteckt {wv:0.00} / {cv:0.00}");
+
+                // DER BLUEPRINT-EDITOR, 50-mal je Sekunde mit Live-Werten -- ein Bild erzwungen.
+                using var form2 = new VorschauForm { ClientSize = new Size(1600, 900) };
+                var graph = SignalGraph.CreateDefault();
+                var editor = new BlueprintEditor(graph, ForzaPacket.AllDescriptors) { Dock = DockStyle.Fill };
+                form2.Controls.Add(editor);
+                form2.Show();
+                Application.DoEvents();
+                var auswerter = new SignalGraphEvaluator();
+                using var bild = new Bitmap(1600, 900);
+                var (wb, cb) = Messe(40, () =>
+                {
+                    var ergebnis = auswerter.Evaluate(graph, paket, DateTime.UtcNow);
+                    editor.SetLiveValues(ergebnis.NodeValues);
+                    editor.DrawToBitmap(bild, new Rectangle(0, 0, 1600, 900));
+                });
+                Console.WriteLine($"Blueprint-Editor je Bild (bis 50/s, wenn sein Reiter offen ist): {wb:0.00} ms Wand / {cb:0.00} ms CPU");
+            }
+            var ganz = GameArea.Capture(schirm, new Size(1, 1));
+            ganz.Dispose();
+            var hoehe = Math.Max(1, CarGridReader.Suchbreite * schirm.Height / schirm.Width);
+            var (w1, c1) = Messe(20, () => GameArea.Capture(schirm, new Size(CarGridReader.Suchbreite, hoehe)).Dispose());
+            Console.WriteLine($"Automenue-Griff (ganzer Schirm -> {CarGridReader.Suchbreite} px), alle 500 ms: {w1:0.00} ms Wand, {c1:0.00} ms CPU");
+            var region = new Rectangle(schirm.X + schirm.Width / 20, schirm.Y + schirm.Height / 10, schirm.Width * 7 / 20, schirm.Height * 9 / 20);
+            var (w2, c2) = Messe(40, () => GameArea.Capture(region, new Size(160, 160 * region.Height / region.Width)).Dispose());
+            Console.WriteLine($"Vergleichsbild (Streckenliste -> 160 px), je Abfrage: {w2:0.00} ms Wand, {c2:0.00} ms CPU");
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--trailer-overlays", StringComparison.OrdinalIgnoreCase))
+        {
+            // STUECKE FUER DEN TRAILER, vom echten Code gezeichnet: durchsichtig auf
+            // 1920x1080, damit sie sich ueber jedes Spielbild legen lassen. Autonotiz,
+            // Meldung, und beide Feiern als ganze Folge mit 30 Bildern je Sekunde.
+            //   --trailer-overlays <ordner>
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var flaeche = new System.Drawing.Size(1920, 1080);
+            var einst = new OverlaySettings();
+            void Zeichne(string datei, Action<System.Drawing.Graphics> malen)
+            {
+                using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
+                                                           System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using (var g = System.Drawing.Graphics.FromImage(bild))
+                {
+                    g.Clear(System.Drawing.Color.Transparent);
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    malen(g);
+                }
+                bild.Save(Path.Combine(ordner, datei), System.Drawing.Imaging.ImageFormat.Png);
+            }
+            Zeichne("carnote.png", g => CarNoteHud.Male(g, einst, flaeche,
+                "Nissan Skyline GT-R V-Spec '93  ·  PI 998  ·  R",
+                "Late apex into the hairpin -- the rear steps out on cold tyres.\nTune: Touge Grip v2 (your own)",
+                auchWennAus: true));
+            Zeichne("message.png", g => MessageHud.Male(g, flaeche, "Tune storage almost full",
+                "962 of 1000 tunes -- 38 free. The app's Tunes tab lists the ones that are on no car.",
+                System.Drawing.Color.FromArgb(255, 210, 90)));
+            var feiern = new (string Name, CelebrationHud.Anlass Anlass)[]
+            {
+                ("rekord", new CelebrationHud.Anlass("You beat the leaderboard!", "39.108", 0.217,
+                    "Website best 39.325", "Irokawa Circuit · Alfa Romeo Giulia Quadrifoglio '17 · A 700")),
+                ("neu", new CelebrationHud.Anlass("New car on the leaderboard!", "1:12.904", 0,
+                    "Its first time here on the website -- thanks to you!",
+                    "Hakone Nanamagari · Mazda MX-5 Miata '94 · B 600",
+                    CelebrationHud.FeierArt.NeuesAuto, "NEW")),
+            };
+            foreach (var (name, anlass) in feiern)
+            {
+                var konfetti = new CelebrationHud.Konfetti(1234, anlass.Art);
+                var bilder = (int)Math.Floor(CelebrationHud.Dauer * 30);
+                for (var i = 0; i < bilder; i++)
+                {
+                    Zeichne($"{name}_{i:0000}.png", g => CelebrationHud.Male(g, flaeche, anlass, konfetti, i / 30.0));
+                }
+            }
+            File.WriteAllBytes(Path.Combine(ordner, "rekord.wav"), CelebrationSound.Wav);
+            File.WriteAllBytes(Path.Combine(ordner, "neu.wav"), CelebrationSound.WavNeuesAuto);
+            Console.WriteLine(ordner);
+            return;
         }
 
         if (args.Length >= 2 && string.Equals(args[0], "--celebration-frames", StringComparison.OrdinalIgnoreCase))
@@ -1253,6 +1402,19 @@ internal static class Program
         {
             if (!imHintergrund) { instanz.ErsteWecken(); }
             return;
+        }
+
+        // DAS SPIEL GEHT VOR (seit 2026-09-28). Wird die Prozessorzeit knapp, bekommt
+        // Forza sie, nicht diese App: Overlay, Haptik und Rundenaufzeichnung vertragen
+        // ein paar Millisekunden Verspaetung, ein Bild des Spiels nicht. Die Telemetrie
+        // geht dabei nicht verloren -- der Socket puffert, bis sie abgeholt wird.
+        try
+        {
+            System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
+                System.Diagnostics.ProcessPriorityClass.BelowNormal;
+        }
+        catch (Exception)
+        {
         }
 
         var einstellungen = Rivals.OverlaySettings.Load();

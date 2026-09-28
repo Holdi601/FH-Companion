@@ -84,6 +84,11 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   only while Forza runs. It has its own switch, on by default.
 - **Layout editor.** Drag every block where you want it and resize it with the
   mouse wheel. You can preview the result on the real screen.
+- **Recording window.** The overlays stay out of screen recordings, because the
+  app reads the screen itself. For OBS, a separate window draws them on a key
+  colour: capture it and add a colour-key filter. You can also switch the
+  overlays over the game off entirely and watch the recording window on a second
+  screen instead.
 
 ### Laps and times
 
@@ -143,6 +148,13 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Signed updates.** The app refuses a package that is not signed by the
   publisher.
 - **Idle outside the game.** It stays idle unless Forza runs.
+- **Out of the game's way.** No keyboard or mouse hooks. While you drive it does
+  not read the screen at all. Overlays hand Windows only their own small area,
+  and the app runs below the game's priority. The editor and inspector stop
+  redrawing while Forza is in front, and controllers get a report only when
+  something changes. `%TEMP%\forza-overlay\perf.log` records what it cost, once
+  a minute, and `scripts\measure_game_impact.ps1` measures Forza's frames with
+  and without it.
 - **Start with Forza** *(optional)*. From sign-in the app waits in the
   notification area and opens minimized when Forza starts. Switch it on with the
   button at the top right or on the first start.

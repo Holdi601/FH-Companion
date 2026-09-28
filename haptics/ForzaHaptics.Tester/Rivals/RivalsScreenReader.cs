@@ -198,8 +198,10 @@ internal sealed class RivalsScreenReader
         var shot = new Bitmap(Math.Max(1, bounds.Width), Math.Max(1, bounds.Height),
                               PixelFormat.Format32bppArgb);
         using var canvas = Graphics.FromImage(shot);
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
         canvas.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size,
                               CopyPixelOperation.SourceCopy);
+        Leistung.Griff(uhr.ElapsedTicks);
         return shot;
     }
 

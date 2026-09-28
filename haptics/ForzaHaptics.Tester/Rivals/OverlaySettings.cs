@@ -224,6 +224,18 @@ internal sealed class OverlaySettings
     /// </summary>
     [JsonPropertyName("hud_target")] public bool HudTarget { get; set; } = true;
 
+    /// <summary>
+    /// Overlays ueber dem Spiel zeigen (seit 2026-09-28). Aus: ueber Forza liegt nichts,
+    /// die Overlays erscheinen nur im Aufnahmefenster. Siehe OverlayAusgabe.
+    /// </summary>
+    [JsonPropertyName("overlay_in_game")] public bool OverlayInGame { get; set; } = true;
+
+    /// <summary>Das Aufnahmefenster beim Start wieder oeffnen.</summary>
+    [JsonPropertyName("recording_window")] public bool RecordingWindow { get; set; }
+
+    /// <summary>Schluesselfarbe des Aufnahmefensters: green, magenta oder black.</summary>
+    [JsonPropertyName("recording_key")] public string RecordingKey { get; set; } = "green";
+
     // ---- TUNE-SPEICHER (seit 2026-09-26) ---------------------------------------
     //
     // Das Spiel nimmt nur eine begrenzte Zahl heruntergeladener Tunes. Die Grenze

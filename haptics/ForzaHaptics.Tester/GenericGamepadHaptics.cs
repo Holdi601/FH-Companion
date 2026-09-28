@@ -23,6 +23,13 @@ internal sealed class GenericGamepadHaptics : IDisposable
     private const ushort SteamControllerProductId = 0x1304;
     private readonly List<GamepadDevice> _devices = [];
     private readonly Dictionary<string, DesiredRumble> _desired = [];
+    // NUR SENDEN, WAS SICH GEAENDERT HAT (seit 2026-09-28). Bis dahin ging alle 20 ms
+    // ein Bericht an den Controller, auch wenn er genau dasselbe sagte wie der vorige --
+    // ueber Bluetooth teilen sich diese Berichte die Funkzeit mit den Eingaben des
+    // Controllers, und die gehoeren dem Spiel. Gleiche Werte gehen hoechstens einmal je
+    // Sekunde erneut hinaus, falls ein anderes Programm den Controller zurueckgesetzt hat.
+    internal static readonly TimeSpan Auffrischen = TimeSpan.FromSeconds(1);
+    private readonly Dictionary<uint, (ushort Low, ushort High, DateTime Zeit)> _xinputGesendet = [];
 
     public int DeviceCount => _devices.Count;
     public string? ActiveTargetId { get; set; }
@@ -222,8 +229,10 @@ internal sealed class GenericGamepadHaptics : IDisposable
             var desired = _desired.GetValueOrDefault(device.Id);
             if (device.SupportsMainRumble)
             {
+                // SDL filtert gleiche Werte selbst (es verlaengert dann nur die Dauer);
+                // XInput nicht -- also hier.
                 var success = device.Backend == GamepadBackend.XInput
-                    ? SetXInputRumble(device.UserIndex, desired.Low, desired.High)
+                    ? SetXInputRumbleWennNoetig(device.UserIndex, desired.Low, desired.High)
                     : Sdl.SDL_RumbleGamepad(
                         device.Handle,
                         ToIntensity(desired.Low),
@@ -273,6 +282,7 @@ internal sealed class GenericGamepadHaptics : IDisposable
                 if (device.Backend == GamepadBackend.XInput)
                 {
                     SetXInputRumble(device.UserIndex, 0, 0);
+                    _xinputGesendet.Remove(device.UserIndex);
                 }
                 else
                 {
@@ -375,6 +385,21 @@ internal sealed class GenericGamepadHaptics : IDisposable
 
     private static ushort ToIntensity(double value) =>
         (ushort)Math.Clamp(Math.Round(value * ushort.MaxValue), 0, ushort.MaxValue);
+
+    private bool SetXInputRumbleWennNoetig(uint userIndex, double low, double high)
+    {
+        var lo = ToIntensity(low);
+        var hi = ToIntensity(high);
+        var jetzt = DateTime.UtcNow;
+        if (_xinputGesendet.TryGetValue(userIndex, out var vorher)
+            && vorher.Low == lo && vorher.High == hi && jetzt - vorher.Zeit < Auffrischen)
+        {
+            return true;
+        }
+        var ok = SetXInputRumble(userIndex, low, high);
+        if (ok) { _xinputGesendet[userIndex] = (lo, hi, jetzt); }
+        return ok;
+    }
 
     private static bool SetXInputRumble(uint userIndex, double low, double high)
     {

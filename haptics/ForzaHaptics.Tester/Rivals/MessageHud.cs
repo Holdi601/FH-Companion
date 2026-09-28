@@ -18,6 +18,8 @@ internal sealed class MessageHud : LayeredHud
     private string _text = string.Empty;
     private Color _farbe = Color.FromArgb(255, 210, 90);
 
+    public override int Ebene => 4;
+
     public MessageHud(Rectangle screen) : base(screen)
     {
         _weg.Tick += (_, _) =>

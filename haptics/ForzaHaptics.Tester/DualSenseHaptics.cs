@@ -18,6 +18,13 @@ internal sealed partial class DualSenseHaptics : IDisposable
     private static readonly int[] ProductIds = [0x0CE6, 0x0DF2];
     private readonly List<DualSenseDevice> _devices = [];
     private readonly Dictionary<string, DesiredState> _desired = [];
+    // NUR SENDEN, WAS SICH GEAENDERT HAT (seit 2026-09-28). Bis dahin ging alle 20 ms
+    // ein Bericht an den Controller, auch wenn er genau dasselbe sagte wie der vorige --
+    // ueber Bluetooth teilen sich diese Berichte die Funkzeit mit den Eingaben des
+    // Controllers, und die gehoeren dem Spiel. Gleiche Werte gehen hoechstens einmal je
+    // Sekunde erneut hinaus, falls ein anderes Programm den Controller zurueckgesetzt hat.
+    internal static readonly TimeSpan Auffrischen = TimeSpan.FromSeconds(1);
+    private readonly Dictionary<string, (byte[] Bericht, DateTime Zeit)> _gesendet = [];
 
     public string? ActiveTargetId { get; set; }
     public int DeviceCount => _devices.Count;
@@ -162,10 +169,19 @@ internal sealed partial class DualSenseHaptics : IDisposable
     {
         var writes = 0;
         LastError = string.Empty;
+        var jetzt = DateTime.UtcNow;
         foreach (var device in _devices.Where(device => device.Id == ActiveTargetId))
         {
-            if (WriteState(device, _desired.GetValueOrDefault(device.Id)))
+            var bericht = BuildReport(device.Bluetooth, _desired.GetValueOrDefault(device.Id));
+            if (_gesendet.TryGetValue(device.Id, out var vorher)
+                && jetzt - vorher.Zeit < Auffrischen
+                && vorher.Bericht.AsSpan().SequenceEqual(bericht))
             {
+                continue;
+            }
+            if (Schreibe(device, bericht))
+            {
+                _gesendet[device.Id] = (bericht, jetzt);
                 writes++;
             }
         }
@@ -212,7 +228,13 @@ internal sealed partial class DualSenseHaptics : IDisposable
 
     private bool WriteState(DualSenseDevice device, DesiredState state)
     {
-        var report = BuildReport(device.Bluetooth, state);
+        var ok = Schreibe(device, BuildReport(device.Bluetooth, state));
+        _gesendet.Remove(device.Id);
+        return ok;
+    }
+
+    private bool Schreibe(DualSenseDevice device, byte[] report)
+    {
         if (NativeMethods.WriteFile(
                 device.Handle,
                 report,

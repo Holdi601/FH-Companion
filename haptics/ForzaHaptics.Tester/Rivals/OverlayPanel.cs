@@ -38,7 +38,7 @@ internal readonly record struct PanelLine(string Left, string Right, Color Tone,
 /// (WS_EX_NOACTIVATE): the game keeps the mouse and the keyboard, which is the
 /// whole point -- an overlay that steals focus mid-corner is worse than no overlay.
 /// </remarks>
-internal sealed class OverlayPanel : Form
+internal sealed class OverlayPanel : Form, IAufnahmeQuelle
 {
     /// <summary>
     /// Wie breit die Spalte mit den eigenen Zeiten ist, wenn sie etwas zeigt.
@@ -102,6 +102,64 @@ internal sealed class OverlayPanel : Form
                  | ControlStyles.OptimizedDoubleBuffer, true);
 
         MakeFonts(bounds);
+        OverlayAusgabe.Melde(this);
+    }
+
+    // ---- Aufnahmefenster und "Overlays ueber dem Spiel" (seit 2026-09-28) ----------
+    //
+    // Gewollt ist, was das Overlay zeigen WILL; ueber dem Spiel erscheint es nur, wenn
+    // die Overlays dort eingeschaltet sind. "Visible" meint hier das Gewollte: Stellen
+    // wie "if (Visible) Hide()" sollen auch dann richtig entscheiden, wenn ueber dem
+    // Spiel nichts gezeigt wird -- sonst bliebe eine Meldung im Aufnahmefenster ewig.
+    private bool _gewollt;
+
+    public bool Gewollt => _gewollt && !IsDisposed;
+
+    public new bool Visible => Gewollt;
+
+    protected override void SetVisibleCore(bool value)
+    {
+        _gewollt = value;
+        base.SetVisibleCore(value && OverlayAusgabe.ImSpiel);
+    }
+
+    public void AusgabeAnwenden()
+    {
+        if (IsDisposed) { return; }
+        base.SetVisibleCore(_gewollt && OverlayAusgabe.ImSpiel);
+        if (base.Visible) { TopMost = true; }
+    }
+
+    public int Ebene => 0;
+
+    private Bitmap? _aufnahme;
+    private DateTime _aufnahmeZeit;
+
+    /// <summary>
+    /// Fuer das Aufnahmefenster: das Panel, wie es sich selbst zeichnet, mit seiner
+    /// Deckkraft. Hoechstens viermal je Sekunde neu gerendert -- der Inhalt wechselt
+    /// beim Blaettern, nicht mit jedem Bild.
+    /// </summary>
+    public void MaleFuerAufnahme(Graphics g)
+    {
+        if (!Gewollt || ClientSize.Width <= 0 || ClientSize.Height <= 0) { return; }
+        var jetzt = DateTime.UtcNow;
+        if (_aufnahme is null || _aufnahme.Size != ClientSize || jetzt - _aufnahmeZeit > TimeSpan.FromMilliseconds(250))
+        {
+            _aufnahme?.Dispose();
+            _aufnahme = new Bitmap(ClientSize.Width, ClientSize.Height);
+            using (var bg = Graphics.FromImage(_aufnahme))
+            using (var pe = new PaintEventArgs(bg, new Rectangle(Point.Empty, ClientSize)))
+            {
+                OnPaint(pe);
+            }
+            _aufnahmeZeit = jetzt;
+        }
+        var f = OverlayAusgabe.Flaeche;
+        using var attr = new System.Drawing.Imaging.ImageAttributes();
+        attr.SetColorMatrix(new System.Drawing.Imaging.ColorMatrix { Matrix33 = (float)Opacity });
+        g.DrawImage(_aufnahme, new Rectangle(Left - f.X, Top - f.Y, Width, Height),
+                    0, 0, _aufnahme.Width, _aufnahme.Height, GraphicsUnit.Pixel, attr);
     }
 
     // Every size is derived from the screen, so a 4K panel is not a strip of ants.

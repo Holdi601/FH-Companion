@@ -214,6 +214,7 @@ internal static class GameArea
     {
         // 24 Bit, nicht 32: GDI schreibt keinen Alphakanal, ein ARGB-Ziel kaeme mit
         // Alpha 0 zurueck -- voellig durchsichtig fuer alles, was danach zeichnet.
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
         var bmp = new Bitmap(Math.Max(1, target.Width), Math.Max(1, target.Height),
                              PixelFormat.Format24bppRgb);
         using var g = Graphics.FromImage(bmp);
@@ -233,6 +234,7 @@ internal static class GameArea
         {
             ReleaseDC(IntPtr.Zero, src);
             g.ReleaseHdc(dst);
+            Leistung.Griff(uhr.ElapsedTicks);
         }
         return bmp;
     }

@@ -53,6 +53,68 @@ internal static class EdgeCaseTest
         StartWithForza();
         LapsWaitForTheServer();
         CelebrationLooksRight();
+        OverlayOutputAndCost();
+    }
+
+    /// <summary>
+    /// Overlays ueber dem Spiel abschaltbar, trotzdem im Aufnahmefenster; der Delta-
+    /// Streifen uebergibt nur seinen Inhalt, die Eingabespuren getrennt (2026-09-28).
+    /// Alle Fenster ausserhalb des Schirms -- ein Test blitzt nie ueber dem Bild auf.
+    /// </summary>
+    private static void OverlayOutputAndCost()
+    {
+        var weg = new Rectangle(-32000, -32000, 1920, 1080);
+        var vorher = Rivals.OverlayAusgabe.ImSpiel;
+        var flaecheVorher = Rivals.OverlayAusgabe.Flaeche;
+        Rivals.OverlayAusgabe.Flaeche = weg;
+        try
+        {
+            // AUS: gewollt ja, ueber dem Spiel nein, im Aufnahmefenster ja.
+            Rivals.OverlayAusgabe.SetzeImSpiel(false);
+            using (var meldung = new Rivals.MessageHud(weg))
+            {
+                meldung.Zeige("Tune storage almost full", "962 of 1000 tunes", Color.Gold, 5);
+                Soll(meldung.Gewollt && meldung.Visible && !((Control)meldung).Visible,
+                     "bei abgeschalteten Overlays erscheint die Meldung trotzdem ueber dem Spiel");
+                Soll(Rivals.OverlayAusgabe.Alle().Contains(meldung), "die Meldung fehlt im Aufnahmefenster");
+                using var bild = new Bitmap(1920, 1080, PixelFormat.Format32bppPArgb);
+                using (var g = Graphics.FromImage(bild)) { g.Clear(Color.Transparent); meldung.MaleFuerAufnahme(g); }
+                var gefunden = false;
+                for (var y = 60; y < 300 && !gefunden; y += 4)
+                {
+                    for (var x = 500; x < 1400 && !gefunden; x += 8) { gefunden = bild.GetPixel(x, y).A > 100; }
+                }
+                Soll(gefunden, "das Aufnahmefenster zeichnet die Meldung nicht");
+                // EIN: jetzt erscheint sie auch ueber dem Spiel (ausserhalb des Schirms).
+                Rivals.OverlayAusgabe.SetzeImSpiel(true);
+                Soll(((Control)meldung).Visible, "nach dem Einschalten erscheint die gewollte Meldung nicht");
+                meldung.Hide();
+                Soll(!meldung.Gewollt && !((Control)meldung).Visible, "Verstecken nimmt die Meldung nicht weg");
+            }
+
+            // DER DELTA-STREIFEN uebergibt nur seinen Inhalt, die Spuren getrennt.
+            using (var hud = new Rivals.DeltaHud(new Rectangle(-32000, -32000, 3840, 2160), new Rivals.OverlaySettings { HudInputs = true }))
+            {
+                hud.Show();
+                Application.DoEvents();
+                for (var i = 0; i < 5; i++)
+                {
+                    hud.PushInputs(0.5f, 0f, 0f, 0.1f, 3, null, null);
+                    hud.Update(-0.25f - i * 0.01f, "same car, same tune", 20f, null, string.Empty, "to beat: 39.325 -- website best, this car");
+                }
+                var b = hud.Bereich;
+                var s = hud.SpurBereich;
+                Soll(!b.IsEmpty && b.Width * b.Height < 3840 * 2160 / 4,
+                     $"der Delta-Streifen uebergibt fast den ganzen Schirm ({b.Width}x{b.Height})");
+                Soll(!s.IsEmpty && !b.IntersectsWith(s), $"die Eingabespuren liegen nicht in ihrem eigenen Block ({s})");
+                hud.Hide();
+            }
+        }
+        finally
+        {
+            Rivals.OverlayAusgabe.SetzeImSpiel(vorher);
+            Rivals.OverlayAusgabe.Flaeche = flaecheVorher;
+        }
     }
 
     /// <summary>

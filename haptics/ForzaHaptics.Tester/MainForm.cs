@@ -479,6 +479,12 @@ internal sealed class MainForm : Form, ITelemetryHost
         hudTab.Controls.Add(hudEinstellungen);
         hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
         hudEinstellungen.NeuesAutoProbe += () => _rivals.PreviewNewCar();
+        hudEinstellungen.AufnahmeFensterWunsch += () => _rivals.OeffneAufnahmefenster();
+        // War das Aufnahmefenster beim letzten Beenden offen, kommt es wieder.
+        Shown += (_, _) =>
+        {
+            if (_rivals.Settings.RecordingWindow) { _rivals.OeffneAufnahmefenster(); }
+        };
         // Wird die Stufe im Rennen per Taste gewechselt, muss der Reiter das zeigen --
         // sonst schreibt die naechste Aenderung hier die alte Stufe zurueck.
         if (_rivals.Controller is not null)
@@ -1129,11 +1135,11 @@ internal sealed class MainForm : Form, ITelemetryHost
             }
             else if (IsSelectedDualSense())
             {
-                _dualSense.EnforceOwnedOutputs();
+                Leistung.Pad(_dualSense.EnforceOwnedOutputs());
             }
             else
             {
-                _gamepads.EnforceOwnedOutputs();
+                Leistung.Pad(_gamepads.EnforceOwnedOutputs());
             }
         };
         _mappingTimer.Start();
@@ -2019,6 +2025,10 @@ internal sealed class MainForm : Form, ITelemetryHost
         _hasTelemetry = true;
         _lastPacketRate = packetRate;
 
+        // Die Anzeige nur, wenn jemand hinsieht (siehe SiehtJemandHin): sechzehn
+        // Beschriftungen zehnmal je Sekunde, sonst auch hinter dem Spiel.
+        if (!SiehtJemandHin(_packetStatus)) { return; }
+
         _telemetryStatus.Text = Loc.T("Live FH6 telemetry connected.");
         _telemetryStatus.ForeColor = SuccessColor;
         _packetStatus.Text =
@@ -2121,7 +2131,17 @@ internal sealed class MainForm : Form, ITelemetryHost
                 _signalGraph,
                 freshTelemetry,
                 now);
-            _blueprintEditor.SetLiveValues(_graphEvaluation.NodeValues);
+            // DIE LIVE-WERTE IM EDITOR nur, wenn jemand hinsieht (seit 2026-09-28): ein
+            // Bild des Editors kostet gemessen 25 ms Prozessorzeit, und er bekam 50-mal je
+            // Sekunde neue Werte -- auch hinter dem Spiel, denn verdeckte Fenster zeichnen
+            // unter Windows weiter. Der Reiter ist der erste, also offen, sobald das
+            // Fenster offen ist. Gerechnet wird weiter (die Haptik braucht es), nur das
+            // Zeichnen wartet.
+            if (now - _liveValuesAt >= TimeSpan.FromMilliseconds(100) && SiehtJemandHin(_blueprintEditor))
+            {
+                _liveValuesAt = now;
+                _blueprintEditor.SetLiveValues(_graphEvaluation.NodeValues);
+            }
             // VERALTETE TELEMETRIE HEISST STILLE. Nach 300 ms ohne Paket liefert jeder
             // Telemetrie-Knoten 0 -- und ein Graph, der den Grip erst in einer Kurve
             // umkehrt, macht daraus volle Staerke, bis GraphMayDrive nach zwei Sekunden
@@ -2151,10 +2171,27 @@ internal sealed class MainForm : Form, ITelemetryHost
     /// Wichtig fuer den Fall "Spiel laeuft nicht": die Zahlen sollen weiter zu sehen
     /// sein, sonst wirkt eine bewusst stille Ausgabe wie eine abgestuerzte App.
     /// </remarks>
+    private DateTime _liveValuesAt = DateTime.MinValue;
+
+    /// <summary>
+    /// Ist dieses Stueck gerade zu sehen -- und nicht nur vorhanden? Sein Reiter offen,
+    /// das Fenster weder versteckt noch minimiert, und Forza nicht im Vordergrund: wer
+    /// faehrt, schaut nicht auf den Editor. Dann wird nichts neu gezeichnet.
+    /// </summary>
+    private bool SiehtJemandHin(Control stueck)
+    {
+        if (!stueck.Visible || !Visible || WindowState == FormWindowState.Minimized) { return false; }
+        var settings = _rivals?.Settings;
+        if (settings is null) { return true; }
+        _game ??= new GameWatch(settings.ForzaProcess);
+        return !(_game.Running && _game.IsForeground);
+    }
+
     private void UpdateTelemetryReadouts()
     {
         var now = DateTime.UtcNow;
-        if (_hasTelemetry && now - _lastInspectorUpdate >= TimeSpan.FromMilliseconds(100))
+        if (_hasTelemetry && now - _lastInspectorUpdate >= TimeSpan.FromMilliseconds(100)
+            && SiehtJemandHin(_telemetryInspector))
         {
             _lastInspectorUpdate = now;
             _telemetryInspector.UpdateValues(

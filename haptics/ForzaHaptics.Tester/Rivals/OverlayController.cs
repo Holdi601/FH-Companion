@@ -99,6 +99,13 @@ internal sealed class OverlayController : IDisposable
     private int? _drivetrain;
     private int? _cylinders;
     private DateTime _telemetryAt = DateTime.MinValue;
+    private float _tempo;
+
+    // DAS AUTOMENUE NUR SO OFT WIE NOETIG (seit 2026-09-28): jeder Blick ist ein Griff
+    // auf den ganzen Schirm (gemessen 57 ms auf 4K). Solange kein Automenue zu sehen
+    // ist, genuegt alle 1,5 s -- steht eines offen, wird wieder alle 0,5 s geschaut,
+    // damit die Notiz dem Rahmen folgt.
+    private DateTime _menueNaechster = DateTime.MinValue;
 
     private LapAutoSubmit? _submitterFeld;
     private LapAutoSubmit _submitter =>
@@ -380,6 +387,7 @@ internal sealed class OverlayController : IDisposable
         // noch nicht, ist es vorerst der Hauptschirm; FollowGameArea zieht nach.
         var screen = GameArea.Find(_settings.ForzaProcess);
         _area = screen;
+        OverlayAusgabe.Flaeche = screen;
         var (rechts, links) = PanelRects(screen);
         _right = new OverlayPanel(rechts, _settings.Opacity);
         _left = new OverlayPanel(links, _settings.Opacity);
@@ -409,7 +417,15 @@ internal sealed class OverlayController : IDisposable
         // DAS AUTOMENUE WIRD IMMER BEOBACHTET, nicht nur bei gestartetem Overlay: die
         // Autonotiz ist ein eigenes Stueck und haengt nicht am Rivals-Panel.
         _menueTick.Interval = 500;
-        _menueTick.Tick += (_, _) => { PruefeAutomenue(); PruefeUmrisseZeit(); AnmeldungOhneOverlay(); };
+        _menueTick.Tick += (_, _) =>
+        {
+            PruefeAutomenue();
+            PruefeUmrisseZeit();
+            AnmeldungOhneOverlay();
+            // Was die App kostet, einmal je Minute ins perf.log (siehe Leistung).
+            if (_game.Running) { Leistung.Zustand(FaehrtGerade()); }
+            Leistung.Protokolliere(_game.Running, _game.Running && _game.IsForeground);
+        };
         _menueTick.Start();
 
         // DER TUNE-SPEICHER: erst nach einer halben Minute, dann alle fuenf Minuten.
@@ -541,6 +557,7 @@ internal sealed class OverlayController : IDisposable
         _pi = (int)packet.Get("CarPerformanceIndex");
         _drivetrain = (int)packet.Get("DrivetrainType");
         _cylinders = (int)packet.Get("NumCylinders");
+        _tempo = (float)packet.Get("Speed");
         _telemetryAt = DateTime.UtcNow;
         UpdateCarNote(packet);
         UpdateDelta(packet);
@@ -1078,6 +1095,8 @@ internal sealed class OverlayController : IDisposable
         {
             if (!_settings.CarNotes || _menueLesen || _reading || _hudPreview || !_reader.OcrAvailable) { return; }
             if (!_game.Running || !_game.IsForeground) { return; }
+            if (FaehrtGerade()) { return; }
+            if (DateTime.UtcNow < _menueNaechster) { return; }
             var flaeche = GameArea.Find(_settings.ForzaProcess);
             if (flaeche.IsEmpty) { return; }
             _menueLesen = true;
@@ -1122,6 +1141,7 @@ internal sealed class OverlayController : IDisposable
                 }
                 finally
                 {
+                    _menueNaechster = DateTime.UtcNow + (rahmen is null ? TimeSpan.FromSeconds(1.5) : TimeSpan.Zero);
                     _menueLesen = false;
                 }
                 try
@@ -1682,6 +1702,7 @@ internal sealed class OverlayController : IDisposable
         var jetzt = GameArea.Find(_settings.ForzaProcess);
         if (jetzt == _area || jetzt.Width < 640 || jetzt.Height < 360) { return; }
         _area = jetzt;
+        OverlayAusgabe.Flaeche = jetzt;
         var (rechts, links) = PanelRects(jetzt);
         _right.Reposition(rechts);
         _left.Reposition(links);
@@ -2139,6 +2160,25 @@ internal sealed class OverlayController : IDisposable
         return false;
     }
 
+    /// <summary>
+    /// Wird gerade gefahren? Dann wird NICHT vom Bildschirm gelesen (seit 2026-09-28).
+    /// </summary>
+    /// <remarks>
+    /// Jedes Lesen holt Pixel per GDI vom Schirm zurueck -- das Automenue sogar den
+    /// ganzen Schirm, zweimal je Sekunde: gemessen 62 ms je Griff auf 4K, dazu das
+    /// Vergleichsbild der Streckenliste bei jeder Abfrage. Waehrend das Spiel rendert,
+    /// muss die Grafikkarte dafuer ein fertiges Bild an den Prozessor zurueckgeben --
+    /// genau die Art Stocken, die im Rennen niemand haben darf. Und waehrend der
+    /// Fahrt gibt es weder Anmeldeschirm noch Automenue: zu lesen ist dann nichts.
+    ///
+    /// Gefahren wird, wenn die Telemetrie frisch ist und das Auto schneller als
+    /// 2,5 m/s (9 km/h) faehrt, oder die Uhr einer Runde laeuft. Ohne frische
+    /// Telemetrie (Menue, Pause, Data Out aus) wird gelesen wie bisher.
+    /// </remarks>
+    internal bool FaehrtGerade() =>
+        DateTime.UtcNow - _telemetryAt < TimeSpan.FromSeconds(2)
+        && (_tempo > 2.5f || (_recorder.HasLapUnderway && _recorder.CurrentSeconds > 0f));
+
     private void Tick()
     {
         try
@@ -2151,7 +2191,7 @@ internal sealed class OverlayController : IDisposable
             {
                 RenderCar();
             }
-            if (_settings.AutoShow && !_left.Up)
+            if (_settings.AutoShow && !_left.Up && !FaehrtGerade())
             {
                 StartRead(force: false);
             }
@@ -2181,6 +2221,10 @@ internal sealed class OverlayController : IDisposable
     private void StartRead(bool force)
     {
         if (_reading || _menueLesen || !_reader.OcrAvailable)
+        {
+            return;
+        }
+        if (!force && FaehrtGerade())
         {
             return;
         }
@@ -2933,6 +2977,7 @@ internal sealed class OverlayController : IDisposable
             // im Vordergrund und nicht wegzuklicken.
             if (!_game.Running || !_game.IsForeground) { HideShapes(); return; }
             if (++_anmeldungTakt % 3 != 0) { return; }
+            if (FaehrtGerade()) { return; }
             FollowGameArea();
             StartRead(force: false);
         }

@@ -116,6 +116,15 @@ Everything drawn over the game while you drive, and where it sits:
 - **Archive every lap for heatmaps.**
 - **Layout editor.** Drag every block where you want it, resize with the mouse
   wheel, and optionally show it on the real screen while you set it up.
+- **Recording and streaming.** The overlays are kept out of screen recordings,
+  because the app reads the screen itself and must not read its own panels.
+  - **Open the recording window:** a normal window that draws the same overlays
+    on a key colour (green, magenta or black). In OBS, add a Window Capture of
+    it above the game capture and a Color Key filter in the same colour. The
+    window may sit on another screen or behind the game, but not minimised.
+  - **Show overlays over the game:** switch it off and nothing at all is drawn
+    over Forza, so the overlays cannot affect its frames. The recording window,
+    for example on a second screen, still shows them.
 
 ## Tuning inspector
 

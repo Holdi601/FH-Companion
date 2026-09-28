@@ -49,7 +49,9 @@ internal sealed class WindowsOcr
         }
 
         using var software = ToSoftwareBitmap(bitmap);
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
         var result = _engine.RecognizeAsync(software).AsTask().GetAwaiter().GetResult();
+        Leistung.Ocr(uhr.ElapsedTicks);
         foreach (var line in result.Lines)
         {
             var text = line.Text?.Trim();

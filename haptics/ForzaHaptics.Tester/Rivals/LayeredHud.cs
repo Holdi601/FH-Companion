@@ -29,7 +29,7 @@ namespace ForzaHaptics.Tester.Rivals;
 /// Koordinaten der ganzen Spielflaeche (dieselbe Rechnung wie in der Vorschau des
 /// Einrichtungsreiters), gezeichnet und uebergeben nur das Rechteck darum.
 /// </remarks>
-internal abstract class LayeredHud : Form
+internal abstract class LayeredHud : Form, IAufnahmeQuelle
 {
     private const int WsExLayered = 0x00080000;
     private const int WsExTransparent = 0x00000020;
@@ -120,6 +120,40 @@ internal abstract class LayeredHud : Form
         // Das Fenster selbst ist nur so gross wie sein Block; Lage und Groesse setzt
         // UpdateLayeredWindow bei jedem Zeichnen.
         Bounds = new Rectangle(flaeche.X, flaeche.Y, 1, 1);
+        OverlayAusgabe.Melde(this);
+    }
+
+    // ---- Aufnahmefenster und "Overlays ueber dem Spiel" (seit 2026-09-28) ----------
+    //
+    // Gewollt ist, was das Overlay zeigen WILL; ueber dem Spiel erscheint es nur, wenn
+    // die Overlays dort eingeschaltet sind. "Visible" meint hier das Gewollte: Stellen
+    // wie "if (Visible) Hide()" sollen auch dann richtig entscheiden, wenn ueber dem
+    // Spiel nichts gezeigt wird -- sonst bliebe eine Meldung im Aufnahmefenster ewig.
+    private bool _gewollt;
+
+    public bool Gewollt => _gewollt && !IsDisposed;
+
+    public new bool Visible => Gewollt;
+
+    protected override void SetVisibleCore(bool value)
+    {
+        _gewollt = value;
+        base.SetVisibleCore(value && OverlayAusgabe.ImSpiel);
+    }
+
+    public void AusgabeAnwenden()
+    {
+        if (IsDisposed) { return; }
+        base.SetVisibleCore(_gewollt && OverlayAusgabe.ImSpiel);
+        if (base.Visible) { TopMost = true; }
+    }
+
+    /// <summary>Reihenfolge im Aufnahmefenster (siehe IAufnahmeQuelle).</summary>
+    public virtual int Ebene => 2;
+
+    public void MaleFuerAufnahme(Graphics g)
+    {
+        if (Gewollt) { Draw(g); }
     }
 
     /// <summary>Die Spielflaeche in Bildschirmkoordinaten setzen -- und neu zeichnen.</summary>
@@ -172,7 +206,7 @@ internal abstract class LayeredHud : Form
     protected override void OnVisibleChanged(EventArgs e)
     {
         base.OnVisibleChanged(e);
-        if (Visible) { Render(); }
+        if (base.Visible) { Render(); }
     }
 
     // Ein Fenster, das UpdateLayeredWindow benutzt, bekommt kein WM_PAINT, das es
@@ -184,7 +218,10 @@ internal abstract class LayeredHud : Form
     /// <summary>Neu rechnen, zeichnen und dem Fenstermanager uebergeben.</summary>
     public void Render()
     {
-        if (!IsHandleCreated || IsDisposed) { return; }
+        // Nicht sichtbar ueber dem Spiel: nichts uebergeben. Das Aufnahmefenster
+        // zeichnet selbst (MaleFuerAufnahme).
+        if (!IsHandleCreated || IsDisposed || !base.Visible) { return; }
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             Rectangle block;
@@ -248,6 +285,7 @@ internal abstract class LayeredHud : Form
         {
             // Ein Anzeigefehler darf nie das Rennen stoeren.
         }
+        Leistung.Gezeichnet(uhr.ElapsedTicks);
     }
 
     /// <summary>Fuer den Selbsttest: hat das letzte Uebergeben geklappt?</summary>
