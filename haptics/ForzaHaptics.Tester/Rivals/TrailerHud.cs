@@ -194,8 +194,8 @@ internal static class TrailerHud
             g.Clear(Color.Transparent);
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-            CarNoteHud.Male(g, s, groesse, args[i + 2], args[i + 3].Replace("\n", "
-"), auchWennAus: true);
+            // Ein "\n" auf der Befehlszeile (zwei Zeichen) wird ein Zeilenumbruch.
+            CarNoteHud.Male(g, s, groesse, args[i + 2], args[i + 3].Replace(@"\n", "\n"), auchWennAus: true);
         }
         bild.Save(args[i + 1], ImageFormat.Png);
         Console.WriteLine(args[i + 1]);
