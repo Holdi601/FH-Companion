@@ -1310,11 +1310,11 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(modus);
-        Rein(Note("Which mode you are playing, written with every lap "
-                  + "so the data can be filtered later. The telemetry "
-                  + "does not say it -- only a free-world run proves "
-                  + "itself, and that one is detected. \"auto\" leaves "
-                  + "everything else as unknown rather than guessing."));
+        Rein(Note("Which mode you are playing, written with every lap. \"auto\" works it "
+                  + "out from the menu you came from: the Rivals screen, a Horizon Play sign-up, "
+                  + "or an ordinary sign-up (a solo or co-op race). Free-roam runs prove themselves "
+                  + "by their own clock. Only Rivals and Horizon Play laps count on the website; "
+                  + "a lap whose mode is unknown is not sent."));
 
         // ---- ZEITFAHREN IN DER OFFENEN WELT ------------------------------------------
         Abschnitt(Loc.T("Time attack in the free world"));

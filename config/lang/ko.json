@@ -176,6 +176,7 @@
  "Smooth traced line": "매끄럽게 따라 그린 선",
  "Smoothing takes out the pixel steps of the line. Turned up high, tight hairpins get rounder too.": "부드럽게 하면 선의 픽셀 계단이 사라집니다. 높게 올리면 급한 헤어핀도 둥글어집니다.",
  "Solo": "솔로",
+ "Solo / co-op race": "솔로 / 협동 레이스",
  "Soon the game will refuse new downloads.": "곧 게임이 새 다운로드를 거부합니다.",
  "Stacked": "위아래로",
  "Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers.": "보통 컨트롤러는 느린 모터와 빠른 모터의 세기를 제공할 뿐, 진짜 반송 주파수는 아닙니다. 「주파수 혼합」을 고르면 변조가 두 모터 사이를 넘나듭니다. 트리거 진동은 대개 호환되는 Xbox 컨트롤러에만 있습니다.",

@@ -197,10 +197,10 @@
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:3443"
+  "Rivals/OverlayController.cs:3506"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:3433"
+  "Rivals/OverlayController.cs:3496"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
@@ -221,7 +221,7 @@
   "MainForm.cs:1236"
  ],
  "Free roam": [
-  "Rivals/OwnTimes.cs:410"
+  "Rivals/OwnTimes.cs:413"
  ],
  "From": [
   "Rivals/CarNotesTab.cs:79"
@@ -269,8 +269,8 @@
   "scripts/contrib_scan.py:70"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:3425",
-  "Rivals/OverlayController.cs:3432"
+  "Rivals/OverlayController.cs:3488",
+  "Rivals/OverlayController.cs:3495"
  ],
  "Key colour for OBS": [
   "Rivals/HudTab.cs:1258"
@@ -336,15 +336,15 @@
   "Rivals/CarNotesTab.cs:198"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:3426",
-  "Rivals/OverlayController.cs:3434"
+  "Rivals/OverlayController.cs:3489",
+  "Rivals/OverlayController.cs:3497"
  ],
  "NODE PALETTE": [
   "BlueprintEditor.cs:63"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:3423",
-  "Rivals/OverlayController.cs:3431"
+  "Rivals/OverlayController.cs:3486",
+  "Rivals/OverlayController.cs:3494"
  ],
  "No car in view -- highlight one in My Cars, or drive one.": [
   "Rivals/CarNotesTab.cs:192"
@@ -571,6 +571,9 @@
  "Solo": [
   "Rivals/OwnTimes.cs:406"
  ],
+ "Solo / co-op race": [
+  "Rivals/OwnTimes.cs:410"
+ ],
  "Soon the game will refuse new downloads.": [
   "Rivals/OverlayController.cs:537"
  ],
@@ -782,7 +785,7 @@
   "MainForm.cs:673"
  ],
  "Unnamed course": [
-  "Rivals/OwnTimes.cs:444"
+  "Rivals/OwnTimes.cs:447"
  ],
  "Unused tunes": [
   "Tuning/TunesTab.cs:293"
@@ -812,8 +815,8 @@
   "Tuning/TunesTab.cs:378"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:3401",
-  "Rivals/OverlayController.cs:3442"
+  "Rivals/OverlayController.cs:3464",
+  "Rivals/OverlayController.cs:3505"
  ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:244"
@@ -843,8 +846,8 @@
   "Rivals/OwnTimesTab.cs:127"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:3398",
-  "Rivals/OverlayController.cs:3441"
+  "Rivals/OverlayController.cs:3461",
+  "Rivals/OverlayController.cs:3504"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
@@ -898,7 +901,7 @@
   "Rivals/CourseShapeHud.cs:222"
  ],
  "down": [
-  "Rivals/OwnTimes.cs:418",
+  "Rivals/OwnTimes.cs:421",
   "Rivals/OwnTimesTab.cs:117"
  ],
  "driven": [
@@ -999,7 +1002,7 @@
   "Rivals/OwnTimesTab.cs:353"
  ],
  "stock class": [
-  "Rivals/OwnTimes.cs:419",
+  "Rivals/OwnTimes.cs:422",
   "Rivals/OwnTimesTab.cs:117"
  ],
  "telemetry: not connected to the app's listener": [
@@ -1018,13 +1021,13 @@
   "Rivals/OwnTimesTab.cs:129"
  ],
  "unknown": [
-  "Rivals/OwnTimes.cs:411"
+  "Rivals/OwnTimes.cs:414"
  ],
  "unsaved": [
   "Rivals/CarNotesTab.cs:123"
  ],
  "up": [
-  "Rivals/OwnTimes.cs:420",
+  "Rivals/OwnTimes.cs:423",
   "Rivals/OwnTimesTab.cs:118"
  ],
  "waiting for Forza": [

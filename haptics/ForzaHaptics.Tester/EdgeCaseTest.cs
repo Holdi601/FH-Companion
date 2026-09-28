@@ -57,6 +57,54 @@ internal static class EdgeCaseTest
         TyreOverview();
         ReplacedControllerGoesQuiet();
         LiveMapStaysWithoutStrip();
+        LapModeFromMenus();
+    }
+
+    /// <summary>
+    /// Der Modus einer Runde aus dem zuletzt gelesenen Menue (2026-09-28): Rivals-Schirm,
+    /// Horizon-Play-Anmeldung, gewoehnliche Anmeldung -- und Rivals nur ohne Gegner.
+    /// </summary>
+    private static void LapModeFromMenus()
+    {
+        var typ = typeof(Rivals.OverlayController);
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var feld = typ.GetField("_modusSchirm", flags)!;
+        Rivals.RecordedLap Runde(float meter, string modus = "unknown") =>
+            new() { LapSeconds = 60f, LengthMetres = meter, Mode = modus, ModeEvidence = "none" };
+        Rivals.RecordedLap Fall(string modus, TimeSpan alter, int platz, float meter = 1880f,
+                                string? strecke = "Soni Circuit", double km = 1.9, string vorher = "unknown")
+        {
+            var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+            (string, DateTime, string?, double)? beleg = (modus, DateTime.UtcNow - alter, strecke, km);
+            feld.SetValue(roh, beleg);
+            var lap = Runde(meter, vorher);
+            roh.ModusAusSchirm(lap, platz);
+            return lap;
+        }
+
+        var r = Fall("rivals", TimeSpan.FromMinutes(3), 1);
+        Soll(r.Mode == "rivals" && r.Track == "Soni Circuit" && r.ModeEvidence.StartsWith("screen:rivals:"),
+             $"Rivals-Schirm, allein gefahren: {r.Mode}/{r.Track}/{r.ModeEvidence}");
+        var z = Fall("rivals", TimeSpan.FromMinutes(3), 4);
+        Soll(z.Mode == "unknown" && z.ModeEvidence.StartsWith("conflict:"),
+             $"Rivals-Schirm, aber Platz 4 -- das war ein Rennen: {z.Mode}/{z.ModeEvidence}");
+        var lang = Fall("rivals", TimeSpan.FromMinutes(3), 1, meter: 2600f);
+        Soll(lang.Mode == "rivals" && string.IsNullOrEmpty(lang.Track),
+             "eine Runde anderer Laenge bekommt den Namen vom Rivals-Schirm");
+        Soll(Fall("rivals", TimeSpan.FromHours(3), 1).Mode == "unknown", "ein drei Stunden alter Rivals-Schirm gilt noch");
+        var rennen = Fall("race", TimeSpan.FromMinutes(10), 5, strecke: null, km: 0);
+        Soll(rennen.Mode == "race" && string.IsNullOrEmpty(rennen.Track),
+             $"eine gewoehnliche Anmeldung ergibt kein Rennen: {rennen.Mode}");
+        Soll(Fall("horizon-play", TimeSpan.FromMinutes(50), 3).Mode == "unknown",
+             "eine 50 Minuten alte Horizon-Play-Anmeldung gilt noch");
+        Soll(Fall("horizon-play", TimeSpan.FromMinutes(20), 1).Mode == "horizon-play",
+             "eine frische Horizon-Play-Anmeldung gilt nicht");
+        Soll(Fall("rivals", TimeSpan.FromMinutes(1), 1, vorher: "freeroam").Mode == "freeroam",
+             "der Menueschirm ueberschreibt die eigene Freiwelt-Uhr");
+        Soll(Rivals.OverlayController.LaengePasst(1900, 1.9) && Rivals.OverlayController.LaengePasst(1850, 1.9)
+             && !Rivals.OverlayController.LaengePasst(2500, 1.9) && !Rivals.OverlayController.LaengePasst(1900, 0),
+             "die Laengenpruefung gegen 'Route Length' stimmt nicht");
+        Soll(Rivals.OwnTimes.ModeText("race") != "race", "der Modus 'race' hat keinen Anzeigenamen");
     }
 
     /// <summary>
@@ -375,7 +423,7 @@ internal static class EdgeCaseTest
         };
         Rivals.RecordedLap Lap(float sek, int car = 1234)
         {
-            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = 3 };
+            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = 3, Mode = "rivals" };
             for (var i = 0; i < 12; i++) { l.Samples.Add(new Rivals.LapSample()); }
             return l;
         }
@@ -1616,11 +1664,19 @@ internal static class EdgeCaseTest
         };
         Rivals.RecordedLap Lap(float sek, int car = 1234, int klasse = 3)
         {
-            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = klasse };
+            var l = new Rivals.RecordedLap { LapSeconds = sek, CarOrdinal = car, CarClass = klasse, Mode = "rivals" };
             for (var i = 0; i < 12; i++) { l.Samples.Add(new Rivals.LapSample()); }
             return l;
         }
         var leer = new Dictionary<string, int>();
+        // OHNE MODUS NICHT (2026-09-28): die Seite trennt die Modi, "unknown" passt nirgends hin.
+        var ohneModus = Lap(59.0f);
+        ohneModus.Mode = "unknown";
+        Soll(!Rivals.LapAutoSubmit.Pruefen(ohneModus, "Test Circuit", data, leer).Senden,
+             "eine Runde ohne bekannten Modus wird gesendet");
+        Soll(Rivals.LapAutoSubmit.SaubererModus("rivals") && Rivals.LapAutoSubmit.SaubererModus("horizon-play")
+             && !Rivals.LapAutoSubmit.SaubererModus("race") && !Rivals.LapAutoSubmit.SaubererModus("freeroam"),
+             "welche Modi in die Wertung kommen, stimmt nicht");
         Soll(Rivals.LapAutoSubmit.Pruefen(Lap(59.0f), "Test Circuit", data, leer).Senden,
              "eine schnellere Runde (59 < 60 s) wird nicht gesendet");
         Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(60.0f), "Test Circuit", data, leer).Senden,

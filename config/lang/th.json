@@ -176,6 +176,7 @@
  "Smooth traced line": "เส้นลากใหม่แบบเรียบ",
  "Smoothing takes out the pixel steps of the line. Turned up high, tight hairpins get rounder too.": "การทำให้เรียบจะลบขั้นบันไดพิกเซลของเส้น ถ้าตั้งสูง โค้งหักศอกแคบก็จะมนขึ้นด้วย",
  "Solo": "เดี่ยว",
+ "Solo / co-op race": "แข่งเดี่ยว / โคออป",
  "Soon the game will refuse new downloads.": "อีกไม่นานเกมจะไม่รับการดาวน์โหลดใหม่",
  "Stacked": "ซ้อนกันแนวตั้ง",
  "Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers.": "จอยทั่วไปให้ความแรงของมอเตอร์ช้าและเร็ว ไม่ใช่ความถี่พาหะจริง เลือก “ผสมความถี่” เพื่อให้การมอดูเลตไล่ระดับระหว่างมอเตอร์ทั้งสอง การสั่นที่ไกปืนมักมีเฉพาะในจอย Xbox ที่รองรับ",

@@ -42,7 +42,7 @@ var piKlasse = S.PI_ORDER.indexOf(klasse);
 
 // --- 1. Eine SCHNELLERE eingereichte Runde loest die Rivals-Zeit ab.
 var schneller = { id: "a", gamertag: "Tester", hidden: false,
-  lap: { track: strecke, carClass: piKlasse, carOrdinal: ordinal,
+  lap: { track: strecke, carClass: piKlasse, carOrdinal: ordinal, mode: "rivals",
          lapSeconds: (rivalsBest - 500) / 1000 } };
 var sub = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [schneller]);
 var p = S.applySubmitted(D, board, picks(), sub).get(auto);
@@ -62,7 +62,7 @@ pruefe(p.ms === rivalsBest && !p.submitted,
 var kopie = JSON.parse(JSON.stringify(D));
 var vorher = kopie.carIds.length;
 var neu = { id: "n", gamertag: "Tester", hidden: false,
-  lap: { track: strecke, carClass: piKlasse, carOrdinal: 999001,
+  lap: { track: strecke, carClass: piKlasse, carOrdinal: 999001, mode: "rivals",
          lapSeconds: 99.5, carName: "Brand New Car '27" } };
 sub = S.buildSubmitted(kopie, [neu]);
 var neuIdx = kopie.carIds.indexOf(999001);
@@ -77,7 +77,7 @@ pruefe(sub.newCars === 1 && kopie.carIds.length === vorher + 1
 //        Eine D-Runde (carClass 0) darf NICHT im A-Brett landen.
 var dBrett = D.boards.find(function (b) { return D.classes[b.k] === "D"; });
 var dRunde = { id: "d", gamertag: "Tester", hidden: false,
-  lap: { track: D.tracks[dBrett.t], carClass: 0, carOrdinal: ordinal, lapSeconds: 80 } };
+  lap: { track: D.tracks[dBrett.t], carClass: 0, carOrdinal: ordinal, mode: "rivals", lapSeconds: 80 } };
 sub = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [dRunde]);
 var landete = Array.from(sub.byBoard.keys());
 pruefe(landete.length === 1 && landete[0].endsWith("|D"),
@@ -85,7 +85,7 @@ pruefe(landete.length === 1 && landete[0].endsWith("|D"),
 
 // --- 5. Ohne Streckennamen: nicht eingeordnet, aber MIT Grund gemeldet.
 var ohne = { id: "x", hidden: false, lap: { carClass: piKlasse, carOrdinal: ordinal,
-                                            lapSeconds: 90 } };
+                                            mode: "rivals", lapSeconds: 90 } };
 sub = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [ohne]);
 pruefe(sub.placed === 0 && sub.unplaced.length === 1
        && sub.unplaced[0].reason === "no track name",
@@ -96,6 +96,27 @@ var versteckt = JSON.parse(JSON.stringify(schneller));
 versteckt.hidden = true;
 sub = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [versteckt]);
 pruefe(sub.placed === 0, "im Admin ausgeblendete Runde erscheint nicht");
+
+// --- 7. NUR RIVALS UND HORIZON PLAY IN DIE WERTUNG (2026-09-28). Eine schnellere
+//        Runde aus einem Solo-/Koop-Rennen, der freien Fahrt oder ohne Modus steht in
+//        der eigenen Liste und laesst die Rivals-Zeit unberuehrt.
+["race", "freeroam", "coop", "unknown", undefined].forEach(function (modus) {
+  var r = JSON.parse(JSON.stringify(schneller));
+  if (modus === undefined) delete r.lap.mode; else r.lap.mode = modus;
+  var s7 = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [r]);
+  var p7 = S.applySubmitted(D, board, picks(), s7).get(auto);
+  pruefe(s7.placed === 0 && s7.others.length === 1 && p7.ms === rivalsBest && !p7.submitted
+         && s7.others[0].mode === (modus || "unknown") && s7.others[0].ms === rivalsBest - 500,
+         "Modus " + (modus || "(keiner)") + ": gezeigt in eigener Liste, nicht gewertet");
+});
+var hp = JSON.parse(JSON.stringify(schneller));
+hp.lap.mode = "horizon-play";
+var s8 = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [hp]);
+var p8 = S.applySubmitted(D, board, picks(), s8).get(auto);
+pruefe(s8.placed === 1 && p8.submitted && p8.submitted.mode === "horizon-play",
+       "Horizon Play zaehlt und traegt seinen Modus");
+pruefe(S.modeText("race") === "Solo / co-op race" && S.modeText("horizon-play") === "Horizon Play",
+       "Anzeigenamen der Modi");
 
 console.log("");
 if (fehler) { console.log(fehler + " Pruefung(en) fehlgeschlagen."); process.exit(1); }

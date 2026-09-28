@@ -68,6 +68,22 @@ internal sealed class ScreenState
     public bool IsHorizonPlay =>
         Series?.Contains("Horizon Play", StringComparison.OrdinalIgnoreCase) == true;
 
+    /// <summary>Die Zeilen oben links, mit "|" getrennt ("Rivals", "Routes") -- leer, wenn keine.</summary>
+    public string Kopf { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Der Rivals-Schirm: Strecke, darunter die Klassen (B 600 ... R 998), rechts
+    /// "Time to Beat". Seit 2026-09-28 -- vorher erkannte die App Rivals gar nicht, und
+    /// eine Rivals-Runde nach einem Horizon-Play-Abend landete als "horizon-play".
+    /// </summary>
+    public bool IsRivalsMenu => Kopf.Split('|').Any(z => TextMatch.Similarity(TextMatch.Normalise(z), "rivals") >= 0.8);
+
+    /// <summary>Auf dem Rivals-Schirm: die gezeigte Strecke.</summary>
+    public string? RivalsRoute { get; set; }
+
+    /// <summary>Auf dem Rivals-Schirm: "Route Length: 1.9 KM" -- die Laenge in km, 0 = unbekannt.</summary>
+    public double RivalsKm { get; set; }
+
     /// <summary>
     /// Ab welcher Strecke (Index in <see cref="Tracks"/>) man selbst faehrt.
     /// </summary>
@@ -328,6 +344,7 @@ internal sealed class RivalsScreenReader
                                    (int)Math.Round((routesRect.Y - screen.Y) * k));
             state = Interpret(Offset(_ocr.Read(routes), origin), ReadBadge(badge), Point.Empty);
         }
+        LiesKopf(state, screen, r => GameArea.Capture(r, Normalised(r.Size, k)));
         state.ReadMilliseconds = (DateTime.UtcNow - started).TotalMilliseconds;
         return state;
     }
@@ -366,8 +383,67 @@ internal sealed class RivalsScreenReader
                                    (int)Math.Round((routesRect.Y - screen.Y) * k));
             state = Interpret(Offset(_ocr.Read(routes), origin), ReadBadge(badge), Point.Empty);
         }
+        LiesKopf(state, screen, r => Resized(frame, r, k, PixelFormat.Format24bppRgb));
         state.ReadMilliseconds = (DateTime.UtcNow - started).TotalMilliseconds;
         return state;
+    }
+
+    /// <summary>Die Ueberschrift oben links, als Bruchteil des 16:9-Schirms [x0, y0, x1, y1].</summary>
+    /// <remarks>
+    /// Auf dem Rivals-Schirm steht dort "Rivals", auf der Streckenwahl davor "Routes".
+    /// Gemessen an einer 1080p-Aufnahme vom 2026-09-27: ruhend bei x 147, y 213; waehrend
+    /// der Menue-Animation groesser bei x 53, y 188. Das Band deckt beides. Die
+    /// Streckenregion faengt erst bei 12 bis 16 % an und sieht das Wort nicht.
+    /// </remarks>
+    internal static readonly double[] KopfRegion = { 0.0, 0.12, 0.35, 0.26 };
+
+    /// <summary>Auf dem Rivals-Schirm: Streckenname und die Zeile "Route Length" darunter.</summary>
+    /// <remarks>Ruhend: Name bei y 571, Laenge bei y 665 (1080p); animiert etwas tiefer.</remarks>
+    internal static readonly double[] RivalsTitelRegion = { 0.0, 0.47, 0.55, 0.70 };
+
+    /// <summary>"Route Length: 1.9 KM" -- die Texterkennung liest den Doppelpunkt nicht immer.</summary>
+    private static readonly Regex RouteLengthMuster = new(
+        @"Length\W*([0-9]+(?:[.,][0-9]+)?)\s*KM", RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// Die Ueberschrift lesen -- und auf dem Rivals-Schirm Strecke und Laenge.
+    /// </summary>
+    /// <remarks>
+    /// Ein kleiner Griff je Lesevorgang, und gelesen wird nur in Menues (nie beim
+    /// Fahren, siehe FaehrtGerade). Der Titel nur, wenn die Ueberschrift Rivals sagt.
+    /// </remarks>
+    private void LiesKopf(ScreenState state, Rectangle screen, Func<Rectangle, Bitmap> hole)
+    {
+        try
+        {
+            using (var kopf = hole(RegionOf(screen, KopfRegion)))
+            {
+                state.Kopf = string.Join("|", _ocr.Read(kopf).Select(l => l.Text.Trim())).Trim();
+            }
+            if (!state.IsRivalsMenu) { return; }
+            using var titel = hole(RegionOf(screen, RivalsTitelRegion));
+            (string Name, double Score)? beste = null;
+            foreach (var zeile in _ocr.Read(titel))
+            {
+                if (_advisor.MatchTrack(zeile.Text, _settings.TrackCutoff) is { } treffer
+                    && (beste is null || treffer.Score > beste.Value.Score))
+                {
+                    beste = (treffer.Track, treffer.Score);
+                }
+                var km = RouteLengthMuster.Match(zeile.Text);
+                if (km.Success && double.TryParse(km.Groups[1].Value.Replace(',', '.'),
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var wert))
+                {
+                    state.RivalsKm = wert;
+                }
+            }
+            state.RivalsRoute = beste?.Name;
+        }
+        catch (Exception)
+        {
+            // Ohne Ueberschrift ist der Schirm eben keiner, den wir kennen.
+        }
     }
 
     private static List<OcrLine> Offset(List<OcrLine> lines, Point origin) =>

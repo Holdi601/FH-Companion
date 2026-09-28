@@ -29,21 +29,39 @@
 
 var PI_ORDER = ["D", "C", "B", "A", "S1", "S2", "R"];
 
+/* NUR RIVALS UND HORIZON PLAY KOMMEN IN DIE WERTUNG (seit 2026-09-28).
+ * Dort gibt es keine Wandfahrten: Rivals erklaert eine Runde mit Wandkontakt fuer
+ * ungueltig, Horizon Play bremst den Motor. Solo, Koop und freie Fahrt erlauben sie,
+ * und eine Rivals-Bestenliste mit solchen Zeiten zu mischen hiesse, sie zu verfaelschen.
+ * Diese Runden stehen darum in einer eigenen Liste -- ebenso Runden ohne bekannten
+ * Modus (eingereicht, bevor die App ihn erkennen konnte). */
+var CLEAN_MODES = ["rivals", "horizon-play"];
+
+var MODE_TEXT = { "rivals": "Rivals", "horizon-play": "Horizon Play", "race": "Solo / co-op race",
+                  "solo": "Solo", "coop": "Co-op", "freeroam": "Free roam", "unknown": "unknown" };
+
+function modeText(mode) {
+  return MODE_TEXT[mode] || String(mode || "unknown");
+}
+
 function falteName(s) {
   return String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 /* laps: die Liste von /api/lap/list.
  * Gibt zurueck: {
- *   byBoard:  Map("Strecke|Klasse" -> Map(carIdx -> {ms, gamertag, received, id})),
+ *   byBoard:  Map("Strecke|Klasse" -> Map(carIdx -> {ms, gamertag, received, id, mode})),
  *   placed:   Anzahl eingerechneter Runden,
  *   unplaced: [{id, reason}]  -- was nicht einzuordnen war, MIT Grund,
- *   newCars:  Anzahl Autos, die es im Datensatz bisher nicht gab
+ *   newCars:  Anzahl Autos, die es im Datensatz bisher nicht gab,
+ *   others:   [{id, mode, track, klasse, car, ms, gamertag, received}] -- Runden aus
+ *             Solo, Koop, freier Fahrt oder ohne Modus: gezeigt, nie gewertet
  * }
  * VERAENDERT D: neue Autos werden an carIds/carNames/carMeta angehaengt. */
 function buildSubmitted(D, laps) {
   var byBoard = new Map();
   var unplaced = [];
+  var others = [];
   var placed = 0;
   var newCars = 0;
 
@@ -64,6 +82,21 @@ function buildSubmitted(D, laps) {
 
     var sek = Number(lap.lapSeconds);
     if (!(sek > 0)) { unplaced.push({ id: id, reason: "no lap time" }); return; }
+
+    // DER MODUS ENTSCHEIDET ZUERST: was nicht aus Rivals oder Horizon Play kommt, wird
+    // gezeigt, aber nie gewertet -- auch wenn es zu einem Brett passen wuerde.
+    var mode = String(lap.mode || "unknown");
+    if (CLEAN_MODES.indexOf(mode) < 0) {
+      var nr = Number(lap.carOrdinal);
+      var bekannt = carIdx.get(nr);
+      others.push({ id: id, mode: mode, track: String(lap.track || ""),
+                    klasse: PI_ORDER[Number(lap.carClass)] || "?",
+                    car: bekannt !== undefined ? D.carNames[bekannt]
+                         : (lap.carName ? String(lap.carName) : (nr > 0 ? "Car #" + nr : "?")),
+                    ms: Math.round(sek * 1000), gamertag: eintrag.gamertag || "",
+                    received: eintrag.received || "" });
+      return;
+    }
 
     var t = trackIdx.get(falteName(lap.track));
     if (t === undefined) {
@@ -117,12 +150,15 @@ function buildSubmitted(D, laps) {
     // Je Auto und Board nur die SCHNELLSTE eingereichte Runde.
     if (!da || ms < da.ms) {
       karte.set(car, { ms: ms, gamertag: eintrag.gamertag || "",
-                       received: eintrag.received || "", id: id, pi: pi });
+                       received: eintrag.received || "", id: id, pi: pi, mode: mode });
     }
     placed += 1;
   });
 
-  return { byBoard: byBoard, placed: placed, unplaced: unplaced, newCars: newCars };
+  others.sort(function (a, b) {
+    return a.track.localeCompare(b.track) || a.klasse.localeCompare(b.klasse) || a.ms - b.ms;
+  });
+  return { byBoard: byBoard, placed: placed, unplaced: unplaced, newCars: newCars, others: others };
 }
 
 /* Die Auswahl von pickCars mit den eingereichten Zeiten verrechnen.
@@ -153,5 +189,5 @@ function applySubmitted(D, board, picks, submitted) {
 
 if (typeof module !== "undefined") {
   module.exports = { buildSubmitted: buildSubmitted, applySubmitted: applySubmitted,
-                     PI_ORDER: PI_ORDER };
+                     PI_ORDER: PI_ORDER, CLEAN_MODES: CLEAN_MODES, modeText: modeText };
 }

@@ -113,6 +113,13 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
     for weeks. Before it goes, it is checked again against that
     day's leaderboard. **Discard waiting laps** in the Rivals tab deletes them
     instead.
+  - Every lap carries its mode: **Rivals**, **Horizon Play**, a solo or co-op
+    race, or free roam. The app tells them apart by the menu you came from (the
+    Rivals screen or the Event Sign Up screen), and a Rivals lap also takes its
+    route name from the Rivals screen. A lap whose mode is unknown is not sent.
+  - Only Rivals and Horizon Play laps count on the website: there a lap that hits
+    a wall is invalid or penalised. Solo, co-op and free-roam laps are listed
+    separately and never enter the ranking.
 
 ### Tuning and tunes
 

@@ -193,6 +193,31 @@ Strecke, Klasse und Auto; nur die schnellste bleibt.
   (Fassung 5): Einschalten reicht die besten Runden aus der Zwischenzeit nach.
   „Discard waiting laps" im Rivals-Tab wirft sie stattdessen weg.
 
+## Der Modus trennt die Wertung (seit 2026-09-28)
+
+Rivals und Horizon Play kennen keine Wandfahrten: Rivals erklärt eine Runde mit
+Wandkontakt für ungültig, Horizon Play bremst den Motor. In Solo- und
+Koop-Rennen und in der freien Fahrt ist die Wand dagegen oft die schnellste
+Linie. Die Seite rechnet darum nur Runden mit `mode` `rivals` oder
+`horizon-play` in die Wertung (`CLEAN_MODES` in `scripts/submitted_laps.js`).
+Alle anderen stehen in einer eigenen Tabelle unter „Data as it stands“ und
+verändern keine Platzierung.
+
+Die App erkennt den Modus am zuletzt gelesenen Menü:
+
+| Schirm | Modus |
+|---|---|
+| Rivals-Schirm (Überschrift „Rivals“, Klassen darunter) | `rivals`, dazu Strecke und Länge |
+| Anmeldeschirm mit „Joining Horizon Play …“ | `horizon-play` |
+| Anmeldeschirm ohne Reihe | `race` (Solo oder Koop, der Schirm sagt nicht welches) |
+| eigene Freiwelt-Uhr | `freeroam` |
+
+Ein Rivals-Schirm gilt zwei Stunden, eine Anmeldung 45 Minuten. Rivals nur, wenn
+in der Runde niemand vor einem lag (`RacePosition` 1): ein Platz dahinter heißt,
+es war ein Rennen, dessen Anmeldung nicht gelesen wurde, und der Modus bleibt
+`unknown` (`modeEvidence` `conflict:…`). Runden mit unbekanntem Modus sendet die
+App nicht; die Feier „schneller als die Website“ gibt es nur in der Wertung.
+
 ## Geprüft wird auf drei Ebenen
 
 ```

@@ -155,14 +155,12 @@ internal sealed class OverlayController : IDisposable
             // hat ihn aus der eigenen Uhr und der ist ein Beweis, die Einstellung
             // nur eine Angabe. Ein Beweis wird nicht von einer Angabe ueberschrieben.
             //
-            // Ein frisch gelesener Horizon-Play-Anmeldeschirm ist ebenfalls ein Beleg
-            // (seit 2026-09-26) -- darum steht er vor der Einstellung.
-            if (lap.Mode == "unknown" && _schirmHorizonPlay
-                && _letzterSchirm is { } gelesen && DateTime.UtcNow - gelesen.Seen <= SchirmGilt)
-            {
-                lap.Mode = "horizon-play";
-                lap.ModeEvidence = $"screen:{(int)(DateTime.UtcNow - gelesen.Seen).TotalSeconds}s";
-            }
+            // DER ZULETZT GELESENE MENUESCHIRM ist ebenfalls ein Beleg -- darum steht er
+            // vor der Einstellung. Seit 2026-09-26 fuer Horizon Play, seit 2026-09-28
+            // fuer jeden: Rivals-Schirm, Horizon-Play-Anmeldung, gewoehnliche Anmeldung.
+            var platzMax = _platzMax;
+            _platzMax = 0;
+            ModusAusSchirm(lap, platzMax);
             if (lap.Mode == "unknown"
                 && !string.IsNullOrWhiteSpace(_settings.LapMode)
                 && _settings.LapMode != "auto")
@@ -172,8 +170,10 @@ internal sealed class OverlayController : IDisposable
             }
 
             // FUER DIE MEISTERSCHAFT: welche der angebotenen Strecken war das?
+            // Eine Rivals-Runde gehoert zu keiner Anmeldung: dort kaeme der Name aus
+            // einem laengst verlassenen Angebot, sobald eine Laenge zufaellig passt.
             _rundenImRennen++;
-            var zuordnung = StreckeZurRunde(lap);
+            var zuordnung = lap.Mode == "rivals" ? null : StreckeZurRunde(lap);
             _letzteStrecke = zuordnung?.Name ?? _letzteStrecke;
 
             // DEN STRECKENNAMEN DAZUSCHREIBEN, falls der Anmeldeschirm ihn hergibt.
@@ -601,6 +601,10 @@ internal sealed class OverlayController : IDisposable
     public void OnTelemetryRaw(ForzaPacket packet)
     {
         if (_disposed) { return; }
+        // Der hoechste Platz der laufenden Runde: in Rivals faehrt niemand sonst, dort
+        // steht immer 1. Ein Platz dahinter widerlegt einen Rivals-Schirm.
+        var platz = (int)packet.Get("RacePosition");
+        if (platz > _platzMax) { _platzMax = platz; }
         try { _recorder.OnTelemetry(packet); } catch (Exception) { }
     }
 
@@ -2525,6 +2529,7 @@ internal sealed class OverlayController : IDisposable
         {
             return;
         }
+        MerkeModus(state);
         var forced = _forced;
         _forced = false;
         _screen = state;
@@ -2603,11 +2608,68 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Der zuletzt gelesene Schirm war der einer Reihe (Horizon Play, Spec Racing).</summary>
     private bool _schirmReihe;
 
-    /// <summary>... und zwar einer Horizon-Play-Reihe -- das ist ein Beleg fuer den Modus.</summary>
-    private bool _schirmHorizonPlay;
-
     /// <summary>Ab welcher Strecke des Schirms man selbst faehrt (ScreenState.FirstOwnIndex).</summary>
     private int _schirmAb;
+
+    /// <summary>Der zuletzt gelesene Menueschirm, der einen Modus belegt.</summary>
+    private (string Modus, DateTime Seen, string? Strecke, double Km)? _modusSchirm;
+
+    /// <summary>Der hoechste Platz seit Beginn der laufenden Runde (RacePosition).</summary>
+    private int _platzMax;
+
+    /// <summary>
+    /// Wie lange ein Rivals-Schirm gilt. Laenger als eine Anmeldung: in Rivals faehrt man
+    /// Runde um Runde und startet neu, ohne das Menue wiederzusehen. Was dazwischen
+    /// geschieht, faengt der Platz ab (siehe ModusAusSchirm).
+    /// </summary>
+    private static readonly TimeSpan RivalsGilt = TimeSpan.FromHours(2);
+
+    /// <summary>Welchen Modus der eben gelesene Schirm belegt -- der juengste gewinnt.</summary>
+    private void MerkeModus(ScreenState state)
+    {
+        if (state.IsRivalsMenu)
+        {
+            _modusSchirm = ("rivals", DateTime.UtcNow, state.RivalsRoute, state.RivalsKm);
+            LogLap($"screen: Rivals menu{(state.RivalsRoute is { } r ? " -- " + r : string.Empty)}"
+                   + (state.RivalsKm > 0 ? $" ({state.RivalsKm:0.0} km)" : string.Empty));
+        }
+        else if (state.IsOffer)
+        {
+            _modusSchirm = (state.IsHorizonPlay ? "horizon-play" : "race", DateTime.UtcNow, null, 0);
+        }
+    }
+
+    /// <summary>Den Modus einer Runde aus dem zuletzt gelesenen Menue -- wenn es frisch genug ist.</summary>
+    /// <remarks>
+    /// Rivals nur, wenn niemand vor einem lag: dort faehrt man allein, der Platz steht
+    /// auf 1. Liegt er hoeher, war es ein Rennen, dessen Anmeldung nicht gelesen wurde --
+    /// dann bleibt der Modus "unknown", statt Rivals zu behaupten.
+    /// </remarks>
+    internal void ModusAusSchirm(RecordedLap lap, int platzMax)
+    {
+        if (lap.Mode != "unknown" || _modusSchirm is not { } beleg) { return; }
+        var alter = DateTime.UtcNow - beleg.Seen;
+        if (alter > (beleg.Modus == "rivals" ? RivalsGilt : SchirmGilt)) { return; }
+        if (beleg.Modus == "rivals" && platzMax > 1)
+        {
+            lap.ModeEvidence = $"conflict:rivals-screen-but-position-{platzMax}";
+            return;
+        }
+        lap.Mode = beleg.Modus;
+        lap.ModeEvidence = $"screen:{beleg.Modus}:{(int)alter.TotalSeconds}s";
+        // Der Rivals-Schirm nennt die Strecke -- sie gilt, wenn die Laenge passt.
+        if (beleg.Modus == "rivals" && string.IsNullOrWhiteSpace(lap.Track)
+            && beleg.Strecke is { } name && LaengePasst(lap.LengthMetres, beleg.Km))
+        {
+            lap.Track = name;
+            lap.TrackEvidence = "rivals-screen+length";
+            LogLap($"route: {name} (Rivals screen, matched by length)");
+        }
+    }
+
+    /// <summary>Passt eine gefahrene Runde zu "Route Length: x KM"? Eine Nachkommastelle, also grob.</summary>
+    internal static bool LaengePasst(double meter, double km) =>
+        km > 0 && meter > 0 && Math.Abs(meter / 1000.0 - km) <= Math.Max(0.08, km * 0.06);
 
     /// <summary>Den gelesenen Schirm fuer die naechsten Runden merken.</summary>
     /// <remarks>
@@ -2622,7 +2684,6 @@ internal sealed class OverlayController : IDisposable
             .ToList();
         _letzterSchirm = (DateTime.UtcNow, state.Klass ?? string.Empty, routen);
         _schirmReihe = state.SeriesIndex > 0 || state.TrackStatus.Count > 0;
-        _schirmHorizonPlay = state.IsHorizonPlay;
         _schirmAb = state.FirstOwnIndex;
     }
 
@@ -3068,7 +3129,9 @@ internal sealed class OverlayController : IDisposable
     {
         try
         {
-            if (Running || !_settings.CourseShapes || _hudPreview) { return; }
+            // Gelesen wird auch ohne Karten, solange Runden aufgezeichnet werden: der
+            // Schirm belegt ihren Modus (Rivals, Horizon Play, Rennen) und ihre Strecke.
+            if (Running || _hudPreview || (!_settings.CourseShapes && !_settings.ArchiveLaps)) { return; }
             // SPIEL NICHT VORNE: die Karten weg. Mit gestartetem Overlay erledigt das
             // GameIsUp; ohne bliebe sonst ein Fenster ueber dem Desktop stehen, immer
             // im Vordergrund und nicht wegzuklicken.

@@ -545,6 +545,28 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--screen-read", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--screen-read bild.png ...": den Leser auf Aufnahmen laufen lassen, genau wie
+            // im Spiel -- Strecken, Klasse, Reihe, und seit 2026-09-28 die Ueberschrift
+            // (Rivals-Schirm) samt Strecke und Laenge.
+            var sp = Array.FindIndex(args, a => string.Equals(a, "--screen-read", StringComparison.OrdinalIgnoreCase));
+            var pfad = Rivals.RivalsDataset.FindDefaultPath();
+            if (pfad is null) { Console.WriteLine("no dataset"); return; }
+            var einst = Rivals.OverlaySettings.Load();
+            var leser = new Rivals.RivalsScreenReader(new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad)), einst);
+            for (var i = sp + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                var st = leser.ReadBitmap(bild);
+                Console.WriteLine($"{Path.GetFileName(args[i])}: head \"{st.Kopf}\" rivals={st.IsRivalsMenu} "
+                                  + $"route={st.RivalsRoute ?? "-"} km={st.RivalsKm} | offer={st.IsOffer} "
+                                  + $"tracks=[{string.Join(", ", st.Tracks)}] class={st.Klass ?? "-"} "
+                                  + $"series={st.Series ?? "-"} hp={st.IsHorizonPlay} ({st.ReadMilliseconds:0} ms)");
+            }
+            return;
+        }
+
         if (args.Contains("--delta-preview", StringComparer.OrdinalIgnoreCase))
         {
             // Den Delta-Streifen mit einer Beschriftung zeichnen -- ohne Fenster.

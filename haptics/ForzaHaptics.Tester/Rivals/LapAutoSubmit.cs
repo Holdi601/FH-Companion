@@ -92,9 +92,17 @@ internal sealed class LapAutoSubmit
     /// </summary>
     public event Action<NeuesAuto>? NeuesAutoEingetragen;
 
+    /// <summary>
+    /// Rivals und Horizon Play: dort gibt es keine Wandfahrten -- Rivals erklaert die
+    /// Runde fuer ungueltig, Horizon Play bremst den Motor. Nur solche Runden kommen auf
+    /// der Seite in die Wertung, und nur fuer sie gibt es die Feier (seit 2026-09-28).
+    /// </summary>
+    internal static bool SaubererModus(string? mode) => mode is "rivals" or "horizon-play";
+
     private void MeldeNeuesAuto(Befund befund, RecordedLap lap, string track, RivalsDataset data, bool nachgereicht)
     {
         if (befund.BestenlisteMs is not null || befund.FrueherMs is not null) { return; }
+        if (!SaubererModus(lap.Mode)) { return; }
         try
         {
             NeuesAutoEingetragen?.Invoke(new NeuesAuto(track, (int)Math.Round(lap.LapSeconds * 1000.0), lap.CarOrdinal,
@@ -196,6 +204,13 @@ internal sealed class LapAutoSubmit
         if (lap.Samples is null || lap.Samples.Count < 10)
         {
             return new Befund(false, "no telemetry for the lap");
+        }
+        // OHNE MODUS NICHT (seit 2026-09-28). Die Seite trennt Rivals und Horizon Play
+        // (keine Wandfahrten) von Solo, Koop und freier Fahrt; eine Runde, deren Modus
+        // niemand kennt, gehoert in keine der beiden Listen.
+        if (string.IsNullOrWhiteSpace(lap.Mode) || lap.Mode == "unknown")
+        {
+            return new Befund(false, "mode unknown -- the app did not see which menu the lap came from");
         }
         if (string.IsNullOrWhiteSpace(track))
         {
@@ -325,6 +340,7 @@ internal sealed class LapAutoSubmit
             var unentschieden = data is null && !befund.Senden && Schluessel(lap, track) is not null
                                 && lap.Samples is { Count: >= 10 } && lap.LapSeconds > 0;
             if (!dryRun && befund.Senden && befund.BestenlisteMs is int bestenliste && data is not null
+                && SaubererModus(lap.Mode)
                 && !(LapQueue.WartendeSekunden(befund.Schluessel) is float wartet && wartet <= lap.LapSeconds))
             {
                 try

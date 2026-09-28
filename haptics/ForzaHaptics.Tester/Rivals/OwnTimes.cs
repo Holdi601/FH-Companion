@@ -405,6 +405,9 @@ internal static class OwnTimes
         "rivals" => Loc.T("Rivals"),
         "solo" => Loc.T("Solo"),
         "coop" => Loc.T("Co-op"),
+        // Anmeldeschirm ohne Horizon-Play-Reihe: allein oder Koop -- der Schirm sagt
+        // nicht, welches von beiden (seit 2026-09-28).
+        "race" => Loc.T("Solo / co-op race"),
         // Eigenname des Spiels, in jeder Sprache derselbe.
         "horizon-play" => "Horizon Play",
         "freeroam" => Loc.T("Free roam"),

@@ -213,6 +213,8 @@ input[type="search"]::placeholder { color: var(--muted); }
 .rule b { color: var(--ink-soft); }
 
 .tablewrap { overflow-x: auto; padding: 0 4px 4px; }
+#other-laps-table th, #other-laps-table td { padding: 3px 14px 3px 0; text-align: left; white-space: nowrap; }
+#other-laps-table td.num { text-align: right; }
 table { border-collapse: collapse; width: 100%; min-width: 720px; }
 thead th { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border-strong); padding: 0; text-align: left; z-index: 2; }
 .sortbtn {
@@ -379,7 +381,11 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     the chosen lap was driven at, where the screen showed it.</p>
     <p><b>Times submitted from the app</b> come in after this choice: where one is faster
     than the lap chosen from the leaderboard for that car, track and class, it takes its
-    place, marked as submitted, and the replaced leaderboard time stays visible.</p>
+    place, marked as submitted, and the replaced leaderboard time stays visible.
+    Only laps driven in <b>Rivals</b> or <b>Horizon Play</b> count: there, a lap that hits
+    a wall is invalid or penalised. Laps from solo and co-op races or free roam, where
+    wall riding is possible, are listed separately under &ldquo;Data as it stands&rdquo;
+    and never enter the ranking.</p>
     <p><b>Points:</b> on each track, first place scores as many points as there are cars in that ranking, and last place scores 1. A car missing from a track scores 0 there. Highest total wins.</p>
     <p><b>Several performance classes at once:</b> the class chips take more than one.
     Each board still ranks only its own field &mdash; a D car never races an S2 car for
@@ -418,6 +424,13 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     <p id="quality"></p>
     <p class="caveat" id="caveat"></p>
     <p class="caveat" id="submitted-note" hidden></p>
+    <div id="other-laps" hidden>
+      <h3>Submitted laps from other modes</h3>
+      <p class="caveat">Solo and co-op races and free roam allow wall riding, so these
+      laps are shown for reference only and never enter the ranking. &ldquo;unknown&rdquo;
+      means the app could not tell the mode when the lap was sent.</p>
+      <div class="tablewrap" id="other-laps-table"></div>
+    </div>
 
     <h2>Privacy</h2>
     <p>This is a free, non-commercial hobby site. No ads, no sales, no donations
@@ -643,6 +656,33 @@ function pickCarsRivals(board, need, forbid) {
 }
 
 /* ---------- eingereichte Zeiten ---------- */
+/* Runden aus Solo, Koop, freier Fahrt oder ohne Modus: eine eigene Tabelle, nie in
+   der Wertung (siehe CLEAN_MODES in submitted_laps.js). */
+function zeigeAndereModi(liste) {
+  const box = document.getElementById("other-laps");
+  const ziel = document.getElementById("other-laps-table");
+  if (!box || !ziel) return;
+  ziel.textContent = "";
+  if (!liste || !liste.length) { box.hidden = true; return; }
+  const table = el("table");
+  const head = el("tr");
+  ["Track", "Class", "Car", "Time", "Mode", "Driver", "Submitted"]
+    .forEach(text => head.appendChild(el("th", null, text)));
+  table.appendChild(head);
+  liste.forEach(r => {
+    const tr = el("tr");
+    tr.appendChild(el("td", null, r.track || "—"));
+    tr.appendChild(el("td", "m", r.klasse));
+    tr.appendChild(el("td", null, r.car));
+    tr.appendChild(el("td", "num mono", lapText(r.ms)));
+    tr.appendChild(el("td", null, modeText(r.mode)));
+    tr.appendChild(el("td", null, r.gamertag || "—"));
+    tr.appendChild(el("td", "num", String(r.received || "").slice(0, 10)));
+    table.appendChild(tr);
+  });
+  ziel.appendChild(table);
+  box.hidden = false;
+}
 /* Kommen zur Laufzeit von /api/lap/list, nicht aus dem Bau: eingereichte
    Zeiten aendern sich laufend, und ein Neubau der Seite dauert ueber eine
    Stunde. Ohne Server (Seite als Datei geoeffnet) bleibt SUBMITTED leer,
@@ -1198,8 +1238,9 @@ function renderBoards(host) {
       // SICHTBAR ANDERS. Eine eingereichte Zeit ist keine Rivals-Zeit: sie ist
       // selbst gefahren, selbst gemessen und nicht vom Spiel bestaetigt.
       const s = row.pick.submitted;
-      const marke = el("span", "flag", "submitted");
+      const marke = el("span", "flag", "submitted · " + modeText(s.mode));
       marke.title = "Submitted by " + (s.gamertag || "a player")
+        + " in " + modeText(s.mode)
         + (s.received ? " on " + String(s.received).slice(0, 10) : "")
         + (row.pick.rivalsMs ? ". Replaces the Rivals time " + lapText(row.pick.rivalsMs) : "")
         + ". Not verified by the game.";
@@ -2041,16 +2082,20 @@ function render() {
     .then(d => {
       SUBMITTED = buildSubmitted(D, d.laps || []);
       const hinweis = document.getElementById("submitted-note");
-      if (hinweis && (SUBMITTED.placed || SUBMITTED.unplaced.length)) {
+      if (hinweis && (SUBMITTED.placed || SUBMITTED.unplaced.length || SUBMITTED.others.length)) {
         hinweis.hidden = false;
-        hinweis.textContent = SUBMITTED.placed + " submitted lap time(s) included"
+        hinweis.textContent = SUBMITTED.placed + " submitted lap time(s) from Rivals and Horizon Play included"
           + (SUBMITTED.newCars ? ", " + SUBMITTED.newCars + " car(s) not yet on any leaderboard" : "")
           + (SUBMITTED.unplaced.length
              ? ". " + SUBMITTED.unplaced.length + " could not be placed ("
                + SUBMITTED.unplaced.slice(0, 3).map(u => u.reason).join("; ") + ")"
              : "")
+          + (SUBMITTED.others.length
+             ? ". " + SUBMITTED.others.length + " from other modes are listed separately"
+             : "")
           + ". Marked submitted; not verified by the game.";
       }
+      zeigeAndereModi(SUBMITTED.others);
       render();
     })
     .catch(() => { /* ohne Server: nichts zu tun */ });
