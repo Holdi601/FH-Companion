@@ -463,7 +463,10 @@ internal sealed class MainForm : Form, ITelemetryHost
         // Woche, ohne dass irgendetwas darauf hinweist.
         Shown += (_, _) => _rivals?.RefreshDatasetInBackground();
 
-        tabs.TabPages.Add(testTab);
+        // KONSOLENMODUS: ohne Vibrationstest (kein Controller hier); Blueprint, Tuning und
+        // Tunes folgen unten und fallen ebenso weg (Controller, Spielspeicher, Spielstand).
+        var konsole = Rivals.OverlaySettings.Load().ConsoleMode;
+        if (!konsole) { tabs.TabPages.Add(testTab); }
         tabs.TabPages.Add(telemetryTab);
         tabs.TabPages.Add(inspectorTab);
         _rivals = new RivalsTab(this);
@@ -528,11 +531,14 @@ internal sealed class MainForm : Form, ITelemetryHost
             if (ReferenceEquals(e.TabPage, myTimesTab)) { myTimes.Reload(); }
         };
 
-        tabs.TabPages.Add(blueprintTab);
+        if (!konsole) { tabs.TabPages.Add(blueprintTab); }
         tabs.TabPages.Add(rivalsTab);
         tabs.TabPages.Add(hudTab);
-        tabs.TabPages.Add(tuningTab);
-        tabs.TabPages.Add(tunesTab);
+        if (!konsole)
+        {
+            tabs.TabPages.Add(tuningTab);
+            tabs.TabPages.Add(tunesTab);
+        }
         tabs.TabPages.Add(carNotesTab);
         tabs.TabPages.Add(myTimesTab);
         if (Environment.GetCommandLineArgs()
@@ -756,6 +762,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             Location = new Point(690, 506)
         };
 
+        telemetryTab.Controls.Add(Konsole.Feld(_rivals!.Settings, new Point(700, 18)));
         telemetryTab.Controls.AddRange([
             telemetryTitle,
             telemetryInstructions,
@@ -1147,6 +1154,13 @@ internal sealed class MainForm : Form, ITelemetryHost
 
         Shown += async (_, _) =>
         {
+            if (_rivals?.Settings.ConsoleMode == true)
+            {
+                // KONSOLENMODUS: kein Controller an diesem Rechner, dafuer das Dashboard.
+                _ = StartTelemetryAsync();
+                _rivals.OeffneAufnahmefenster();
+                return;
+            }
             await ConnectControllerAsync();
             _ = StartTelemetryAsync();
         };
@@ -1928,7 +1942,9 @@ internal sealed class MainForm : Form, ITelemetryHost
             _telemetryCancellation = new CancellationTokenSource();
             // NUR DIESER RECHNER, ausser es ist ausdruecklich anders eingestellt --
             // siehe OverlaySettings.TelemetryFromLan.
-            var ausDemNetz = Rivals.OverlaySettings.Load().TelemetryFromLan;
+            // Im Konsolenmodus kommt die Telemetrie IMMER aus dem Netz (Xbox, anderer PC).
+            var einstellungen = Rivals.OverlaySettings.Load();
+            var ausDemNetz = einstellungen.TelemetryFromLan || einstellungen.ConsoleMode;
             _telemetryClient = new UdpClient(new IPEndPoint(
                 ausDemNetz ? IPAddress.Any : IPAddress.Loopback, port));
         }
@@ -1942,7 +1958,14 @@ internal sealed class MainForm : Form, ITelemetryHost
         _portNumber.Enabled = false;
         _startTelemetryButton.Enabled = false;
         _stopTelemetryButton.Enabled = true;
-        _telemetryStatus.Text = $"Listening on UDP port {port}. Drive in FH6 to produce packets...";
+        _telemetryStatus.Text = _rivals?.Settings.ConsoleMode == true
+            ? $"Listening on UDP port {port} on {Konsole.AdressenText()}. Set Data Out on the Xbox/PC to one of these."
+            : $"Listening on UDP port {port}. Drive in FH6 to produce packets...";
+        if (_rivals?.Settings.ConsoleMode == true)
+        {
+            Rivals.OverlayAusgabe.Hinweis = string.Format(Loc.T("Waiting for telemetry on {0}, port {1}"),
+                                                          Konsole.AdressenText(), port);
+        }
         _telemetryStatus.ForeColor = WarningColor;
 
         var client = _telemetryClient;
@@ -2020,6 +2043,7 @@ internal sealed class MainForm : Form, ITelemetryHost
 
     private void ShowTelemetry(ForzaPacket telemetry, long totalPackets, double packetRate, int packetLength)
     {
+        Rivals.OverlayAusgabe.LetztesPaket = DateTime.UtcNow;
         _latestTelemetry = telemetry;
         _rivals?.Controller?.OnTelemetry(telemetry);
         _latestTelemetryAt = DateTime.UtcNow;
@@ -2076,6 +2100,11 @@ internal sealed class MainForm : Form, ITelemetryHost
             if (settings is null)
             {
                 return true;
+            }
+            // Konsolenmodus: der Controller haengt an der Konsole, nicht hier.
+            if (settings.ConsoleMode)
+            {
+                return false;
             }
             if (settings.HapticsRequireForza)
             {

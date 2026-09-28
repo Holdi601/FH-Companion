@@ -40,6 +40,9 @@ internal static class GameArea
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr h);
     [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr h);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowTextW(IntPtr hWnd, StringBuilder text, int maxCount);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassNameW(IntPtr h, StringBuilder s, int n);
     [DllImport("user32.dll")] private static extern bool GetClientRect(IntPtr h, out Rect r);
     [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr h, ref Pt p);
@@ -99,7 +102,15 @@ internal static class GameArea
     /// </remarks>
     public static Rectangle Find(string? processName)
     {
+        // KONSOLENMODUS MIT VIDEOQUELLE (seit 2026-09-28): die "Spielflaeche" ist das
+        // Bild der Quelle, in dessen eigenen Koordinaten -- Capture schneidet daraus aus.
+        if (Rivals.Bildquellen.Aktiv is { } quelle)
+        {
+            var bild = quelle.Neuestes();
+            return bild is null ? new Rectangle(0, 0, 1920, 1080) : new Rectangle(0, 0, bild.Width, bild.Height);
+        }
         var name = string.IsNullOrWhiteSpace(processName) ? GameWatch.DefaultProcessName : processName!;
+        if (!string.IsNullOrWhiteSpace(FensterTitel)) { name = "title:" + FensterTitel; }
         lock (Gate)
         {
             if (name == _cachedFor && (DateTime.UtcNow - _cachedAt).TotalSeconds < 2)
@@ -119,9 +130,17 @@ internal static class GameArea
         lock (Gate) { _cachedAt = DateTime.MinValue; }
     }
 
+    /// <summary>
+    /// Konsolenmodus, Quelle "Fenster": statt des Spiels das Fenster, dessen Titel dies
+    /// enthaelt (OBS-Projektor, Software der Aufnahmekarte, Xbox-App). null: das Spiel.
+    /// </summary>
+    public static string? FensterTitel { get; set; }
+
     private static Rectangle Compute(string name)
     {
-        var fenster = GameWindow(name);
+        var fenster = name.StartsWith("title:", StringComparison.Ordinal)
+            ? FensterMitTitel(name["title:".Length..])
+            : GameWindow(name);
         if (fenster != IntPtr.Zero)
         {
             if (!IsIconic(fenster) && GetClientRect(fenster, out var r))
@@ -181,6 +200,29 @@ internal static class GameArea
         return gefunden;
     }
 
+    /// <summary>Das erste sichtbare Hauptfenster, dessen Titel <paramref name="teil"/> enthaelt.</summary>
+    private static IntPtr FensterMitTitel(string teil)
+    {
+        var gefunden = IntPtr.Zero;
+        var titel = new StringBuilder(256);
+        var eigenes = Process.GetCurrentProcess().Id;
+        EnumWindows((h, _) =>
+        {
+            if (!IsWindowVisible(h)) { return true; }
+            GetWindowThreadProcessId(h, out var pid);
+            if (pid == eigenes) { return true; }
+            titel.Clear();
+            GetWindowTextW(h, titel, titel.Capacity);
+            if (titel.ToString().Contains(teil, StringComparison.OrdinalIgnoreCase))
+            {
+                gefunden = h;
+                return false;
+            }
+            return true;
+        }, IntPtr.Zero);
+        return gefunden;
+    }
+
     /// <summary>The centred 16:9 part of an area; the area itself when it is 16:9.</summary>
     public static Rectangle SixteenNine(Rectangle area)
     {
@@ -212,6 +254,13 @@ internal static class GameArea
     /// </remarks>
     public static Bitmap Capture(Rectangle source, Size target)
     {
+        // Aus der Videoquelle statt vom Schirm (Konsolenmodus), siehe Find.
+        if (Rivals.Bildquellen.Aktiv is { } quelle)
+        {
+            var uhrQ = System.Diagnostics.Stopwatch.StartNew();
+            try { return Rivals.Bildquellen.Ausschnitt(quelle.Neuestes(), source, target); }
+            finally { Leistung.Griff(uhrQ.ElapsedTicks); }
+        }
         // 24 Bit, nicht 32: GDI schreibt keinen Alphakanal, ein ARGB-Ziel kaeme mit
         // Alpha 0 zurueck -- voellig durchsichtig fuer alles, was danach zeichnet.
         var uhr = System.Diagnostics.Stopwatch.StartNew();

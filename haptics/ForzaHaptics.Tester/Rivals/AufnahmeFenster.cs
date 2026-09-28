@@ -26,7 +26,12 @@ internal sealed class AufnahmeFenster : Form
     public AufnahmeFenster(OverlaySettings settings)
     {
         _settings = settings;
-        Text = AppInfo.Name + " – " + Loc.T("overlay for recording");
+        // IM KONSOLENMODUS IST ES DAS DASHBOARD: dunkler Grund statt Schluesselfarbe,
+        // Doppelklick oder F11 fuer Vollbild auf dem zweiten Schirm.
+        Text = AppInfo.Name + " – " + (settings.ConsoleMode ? Loc.T("Dashboard") : Loc.T("overlay for recording"));
+        KeyPreview = true;
+        KeyDown += (_, e) => { if (e.KeyCode == Keys.F11) { Vollbild(); } else if (e.KeyCode == Keys.Escape && _vollbild) { Vollbild(); } };
+        DoubleClick += (_, _) => Vollbild();
         Icon = Marke.Symbol() ?? Icon;
         StartPosition = FormStartPosition.WindowsDefaultLocation;
         var f = OverlayAusgabe.Flaeche;
@@ -41,6 +46,30 @@ internal sealed class AufnahmeFenster : Form
         _takt.Start();
     }
 
+    private bool _vollbild;
+    private Rectangle _vorher;
+
+    /// <summary>Vollbild an/aus -- rahmenlos ueber den ganzen Schirm, auf dem das Fenster steht.</summary>
+    private void Vollbild()
+    {
+        if (!_vollbild)
+        {
+            _vorher = Bounds;
+            FormBorderStyle = FormBorderStyle.None;
+            Bounds = Screen.FromControl(this).Bounds;
+            _vollbild = true;
+        }
+        else
+        {
+            FormBorderStyle = FormBorderStyle.Sizable;
+            Bounds = _vorher;
+            _vollbild = false;
+        }
+    }
+
+    /// <summary>Der Grund des Dashboards (Konsolenmodus).</summary>
+    internal static readonly Color DashboardGrund = Color.FromArgb(11, 15, 20);
+
     /// <summary>Die Farbe, die OBS ausstanzt.</summary>
     internal static Color Schluessel(string? name) => (name ?? "green").Trim().ToLowerInvariant() switch
     {
@@ -54,9 +83,21 @@ internal sealed class AufnahmeFenster : Form
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
-        g.Clear(Schluessel(_settings.RecordingKey));
+        g.Clear(_settings.ConsoleMode ? DashboardGrund : Schluessel(_settings.RecordingKey));
         var f = OverlayAusgabe.Flaeche;
         if (f.Width <= 0 || f.Height <= 0) { return; }
+        var etwas = OverlayAusgabe.Alle().Any(q => q.Gewollt);
+        var hinweis = !_settings.ConsoleMode || etwas ? null
+            : DateTime.UtcNow - OverlayAusgabe.LetztesPaket < TimeSpan.FromSeconds(3)
+                ? Loc.T("Receiving telemetry. The HUD appears as soon as you drive.")
+                : OverlayAusgabe.Hinweis;
+        if (hinweis is { Length: > 0 })
+        {
+            using var schrift = new Font("Segoe UI", Math.Max(10f, ClientSize.Height / 40f), GraphicsUnit.Pixel);
+            using var grau = new SolidBrush(Color.FromArgb(150, 165, 185));
+            using var mitte = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString(hinweis, schrift, grau, new RectangleF(0, 0, ClientSize.Width, ClientSize.Height), mitte);
+        }
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.TextRenderingHint = TextRenderingHint.AntiAlias;
         g.ScaleTransform(ClientSize.Width / (float)f.Width, ClientSize.Height / (float)f.Height);

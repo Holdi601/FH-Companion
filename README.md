@@ -159,6 +159,22 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   faster (higher frequency) you set the vibration, the more power it draws.
   Untick `Graph output enabled` in the Blueprint editor to switch it off.
 
+### Console or second PC
+
+For an Xbox, or a second PC next to the gaming PC. Switch it on in the Live grip
+telemetry tab and restart the app.
+
+- The game sends its telemetry over the network; the tab shows the address to
+  enter under Data Out.
+- The HUD shows in a dashboard window instead of over the game, and can go full
+  screen on a second monitor. It covers delta, input traces, live map, tyre
+  overview, lap recording and personal records.
+- Memory reading, the tune tools and controller haptics are off.
+- With a video source (a window that shows the game, a capture card or the OBS
+  Virtual Camera, or a stream address read with ffmpeg), the screen-reading
+  parts work too: sign-up maps, car recommendations, car notes and mode
+  detection. Without one, you set the lap mode by hand.
+
 ### The app itself
 
 - **25 languages.**

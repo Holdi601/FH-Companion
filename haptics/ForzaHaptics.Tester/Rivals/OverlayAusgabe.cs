@@ -49,6 +49,15 @@ internal static class OverlayAusgabe
     /// <summary>Die Spielflaeche in Bildschirmkoordinaten -- der Massstab des Aufnahmefensters.</summary>
     public static Rectangle Flaeche { get; set; } = new(0, 0, 1920, 1080);
 
+    /// <summary>
+    /// Ein Hinweis fuers Dashboard, solange nichts zu zeigen ist -- etwa "warte auf
+    /// Telemetrie an 192.168.1.20:5300" (Konsolenmodus, seit 2026-09-28). null: keiner.
+    /// </summary>
+    public static string? Hinweis { get; set; }
+
+    /// <summary>Wann das letzte Paket kam (fuer den Hinweis im Dashboard).</summary>
+    public static DateTime LetztesPaket { get; set; } = DateTime.MinValue;
+
     public static void Melde(IAufnahmeQuelle quelle)
     {
         lock (Quellen)

@@ -235,6 +235,37 @@ battery noticeably faster while the haptics are on. The stronger and faster
 (higher frequency) you set the vibration in the Blueprint editor, the more power
 it draws.
 
+## Console or second PC
+
+For playing on an Xbox, or on another PC, with FH Companion on this computer.
+
+1. In the **Live grip telemetry** tab, tick **The game runs on an Xbox or another
+   PC** and restart the app.
+2. On the Xbox or the gaming PC, set Forza's **Data Out** to the address shown in
+   the tab, with the port from the same tab.
+3. The **dashboard** window opens by itself. Double-click it or press F11 for
+   full screen, and Esc to leave full screen.
+
+What works and what does not:
+
+- **Works from telemetry alone:** delta and ghost countdown, input traces, live
+  map, tyre overview, lap recording, My times, personal records and the
+  celebrations.
+- **Off:** the tuning inspector and tunes (they read the game's memory and
+  save), the vibration test, the Blueprint editor and all controller haptics.
+  The controller is on the other device.
+- **Needs a video source:** the Event Sign Up maps, the car recommendations,
+  the car note from My Cars, and detecting Rivals and Horizon Play. Choose
+  under **Video source for screen reading**:
+  - **A window on this PC** that shows the game (an OBS projector, a capture
+    card's software, the Xbox app). Enter part of its title. The window has to
+    stay visible.
+  - **A video device:** a capture card, or the **OBS Virtual Camera**, which
+    passes on anything OBS shows, including network streams.
+  - **A stream address** (RTSP, HLS, RTMP, SRT). This needs ffmpeg installed.
+- **Without a video source,** set **Which mode you are playing** so your laps
+  carry the right mode. Only Rivals and Horizon Play laps count on the website.
+
 ## Updating
 
 The app asks on start whether a newer version exists, and the update button does

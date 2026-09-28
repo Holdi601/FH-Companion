@@ -326,6 +326,43 @@ internal sealed class OverlaySettings
     // Federweg, Pfuetze, Curb, Rumpeln (TyreHud). Ab Werk AUS -- es ist viel auf einmal,
     // und ein neues Fenster ueber dem Spiel soll niemand ungefragt bekommen.
 
+    // ---- KONSOLENMODUS / ZWEITER RECHNER (seit 2026-09-28) --------------------------
+    //
+    // Das Spiel laeuft woanders (Xbox, anderer PC) und schickt seine Telemetrie ueber das
+    // Netz. Dann gilt: kein Speicherlesen, keine Controller-Haptik, keine Overlays ueber
+    // DIESEM Schirm -- sondern ein Dashboard-Fenster. Den Schirm lesen (Anmeldung,
+    // Automenue, Rivals-Schirm) geht nur mit einer Videoquelle: einem Fenster, das das
+    // Spielbild zeigt, einem Videogeraet (Aufnahmekarte, OBS Virtual Camera) oder einer
+    // Stromadresse.
+
+    /// <summary>Konsolen- bzw. Zweitrechner-Modus. Wirkt nach einem Neustart der App.</summary>
+    [JsonPropertyName("console_mode")] public bool ConsoleMode { get; set; }
+
+    /// <summary>none | window | device | url -- woher das Spielbild zum Lesen kommt.</summary>
+    [JsonPropertyName("video_source")] public string VideoSource { get; set; } = "none";
+
+    /// <summary>Quelle "window": ein Teil des Fenstertitels (etwa "Projector" oder "Xbox").</summary>
+    [JsonPropertyName("video_window")] public string? VideoWindow { get; set; }
+
+    /// <summary>Quelle "device": der Name des Videogeraets.</summary>
+    [JsonPropertyName("video_device")] public string? VideoDevice { get; set; }
+
+    /// <summary>Quelle "url": HLS, RTSP, RTMP, SRT ... -- gelesen mit ffmpeg.</summary>
+    [JsonPropertyName("video_url")] public string? VideoUrl { get; set; }
+
+    /// <summary>Wo ffmpeg liegt, falls nicht im Suchpfad.</summary>
+    [JsonPropertyName("ffmpeg_path")] public string? FfmpegPath { get; set; }
+
+    /// <summary>Konsolenmodus mit einer brauchbar eingestellten Videoquelle?</summary>
+    [JsonIgnore]
+    public bool HasVideoSource => ConsoleMode && (VideoSource ?? "none").ToLowerInvariant() switch
+    {
+        "window" => !string.IsNullOrWhiteSpace(VideoWindow),
+        "device" => !string.IsNullOrWhiteSpace(VideoDevice),
+        "url" => !string.IsNullOrWhiteSpace(VideoUrl),
+        _ => false,
+    };
+
     // ---- EIGENE REKORDE (seit 2026-09-28, PersonalRecords) ------------------------
     //
     // Kleine Feiern fuer den eigenen Fortschritt, jede fuer sich abschaltbar: "either for

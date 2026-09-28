@@ -263,7 +263,7 @@ internal sealed class OverlayController : IDisposable
         {
             // Wie GameIsUp, aber ohne dessen Fenstersuche -- das hier laeuft zehnmal
             // je Sekunde, und die Uebergaenge erledigt der Tick.
-            var vorne = !_settings.OverlayRequireForza
+            var vorne = _settings.ConsoleMode || !_settings.OverlayRequireForza
                         || (_game.Running && (!_settings.OverlayRequireFocus || _game.IsForeground));
             if (!_settings.HudTyres || packet.Get("IsRaceOn") < 0.5 || !vorne)
             {
@@ -436,6 +436,21 @@ internal sealed class OverlayController : IDisposable
         _game = new GameWatch(settings.ForzaProcess);
         WireRecorder();
 
+        // KONSOLENMODUS: das Spielbild kommt aus einer Videoquelle (oder gar nicht), und
+        // ueber diesem Schirm liegt nichts -- gezeigt wird im Dashboard (AufnahmeFenster).
+        if (_settings.ConsoleMode)
+        {
+            GameArea.FensterTitel = string.Equals(_settings.VideoSource, "window", StringComparison.OrdinalIgnoreCase)
+                ? _settings.VideoWindow : null;
+            Bildquellen.Aktiv = Bildquellen.Erzeuge(_settings);
+            OverlayAusgabe.SetzeImSpiel(false);
+        }
+        else
+        {
+            GameArea.FensterTitel = null;
+            Bildquellen.Aktiv = null;
+        }
+
         // DIE SPIELFLAECHE, nicht der Hauptschirm -- siehe GameArea. Laeuft das Spiel
         // noch nicht, ist es vorerst der Hauptschirm; FollowGameArea zieht nach.
         var screen = GameArea.Find(_settings.ForzaProcess);
@@ -500,7 +515,8 @@ internal sealed class OverlayController : IDisposable
         // schon einmal lesen, damit der erste Autowechsel nicht darauf wartet.
         Task.Run(() =>
         {
-            try { _ = Tuning.TuneStorage.AppliedFor(0); } catch (Exception) { }
+            // Den Tune-Speicher gibt es nur, wenn das Spiel auf diesem Rechner laeuft.
+            if (!_settings.ConsoleMode) { try { _ = Tuning.TuneStorage.AppliedFor(0); } catch (Exception) { } }
             try
             {
                 var n = LapArchive.NamenNachtragen();
@@ -525,9 +541,10 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     private void PruefeTunes()
     {
+        if (_settings.ConsoleMode) { return; }
         try
         {
-            if (!_game.Running || !_game.IsForeground) { return; }
+            if (!SpielbildDa()) { return; }
             if (Tuning.TuneStorage.Count() is not { } anzahl) { return; }
             var grenze = Math.Max(1, _settings.TuneLimit);
             var frei = grenze - anzahl;
@@ -1111,8 +1128,10 @@ internal sealed class OverlayController : IDisposable
     }
 
     /// <summary>Das aufgespielte Tune als Zeilen fuer die Autonotiz, oder null.</summary>
-    private static string? TuneText(int ordinal)
+    private string? TuneText(int ordinal)
     {
+        // Das aufgespielte Tune steht im Spielstand -- im Konsolenmodus nicht auf diesem Rechner.
+        if (_settings.ConsoleMode) { return null; }
         if (Tuning.TuneStorage.AppliedFor(ordinal) is not { } a) { return null; }
         var t = a.Tune;
         if (string.IsNullOrWhiteSpace(t.Name) && string.IsNullOrWhiteSpace(t.Description)) { return null; }
@@ -1159,7 +1178,7 @@ internal sealed class OverlayController : IDisposable
         try
         {
             if (!_settings.CarNotes || _menueLesen || _reading || _hudPreview || !_reader.OcrAvailable) { return; }
-            if (!_game.Running || !_game.IsForeground) { return; }
+            if (!SpielbildDa()) { return; }
             if (FaehrtGerade()) { return; }
             if (DateTime.UtcNow < _menueNaechster) { return; }
             var flaeche = GameArea.Find(_settings.ForzaProcess);
@@ -2216,8 +2235,42 @@ internal sealed class OverlayController : IDisposable
     /// angehefteten Panel, bliebe es sonst ueber dem Desktop stehen, immer im
     /// Vordergrund, ohne Taste zum Schliessen im Blick.
     /// </remarks>
+    /// <summary>Ist ein Spielbild zum Lesen da? Lokal: Forza laeuft und ist vorne. Konsolenmodus: eine Videoquelle.</summary>
+    private bool SpielbildDa() =>
+        _settings.ConsoleMode ? _settings.HasVideoSource : _game.Running && _game.IsForeground;
+
     private bool GameIsUp()
     {
+        // KONSOLENMODUS: kein Spiel auf diesem Rechner. "Laeuft" heisst: es kommen Pakete
+        // (oder eine Videoquelle liefert das Bild der Menues).
+        if (_settings.ConsoleMode)
+        {
+            var da = DateTime.UtcNow - _telemetryAt < TimeSpan.FromSeconds(5) || _settings.HasVideoSource;
+            if (da)
+            {
+                FollowGameArea();
+                if (_idleForGame)
+                {
+                    _idleForGame = false;
+                    SetStatus(_settings.HasVideoSource
+                        ? "console mode -- telemetry over the network, " + (Bildquellen.Aktiv?.Beschreibung ?? "window: " + _settings.VideoWindow)
+                        : "console mode -- telemetry over the network, no video source (screen reading off)");
+                }
+                return true;
+            }
+            if (!_idleForGame)
+            {
+                _idleForGame = true;
+                _pinned = null;
+                Hide(_right);
+                HideShapes();
+                Hide(_left);
+                HideHud();
+                if (_reifen.Visible) { _reifen.Hide(); }
+                SetStatus("console mode -- waiting for telemetry from the network");
+            }
+            return false;
+        }
         if (!_settings.OverlayRequireForza)
         {
             return true;
@@ -2325,6 +2378,8 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     private void StartRead(bool force)
     {
+        // Konsolenmodus ohne Videoquelle: auf diesem Schirm ist nichts vom Spiel zu lesen.
+        if (_settings.ConsoleMode && !_settings.HasVideoSource) { return; }
         if (_reading || _menueLesen || !_reader.OcrAvailable)
         {
             return;
@@ -3140,7 +3195,7 @@ internal sealed class OverlayController : IDisposable
             // SPIEL NICHT VORNE: die Karten weg. Mit gestartetem Overlay erledigt das
             // GameIsUp; ohne bliebe sonst ein Fenster ueber dem Desktop stehen, immer
             // im Vordergrund und nicht wegzuklicken.
-            if (!_game.Running || !_game.IsForeground) { HideShapes(); return; }
+            if (!SpielbildDa()) { HideShapes(); return; }
             if (++_anmeldungTakt % 3 != 0) { return; }
             if (FaehrtGerade()) { return; }
             FollowGameArea();
@@ -3484,7 +3539,7 @@ internal sealed class OverlayController : IDisposable
     {
         LogLap($"new car on the leaderboard: {r.CarName ?? AutoName(r.CarOrdinal)} on {r.Track} ({r.Klasse})");
         if (!_settings.CelebrateNewCar) { return; }
-        if (r.Nachgereicht && !_game.Running) { return; }
+        if (r.Nachgereicht && !(_settings.ConsoleMode ? TelemetryFresh : _game.Running)) { return; }
         var auto = r.CarName ?? AutoName(r.CarOrdinal);
         var detail = string.Join(" · ", new[] { r.Track, auto, r.Klasse }.Where(x => !string.IsNullOrWhiteSpace(x)));
         ZeigeFeier(new CelebrationHud.Anlass(

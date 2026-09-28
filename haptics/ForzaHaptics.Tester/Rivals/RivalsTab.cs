@@ -60,7 +60,8 @@ internal sealed class RivalsTab : UserControl
 
         _settings = OverlaySettings.Load();
         // Wo die Overlays erscheinen, gilt ab dem ersten Fenster (siehe OverlayAusgabe).
-        OverlayAusgabe.SetzeImSpiel(_settings.OverlayInGame);
+        // Im Konsolenmodus liegt nichts ueber diesem Schirm -- das Dashboard zeigt es.
+        OverlayAusgabe.SetzeImSpiel(_settings.OverlayInGame && !_settings.ConsoleMode);
         _nachreicher = new LapAutoSubmit(() => _advisor, _settings, OverlayController.WriteLapLog);
         // Bringt eine NACHGEREICHTE Runde ein Auto neu auf die Liste, meldet das Overlay es.
         _nachreicher.NeuesAutoEingetragen += r =>

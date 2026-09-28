@@ -60,6 +60,79 @@ internal static class EdgeCaseTest
         LapModeFromMenus();
         PersonalRecordsDecide();
         CelebrationsWaitWhileDriving();
+        ConsoleModeReadsItsSource();
+    }
+
+    /// <summary>Eine Bildquelle zum Testen: ein festes Bild.</summary>
+    private sealed class FesteQuelle : Rivals.IBildquelle
+    {
+        public Bitmap Bild { get; } = new(1920, 1080, PixelFormat.Format32bppArgb);
+        public string Beschreibung => "test";
+        public Bitmap? Neuestes() => Bild;
+        public void Dispose() => Bild.Dispose();
+    }
+
+    /// <summary>
+    /// Konsolenmodus (2026-09-28): ohne Videoquelle wird nichts gelesen; mit einer liest
+    /// GameArea aus IHREM Bild -- Flaeche, Ausschnitt und Farbe stimmen.
+    /// </summary>
+    private static void ConsoleModeReadsItsSource()
+    {
+        var s = new Rivals.OverlaySettings();
+        Soll(!s.ConsoleMode && !s.HasVideoSource, "der Konsolenmodus ist ab Werk an");
+        s.ConsoleMode = true;
+        Soll(!s.HasVideoSource, "ohne Angaben gilt eine Videoquelle");
+        s.VideoSource = "window";
+        Soll(!s.HasVideoSource, "Quelle Fenster ohne Titel gilt");
+        s.VideoWindow = "Projector";
+        Soll(s.HasVideoSource, "Quelle Fenster mit Titel gilt nicht");
+        s.VideoSource = "url";
+        Soll(!s.HasVideoSource, "Quelle Adresse ohne Adresse gilt");
+
+        // SpielbildDa: Konsole ohne Quelle -> nichts zu lesen.
+        var typ = typeof(Rivals.OverlayController);
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var roh = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+        var ohne = new Rivals.OverlaySettings { ConsoleMode = true };
+        typ.GetField("_settings", flags)!.SetValue(roh, ohne);
+        var da = typ.GetMethod("SpielbildDa", flags)!;
+        Soll(!(bool)da.Invoke(roh, null)!, "Konsolenmodus ohne Videoquelle will den Schirm lesen");
+        typ.GetField("_settings", flags)!.SetValue(roh, new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "window", VideoWindow = "x" });
+        Soll((bool)da.Invoke(roh, null)!, "Konsolenmodus mit Videoquelle liest nicht");
+
+        // GameArea liest aus der Quelle: linke Haelfte rot, rechte blau.
+        using var quelle = new FesteQuelle();
+        using (var g = Graphics.FromImage(quelle.Bild))
+        {
+            g.Clear(Color.Blue);
+            g.FillRectangle(Brushes.Red, 0, 0, 960, 1080);
+        }
+        var vorher = Rivals.Bildquellen.Aktiv;
+        try
+        {
+            Rivals.Bildquellen.Aktiv = quelle;
+            var flaeche = GameArea.Find("forzahorizon6");
+            Soll(flaeche == new Rectangle(0, 0, 1920, 1080), $"die Flaeche ist nicht das Bild der Quelle ({flaeche})");
+            using var links = GameArea.Capture(new Rectangle(100, 100, 400, 300), new Size(200, 150));
+            using var rechts = GameArea.Capture(new Rectangle(1200, 600, 400, 300), new Size(200, 150));
+            var l = links.GetPixel(100, 75);
+            var r = rechts.GetPixel(100, 75);
+            Soll(l.R > 200 && l.B < 50 && r.B > 200 && r.R < 50 && links.Size == new Size(200, 150),
+                 $"der Ausschnitt aus der Quelle stimmt nicht (links {l}, rechts {r})");
+        }
+        finally
+        {
+            // Nicht Dispose ueber den Setter: die Testquelle raeumt using auf.
+            typeof(Rivals.Bildquellen).GetField("_aktiv", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+                .SetValue(null, vorher);
+            GameArea.Invalidate();
+        }
+
+        Soll(Konsole.Adressen().All(a => !a.StartsWith("127.")), "unter den Netzadressen steht die Loopback-Adresse");
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000), ShowInTaskbar = false };
+        var feld = Konsole.Feld(new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "device" }, Point.Empty);
+        form.Controls.Add(feld);
+        Soll(feld.Controls.Count >= 8, "das Bedienfeld des Konsolenmodus ist unvollstaendig");
     }
 
     /// <summary>
