@@ -87,6 +87,21 @@ Everything drawn over the game while you drive, and where it sits:
 - **Input strip.** Throttle, brake, clutch, steering and gear.
 - **Live map.** The lap drawn as you drive, with line thickness and smoothing.
   Jumps appear as gaps.
+- **Tyre overview.** Off until you switch it on under Elements. It shows while
+  you drive, in races and in free roam, and hides in menus and pauses.
+  - **Colour:** tyre temperature, from blue (cold) through green to red (hot).
+    The number is in °C, or in °F if you choose so.
+  - **Percentage in the tyre:** grip left before it slides (0% = sliding).
+  - **Outline:** thin while the tyre holds, yellow at the limit, red and
+    glowing when it slides. The tyre also tilts with its slip angle.
+  - **Tag above the tyre:** LOCK (locked under braking), SPIN (wheelspin),
+    SLIDE (sliding sideways).
+  - **Bar below:** slip ratio. Red to the left means braking, orange to the
+    right means wheelspin. The marks at the sides are the grip limit.
+  - **Bar beside:** suspension travel with percent and centimetres; it turns
+    red when the suspension bottoms out.
+  - **Icons:** a water drop in a puddle, red-and-white stripes on a kerb, waves
+    on bumpy ground.
 - **Course maps on the Event Sign Up screen.**
   - **Source:** your own laps or the Rivals maps. The Rivals maps appear as the
     game's picture or as a smooth traced line.

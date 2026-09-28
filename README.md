@@ -68,6 +68,11 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Input strip.** Throttle, brake, clutch, steering and gear.
 - **Live map.** The current lap drawn as you drive, with adjustable thickness and
   smoothing. Jumps are drawn as gaps.
+- **Tyre overview (off by default).** All four tyres at a glance while you drive.
+  The colour shows temperature and the outline shows slip. Each tyre tilts with
+  its slip angle, and LOCK, SPIN and SLIDE tags mark what it is doing. Bars show
+  wheelspin or locking and suspension travel, and icons show puddles, kerbs and
+  bumpy ground.
 - **Car notes in the car menu.** Your own note for the car highlighted in My Cars,
   plus the applied tune's name, tuner and description.
 - **Messages.** A short note when a lap or sprint is stored, and a warning when

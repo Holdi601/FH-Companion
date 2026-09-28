@@ -54,6 +54,78 @@ internal static class EdgeCaseTest
         LapsWaitForTheServer();
         CelebrationLooksRight();
         OverlayOutputAndCost();
+        TyreOverview();
+    }
+
+    /// <summary>
+    /// Die Reifenuebersicht (2026-09-28): ab Werk aus, Fahrenheit wird Celsius, jeder
+    /// Zustand bekommt sein Schild, und gezeichnet wird nur im eigenen Block.
+    /// </summary>
+    private static void TyreOverview()
+    {
+        Soll(!new Rivals.OverlaySettings().HudTyres, "die Reifenuebersicht ist ab Werk an -- sie soll opt-in sein");
+
+        var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 1234, 700, 5);
+        void Setze(string feld, float wert)
+        {
+            var d = ForzaPacket.Descriptors.First(x => x.Key == feld);
+            if (d.Type == TelemetryValueType.Signed32) { BitConverter.GetBytes((int)wert).CopyTo(roh, d.Offset); }
+            else if (d.Type == TelemetryValueType.Unsigned8) { roh[d.Offset] = (byte)wert; }
+            else { BitConverter.GetBytes(wert).CopyTo(roh, d.Offset); }
+        }
+        Setze("TireTempFrontLeft", 212f);        // 100 Grad C
+        Setze("TireTempRearRight", 150.8f);      // 66 Grad C
+        Setze("Brake", 255);
+        Setze("TireSlipRatioFrontLeft", -1.5f);  // blockiert
+        Setze("TireCombinedSlipFrontLeft", 1.5f);
+        Setze("TireSlipAngleFrontRight", 1.2f);  // rutscht quer
+        Setze("TireSlipRatioRearRight", 1.3f);   // dreht durch
+        Setze("WheelOnRumbleStripRearLeft", 1);
+        Setze("WheelInPuddleRearLeft", 0.4f);    // Float nach der Beschreibung
+        BitConverter.GetBytes(1).CopyTo(roh, ForzaPacket.Descriptors.First(x => x.Key == "WheelInPuddleRearRight").Offset);
+        Setze("NormalizedSuspensionTravelRearLeft", 0.97f);
+        Soll(ForzaPacket.TryParse(roh, out var paket), "das Testpaket liess sich nicht lesen");
+        var z = Rivals.TyreHud.AusPaket(paket);
+        Soll(Math.Abs(z.VL.TempC - 100f) < 0.05f && Math.Abs(z.HR.TempC - 66f) < 0.05f,
+             $"Reifentemperatur nicht von Fahrenheit umgerechnet ({z.VL.TempC}, {z.HR.TempC})");
+        Soll(Rivals.TyreHud.Schild(z.VL)?.Text == "LOCK", "ein blockiertes Rad bekommt kein LOCK");
+        Soll(Rivals.TyreHud.Schild(z.VR)?.Text == "SLIDE", "ein quer rutschendes Rad bekommt kein SLIDE");
+        Soll(Rivals.TyreHud.Schild(z.HR)?.Text == "SPIN", "ein durchdrehendes Rad bekommt kein SPIN");
+        Soll(Rivals.TyreHud.Schild(z.HL) is null, "ein ruhiges Rad bekommt ein Schild");
+        Soll(z.HL.Rumble && Math.Abs(z.HL.Puddle - 0.4f) < 1e-4 && z.HL.Travel > 0.9f && z.VL.Grip < 0.01f,
+             $"Curb, Pfuetze, Federweg oder Grip kommen nicht an ({z.HL.Rumble}, {z.HL.Puddle}, {z.HL.Travel}, {z.VL.Grip})");
+        // So sendet es Horizon 6 wirklich: eine Ganzzahl 1.
+        Soll(z.HR.Puddle == 1f, $"die Pfuetze als Ganzzahl 1 kommt als {z.HR.Puddle} an");
+
+        var kalt = Rivals.TyreHud.TempFarbe(55f);
+        var gut = Rivals.TyreHud.TempFarbe(92f);
+        var heiss = Rivals.TyreHud.TempFarbe(135f);
+        Soll(kalt.B > kalt.R && gut.G > gut.R && gut.G > gut.B && heiss.R > heiss.G,
+             "die Temperaturfarben lesen nicht kalt-blau, normal-gruen, heiss-rot");
+
+        var s = new Rivals.OverlaySettings { HudTyres = true };
+        var vorher = 0;
+        foreach (var flaeche in new[] { new Size(1920, 1080), new Size(2560, 1440), new Size(3840, 2160) })
+        {
+            var b = Rivals.TyreHud.Lege(s, flaeche);
+            Soll(b.Left >= 0 && b.Top >= 0 && b.Right <= flaeche.Width && b.Bottom <= flaeche.Height,
+                 $"{flaeche.Height}p: der Block ragt aus dem Bild ({b})");
+            Soll(b.Width > vorher, $"{flaeche.Height}p: der Block waechst nicht mit der Aufloesung");
+            vorher = b.Width;
+            using var bild = new Bitmap(flaeche.Width, flaeche.Height, PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(bild)) { g.Clear(Color.Transparent); Rivals.TyreHud.Male(g, s, flaeche, Rivals.TyreHud.Beispiel()); }
+            var innen = 0;
+            var aussen = 0;
+            for (var y = 0; y < flaeche.Height; y += 6)
+            {
+                for (var x = 0; x < flaeche.Width; x += 6)
+                {
+                    if (bild.GetPixel(x, y).A == 0) { continue; }
+                    if (b.Contains(x, y)) { innen++; } else { aussen++; }
+                }
+            }
+            Soll(innen > 100 && aussen == 0, $"{flaeche.Height}p: gezeichnet innen {innen}, ausserhalb {aussen}");
+        }
     }
 
     /// <summary>

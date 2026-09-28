@@ -9,7 +9,16 @@ internal enum TelemetryValueType
     Float32,
     Unsigned16,
     Unsigned8,
-    Signed8
+    Signed8,
+
+    /// <summary>
+    /// Laut Forzas Data-Out-Beschreibung ein Float von 0 bis 1 (Pfuetzentiefe). Horizon 6
+    /// sendet aber eine Ganzzahl: in 3,08 Millionen aufgezeichneten Paketen (582 Runden,
+    /// 2026-09-28) war der einzige Wert ausser 0 genau 1 -- ein Float haette dort
+    /// Bitmuster wie 0x3F000000 hinterlassen. Gelesen wird beides: eine rohe 0 oder 1
+    /// bleibt 0 oder 1, alles andere ist der Float (1.0f ist 0x3F800000, nicht 1).
+    /// </summary>
+    FlagOrFloat32,
 }
 
 internal sealed record TelemetryDescriptor(
@@ -68,10 +77,10 @@ internal sealed class ForzaPacket
         D("WheelOnRumbleStripFrontRight", "Rumble strip FR", "Surface", 120, TelemetryValueType.Signed32),
         D("WheelOnRumbleStripRearLeft", "Rumble strip RL", "Surface", 124, TelemetryValueType.Signed32),
         D("WheelOnRumbleStripRearRight", "Rumble strip RR", "Surface", 128, TelemetryValueType.Signed32),
-        D("WheelInPuddleFrontLeft", "Puddle FL", "Surface", 132, TelemetryValueType.Signed32),
-        D("WheelInPuddleFrontRight", "Puddle FR", "Surface", 136, TelemetryValueType.Signed32),
-        D("WheelInPuddleRearLeft", "Puddle RL", "Surface", 140, TelemetryValueType.Signed32),
-        D("WheelInPuddleRearRight", "Puddle RR", "Surface", 144, TelemetryValueType.Signed32),
+        D("WheelInPuddleFrontLeft", "Puddle FL", "Surface", 132, TelemetryValueType.FlagOrFloat32),
+        D("WheelInPuddleFrontRight", "Puddle FR", "Surface", 136, TelemetryValueType.FlagOrFloat32),
+        D("WheelInPuddleRearLeft", "Puddle RL", "Surface", 140, TelemetryValueType.FlagOrFloat32),
+        D("WheelInPuddleRearRight", "Puddle RR", "Surface", 144, TelemetryValueType.FlagOrFloat32),
         D("SurfaceRumbleFrontLeft", "Surface rumble FL", "Surface", 148, TelemetryValueType.Float32),
         D("SurfaceRumbleFrontRight", "Surface rumble FR", "Surface", 152, TelemetryValueType.Float32),
         D("SurfaceRumbleRearLeft", "Surface rumble RL", "Surface", 156, TelemetryValueType.Float32),
@@ -102,10 +111,11 @@ internal sealed class ForzaPacket
         D("Speed", "Speed", "Vehicle", 256, TelemetryValueType.Float32, "m/s", 0, 150),
         D("Power", "Power", "Engine", 260, TelemetryValueType.Float32, "W", -1500000, 1500000),
         D("Torque", "Torque", "Engine", 264, TelemetryValueType.Float32, "N·m", -3000, 3000),
-        D("TireTempFrontLeft", "Tire temperature FL", "Tires", 268, TelemetryValueType.Float32, "°C", 0, 200),
-        D("TireTempFrontRight", "Tire temperature FR", "Tires", 272, TelemetryValueType.Float32, "°C", 0, 200),
-        D("TireTempRearLeft", "Tire temperature RL", "Tires", 276, TelemetryValueType.Float32, "°C", 0, 200),
-        D("TireTempRearRight", "Tire temperature RR", "Tires", 280, TelemetryValueType.Float32, "°C", 0, 200),
+        // FAHRENHEIT, nicht Celsius: auf einer echten Runde 190 bis 270 (2026-09-28).
+        D("TireTempFrontLeft", "Tire temperature FL", "Tires", 268, TelemetryValueType.Float32, "°F", 50, 300),
+        D("TireTempFrontRight", "Tire temperature FR", "Tires", 272, TelemetryValueType.Float32, "°F", 50, 300),
+        D("TireTempRearLeft", "Tire temperature RL", "Tires", 276, TelemetryValueType.Float32, "°F", 50, 300),
+        D("TireTempRearRight", "Tire temperature RR", "Tires", 280, TelemetryValueType.Float32, "°F", 50, 300),
         D("Boost", "Boost", "Engine", 284, TelemetryValueType.Float32, "psi", 0, 50),
         D("Fuel", "Fuel", "Vehicle", 288, TelemetryValueType.Float32),
         D("DistanceTraveled", "Distance traveled", "Race", 292, TelemetryValueType.Float32, "m", 0, 100000),
@@ -252,8 +262,17 @@ internal sealed class ForzaPacket
             TelemetryValueType.Unsigned16 => BinaryPrimitives.ReadUInt16LittleEndian(packet.Slice(descriptor.Offset, 2)),
             TelemetryValueType.Unsigned8 => packet[descriptor.Offset],
             TelemetryValueType.Signed8 => unchecked((sbyte)packet[descriptor.Offset]),
+            TelemetryValueType.FlagOrFloat32 => FlagOderFloat(
+                BinaryPrimitives.ReadInt32LittleEndian(packet.Slice(descriptor.Offset, 4))),
             _ => 0
         };
+
+    private static double FlagOderFloat(int bits)
+    {
+        if (bits is 0 or 1) { return bits; }
+        var wert = BitConverter.Int32BitsToSingle(bits);
+        return float.IsFinite(wert) ? wert : 0;
+    }
 
     private static TelemetryDescriptor D(
         string key,

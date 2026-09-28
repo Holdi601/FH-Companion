@@ -55,6 +55,7 @@ internal sealed class OverlayController : IDisposable
     private readonly CourseShapeHud _shapes;
     private readonly CarNoteHud _carNote;
     private readonly LiveMapHud _liveMap;
+    private readonly TyreHud _reifen;
     public CarNotes Notes { get; } = new();
     private string _carKey = string.Empty;
 
@@ -229,6 +230,40 @@ internal sealed class OverlayController : IDisposable
     /// gefahren wird. Sichtbar nur im Rennen mit laufender Runde, wie der Streifen.
     /// </remarks>
     private int _karteRunde = -1;
+
+    /// <summary>Die Reifenuebersicht: sichtbar, solange gefahren wird und sie an ist.</summary>
+    /// <remarks>
+    /// Anders als die Live-Karte auch im freien Fahren -- Temperatur und Grip gelten
+    /// ueberall, nicht nur mit laufender Runde. `IsRaceOn` faellt in Menue und Pause
+    /// auf 0, dann geht sie weg. Gezeichnet wird im langsamen Takt (10 Hz) und nur
+    /// der eigene Block.
+    /// </remarks>
+    private void UpdateReifen(ForzaPacket packet)
+    {
+        if (_hudPreview) { return; }
+        try
+        {
+            // Wie GameIsUp, aber ohne dessen Fenstersuche -- das hier laeuft zehnmal
+            // je Sekunde, und die Uebergaenge erledigt der Tick.
+            var vorne = !_settings.OverlayRequireForza
+                        || (_game.Running && (!_settings.OverlayRequireFocus || _game.IsForeground));
+            if (!_settings.HudTyres || packet.Get("IsRaceOn") < 0.5 || !vorne)
+            {
+                if (_reifen.Visible) { _reifen.Hide(); }
+                return;
+            }
+            _reifen.Setze(TyreHud.AusPaket(packet));
+            if (!_reifen.Visible)
+            {
+                _reifen.Show();
+                _reifen.TopMost = true;
+            }
+        }
+        catch (Exception)
+        {
+            // Eine Anzeige darf nie die App mitnehmen.
+        }
+    }
 
     private void UpdateLiveMap(ForzaPacket packet)
     {
@@ -408,6 +443,7 @@ internal sealed class OverlayController : IDisposable
             try { _owner.BeginInvoke(() => NeuesAutoFeiern(r)); } catch (Exception) { }
         };
         _liveMap = new LiveMapHud(_settings, screen);
+        _reifen = new TyreHud(_settings, screen);
 
         _tick.Interval = Math.Max(250, (int)(_settings.PollSeconds * 1000));
         _tick.Tick += (_, _) => Tick();
@@ -562,6 +598,7 @@ internal sealed class OverlayController : IDisposable
         UpdateCarNote(packet);
         UpdateDelta(packet);
         UpdateLiveMap(packet);
+        UpdateReifen(packet);
         UpdateMeisterschaft(packet);
     }
 
@@ -1711,6 +1748,7 @@ internal sealed class OverlayController : IDisposable
         _meldung.SetArea(jetzt);
         _feier.SetArea(jetzt);
         _liveMap.SetArea(jetzt);
+        _reifen.SetArea(jetzt);
         // Der Streifen rechnet seine Einheit einmal aus der Flaeche; neu anlegen.
         if (_hud is not null && !_hud.IsDisposed)
         {
@@ -1769,6 +1807,12 @@ internal sealed class OverlayController : IDisposable
                 if (!_liveMap.Visible) { _liveMap.Show(); }
                 _liveMap.TopMost = true;
             }
+            if (_settings.HudTyres)
+            {
+                _reifen.Setze(TyreHud.Beispiel());
+                if (!_reifen.Visible) { _reifen.Show(); }
+                _reifen.TopMost = true;
+            }
             _carNote.SetNote("Porsche 911 GT3 RS '19  \u00b7  PI 900  \u00b7  513 hp",
                              "preview: understeers from turn 3, tyres go off after 4 laps");
             if (!_carNote.Visible) { _carNote.Show(); }
@@ -1824,6 +1868,17 @@ internal sealed class OverlayController : IDisposable
             if (_shapes.Visible) { _shapes.Render(); }
             if (_carNote.Visible) { _carNote.Render(); }
             if (_liveMap.Visible) { _liveMap.Render(); }
+            if (_hudPreview)
+            {
+                if (_settings.HudTyres)
+                {
+                    _reifen.Setze(TyreHud.Beispiel());
+                    if (!_reifen.Visible) { _reifen.Show(); _reifen.TopMost = true; }
+                }
+                else if (_reifen.Visible) { _reifen.Hide(); }
+            }
+            else if (!_settings.HudTyres && _reifen.Visible) { _reifen.Hide(); }
+            else if (_reifen.Visible) { _reifen.Render(); }
             if (!_settings.DeltaHud) { HideHud(); return; }
             if (_hud is not null && !_hud.IsDisposed) { _hud.Invalidate(); }
         }
@@ -1842,6 +1897,7 @@ internal sealed class OverlayController : IDisposable
         _liveMap.SetPreview(false);
         _liveMap.SetReference(null);
         _liveMap.ClearTrail();
+        if (_reifen.Visible) { _reifen.Hide(); }
         HideHud();
         HideShapes();
         if (_carNote.Visible) { _carNote.Hide(); }
@@ -2153,6 +2209,7 @@ internal sealed class OverlayController : IDisposable
             // Der Delta-Streifen ist ein eigenes Fenster und blieb sonst stehen,
             // waehrend die beiden Panels verschwanden.
             HideHud();
+            if (_reifen.Visible) { _reifen.Hide(); }
             SetStatus(_game.Running
                 ? $"idle — {_game.ProcessName}.exe is not the active window"
                 : $"idle — waiting for {_game.ProcessName}.exe");
@@ -2186,6 +2243,12 @@ internal sealed class OverlayController : IDisposable
             if (!GameIsUp())
             {
                 return;
+            }
+            // Die Reifen zeigen Messwerte; kommen keine mehr (Data Out aus, Spiel
+            // haengt), ist ein stehendes Bild eine Luege.
+            if (_reifen.Visible && !_hudPreview && DateTime.UtcNow - _telemetryAt > TimeSpan.FromSeconds(1.5))
+            {
+                _reifen.Hide();
             }
             if (_left.Up)
             {
@@ -3271,6 +3334,13 @@ internal sealed class OverlayController : IDisposable
         // Die Feier ebenso: ein neuer Controller (frischer Datensatz) darf keine
         // halbe Feier des alten stehen lassen.
         try { _feier.Beenden(); _feier.Close(); _feier.Dispose(); } catch (Exception) { }
+        // Und alle uebrigen Fenster: bis zum 2026-09-28 blieben Umriss, Notiz, Meldung
+        // und Live-Karte des alten Controllers offen -- sichtbar eingefroren, wenn sie
+        // beim Wechsel gerade standen.
+        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen })
+        {
+            try { fenster.Close(); fenster.Dispose(); } catch (Exception) { }
+        }
     }
 
     // ------------------------------------------------------------------ //

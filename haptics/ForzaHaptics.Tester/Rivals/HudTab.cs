@@ -7,7 +7,7 @@ namespace ForzaHaptics.Tester.Rivals;
 // Course: die Umrisse der angebotenen Strecken. Anders als die uebrigen Teile
 // gehoert er zum Anmeldeschirm und nicht ins Rennen -- geschoben wird er aber
 // genauso, und darum steht er hier.
-internal enum HudPart { Delta, Ghost, Note, Inputs, Course, CarNote, LiveMap }
+internal enum HudPart { Delta, Ghost, Note, Inputs, Course, CarNote, LiveMap, Tyres }
 
 /// <summary>
 /// Der Reiter, auf dem der Streifen eingerichtet wird -- durch Ziehen, nicht Tippen.
@@ -249,6 +249,12 @@ internal sealed class HudLayoutCanvas : Control
             var b = LiveMapHud.Lege(_settings, echt);
             return new RectangleF(schirm.X + b.X * f, schirm.Y + b.Y * f, b.Width * f, b.Height * f);
         }
+        if (part == HudPart.Tyres)
+        {
+            var (echt, f) = NotizMassstab(schirm);
+            var b = TyreHud.Lege(_settings, echt);
+            return new RectangleF(schirm.X + b.X * f, schirm.Y + b.Y * f, b.Width * f, b.Height * f);
+        }
         if (part == HudPart.CarNote)
         {
             // DIESELBE RECHNUNG WIE IM SPIEL -- nicht nachgebaut, sondern aufgerufen
@@ -342,7 +348,7 @@ internal sealed class HudLayoutCanvas : Control
 
         _boxes.Clear();
         foreach (var part in new[]
-                 { HudPart.Course, HudPart.LiveMap, HudPart.CarNote, HudPart.Inputs, HudPart.Note,
+                 { HudPart.Course, HudPart.LiveMap, HudPart.Tyres, HudPart.CarNote, HudPart.Inputs, HudPart.Note,
                    HudPart.Ghost, HudPart.Delta })
         {
             var kasten = BoxOf(g, part, _screen);
@@ -397,6 +403,22 @@ internal sealed class HudLayoutCanvas : Control
                     using var leer = new Pen(Color.FromArgb(120, 127, 211, 255), 1f) { DashStyle = DashStyle.Dot };
                     g.DrawRectangle(leer, b);
                 }
+            }
+            finally { g.Restore(zustand); }
+            if (part == _selected) { Rahmen(g, kasten, part); }
+            return;
+        }
+        if (part == HudPart.Tyres)
+        {
+            // Mit der Zeichnung des Overlays und einem Beispiel, das jeden Zustand
+            // einmal zeigt: heiss und rutschend, Curb, blockiert, Pfuetze.
+            var (echt, f) = NotizMassstab(_screen);
+            var zustand = g.Save();
+            try
+            {
+                g.TranslateTransform(_screen.X, _screen.Y);
+                g.ScaleTransform(f, f);
+                TyreHud.Male(g, _settings, echt, TyreHud.Beispiel());
             }
             finally { g.Restore(zustand); }
             if (part == _selected) { Rahmen(g, kasten, part); }
@@ -473,6 +495,7 @@ internal sealed class HudLayoutCanvas : Control
         {
             HudPart.Course => "Event Sign Up maps (before the race)",
             HudPart.LiveMap => "live map (during the race)",
+            HudPart.Tyres => "tyre overview (while driving)",
             HudPart.CarNote => "car note",
             HudPart.Inputs => "input traces",
             HudPart.Note => "note line",
@@ -483,6 +506,7 @@ internal sealed class HudLayoutCanvas : Control
         {
             HudPart.Course => !_settings.CourseShapes,
             HudPart.LiveMap => !_settings.LiveMap,
+            HudPart.Tyres => !_settings.HudTyres,
             HudPart.CarNote => !_settings.CarNotes,
             HudPart.Inputs => !_settings.HudInputs,
             _ => false,
@@ -623,7 +647,7 @@ internal sealed class HudLayoutCanvas : Control
         // wuerde sonst jeden Griff auf die kleineren Anzeigen abfangen.
         foreach (var part in new[]
                  { HudPart.Delta, HudPart.Ghost, HudPart.Note, HudPart.Inputs,
-                   HudPart.CarNote, HudPart.LiveMap, HudPart.Course })
+                   HudPart.CarNote, HudPart.Tyres, HudPart.LiveMap, HudPart.Course })
         {
             if (!_boxes.TryGetValue(part, out var kasten)) { continue; }
             if (!kasten.Contains(e.Location)) { continue; }
@@ -813,6 +837,14 @@ internal sealed class HudPartPanel : Panel
         stapel.Controls.Add(Note("One map of the course you are driving, with your car on it. It is drawn "
                                  + "from your own laps -- only they know where on the map the car is. "
                                  + "On a course you have not driven yet it grows as you drive."));
+        // DIE REIFENUEBERSICHT (seit 2026-09-28): ab Werk aus.
+        Schalter(Loc.T("Tyre overview while driving"), settings.HudTyres, v => _settings.HudTyres = v);
+        stapel.Controls.Add(Note("All four tyres at a glance: colour is temperature, the outline turns "
+                                 + "yellow at the limit and red when the tyre slides, and the tyre tilts "
+                                 + "with its slip angle. The bars show wheelspin or locking and the "
+                                 + "suspension travel; icons show puddles, kerbs and bumpy ground."));
+        Schalter(Loc.T("Tyre temperature in Fahrenheit"), settings.TyresFahrenheit,
+                 v => _settings.TyresFahrenheit = v);
         Schalter(Loc.T("Car note"), settings.CarNotes, v => _settings.CarNotes = v);
         Schalter(Loc.T("Show the applied tune's name and description in the car note"), settings.CarNoteTune,
                  v => _settings.CarNoteTune = v);
@@ -1304,6 +1336,7 @@ internal sealed class HudPartPanel : Panel
             HudPart.Course => "Event Sign Up maps",
             HudPart.CarNote => "Car note",
             HudPart.LiveMap => "Live map",
+            HudPart.Tyres => "Tyre overview",
             _ => "Delta",
         };
         var lage = _settings.PlacementOf(part);

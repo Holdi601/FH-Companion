@@ -1185,6 +1185,31 @@ internal static class Program
             }
         }
 
+        if (args.Length >= 2 && string.Equals(args[0], "--blueprint-preview", StringComparison.OrdinalIgnoreCase))
+        {
+            // Den Blueprint-Editor mit dem Standardgraphen und Live-Werten abbilden --
+            // ausserhalb des Schirms (VorschauForm), fuer Anleitung und Trailer.
+            //   --blueprint-preview <datei.png> [breite hoehe]
+            var breite = args.Length >= 4 && int.TryParse(args[2], out var bw) ? bw : 1600;
+            var hoehe = args.Length >= 4 && int.TryParse(args[3], out var bh) ? bh : 900;
+            using var form = new VorschauForm { ClientSize = new Size(breite, hoehe) };
+            var graph = SignalGraph.CreateDefault();
+            var editor = new BlueprintEditor(graph, ForzaPacket.AllDescriptors) { Dock = DockStyle.Fill };
+            form.Controls.Add(editor);
+            form.Show();
+            Application.DoEvents();
+            if (ForzaPacket.TryParse(SelfTest.LapPacket(1, 1, 1234f, 45.6f, 0f, 2542, 700, 3), out var paket))
+            {
+                editor.SetLiveValues(new SignalGraphEvaluator().Evaluate(graph, paket, DateTime.UtcNow).NodeValues);
+            }
+            Application.DoEvents();
+            using var bild = new Bitmap(breite, hoehe);
+            editor.DrawToBitmap(bild, new Rectangle(0, 0, breite, hoehe));
+            bild.Save(Path.GetFullPath(args[1]), System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(Path.GetFullPath(args[1]));
+            return;
+        }
+
         if (args.Contains("--perf-bench", StringComparer.OrdinalIgnoreCase))
         {
             // WAS KOSTET FHC, WAEHREND FORZA LAEUFT? (seit 2026-09-28)
@@ -1370,6 +1395,35 @@ internal static class Program
             }
             File.WriteAllBytes(Path.Combine(ordner, "feier.wav"), CelebrationSound.Wav);
             File.WriteAllBytes(Path.Combine(ordner, "neu.wav"), CelebrationSound.WavNeuesAuto);
+            Console.WriteLine(ordner);
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--tyre-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // DIE REIFENUEBERSICHT ALS BILD -- wie oben ohne Fenster ueber dem Spiel.
+            // Dieselbe Zeichnung (TyreHud.Male): das Beispiel und ein ruhiger Zustand,
+            // auf drei Aufloesungen.
+            //   --tyre-frames <ordner> [hintergrund.png]
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var s = new OverlaySettings { HudTyres = true };
+            var ruhig = new TyreHud.Rad(93f, 0.05f, 0.05f, 0.1f, 0.5f, 0.06f, 0f, false, 0f, 0.9f, 0f);
+            foreach (var (name, zustand) in new[] { ("beispiel", TyreHud.Beispiel()),
+                                                    ("ruhig", new TyreHud.Zustand(ruhig, ruhig, ruhig, ruhig)) })
+            foreach (var flaeche in new[] { new System.Drawing.Size(1920, 1080), new System.Drawing.Size(2560, 1440),
+                                            new System.Drawing.Size(3840, 2160) })
+            {
+                using var grund = args.Length >= 3 && File.Exists(args[2])
+                    ? new System.Drawing.Bitmap(System.Drawing.Image.FromFile(args[2]), flaeche)
+                    : null;
+                using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
+                                                           System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using var g = System.Drawing.Graphics.FromImage(bild);
+                if (grund is not null) { g.DrawImage(grund, 0, 0); }
+                else { g.Clear(System.Drawing.Color.FromArgb(70, 76, 84)); }
+                TyreHud.Male(g, s, flaeche, zustand);
+                bild.Save(Path.Combine(ordner, $"{name}_{flaeche.Height}.png"));
+            }
             Console.WriteLine(ordner);
             return;
         }

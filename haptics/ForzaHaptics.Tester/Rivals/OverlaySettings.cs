@@ -320,6 +320,26 @@ internal sealed class OverlaySettings
         (float)HudLiveMapX, (float)HudLiveMapY, HudLiveMapAlign ?? "right",
         (float)HudLiveMapScale);
 
+    // ---- DIE REIFENUEBERSICHT (seit 2026-09-28) ------------------------------------
+    //
+    // Alle vier Reifen samt Fahrwerk als Bild: Temperatur, Grip, Schlupf, Schraeglauf,
+    // Federweg, Pfuetze, Curb, Rumpeln (TyreHud). Ab Werk AUS -- es ist viel auf einmal,
+    // und ein neues Fenster ueber dem Spiel soll niemand ungefragt bekommen.
+
+    [JsonPropertyName("hud_tyres")] public bool HudTyres { get; set; }
+    [JsonPropertyName("hud_tyres_x")] public double HudTyresX { get; set; } = 0.985;
+    [JsonPropertyName("hud_tyres_y")] public double HudTyresY { get; set; } = 0.50;
+    [JsonPropertyName("hud_tyres_align")] public string HudTyresAlign { get; set; } = "right";
+    [JsonPropertyName("hud_tyres_scale")] public double HudTyresScale { get; set; } = 0.85;
+
+    /// <summary>Reifentemperatur in Fahrenheit statt Celsius (die Farben bleiben gleich).</summary>
+    [JsonPropertyName("tyres_fahrenheit")] public bool TyresFahrenheit { get; set; }
+
+    [JsonIgnore]
+    public HudPlacement TyresPlacement => new(
+        (float)HudTyresX, (float)HudTyresY, HudTyresAlign ?? "right",
+        (float)HudTyresScale);
+
     public HudPlacement CoursePlacement => new(
         (float)HudCourseX, (float)HudCourseY, HudCourseAlign ?? "left",
         (float)HudCourseScale);
@@ -393,6 +413,8 @@ internal sealed class OverlaySettings
         "hud_livemap_scale", "livemap_size", "livemap_car", "livemap_trail",
         "course_shape_smooth", "course_rivals_style", "course_shape_layout",
         "livemap_width", "livemap_smooth",
+        "hud_tyres", "hud_tyres_x", "hud_tyres_y", "hud_tyres_align", "hud_tyres_scale",
+        "tyres_fahrenheit",
     };
 
     /// <summary>Jede Einstellung nach ihrem Namen in der Datei.</summary>
@@ -553,6 +575,7 @@ internal sealed class OverlaySettings
         HudPart.Course => CoursePlacement,
         HudPart.CarNote => CarNotePlacement,
         HudPart.LiveMap => LiveMapPlacement,
+        HudPart.Tyres => TyresPlacement,
         _ => throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck"),
     };
 
@@ -567,6 +590,7 @@ internal sealed class OverlaySettings
             case HudPart.Course: HudCourseScale = wert; break;
             case HudPart.CarNote: HudCarNoteScale = wert; break;
             case HudPart.LiveMap: HudLiveMapScale = wert; break;
+            case HudPart.Tyres: HudTyresScale = wert; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
@@ -582,6 +606,7 @@ internal sealed class OverlaySettings
             case HudPart.Course: HudCourseAlign = wert; break;
             case HudPart.CarNote: HudCarNoteAlign = wert; break;
             case HudPart.LiveMap: HudLiveMapAlign = wert; break;
+            case HudPart.Tyres: HudTyresAlign = wert; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
@@ -597,6 +622,7 @@ internal sealed class OverlaySettings
             case HudPart.Course: HudCourseX = x; HudCourseY = y; break;
             case HudPart.CarNote: HudCarNoteX = x; HudCarNoteY = y; break;
             case HudPart.LiveMap: HudLiveMapX = x; HudLiveMapY = y; break;
+            case HudPart.Tyres: HudTyresX = x; HudTyresY = y; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
