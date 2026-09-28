@@ -26,7 +26,7 @@ namespace ForzaHaptics.Tester.Rivals;
 /// ## Aufruf
 ///
 ///     --trailer-hud &lt;runde.json&gt; &lt;ordner&gt; [--ref &lt;runde.json&gt;] [--size 3840x2160]
-///                   [--parts delta,inputs,tyres,map]
+///                   [--parts delta,inputs,tyres,map] [--from s] [--to s]
 ///
 /// Ohne --ref die schnellste andere eigene Runde auf demselben Kurs, in derselben
 /// Klasse, mit demselben Start. Heraus kommen step_00000.png ... (10 je Sekunde, voll
@@ -70,6 +70,8 @@ internal static class TrailerHud
         var s = new OverlaySettings
         {
             DeltaHud = true, HudInputs = teile.Contains("inputs"), LiveMap = true, HudTyres = true,
+            // Etwas tiefer als ab Werk: mit der Live-Karte zusammen beruehren sie sich sonst.
+            HudTyresY = 0.56,
         };
         using var streifen = new DeltaHud(new Rectangle(Point.Empty, groesse), s);
         var karte = (referenz ?? lap).Samples.Select(p => new PointF(p.X, p.Z)).ToList();
@@ -79,6 +81,12 @@ internal static class TrailerHud
             ? $"Same car in this PI class · {kl}" : "Same car in this PI class";
 
         var schritte = (int)Math.Floor(lap.LapSeconds * 10) + 1;
+        // Nur ein Stueck der Runde als Bild ausgeben (die Spuren und die Karte werden
+        // trotzdem von Anfang an gefuehrt, damit sie aussehen wie im Rennen).
+        var von = double.TryParse(Wert("--from"), System.Globalization.NumberStyles.Float,
+                                  System.Globalization.CultureInfo.InvariantCulture, out var f0) ? f0 : 0;
+        var bis = double.TryParse(Wert("--to"), System.Globalization.NumberStyles.Float,
+                                  System.Globalization.CultureInfo.InvariantCulture, out var f1) ? f1 : double.MaxValue;
         using var bild = new Bitmap(groesse.Width, groesse.Height, PixelFormat.Format32bppPArgb);
         for (var k = 0; k < schritte; k++)
         {
@@ -96,6 +104,7 @@ internal static class TrailerHud
             }
             streifen.Update(delta, bezeichnung, 0f);
             spur.Add(new PointF((float)paket.Get("PositionX"), (float)paket.Get("PositionZ")));
+            if (t < von - 1e-6 || t > bis + 1e-6) { continue; }
 
             using (var gfx = Graphics.FromImage(bild))
             {
@@ -119,6 +128,77 @@ internal static class TrailerHud
             steps = zeiten.Select(z => new[] { z.Schritt, z.RundenZeit, z.TimestampMs }),
         }));
         Console.WriteLine($"{zeiten.Count} frames -> {ordner}");
+        return 0;
+    }
+
+    /// <summary>
+    /// Eine Feier als Bildfolge, 60 je Sekunde, in beliebiger Aufloesung -- dieselbe
+    /// Zeichnung wie im Fenster (CelebrationHud.Male).
+    /// </summary>
+    /// <remarks>
+    ///     --trailer-celebration &lt;ordner&gt; &lt;art: rekord|neu|pb|rep&gt; &lt;titel&gt; &lt;zeit&gt;
+    ///                           &lt;vorsprung s&gt; &lt;vergleich&gt; &lt;detail&gt; [--size WxH] [--chip TEXT]
+    /// </remarks>
+    public static int Feier(string[] args)
+    {
+        var i = Array.FindIndex(args, a => string.Equals(a, "--trailer-celebration", StringComparison.OrdinalIgnoreCase));
+        if (i < 0 || i + 7 >= args.Length) { Console.WriteLine("usage: --trailer-celebration <dir> <kind> <title> <time> <gap> <compare> <detail> [--size WxH] [--chip TEXT]"); return 2; }
+        var ordner = Directory.CreateDirectory(args[i + 1]).FullName;
+        var art = args[i + 2].ToLowerInvariant() switch
+        {
+            "neu" => CelebrationHud.FeierArt.NeuesAuto,
+            "pb" => CelebrationHud.FeierArt.Persoenlich,
+            "rep" => CelebrationHud.FeierArt.Repertoire,
+            _ => CelebrationHud.FeierArt.Rekord,
+        };
+        var vorsprung = double.Parse(args[i + 5], System.Globalization.CultureInfo.InvariantCulture);
+        var k = Array.FindIndex(args, a => string.Equals(a, "--chip", StringComparison.OrdinalIgnoreCase));
+        var chip = k >= 0 && k + 1 < args.Length ? args[k + 1] : null;
+        var groesse = new Size(3840, 2160);
+        var g0 = Array.FindIndex(args, a => string.Equals(a, "--size", StringComparison.OrdinalIgnoreCase));
+        if (g0 >= 0 && g0 + 1 < args.Length && args[g0 + 1].Split('x') is { Length: 2 } wh) { groesse = new Size(int.Parse(wh[0]), int.Parse(wh[1])); }
+        var anlass = new CelebrationHud.Anlass(args[i + 3], args[i + 4], vorsprung, args[i + 6], args[i + 7], art, chip);
+        var konfetti = new CelebrationHud.Konfetti(20260928, art);
+        var bilder = (int)Math.Ceiling(CelebrationHud.DauerVon(art) * 60);
+        using var bild = new Bitmap(groesse.Width, groesse.Height, PixelFormat.Format32bppPArgb);
+        for (var n = 0; n < bilder; n++)
+        {
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.Transparent);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                CelebrationHud.Male(g, groesse, anlass, konfetti, n / 60.0);
+            }
+            bild.Save(Path.Combine(ordner, $"cel_{n:00000}.png"), ImageFormat.Png);
+        }
+        Console.WriteLine($"{bilder} frames -> {ordner}");
+        return 0;
+    }
+
+    /// <summary>
+    /// Die Autonotiz als Bild -- dieselbe Zeichnung wie im Automenue (CarNoteHud.Male).
+    ///     --trailer-carnote &lt;datei.png&gt; &lt;kopf&gt; &lt;text&gt; [--size WxH]
+    /// </summary>
+    public static int Notiz(string[] args)
+    {
+        var i = Array.FindIndex(args, a => string.Equals(a, "--trailer-carnote", StringComparison.OrdinalIgnoreCase));
+        if (i < 0 || i + 3 >= args.Length) { Console.WriteLine("usage: --trailer-carnote <out.png> <title> <text> [--size WxH]"); return 2; }
+        var groesse = new Size(3840, 2160);
+        var g0 = Array.FindIndex(args, a => string.Equals(a, "--size", StringComparison.OrdinalIgnoreCase));
+        if (g0 >= 0 && g0 + 1 < args.Length && args[g0 + 1].Split('x') is { Length: 2 } wh) { groesse = new Size(int.Parse(wh[0]), int.Parse(wh[1])); }
+        var s = OverlaySettings.Load();
+        s.CarNotes = true;
+        using var bild = new Bitmap(groesse.Width, groesse.Height, PixelFormat.Format32bppPArgb);
+        using (var g = Graphics.FromImage(bild))
+        {
+            g.Clear(Color.Transparent);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            CarNoteHud.Male(g, s, groesse, args[i + 2], args[i + 3].Replace("\n", "
+"), auchWennAus: true);
+        }
+        bild.Save(args[i + 1], ImageFormat.Png);
+        Console.WriteLine(args[i + 1]);
         return 0;
     }
 

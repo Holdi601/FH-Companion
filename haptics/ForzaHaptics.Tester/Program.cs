@@ -545,6 +545,16 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--trailer-celebration", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.ExitCode = TrailerHud.Feier(args);
+            return;
+        }
+        if (args.Contains("--trailer-carnote", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.ExitCode = TrailerHud.Notiz(args);
+            return;
+        }
         if (args.Contains("--trailer-hud", StringComparer.OrdinalIgnoreCase))
         {
             // Die Overlays einer aufgezeichneten Runde als Einzelbilder -- fuer Videos
