@@ -120,6 +120,9 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
     protected override void SetVisibleCore(bool value)
     {
         _gewollt = value;
+        // Ein geschlossenes Fenster zeigt nichts mehr -- und wirft nicht: ein spaeter
+        // Rueckruf des alten Controllers darf die App nicht mitnehmen (2026-09-28).
+        if (IsDisposed || Disposing) { return; }
         base.SetVisibleCore(value && OverlayAusgabe.ImSpiel);
     }
 

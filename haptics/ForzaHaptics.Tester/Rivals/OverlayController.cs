@@ -108,6 +108,21 @@ internal sealed class OverlayController : IDisposable
     // damit die Notiz dem Rahmen folgt.
     private DateTime _menueNaechster = DateTime.MinValue;
 
+    /// <summary>Weggeworfen: kein Zeitgeber und kein Rueckruf fasst danach noch etwas an.</summary>
+    /// <remarks>
+    /// Seit 2026-09-28. Der Controller wird bei jedem neuen Datensatz ersetzt (also bei
+    /// jedem Start). Drei seiner Zeitgeber liefen danach weiter: der alte las das
+    /// Automenue weiter zweimal je Sekunde vom Schirm, neben dem neuen. Seit Dispose
+    /// auch die Fenster schliesst, warf derselbe Zeitgeber "Cannot access a disposed
+    /// object" -- so ist es aufgefallen.
+    /// </remarks>
+    private bool _disposed;
+
+    /// <summary>Jeder Zeitgeber des Controllers -- Dispose haelt sie alle an.</summary>
+    /// <remarks>Ein neuer Zeitgeber gehoert hier hinein; der Grenzfalltest prueft das.</remarks>
+    internal IEnumerable<System.Windows.Forms.Timer> AlleZeitgeber() =>
+        new[] { _tick, _triggerTick, _menueTick, _tuneTick, _meisterschaftWeg };
+
     private LapAutoSubmit? _submitterFeld;
     private LapAutoSubmit _submitter =>
         _submitterFeld ??= new LapAutoSubmit(() => _advisor, _settings, LogLap);
@@ -436,11 +451,11 @@ internal sealed class OverlayController : IDisposable
         // Website schlaegt, aus einem Hintergrundfaden -- gezeigt wird im Fenster-Faden.
         _submitter.RekordGefahren += r =>
         {
-            try { _owner.BeginInvoke(() => Feiern(r)); } catch (Exception) { }
+            try { _owner.BeginInvoke(() => { if (!_disposed) { Feiern(r); } }); } catch (Exception) { }
         };
         _submitter.NeuesAutoEingetragen += r =>
         {
-            try { _owner.BeginInvoke(() => NeuesAutoFeiern(r)); } catch (Exception) { }
+            try { _owner.BeginInvoke(() => { if (!_disposed) { NeuesAutoFeiern(r); } }); } catch (Exception) { }
         };
         _liveMap = new LiveMapHud(_settings, screen);
         _reifen = new TyreHud(_settings, screen);
@@ -455,6 +470,7 @@ internal sealed class OverlayController : IDisposable
         _menueTick.Interval = 500;
         _menueTick.Tick += (_, _) =>
         {
+            if (_disposed) { return; }
             PruefeAutomenue();
             PruefeUmrisseZeit();
             AnmeldungOhneOverlay();
@@ -469,6 +485,7 @@ internal sealed class OverlayController : IDisposable
         _meisterschaftWeg.Tick += (_, _) =>
         {
             _meisterschaftWeg.Stop();
+            if (_disposed) { return; }
             _angebot.Clear();
             _erledigt.Clear();
             if (!_rennenLaeuft) { HideShapes(); }
@@ -488,7 +505,7 @@ internal sealed class OverlayController : IDisposable
         });
 
         _tuneTick.Interval = 30_000;
-        _tuneTick.Tick += (_, _) => { _tuneTick.Interval = 300_000; PruefeTunes(); };
+        _tuneTick.Tick += (_, _) => { if (_disposed) { return; } _tuneTick.Interval = 300_000; PruefeTunes(); };
         _tuneTick.Start();
     }
 
@@ -583,12 +600,14 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     public void OnTelemetryRaw(ForzaPacket packet)
     {
+        if (_disposed) { return; }
         try { _recorder.OnTelemetry(packet); } catch (Exception) { }
     }
 
     /// <summary>Every telemetry packet the host app parses, at its own rate.</summary>
     public void OnTelemetry(ForzaPacket packet)
     {
+        if (_disposed) { return; }
         _ordinal = (int)packet.Get("CarOrdinal");
         _pi = (int)packet.Get("CarPerformanceIndex");
         _drivetrain = (int)packet.Get("DrivetrainType");
@@ -1183,7 +1202,7 @@ internal sealed class OverlayController : IDisposable
                 }
                 try
                 {
-                    _owner.BeginInvoke(() => MenueGelesen(rahmen, abdruck, auto, gelesen, neu));
+                    _owner.BeginInvoke(() => { if (!_disposed) { MenueGelesen(rahmen, abdruck, auto, gelesen, neu); } });
                 }
                 catch (Exception)
                 {
@@ -1942,6 +1961,7 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     private void PollTriggers()
     {
+        if (_disposed) { return; }
         if (!GameIsUp())
         {
             // Gedrueckt Gehaltenes vergessen, sonst loest die Taste in dem Moment aus,
@@ -2238,6 +2258,7 @@ internal sealed class OverlayController : IDisposable
 
     private void Tick()
     {
+        if (_disposed) { return; }
         try
         {
             if (!GameIsUp())
@@ -2345,6 +2366,7 @@ internal sealed class OverlayController : IDisposable
             {
                 _owner.BeginInvoke(() =>
                 {
+                    if (_disposed) { return; }
                     foreach (var panel in blinked)
                     {
                         if (panel.Up)
@@ -3309,9 +3331,15 @@ internal sealed class OverlayController : IDisposable
 
     public void Dispose()
     {
+        if (_disposed) { return; }
+        _disposed = true;
         Stop();
         _tick.Dispose();
         _triggerTick.Dispose();
+        foreach (var zeitgeber in AlleZeitgeber())
+        {
+            try { zeitgeber.Stop(); zeitgeber.Dispose(); } catch (Exception) { }
+        }
         _right.Dispose();
         _left.Dispose();
 

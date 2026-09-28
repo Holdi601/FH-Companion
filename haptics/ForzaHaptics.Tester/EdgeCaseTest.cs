@@ -55,6 +55,48 @@ internal static class EdgeCaseTest
         CelebrationLooksRight();
         OverlayOutputAndCost();
         TyreOverview();
+        ReplacedControllerGoesQuiet();
+    }
+
+    /// <summary>
+    /// Ein ersetzter Controller haelt JEDEN Zeitgeber an, und seine geschlossenen
+    /// Fenster nehmen spaete Aufrufe hin, ohne zu werfen (2026-09-28: "Cannot access a
+    /// disposed object ... CarNoteHud" beim Start, weil das Automenue des alten
+    /// Controllers weiterlief).
+    /// </summary>
+    private static void ReplacedControllerGoesQuiet()
+    {
+        // Ohne den Konstruktor (der schreibt im Hintergrund in den Rundenbestand):
+        // ein leeres Objekt, jedes Zeitgeber-Feld mit einem eigenen Zeitgeber belegt.
+        var typ = typeof(Rivals.OverlayController);
+        var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+        var felder = typ.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        .Where(f => f.FieldType == typeof(System.Windows.Forms.Timer)).ToList();
+        foreach (var f in felder) { f.SetValue(roh, new System.Windows.Forms.Timer()); }
+        var gestoppt = roh.AlleZeitgeber().ToHashSet();
+        var vergessen = felder.Where(f => !gestoppt.Contains((System.Windows.Forms.Timer)f.GetValue(roh)!))
+                              .Select(f => f.Name).ToList();
+        Soll(felder.Count >= 5 && vergessen.Count == 0,
+             $"Dispose haelt diese Zeitgeber nicht an: {string.Join(", ", vergessen)}");
+        foreach (var t in gestoppt) { t.Dispose(); }
+
+        var weg = new Rectangle(-32000, -32000, 1920, 1080);
+        var notiz = new Rivals.CarNoteHud(new Rivals.OverlaySettings(), weg);
+        notiz.Show();
+        notiz.Dispose();
+        try
+        {
+            notiz.Show();
+            notiz.Hide();
+            notiz.Render();
+            notiz.SetArea(new Rectangle(-32000, -32000, 2560, 1440));
+            notiz.TopMost = true;
+            Soll(!notiz.Visible, "ein geschlossenes Fenster meldet sich sichtbar");
+        }
+        catch (ObjectDisposedException e)
+        {
+            Soll(false, "ein geschlossenes Overlay wirft bei einem spaeten Aufruf: " + e.Message);
+        }
     }
 
     /// <summary>
