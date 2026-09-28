@@ -359,6 +359,7 @@ internal sealed class OverlaySettings
     {
         "window" => !string.IsNullOrWhiteSpace(VideoWindow),
         "device" => !string.IsNullOrWhiteSpace(VideoDevice),
+        "obs" => true,
         "url" => !string.IsNullOrWhiteSpace(VideoUrl),
         _ => false,
     };

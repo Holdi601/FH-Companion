@@ -645,6 +645,43 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--video-sources", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--video-sources": was dieser Rechner als Spielbild anbieten kann -- Videogeraete
+            // (Aufnahmekarte, OBS Virtual Camera), Fenster, ffmpeg.
+            // "--video-sources <device|obs|window|url> <name> <out.png>": ein Bild davon holen.
+            var vp = Array.FindIndex(args, a => string.Equals(a, "--video-sources", StringComparison.OrdinalIgnoreCase));
+            if (vp + 3 < args.Length)
+            {
+                var s = new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = args[vp + 1] };
+                switch (args[vp + 1])
+                {
+                    case "window": s.VideoWindow = args[vp + 2]; break;
+                    case "url": s.VideoUrl = args[vp + 2]; break;
+                    default: s.VideoDevice = args[vp + 2]; break;
+                }
+                using var quelle = Rivals.Bildquellen.Erzeuge(s);
+                if (quelle is null) { Console.WriteLine("no source for these settings"); return; }
+                Bitmap? bild = null;
+                for (var i = 0; i < 80 && bild is null; i++)
+                {
+                    Thread.Sleep(100);
+                    bild = quelle.Neuestes();
+                }
+                Console.WriteLine(quelle.Beschreibung);
+                if (bild is null) { Console.WriteLine("no picture within 8 s"); return; }
+                bild.Save(args[vp + 3], System.Drawing.Imaging.ImageFormat.Png);
+                Console.WriteLine($"{bild.Width}x{bild.Height} -> {args[vp + 3]}");
+                return;
+            }
+            Console.WriteLine("video devices:");
+            foreach (var n in Rivals.Bildquellen.GeraeteAsync().GetAwaiter().GetResult()) { Console.WriteLine("  " + n); }
+            Console.WriteLine("windows (graphics capture " + (Rivals.FensterQuelle.Unterstuetzt ? "available" : "NOT available") + "):");
+            foreach (var (_, t) in Rivals.Fenster.Sichtbare()) { Console.WriteLine("  " + t); }
+            Console.WriteLine("ffmpeg: " + (Rivals.Ffmpeg.Finden(null) ?? "not found"));
+            return;
+        }
+
         if (args.Contains("--tuning-preview", StringComparer.OrdinalIgnoreCase))
         {
             // "--tuning-preview <garage.db> <auto>": den Tuning-Inspektor mit einer
@@ -1115,6 +1152,52 @@ internal static class Program
         // DAS PANEL ALS BILD. Eine Aenderung an der Darstellung laesst sich sonst
         // nur mit laufendem Spiel beurteilen -- und genau dort faellt zu spaet auf,
         // dass ein langer Autoname in die Zahlenspalte laeuft.
+        if (args.Contains("--main-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--main-preview <out.png> [tab=<Reitername>] [w=1400] [h=900]": das Hauptfenster
+            // als Bild, fuer Anleitungen. Ausserhalb des Schirms, ohne Fokus, ohne das, was
+            // am ersten Zeigen haengt (Controller, Empfang, Dashboard) -- MainForm.NurVorschau.
+            // Die Einstellungen kommen wie immer aus config/overlay.json neben der EXE: fuer
+            // saubere Bilder eine Kopie der App mit eigener Einstellungsdatei benutzen.
+            var mp = Array.FindIndex(args, a => string.Equals(a, "--main-preview", StringComparison.OrdinalIgnoreCase));
+            string? Wert(string name) => args.FirstOrDefault(a => a.StartsWith(name + "=", StringComparison.OrdinalIgnoreCase))?[(name.Length + 1)..];
+            var ziel = mp + 1 < args.Length ? args[mp + 1] : Path.Combine(Path.GetTempPath(), "forza-main.png");
+            Loc.Waehle(Rivals.OverlaySettings.Load().Language);
+            MainForm.NurVorschau = true;
+            using var fenster = new MainForm(false)
+            {
+                StartPosition = FormStartPosition.Manual,
+                Location = new Point(-32000, -32000),
+                ShowInTaskbar = false,
+                Size = new Size(int.TryParse(Wert("w"), out var w) ? w : 1400, int.TryParse(Wert("h"), out var h) ? h : 900),
+            };
+            fenster.Show();
+            if (Wert("tab") is { } reiter)
+            {
+                var tabs = new Stack<Control>(new Control[] { fenster });
+                while (tabs.Count > 0)
+                {
+                    var c = tabs.Pop();
+                    if (c is TabControl t)
+                    {
+                        foreach (TabPage seite in t.TabPages)
+                        {
+                            if (seite.Text.Contains(reiter, StringComparison.OrdinalIgnoreCase)) { t.SelectedTab = seite; }
+                        }
+                    }
+                    foreach (Control k in c.Controls) { tabs.Push(k); }
+                }
+            }
+            for (var i = 0; i < 15; i++) { Application.DoEvents(); Thread.Sleep(100); }
+            using var bild = new Bitmap(fenster.Width, fenster.Height);
+            fenster.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            fenster.Close();
+            Rivals.Bildquellen.Aktiv = null;
+            return;
+        }
+
         if (args.Contains("--disclosure-preview", StringComparer.OrdinalIgnoreCase))
         {
             // Das Zustimmungsfenster abbilden, ohne es zu bedienen. Seit dem

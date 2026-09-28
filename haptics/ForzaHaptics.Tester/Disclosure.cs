@@ -65,7 +65,11 @@ internal static class Disclosure
     // 6 seit 2026-09-28: mit jeder eingereichten Runde geht ihre VOLLE Telemetrie
     // hinaus (jedes Paket: Ort, Lage, Tempo, Eingaben, Motor, je Rad Temperatur,
     // Schlupf, Federweg) -- Fassung 5 nannte nur "positions and speeds".
-    public const int Fassung = 6;
+    // 7 seit 2026-09-28 (abends): der Modus "Xbox / 2nd PC" lauscht im Netz statt nur
+    // auf 127.0.0.1, und er liest das Spielbild aus einer gewaehlten Quelle (Aufnahme-
+    // karte, OBS, Fenster von Xbox Remote Play, Stromadresse). Fassung 6 nannte nur
+    // 127.0.0.1 und "the game window".
+    public const int Fassung = 7;
 
     private const string Titel = "What " + AppInfo.Name + " does";
 
@@ -81,7 +85,9 @@ WHAT IT DOES ON YOUR PC
       You switch that on yourself in the game under Settings > HUD and Gameplay.
       The program listens on 127.0.0.1 -- your own computer, not the network --
       and uses it for the lap delta, the live map, your lap records and the
-      controller vibration.
+      controller vibration. Only if you switch the program to "Xbox / 2nd PC" at
+      the top of its window does it listen on your network instead, so that the
+      Xbox or the other PC can reach it.
 
   Reads the memory of the running game -- only when you press a button.
       The list of parts fitted to your car, and which tune sits on which car, are
@@ -98,7 +104,10 @@ WHAT IT DOES ON YOUR PC
       To know which routes the Event Sign Up screen offers and which car is
       highlighted in the car menu, the program takes pictures of the game window
       and reads the text with the text recognition built into Windows. This
-      happens on your PC; the pictures are not sent anywhere.
+      happens on your PC; the pictures are not sent anywhere. In "Xbox / 2nd PC"
+      mode it takes those pictures from the source you choose instead: a capture
+      card, OBS, the Xbox Remote Play window or a stream address. Windows then
+      draws a yellow frame around a captured window.
 
   Reads your downloaded tunes from the game's save folder -- read-only.
       The Tunes tab counts them and shows which ones no car uses. The save folder
@@ -310,10 +319,13 @@ top of the main window.
         {
             Text = Titel,
             Icon = Marke.Symbol(),
-            StartPosition = FormStartPosition.CenterScreen,
+            // Nur ein Bild davon (--disclosure-preview): ausserhalb des Schirms, damit
+            // nichts vor dem Nutzer aufblitzt.
+            StartPosition = BeimZeigen is null ? FormStartPosition.CenterScreen : FormStartPosition.Manual,
+            Location = BeimZeigen is null ? Point.Empty : new Point(-32000, -32000),
             MinimizeBox = false,
             MaximizeBox = false,
-            ShowInTaskbar = erstesMal,
+            ShowInTaskbar = erstesMal && BeimZeigen is null,
             FormBorderStyle = FormBorderStyle.Sizable,
             ClientSize = new Size(760, 620),
             MinimumSize = new Size(560, 420),

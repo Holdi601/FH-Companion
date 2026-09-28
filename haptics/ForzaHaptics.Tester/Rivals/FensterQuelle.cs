@@ -1,0 +1,425 @@
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Text;
+using Windows.Graphics.Capture;
+using Windows.Graphics.DirectX;
+using Windows.Graphics.DirectX.Direct3D11;
+using Windows.Graphics.Imaging;
+using WinRT;
+
+namespace ForzaHaptics.Tester.Rivals;
+
+/// <summary>
+/// Ein Fenster als Bildquelle -- ueber Windows Graphics Capture, NICHT vom Bildschirm
+/// (seit 2026-09-28): Xbox Remote Play, ein OBS-Projektor, die Vorschau einer
+/// Aufnahmekarte.
+/// </summary>
+/// <remarks>
+/// Vorher kopierte die App die Pixel an der Stelle des Fensters vom Schirm. Lag das
+/// Dashboard darueber, las sie das Dashboard. Windows Graphics Capture bekommt das
+/// Bild des Fensters selbst vom Fenstermanager -- verdeckt oder auf einem anderen
+/// Schirm, egal. Nur MINIMIERT liefert ein Fenster nichts.
+///
+/// Windows zeichnet waehrenddessen einen gelben Rahmen um das Fenster: das ist die
+/// Anzeige, dass ein Programm es aufnimmt, und bei dieser SDK-Fassung nicht
+/// abzuschalten.
+///
+/// Aus dem Bild wird die Innenflaeche geschnitten (ohne Titelleiste), und davon das
+/// 16:9-Spielbild, wenn es mit Balken darin liegt -- siehe <see cref="Bildquellen.Spielbild"/>.
+/// </remarks>
+internal sealed unsafe class FensterQuelle : IBildquelle
+{
+    private static readonly Guid IidInterop = new("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356");
+    private static readonly Guid IidItem = new("79C3F95B-31F7-4EC2-A464-632EF5D30760");
+    private static readonly Guid IidDxgiDevice = new("54EC77FA-1377-44E6-8C32-88FD5F44C84C");
+
+    private readonly object _schloss = new();
+    private readonly string _titel;
+    private readonly Func<IntPtr> _finden;
+    private readonly System.Threading.Timer _wache;
+    private IntPtr _fenster;
+    private IDirect3DDevice? _geraet;
+    private GraphicsCaptureItem? _item;
+    private Direct3D11CaptureFramePool? _pool;
+    private GraphicsCaptureSession? _sitzung;
+    private Direct3D11CaptureFrame? _letzter;
+    private Windows.Graphics.SizeInt32 _groesse;
+    private Bitmap? _bild;
+    // Das vorige Bild lebt einen Umlauf laenger: ein Leser, der es gerade zeichnet,
+    // soll es nicht unter der Hand verlieren.
+    private Bitmap? _altesBild;
+    private DateTime _bildAm = DateTime.MinValue;
+    private bool _zu;
+
+    public string Beschreibung { get; private set; }
+
+    /// <summary>Kann dieses Windows Fenster so aufnehmen? (ab Windows 10 1903)</summary>
+    public static bool Unterstuetzt
+    {
+        get
+        {
+            try { return GraphicsCaptureSession.IsSupported(); }
+            catch (Exception) { return false; }
+        }
+    }
+
+    public FensterQuelle(string titel) : this(titel, () => Fenster.Finden(titel))
+    {
+    }
+
+    /// <summary>Mit eigener Suche -- etwa der Projektor von OBS, der je Sprache anders heisst.</summary>
+    public FensterQuelle(string titel, Func<IntPtr> finden)
+    {
+        _titel = titel;
+        _finden = finden;
+        Beschreibung = "window: looking for \"" + titel + "\"";
+        // Alle zwei Sekunden nachsehen: das Fenster kann spaeter kommen, geschlossen
+        // und neu geoeffnet werden.
+        _wache = new System.Threading.Timer(_ => Pruefen(), null, 0, 2000);
+    }
+
+    private void Pruefen()
+    {
+        lock (_schloss)
+        {
+            if (_zu) { return; }
+            if (_sitzung is not null && _fenster != IntPtr.Zero && Fenster.IsWindow(_fenster))
+            {
+                Beschreibung = Fenster.IsIconic(_fenster)
+                    ? "window is minimized -- restore it; it may stay behind other windows"
+                    : "window: " + Fenster.Titel(_fenster);
+                return;
+            }
+            Schliessen();
+            var h = _finden();
+            if (h == IntPtr.Zero)
+            {
+                Beschreibung = "window not found: \"" + _titel + "\"";
+                return;
+            }
+            try
+            {
+                Starten(h);
+                Beschreibung = "window: " + Fenster.Titel(h);
+            }
+            catch (Exception e)
+            {
+                Schliessen();
+                Beschreibung = "window capture failed: " + e.Message;
+            }
+        }
+    }
+
+    private void Starten(IntPtr fenster)
+    {
+        _geraet ??= D3dGeraet();
+        var item = ItemFuer(fenster);
+        _item = item;
+        _groesse = item.Size;
+        _pool = Direct3D11CaptureFramePool.CreateFreeThreaded(
+            _geraet, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, _groesse);
+        _pool.FrameArrived += Angekommen;
+        _sitzung = _pool.CreateCaptureSession(item);
+        try { _sitzung.IsCursorCaptureEnabled = false; } catch (Exception) { }
+        _sitzung.StartCapture();
+        _fenster = fenster;
+    }
+
+    /// <summary>
+    /// Nur das neueste Bild behalten -- umgewandelt wird erst, wenn ein Leser fragt.
+    /// </summary>
+    private void Angekommen(Direct3D11CaptureFramePool pool, object _)
+    {
+        Direct3D11CaptureFrame? bild;
+        try { bild = pool.TryGetNextFrame(); }
+        catch (Exception) { return; }
+        if (bild is null) { return; }
+        lock (_schloss)
+        {
+            if (_zu || !ReferenceEquals(pool, _pool))
+            {
+                bild.Dispose();
+                return;
+            }
+            _letzter?.Dispose();
+            _letzter = bild;
+            var neu = bild.ContentSize;
+            if (neu.Width > 0 && neu.Height > 0 && (neu.Width != _groesse.Width || neu.Height != _groesse.Height))
+            {
+                // Das Fenster hat seine Groesse geaendert: der Vorrat muss mitwachsen.
+                _groesse = neu;
+                try { pool.Recreate(_geraet, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, _groesse); }
+                catch (Exception) { }
+            }
+        }
+    }
+
+    public Bitmap? Neuestes()
+    {
+        lock (_schloss)
+        {
+            if (_letzter is null) { return _bild; }
+            // Hoechstens alle 150 ms neu umwandeln -- ein Lesevorgang fragt mehrmals.
+            if (_bild is not null && DateTime.UtcNow - _bildAm < TimeSpan.FromMilliseconds(150)) { return _bild; }
+            try
+            {
+                using var weich = SoftwareBitmap.CreateCopyFromSurfaceAsync(_letzter.Surface, BitmapAlphaMode.Ignore)
+                                                .AsTask().GetAwaiter().GetResult();
+                using var roh = Bildquellen.AlsBitmap(weich, ohneAlpha: true);
+                var inhalt = _letzter.ContentSize;
+                var flaeche = Innenflaeche(new Rectangle(0, 0,
+                    Math.Min(roh.Width, Math.Max(1, inhalt.Width)), Math.Min(roh.Height, Math.Max(1, inhalt.Height))));
+                var spiel = Bildquellen.Spielbild(roh, flaeche);
+                var neu = roh.Clone(spiel, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                _altesBild?.Dispose();
+                _altesBild = _bild;
+                _bild = neu;
+                _bildAm = DateTime.UtcNow;
+            }
+            catch (Exception)
+            {
+                // Ein verlorenes Bild ist kein Fehler; das naechste kommt.
+            }
+            return _bild;
+        }
+    }
+
+    /// <summary>Die Innenflaeche des Fensters (ohne Titelleiste und Rand) im aufgenommenen Bild.</summary>
+    private Rectangle Innenflaeche(Rectangle ganz)
+    {
+        try
+        {
+            if (Fenster.DwmGetWindowAttribute(_fenster, 9, out var aussen, sizeof(Fenster.RECT)) == 0
+                && Fenster.GetClientRect(_fenster, out var innen))
+            {
+                var p = new Fenster.POINT();
+                if (Fenster.ClientToScreen(_fenster, ref p))
+                {
+                    var r = new Rectangle(p.X - aussen.Left, p.Y - aussen.Top, innen.Right - innen.Left,
+                                          innen.Bottom - innen.Top);
+                    r.Intersect(ganz);
+                    if (r.Width >= 320 && r.Height >= 180) { return r; }
+                }
+            }
+        }
+        catch (Exception)
+        {
+        }
+        return ganz;
+    }
+
+    private void Schliessen()
+    {
+        try { _sitzung?.Dispose(); } catch (Exception) { }
+        try
+        {
+            if (_pool is not null) { _pool.FrameArrived -= Angekommen; }
+            _pool?.Dispose();
+        }
+        catch (Exception) { }
+        try { _letzter?.Dispose(); } catch (Exception) { }
+        _sitzung = null;
+        _pool = null;
+        _letzter = null;
+        _item = null;
+        _fenster = IntPtr.Zero;
+    }
+
+    public void Dispose()
+    {
+        _wache.Dispose();
+        lock (_schloss)
+        {
+            _zu = true;
+            Schliessen();
+            _bild?.Dispose();
+            _altesBild?.Dispose();
+            _bild = null;
+            _altesBild = null;
+            try { (_geraet as IDisposable)?.Dispose(); } catch (Exception) { }
+            _geraet = null;
+        }
+    }
+
+    // ------------------------------------------------------------------ Windows-Anbindung
+
+    /// <summary>Ein Aufnahme-Objekt fuer ein Fenster (IGraphicsCaptureItemInterop.CreateForWindow).</summary>
+    private static GraphicsCaptureItem ItemFuer(IntPtr fenster)
+    {
+        var fabrik = ActivationFactory.Get("Windows.Graphics.Capture.GraphicsCaptureItem");
+        var iid = IidInterop;
+        Marshal.ThrowExceptionForHR(Marshal.QueryInterface(fabrik.ThisPtr, ref iid, out var interop));
+        try
+        {
+            // vtable: IUnknown (3 Eintraege), dann CreateForWindow, CreateForMonitor.
+            var tabelle = *(IntPtr**)interop;
+            var erzeuge = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, Guid*, IntPtr*, int>)tabelle[3];
+            var itemIid = IidItem;
+            IntPtr zeiger;
+            Marshal.ThrowExceptionForHR(erzeuge(interop, fenster, &itemIid, &zeiger));
+            try { return GraphicsCaptureItem.FromAbi(zeiger); }
+            finally { Marshal.Release(zeiger); }
+        }
+        finally
+        {
+            Marshal.Release(interop);
+        }
+    }
+
+    /// <summary>Ein Direct3D-11-Geraet als WinRT-IDirect3DDevice fuer den Bildvorrat.</summary>
+    private static IDirect3DDevice D3dGeraet()
+    {
+        const int Hardware = 1;
+        const uint BgraSupport = 0x20;
+        var hr = D3D11CreateDevice(IntPtr.Zero, Hardware, IntPtr.Zero, BgraSupport, IntPtr.Zero, 0, 7,
+                                   out var d3d, out _, out var kontext);
+        if (hr < 0)
+        {
+            // Ohne Grafikkarte (Fernsitzung, VM): der Software-Rasterer.
+            const int Warp = 5;
+            Marshal.ThrowExceptionForHR(D3D11CreateDevice(IntPtr.Zero, Warp, IntPtr.Zero, BgraSupport, IntPtr.Zero,
+                                                          0, 7, out d3d, out _, out kontext));
+        }
+        try
+        {
+            var iid = IidDxgiDevice;
+            Marshal.ThrowExceptionForHR(Marshal.QueryInterface(d3d, ref iid, out var dxgi));
+            try
+            {
+                Marshal.ThrowExceptionForHR(CreateDirect3D11DeviceFromDXGIDevice(dxgi, out var winrt));
+                try { return MarshalInterface<IDirect3DDevice>.FromAbi(winrt); }
+                finally { Marshal.Release(winrt); }
+            }
+            finally
+            {
+                Marshal.Release(dxgi);
+            }
+        }
+        finally
+        {
+            if (kontext != IntPtr.Zero) { Marshal.Release(kontext); }
+            Marshal.Release(d3d);
+        }
+    }
+
+    [DllImport("d3d11.dll")]
+    private static extern int D3D11CreateDevice(IntPtr adapter, int driverType, IntPtr software, uint flags,
+                                                IntPtr featureLevels, uint featureLevelCount, uint sdkVersion,
+                                                out IntPtr device, out int featureLevel, out IntPtr context);
+
+    [DllImport("d3d11.dll")]
+    private static extern int CreateDirect3D11DeviceFromDXGIDevice(IntPtr dxgiDevice, out IntPtr graphicsDevice);
+}
+
+/// <summary>Die sichtbaren Fenster anderer Programme -- zum Auswaehlen und Wiederfinden.</summary>
+internal static class Fenster
+{
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RECT { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct POINT { public int X, Y; }
+
+    private delegate bool Aufzaehlen(IntPtr h, IntPtr l);
+
+    [DllImport("user32.dll")] private static extern bool EnumWindows(Aufzaehlen f, IntPtr l);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr h);
+    [DllImport("user32.dll")] internal static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowTextW(IntPtr h, StringBuilder s, int n);
+    [DllImport("user32.dll")] private static extern int GetWindowTextLengthW(IntPtr h);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll")] internal static extern bool GetClientRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] internal static extern bool ClientToScreen(IntPtr h, ref POINT p);
+    [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr h, int attr, out RECT r, int size);
+    [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr h, int attr, out int wert, int size);
+
+    internal static string Titel(IntPtr h)
+    {
+        var n = GetWindowTextLengthW(h);
+        if (n <= 0) { return string.Empty; }
+        var s = new StringBuilder(n + 1);
+        GetWindowTextW(h, s, s.Capacity);
+        return s.ToString();
+    }
+
+    /// <summary>Sichtbare Fenster mit Titel, ohne die eigenen und ohne versteckte ("cloaked") Fenster.</summary>
+    internal static List<(IntPtr Handle, string Titel)> Sichtbare()
+    {
+        var eigene = (uint)Environment.ProcessId;
+        var raus = new List<(IntPtr, string)>();
+        EnumWindows((h, _) =>
+        {
+            if (!IsWindowVisible(h)) { return true; }
+            GetWindowThreadProcessId(h, out var pid);
+            if (pid == eigene) { return true; }
+            // Unsichtbar gemachte Fenster (Apps im Hintergrund, andere Desktops)
+            if (DwmGetWindowAttribute(h, 14, out int versteckt, sizeof(int)) == 0 && versteckt != 0) { return true; }
+            var t = Titel(h);
+            if (t.Length > 0) { raus.Add((h, t)); }
+            return true;
+        }, IntPtr.Zero);
+        return raus;
+    }
+
+    /// <summary>
+    /// Das sichtbare Fenster zu einem Titel(-teil) -- sonst IntPtr.Zero.
+    /// </summary>
+    /// <remarks>
+    /// Genau gleich vor "beginnt mit" vor "enthaelt": die Xbox-App hat neben ihrem
+    /// Hauptfenster "XBOX" auch Chatfenster wie "Freund - XBOX". Wer "Xbox" eintippt,
+    /// meint das Hauptfenster.
+    /// </remarks>
+    internal static IntPtr Finden(string teil)
+    {
+        if (string.IsNullOrWhiteSpace(teil)) { return IntPtr.Zero; }
+        var t = teil.Trim();
+        var alle = Sichtbare();
+        foreach (var pruefe in new Func<string, bool>[]
+                 {
+                     x => x.Equals(t, StringComparison.OrdinalIgnoreCase),
+                     x => x.StartsWith(t, StringComparison.OrdinalIgnoreCase),
+                     x => x.Contains(t, StringComparison.OrdinalIgnoreCase),
+                 })
+        {
+            foreach (var (h, titel) in alle)
+            {
+                if (pruefe(titel)) { return h; }
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Ein Projektorfenster von OBS: ein Fenster von obs64/obs32, das nicht das
+    /// Hauptfenster ist (das heisst "OBS 32.x - Profil ..."). Nach dem Prozess und nicht
+    /// nach dem Titel gesucht -- "Windowed Projector" heisst auf Deutsch "Fensterprojektor".
+    /// </summary>
+    internal static IntPtr ObsProjektor()
+    {
+        foreach (var (h, t) in Sichtbare())
+        {
+            if (t.StartsWith("OBS", StringComparison.OrdinalIgnoreCase)) { continue; }
+            GetWindowThreadProcessId(h, out var pid);
+            try
+            {
+                using var p = System.Diagnostics.Process.GetProcessById((int)pid);
+                if (p.ProcessName.StartsWith("obs", StringComparison.OrdinalIgnoreCase)) { return h; }
+            }
+            catch (Exception)
+            {
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    /// <summary>Ein Fenster, das nach Xbox Remote Play aussieht (Xbox-App oder xbox.com/play im Browser).</summary>
+    internal static string? XboxVorschlag()
+    {
+        var titel = Sichtbare().Select(f => f.Titel).ToList();
+        return titel.FirstOrDefault(t => t.Trim().Equals("Xbox", StringComparison.OrdinalIgnoreCase))
+               ?? titel.FirstOrDefault(t => t.Contains("Xbox Cloud Gaming", StringComparison.OrdinalIgnoreCase)
+                                            || t.Contains("xbox.com", StringComparison.OrdinalIgnoreCase))
+               ?? titel.FirstOrDefault(t => t.StartsWith("Xbox", StringComparison.OrdinalIgnoreCase));
+    }
+}

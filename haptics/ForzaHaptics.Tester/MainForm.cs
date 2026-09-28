@@ -8,6 +8,21 @@ namespace ForzaHaptics.Tester;
 
 internal sealed class MainForm : Form, ITelemetryHost
 {
+    /// <summary>
+    /// Nur ein Bild des Fensters (--main-preview, fuer Anleitungen): kein Controller,
+    /// kein Empfang, kein Dashboard -- alles, was am ersten Zeigen haengt, bleibt aus --,
+    /// und das Fenster nimmt niemandem den Fokus.
+    /// </summary>
+    internal static bool NurVorschau;
+
+    protected override bool ShowWithoutActivation => NurVorschau;
+
+    protected override void OnShown(EventArgs e)
+    {
+        if (NurVorschau) { return; }
+        base.OnShown(e);
+    }
+
     private static readonly Color WindowColor = Color.FromArgb(18, 20, 24);
     private static readonly Color PanelColor = Color.FromArgb(27, 30, 36);
     private static readonly Color MutedColor = Color.FromArgb(180, 185, 194);
@@ -250,6 +265,12 @@ internal sealed class MainForm : Form, ITelemetryHost
         };
         whatItDoes.LinkClicked += (_, _) => Disclosure.Zeigen(erstesMal: false);
 
+        // DER SCHALTER PC / XBOX (seit 2026-09-28): oben, wo man ihn findet -- vorher
+        // war es ein Haken im Reiter "Live grip telemetry", und danach ein Neustart von Hand.
+        var imKonsolenModus = Rivals.OverlaySettings.Load().ConsoleMode;
+        var modusSchalter = Konsole.Modusschalter(imKonsolenModus, ModusWechseln);
+        modusSchalter.Location = new Point(12, 84);
+
         // SPRACHE. Vorgabe ist die von Windows; wer sie hier umstellt, bekommt die
         // Wahl beim naechsten Start wieder -- WinForms baut die schon gesetzten
         // Beschriftungen nicht von selbst neu, und sie zur Laufzeit alle
@@ -331,6 +352,14 @@ internal sealed class MainForm : Form, ITelemetryHost
         reconnectHost.Controls.Add(startZeile);
         textPanel.Controls.Add(title);
         textPanel.Controls.Add(whatItDoes);
+        textPanel.Controls.Add(modusSchalter);
+        // Im Konsolenmodus haengt der Controller an der Konsole: keine Auswahl, kein
+        // "Suche Steam Controller" -- sondern was hier stattdessen passiert.
+        if (imKonsolenModus)
+        {
+            controllerZeile.Visible = false;
+            _controllerStatus.Text = Loc.T("Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.");
+        }
         header.Controls.Add(textPanel);
         header.Controls.Add(reconnectHost);
         header.Controls.Add(logo);
@@ -669,7 +698,11 @@ internal sealed class MainForm : Form, ITelemetryHost
 
         var telemetryInstructions = new Label
         {
-            Text = Loc.T("FH6: Data Out On  |  IP 127.0.0.1  |  Format Sled  |  Port must match below"),
+            // Im Konsolenmodus nicht 127.0.0.1: das Spiel laeuft woanders und schickt hierher.
+            Text = Rivals.OverlaySettings.Load().ConsoleMode
+                ? string.Format(Loc.T("FH6 on the Xbox / other PC: Data Out On  |  IP {0}  |  Port must match below"),
+                                Konsole.AdressenText())
+                : Loc.T("FH6: Data Out On  |  IP 127.0.0.1  |  Format Sled  |  Port must match below"),
             ForeColor = MutedColor,
             AutoSize = true,
             Location = new Point(25, 54)
@@ -762,7 +795,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             Location = new Point(690, 506)
         };
 
-        telemetryTab.Controls.Add(Konsole.Feld(_rivals!.Settings, new Point(700, 18)));
+        telemetryTab.Controls.Add(Konsole.Feld(_rivals!.Settings, new Point(700, 18), () => TelemetryPort));
         telemetryTab.Controls.AddRange([
             telemetryTitle,
             telemetryInstructions,
@@ -2030,6 +2063,23 @@ internal sealed class MainForm : Form, ITelemetryHost
     // The tab is built before the port box is, so this has to hold up during
     // construction: it crashed the app on start-up when it did not.
     public int TelemetryPort => _portNumber is null ? 5300 : (int)_portNumber.Value;
+
+    /// <summary>PC- oder Konsolenmodus -- nach einer Rueckfrage, denn es heisst Neustart.</summary>
+    private void ModusWechseln(bool konsole)
+    {
+        var text = konsole
+            ? Loc.T("FH Companion restarts in Xbox / 2nd PC mode: the telemetry comes over the network and the HUD shows in a dashboard window.")
+            : Loc.T("FH Companion restarts in PC mode: the game runs on this PC.");
+        if (MessageBox.Show(this, text, Loc.T("Switch mode"), MessageBoxButtons.OKCancel,
+                            MessageBoxIcon.Information) != DialogResult.OK)
+        {
+            return;
+        }
+        var s = _rivals?.Settings ?? Rivals.OverlaySettings.Load();
+        s.ConsoleMode = konsole;
+        s.Save();
+        Application.Restart();
+    }
 
     public bool TelemetryRunning => _telemetryClient is not null;
 

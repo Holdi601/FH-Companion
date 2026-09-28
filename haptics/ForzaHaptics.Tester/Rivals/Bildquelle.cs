@@ -48,13 +48,120 @@ internal static class Bildquellen
         }
     }
 
-    /// <summary>Die Quelle zu den Einstellungen: Geraet oder Adresse; Fenster und "keine" brauchen keine.</summary>
-    public static IBildquelle? Erzeuge(OverlaySettings s) => (s.VideoSource ?? "none").ToLowerInvariant() switch
+    /// <summary>Der Name, unter dem OBS seine virtuelle Kamera anmeldet.</summary>
+    public const string ObsKamera = "OBS Virtual Camera";
+
+    /// <summary>Der Titelteil von OBS' Fensterprojektor ("Windowed Projector (Program)").</summary>
+    public const string ObsProjektor = "Projector";
+
+    /// <summary>
+    /// Die Quelle zu den Einstellungen -- die vier Wege, das Spielbild herzuholen (seit
+    /// 2026-09-28): Aufnahmekarte ("device"), OBS ("obs"), ein Fenster wie Xbox Remote
+    /// Play ("window"), eine Stromadresse ("url").
+    /// </summary>
+    public static IBildquelle? Erzeuge(OverlaySettings s) => StandbildQuelle.FuerVorschau(s) ?? (s.VideoSource ?? "none").ToLowerInvariant() switch
     {
         "device" when !string.IsNullOrWhiteSpace(s.VideoDevice) => new GeraeteQuelle(s.VideoDevice!),
-        "url" when !string.IsNullOrWhiteSpace(s.VideoUrl) => new StromQuelle(s.VideoUrl!, s.FfmpegPath),
+        "obs" => new ObsQuelle(),
+        "window" when !string.IsNullOrWhiteSpace(s.VideoWindow) && FensterQuelle.Unterstuetzt
+            => new FensterQuelle(s.VideoWindow!),
+        "url" when !string.IsNullOrWhiteSpace(s.VideoUrl) => new StromQuelle(s.VideoUrl!, Ffmpeg.Finden(s.FfmpegPath)),
         _ => null,
     };
+
+    /// <summary>
+    /// Die Einstellungen anwenden -- beim Start und SOFORT, wenn im Bedienfeld eine
+    /// andere Quelle gewaehlt wird (kein Neustart mehr).
+    /// </summary>
+    /// <remarks>
+    /// Ohne Graphics Capture (altes Windows) liest die Fenster-Quelle wie frueher vom
+    /// Schirm: dann muss das Fenster sichtbar bleiben.
+    /// </remarks>
+    public static void Anwenden(OverlaySettings s)
+    {
+        if (!s.ConsoleMode)
+        {
+            GameArea.FensterTitel = null;
+            Aktiv = null;
+            return;
+        }
+        var fenster = string.Equals(s.VideoSource, "window", StringComparison.OrdinalIgnoreCase);
+        GameArea.FensterTitel = fenster && !FensterQuelle.Unterstuetzt ? s.VideoWindow : null;
+        Aktiv = Erzeuge(s);
+    }
+
+    /// <summary>
+    /// Wo im Bild das 16:9-Spielbild liegt -- innerhalb der Flaeche <paramref name="flaeche"/>.
+    /// </summary>
+    /// <remarks>
+    /// Ein Fenster (Xbox Remote Play, Browser, Projektor) zeigt das Spiel oft mit Balken:
+    /// schwarz oder in einer einfarbigen Seitenfarbe. Gleichfoermige Randzeilen und
+    /// -spalten werden abgeschnitten -- aber NUR, wenn danach 16:9 uebrig bleibt. Ein
+    /// gleichmaessig blauer Himmel oben im Spiel ist auch gleichfoermig; abgeschnitten
+    /// ergaebe er kein 16:9 und bleibt deshalb stehen. Passt nichts, wird die Flaeche
+    /// mittig auf 16:9 gebracht.
+    /// </remarks>
+    internal static unsafe Rectangle Spielbild(Bitmap bild, Rectangle flaeche)
+    {
+        flaeche.Intersect(new Rectangle(0, 0, bild.Width, bild.Height));
+        if (flaeche.Width < 16 || flaeche.Height < 9) { return new Rectangle(0, 0, bild.Width, bild.Height); }
+        var daten = bild.LockBits(new Rectangle(0, 0, bild.Width, bild.Height),
+                                  System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                                  System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        try
+        {
+            byte* basis = (byte*)daten.Scan0;
+            int Hell(int x, int y)
+            {
+                var p = basis + (y * daten.Stride) + (x * 4);
+                return (p[0] + (2 * p[1]) + p[2]) >> 2;
+            }
+            bool ZeileGleich(int y)
+            {
+                int min = 255, max = 0;
+                for (var x = flaeche.Left; x < flaeche.Right; x += 4)
+                {
+                    var h = Hell(x, y);
+                    if (h < min) { min = h; }
+                    if (h > max) { max = h; }
+                    if (max - min > 12) { return false; }
+                }
+                return true;
+            }
+            bool SpalteGleich(int x, int oben, int unten)
+            {
+                int min = 255, max = 0;
+                for (var y = oben; y < unten; y += 4)
+                {
+                    var h = Hell(x, y);
+                    if (h < min) { min = h; }
+                    if (h > max) { max = h; }
+                    if (max - min > 12) { return false; }
+                }
+                return true;
+            }
+            int o = flaeche.Top, u = flaeche.Bottom - 1;
+            while (o < u && ZeileGleich(o)) { o++; }
+            while (u > o && ZeileGleich(u)) { u--; }
+            int l = flaeche.Left, r = flaeche.Right - 1;
+            while (l < r && SpalteGleich(l, o, u + 1)) { l++; }
+            while (r > l && SpalteGleich(r, o, u + 1)) { r--; }
+            var innen = Rectangle.FromLTRB(l, o, r + 1, u + 1);
+            if (innen.Width >= 320 && innen.Height >= 180 && Math.Abs((innen.Width / (double)innen.Height) - (16.0 / 9)) < 0.04)
+            {
+                return innen;
+            }
+        }
+        finally
+        {
+            bild.UnlockBits(daten);
+        }
+        // Mittig auf 16:9.
+        var breite = Math.Min(flaeche.Width, (int)Math.Round(flaeche.Height * 16.0 / 9));
+        var hoehe = Math.Min(flaeche.Height, (int)Math.Round(breite * 9.0 / 16));
+        return new Rectangle(flaeche.Left + ((flaeche.Width - breite) / 2), flaeche.Top + ((flaeche.Height - hoehe) / 2),
+                             breite, hoehe);
+    }
 
     /// <summary>Die Videogeraete dieses Rechners -- Aufnahmekarten, Kameras, OBS Virtual Camera.</summary>
     public static async Task<List<string>> GeraeteAsync()
@@ -85,11 +192,16 @@ internal static class Bildquellen
     }
 
     /// <summary>Ein WinRT-Bild (BGRA8) in ein GDI+-Bild, eine Zeilenkopie.</summary>
-    internal static unsafe Bitmap AlsBitmap(SoftwareBitmap bgra)
+    /// <param name="ohneAlpha">
+    /// Den Alphakanal nicht beachten. Fenster, die mit GDI zeichnen (WinForms, viele
+    /// Spieler-Programme), hinterlassen dort 0 -- als ARGB gelesen waere das Bild
+    /// voellig durchsichtig.
+    /// </param>
+    internal static unsafe Bitmap AlsBitmap(SoftwareBitmap bgra, bool ohneAlpha = false)
     {
-        var bmp = new Bitmap(bgra.PixelWidth, bgra.PixelHeight, PixelFormat.Format32bppArgb);
-        var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly,
-                                PixelFormat.Format32bppArgb);
+        var format = ohneAlpha ? PixelFormat.Format32bppRgb : PixelFormat.Format32bppArgb;
+        var bmp = new Bitmap(bgra.PixelWidth, bgra.PixelHeight, format);
+        var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, format);
         try
         {
             using var puffer = bgra.LockBuffer(BitmapBufferAccessMode.Read);
@@ -122,6 +234,7 @@ internal sealed class GeraeteQuelle : IBildquelle
     private MediaCapture? _aufnahme;
     private MediaFrameReader? _leser;
     private Bitmap? _letztes;
+    private Bitmap? _vorletztes;
     private DateTime _letztesAm = DateTime.MinValue;
     private bool _zu;
 
@@ -197,7 +310,8 @@ internal sealed class GeraeteQuelle : IBildquelle
                     ? SoftwareBitmap.Copy(weich)
                     : SoftwareBitmap.Convert(weich, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
                 var neu = Bildquellen.AlsBitmap(bgra);
-                _letztes?.Dispose();
+                _vorletztes?.Dispose();
+                _vorletztes = _letztes;
                 _letztes = neu;
                 _letztesAm = DateTime.UtcNow;
             }
@@ -218,10 +332,141 @@ internal sealed class GeraeteQuelle : IBildquelle
             _leser?.Dispose();
             _aufnahme?.Dispose();
             _letztes?.Dispose();
+            _vorletztes?.Dispose();
+            _vorletztes = null;
             _leser = null;
             _aufnahme = null;
             _letztes = null;
         }
+    }
+}
+
+/// <summary>
+/// OBS als Quelle: seine virtuelle Kamera, wenn Windows sie als Videogeraet kennt --
+/// sonst ein Fensterprojektor von OBS, aufgenommen wie jedes andere Fenster.
+/// </summary>
+/// <remarks>
+/// GEMESSEN am 2026-09-28 (OBS 32, Windows 11): die OBS Virtual Camera ist ein
+/// DirectShow-Filter, und Media Foundation -- womit die App Videogeraete oeffnet --
+/// fuehrt sie nicht. Der Fensterprojektor geht immer: in OBS Rechtsklick auf die
+/// Vorschau, "Windowed Projector (Program)". Er darf verdeckt sein, nur nicht minimiert.
+/// </remarks>
+internal sealed class ObsQuelle : IBildquelle
+{
+    private readonly object _schloss = new();
+    private IBildquelle _jetzt;
+    private bool _zu;
+
+    public ObsQuelle()
+    {
+        _jetzt = new FensterQuelle("OBS projector", Fenster.ObsProjektor);
+        _ = KameraSuchenAsync();
+    }
+
+    private async Task KameraSuchenAsync()
+    {
+        var geraete = await Bildquellen.GeraeteAsync();
+        var kamera = geraete.FirstOrDefault(g => g.Contains("OBS", StringComparison.OrdinalIgnoreCase));
+        if (kamera is null) { return; }
+        lock (_schloss)
+        {
+            if (_zu) { return; }
+            var alt = _jetzt;
+            _jetzt = new GeraeteQuelle(kamera);
+            try { alt.Dispose(); } catch (Exception) { }
+        }
+    }
+
+    public string Beschreibung
+    {
+        get { lock (_schloss) { return "OBS -- " + _jetzt.Beschreibung; } }
+    }
+
+    public Bitmap? Neuestes()
+    {
+        lock (_schloss) { return _jetzt.Neuestes(); }
+    }
+
+    public void Dispose()
+    {
+        lock (_schloss)
+        {
+            _zu = true;
+            try { _jetzt.Dispose(); } catch (Exception) { }
+        }
+    }
+}
+
+/// <summary>
+/// Nur fuer Anleitungsbilder (--main-preview): ein Standbild des Spiels anstelle der
+/// gewaehlten Quelle, damit die Vorschau zeigt, was mit angeschlossener Xbox zu sehen
+/// waere. Greift ausschliesslich mit MainForm.NurVorschau und FHC_PREVIEW_PICTURE.
+/// </summary>
+internal sealed class StandbildQuelle : IBildquelle
+{
+    private readonly Bitmap _bild;
+    private readonly string _art;
+
+    private StandbildQuelle(Bitmap bild, string art)
+    {
+        _bild = bild;
+        _art = art;
+    }
+
+    public static IBildquelle? FuerVorschau(OverlaySettings s)
+    {
+        if (!MainForm.NurVorschau || (s.VideoSource ?? "none") == "none") { return null; }
+        var pfad = Environment.GetEnvironmentVariable("FHC_PREVIEW_PICTURE");
+        if (string.IsNullOrWhiteSpace(pfad) || !File.Exists(pfad)) { return null; }
+        var art = (s.VideoSource ?? string.Empty).ToLowerInvariant() switch
+        {
+            "device" => "video device: " + (s.VideoDevice ?? "capture card"),
+            "obs" => "OBS -- window: Windowed Projector (Program)",
+            "window" => "window: " + (s.VideoWindow ?? "Xbox"),
+            _ => "stream: " + (s.VideoUrl ?? string.Empty),
+        };
+        return new StandbildQuelle(new Bitmap(pfad), art);
+    }
+
+    public string Beschreibung => _art;
+
+    public Bitmap? Neuestes() => _bild;
+
+    public void Dispose() => _bild.Dispose();
+}
+
+/// <summary>Wo ffmpeg liegt: Einstellung, PATH, winget (Gyan.FFmpeg / BtbN) -- oder null.</summary>
+internal static class Ffmpeg
+{
+    public static string? Finden(string? eingestellt)
+    {
+        if (!string.IsNullOrWhiteSpace(eingestellt) && File.Exists(eingestellt)) { return eingestellt; }
+        try
+        {
+            foreach (var ordner in (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator))
+            {
+                if (string.IsNullOrWhiteSpace(ordner)) { continue; }
+                var p = Path.Combine(ordner.Trim('"'), "ffmpeg.exe");
+                if (File.Exists(p)) { return p; }
+            }
+            var winget = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                      "Microsoft", "WinGet");
+            var link = Path.Combine(winget, "Links", "ffmpeg.exe");
+            if (File.Exists(link)) { return link; }
+            var pakete = Path.Combine(winget, "Packages");
+            if (Directory.Exists(pakete))
+            {
+                foreach (var paket in Directory.EnumerateDirectories(pakete, "*FFmpeg*"))
+                {
+                    var treffer = Directory.EnumerateFiles(paket, "ffmpeg.exe", SearchOption.AllDirectories).FirstOrDefault();
+                    if (treffer is not null) { return treffer; }
+                }
+            }
+        }
+        catch (Exception)
+        {
+        }
+        return null;
     }
 }
 
@@ -241,6 +486,7 @@ internal sealed class StromQuelle : IBildquelle
     private Process? _prozess;
     private byte[]? _letztes;
     private Bitmap? _bild;
+    private Bitmap? _altesBild;
     private bool _bildAktuell;
     private volatile bool _zu;
 
@@ -249,7 +495,7 @@ internal sealed class StromQuelle : IBildquelle
     public StromQuelle(string adresse, string? ffmpeg)
     {
         _adresse = adresse;
-        _ffmpeg = string.IsNullOrWhiteSpace(ffmpeg) ? "ffmpeg" : ffmpeg;
+        _ffmpeg = ffmpeg;
         Beschreibung = "stream: connecting";
         _faden = new Thread(Lesen) { IsBackground = true, Name = "stream source", Priority = ThreadPriority.BelowNormal };
         _faden.Start();
@@ -258,6 +504,11 @@ internal sealed class StromQuelle : IBildquelle
     private void Lesen()
     {
         var bildBytes = Breite * Hoehe * 4;
+        if (_ffmpeg is null)
+        {
+            Beschreibung = "stream needs ffmpeg (not found) -- run: winget install Gyan.FFmpeg";
+            return;
+        }
         while (!_zu)
         {
             try
@@ -302,7 +553,7 @@ internal sealed class StromQuelle : IBildquelle
             }
             catch (System.ComponentModel.Win32Exception)
             {
-                Beschreibung = "stream needs ffmpeg (not found) -- install ffmpeg or use the OBS Virtual Camera";
+                Beschreibung = "stream needs ffmpeg (not found) -- run: winget install Gyan.FFmpeg";
                 return;
             }
             catch (Exception e)
@@ -319,8 +570,9 @@ internal sealed class StromQuelle : IBildquelle
         {
             if (_letztes is null) { return null; }
             if (_bild is not null && _bildAktuell) { return _bild; }
-            _bild ??= new Bitmap(Breite, Hoehe, PixelFormat.Format32bppArgb);
-            var data = _bild.LockBits(new Rectangle(0, 0, Breite, Hoehe), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            // Ein NEUES Bild: das bisherige zeichnet vielleicht gerade ein Leser.
+            var neu = new Bitmap(Breite, Hoehe, PixelFormat.Format32bppArgb);
+            var data = neu.LockBits(new Rectangle(0, 0, Breite, Hoehe), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
             try
             {
                 for (var zeile = 0; zeile < Hoehe; zeile++)
@@ -331,8 +583,11 @@ internal sealed class StromQuelle : IBildquelle
             }
             finally
             {
-                _bild.UnlockBits(data);
+                neu.UnlockBits(data);
             }
+            _altesBild?.Dispose();
+            _altesBild = _bild;
+            _bild = neu;
             _bildAktuell = true;
             return _bild;
         }
@@ -345,7 +600,9 @@ internal sealed class StromQuelle : IBildquelle
         {
             try { if (_prozess is { HasExited: false }) { _prozess.Kill(); } } catch (Exception) { }
             _bild?.Dispose();
+            _altesBild?.Dispose();
             _bild = null;
+            _altesBild = null;
         }
     }
 }

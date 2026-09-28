@@ -443,18 +443,8 @@ internal sealed class OverlayController : IDisposable
 
         // KONSOLENMODUS: das Spielbild kommt aus einer Videoquelle (oder gar nicht), und
         // ueber diesem Schirm liegt nichts -- gezeigt wird im Dashboard (AufnahmeFenster).
-        if (_settings.ConsoleMode)
-        {
-            GameArea.FensterTitel = string.Equals(_settings.VideoSource, "window", StringComparison.OrdinalIgnoreCase)
-                ? _settings.VideoWindow : null;
-            Bildquellen.Aktiv = Bildquellen.Erzeuge(_settings);
-            OverlayAusgabe.SetzeImSpiel(false);
-        }
-        else
-        {
-            GameArea.FensterTitel = null;
-            Bildquellen.Aktiv = null;
-        }
+        Bildquellen.Anwenden(_settings);
+        if (_settings.ConsoleMode) { OverlayAusgabe.SetzeImSpiel(false); }
 
         // DIE SPIELFLAECHE, nicht der Hauptschirm -- siehe GameArea. Laeuft das Spiel
         // noch nicht, ist es vorerst der Hauptschirm; FollowGameArea zieht nach.

@@ -62,6 +62,7 @@ internal static class EdgeCaseTest
         CelebrationsWaitWhileDriving();
         ConsoleModeReadsItsSource();
         FullTelemetryTravelsWithTheLap();
+        PictureSourcesFindTheGame();
     }
 
     /// <summary>Eine Bildquelle zum Testen: ein festes Bild.</summary>
@@ -82,6 +83,77 @@ internal static class EdgeCaseTest
     /// Speicher, und fuer eine wartende Runde aus ihrer Nebendatei. Kein lokaler Pfad
     /// darf dabei in den Rumpf geraten.
     /// </summary>
+    /// <summary>
+    /// Die vier Wege zum Spielbild (seit 2026-09-28): das 16:9-Spielbild in einem Fenster
+    /// mit Balken finden -- und einen gleichmaessigen Himmel NICHT fuer einen Balken halten;
+    /// ein Fenster per Graphics Capture aufnehmen, auch ausserhalb des Schirms.
+    /// </summary>
+    private static void PictureSourcesFindTheGame()
+    {
+        // Ein 1600x1000-Fenster, darin ein 1440x810-Spielbild mit schwarzen Balken.
+        using (var bild = new Bitmap(1600, 1000, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+        {
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.Black);
+                using var pinsel = new System.Drawing.Drawing2D.LinearGradientBrush(
+                    new Rectangle(80, 95, 1440, 810), Color.DarkGreen, Color.Orange, 30f);
+                g.FillRectangle(pinsel, 80, 95, 1440, 810);
+                g.FillEllipse(Brushes.White, 700, 400, 200, 120);
+            }
+            var r = Rivals.Bildquellen.Spielbild(bild, new Rectangle(0, 0, 1600, 1000));
+            Soll(Math.Abs(r.X - 80) <= 2 && Math.Abs(r.Y - 95) <= 2 && Math.Abs(r.Width - 1440) <= 4
+                 && Math.Abs(r.Height - 810) <= 4,
+                 $"das Spielbild in den Balken wurde nicht gefunden: {r}");
+        }
+        // Ein Spielbild OHNE Balken mit einem einfarbigen Himmel oben: nichts abschneiden.
+        using (var bild = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+        {
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.FromArgb(90, 150, 220));
+                g.FillRectangle(Brushes.DimGray, 0, 500, 1920, 580);
+                g.FillRectangle(Brushes.Gold, 900, 700, 200, 120);
+            }
+            var r = Rivals.Bildquellen.Spielbild(bild, new Rectangle(0, 0, 1920, 1080));
+            Soll(r == new Rectangle(0, 0, 1920, 1080), $"ein blauer Himmel wurde als Balken abgeschnitten: {r}");
+        }
+        // Eine Flaeche, die nicht 16:9 ist und keine Balken hat: mittig auf 16:9.
+        using (var bild = new Bitmap(1000, 1000, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+        {
+            using (var g = Graphics.FromImage(bild))
+            {
+                using var pinsel = new System.Drawing.Drawing2D.LinearGradientBrush(
+                    new Rectangle(0, 0, 1000, 1000), Color.Red, Color.Blue, 45f);
+                g.FillRectangle(pinsel, 0, 0, 1000, 1000);
+            }
+            var r = Rivals.Bildquellen.Spielbild(bild, new Rectangle(0, 0, 1000, 1000));
+            Soll(r.Width == 1000 && Math.Abs(r.Height - 563) <= 1 && Math.Abs(r.Y - 218) <= 1,
+                 $"eine quadratische Flaeche wurde nicht mittig auf 16:9 gebracht: {r}");
+        }
+
+        // Die Einstellungen: OBS braucht nichts weiter, die anderen ihren Namen.
+        var s = new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "obs" };
+        Soll(s.HasVideoSource, "OBS gilt nicht als Quelle");
+        s.VideoSource = "window";
+        Soll(!s.HasVideoSource, "ein Fenster ohne Titel gilt als Quelle");
+        s.ConsoleMode = false;
+        Rivals.Bildquellen.Anwenden(s);
+        Soll(Rivals.Bildquellen.Aktiv is null && GameArea.FensterTitel is null,
+             "im PC-Modus blieb eine Videoquelle aktiv");
+        Soll(Rivals.Ffmpeg.Finden(Application.ExecutablePath) == Application.ExecutablePath,
+             "ein eingestellter ffmpeg-Pfad wird nicht genommen");
+
+        // Graphics Capture selbst wird hier NICHT live geprueft: Windows zeichnet Fenster
+        // ausserhalb aller Schirme nicht (gemessen am 2026-09-28: schwarzes Bild, bei -32000
+        // wie rechts daneben), und ein sichtbares Testfenster ist tabu. Von Hand:
+        // "FH Companion.exe --video-sources window <Titel> bild.png".
+        using var fehlt = new Rivals.FensterQuelle("fhc-edge-gibt-es-nicht-7d1c");
+        for (var i = 0; i < 30 && !fehlt.Beschreibung.Contains("not found"); i++) { Thread.Sleep(50); }
+        Soll(fehlt.Beschreibung.Contains("not found") && fehlt.Neuestes() is null,
+             "ein fehlendes Fenster wird nicht als fehlend gemeldet: " + fehlt.Beschreibung);
+    }
+
     private static Rivals.TelemetryTrack TestSpur()
     {
         var spur = new Rivals.TelemetryTrack();

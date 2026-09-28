@@ -5,6 +5,9 @@ linked notes.
 
 ## Before the first start
 
+Step by step with pictures: [Setting up on this PC](setup_pc.md) ·
+[Setting up on an Xbox or a second PC](setup_xbox.md).
+
 In Forza Horizon 6, under **Settings › HUD and Gameplay**, set:
 
 | Setting | Value |
@@ -238,11 +241,13 @@ it draws.
 ## Console or second PC
 
 For playing on an Xbox, or on another PC, with FH Companion on this computer.
+Step by step with pictures: [Setting up on an Xbox or a second PC](setup_xbox.md).
 
-1. In the **Live grip telemetry** tab, tick **The game runs on an Xbox or another
-   PC** and restart the app.
+1. At the top of the window, next to **The game runs on:**, click **Xbox / 2nd
+   PC**. The app asks once and restarts in that mode. **This PC** switches back.
 2. On the Xbox or the gaming PC, set Forza's **Data Out** to the address shown in
-   the tab, with the port from the same tab.
+   the **Live grip telemetry** tab, with the port from the same tab. Only real
+   network cards are listed; virtual ones (Hyper-V, WSL, VPN) are left out.
 3. The **dashboard** window opens by itself. Double-click it or press F11 for
    full screen, and Esc to leave full screen.
 
@@ -254,16 +259,28 @@ What works and what does not:
 - **Off:** the tuning inspector and tunes (they read the game's memory and
   save), the vibration test, the Blueprint editor and all controller haptics.
   The controller is on the other device.
-- **Needs a video source:** the Event Sign Up maps, the car recommendations,
-  the car note from My Cars, and detecting Rivals and Horizon Play. Choose
-  under **Video source for screen reading**:
-  - **A window on this PC** that shows the game (an OBS projector, a capture
-    card's software, the Xbox app). Enter part of its title. The window has to
-    stay visible.
-  - **A video device:** a capture card, or the **OBS Virtual Camera**, which
-    passes on anything OBS shows, including network streams.
-  - **A stream address** (RTSP, HLS, RTMP, SRT). This needs ffmpeg installed.
-- **Without a video source,** set **Which mode you are playing** so your laps
+- **Needs the game's picture:** the Event Sign Up maps, the car recommendations,
+  the car note from My Cars, and detecting Rivals and Horizon Play. Choose one of
+  four ways under **Game picture (optional)**; a preview underneath shows what
+  the app sees, and a change applies at once:
+  - **Capture card:** the Xbox's HDMI goes through the card (Elgato and the like)
+    to the TV. The app lists the video devices of this PC.
+  - **OBS:** in OBS, right-click the preview and choose **Windowed Projector
+    (Program)**. The app finds that window by itself. (OBS's Virtual Camera is a
+    DirectShow device, which Windows' own video API does not list; if a future
+    OBS registers it properly, the app takes it instead.)
+  - **Xbox Remote Play:** start Remote Play in the Xbox app or at xbox.com/play;
+    the app suggests the Xbox window. It is captured through Windows Graphics
+    Capture, so it may sit behind other windows, but it must be on a screen and
+    not minimized. Windows draws a yellow frame around a window while an app
+    captures it.
+  - **Stream address** (SRT, RTMP, RTSP, HLS): read through ffmpeg. The app finds
+    ffmpeg on the PATH or from winget; without it, run `winget install
+    Gyan.FFmpeg` once. A stream is a few seconds late, which is fine for menus.
+
+  In a window, the game's 16:9 picture is cut out of any black or plain bars
+  around it, but only when what remains is 16:9 — a flat sky is not a bar.
+- **Without a game picture,** set **Which mode you are playing** so your laps
   carry the right mode. Only Rivals and Horizon Play laps count on the website.
 
 ## Updating

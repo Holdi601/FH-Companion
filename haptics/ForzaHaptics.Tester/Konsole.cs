@@ -12,31 +12,50 @@ namespace ForzaHaptics.Tester;
 /// Das Spiel laeuft auf einer Xbox oder einem anderen PC und schickt seine Telemetrie
 /// hierher. Was nur Telemetrie braucht, laeuft weiter (Delta, Eingabespuren, Live-Karte,
 /// Reifen, Rundenaufzeichnung, eigene Rekorde) und steht im Dashboard. Was den Speicher
-/// oder den Spielstand des Spiels liest oder den Controller ansteuert, faellt weg. Den
-/// Schirm lesen geht mit einer Videoquelle (Fenster, Videogeraet, Stromadresse).
+/// oder den Spielstand des Spiels liest oder den Controller ansteuert, faellt weg.
+///
+/// Umgeschaltet wird oben im Fenster ("This PC" / "Xbox / 2nd PC", siehe
+/// <see cref="Modusschalter"/>). Hier stehen die Schritte danach: was an der Konsole
+/// einzutragen ist, woher das Spielbild kommt (vier Wege), welcher Modus gefahren wird.
 /// </remarks>
 internal static class Konsole
 {
     /// <summary>Die IPv4-Adressen dieses Rechners im Netz, fuer "Data Out" an der Konsole.</summary>
+    /// <remarks>
+    /// NUR KARTEN MIT EINEM GATEWAY, wenn es solche gibt: Hyper-V, WSL und VPNs legen
+    /// virtuelle Karten an (172.x, 10.x), die die Xbox nie erreicht. Gemessen am
+    /// 2026-09-28: neben 192.168.2.4 stand 172.18.144.1 -- die WSL-Bruecke.
+    /// </remarks>
     internal static List<string> Adressen()
     {
-        var raus = new List<string>();
+        // Fuer Anleitungsbilder (--main-preview): eine Beispieladresse statt der echten.
+        if (MainForm.NurVorschau && Environment.GetEnvironmentVariable("FHC_PREVIEW_ADDRESS") is { Length: > 0 } beispiel)
+        {
+            return new List<string> { beispiel };
+        }
+        var mitGateway = new List<string>();
+        var alle = new List<string>();
         try
         {
             foreach (var karte in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (karte.OperationalStatus != OperationalStatus.Up
                     || karte.NetworkInterfaceType == NetworkInterfaceType.Loopback) { continue; }
-                foreach (var a in karte.GetIPProperties().UnicastAddresses)
+                var eigenschaften = karte.GetIPProperties();
+                var gateway = eigenschaften.GatewayAddresses.Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork
+                                                                     && !g.Address.Equals(System.Net.IPAddress.Any));
+                foreach (var a in eigenschaften.UnicastAddresses)
                 {
-                    if (a.Address.AddressFamily == AddressFamily.InterNetwork) { raus.Add(a.Address.ToString()); }
+                    if (a.Address.AddressFamily != AddressFamily.InterNetwork) { continue; }
+                    alle.Add(a.Address.ToString());
+                    if (gateway) { mitGateway.Add(a.Address.ToString()); }
                 }
             }
         }
         catch (Exception)
         {
         }
-        return raus.Distinct().ToList();
+        return (mitGateway.Count > 0 ? mitGateway : alle).Distinct().ToList();
     }
 
     internal static string AdressenText()
@@ -45,112 +64,236 @@ internal static class Konsole
         return a.Count == 0 ? Loc.T("this PC's network address") : string.Join(", ", a);
     }
 
-    /// <summary>Das Bedienfeld: Schalter, Adresse, Videoquelle, Modus der Runden, Neustart.</summary>
-    internal static Control Feld(Rivals.OverlaySettings s, Point ort)
+    /// <summary>Die vier Wege zum Spielbild, dazu "keins" -- Schluessel wie in OverlaySettings.VideoSource.</summary>
+    internal static readonly string[] Quellen = { "none", "device", "obs", "window", "url" };
+
+    private static readonly Color Grau = Color.FromArgb(147, 162, 181);
+
+    /// <summary>Das Bedienfeld. Im PC-Modus nur der Hinweis auf den Schalter oben.</summary>
+    internal static Control Feld(Rivals.OverlaySettings s, Point ort, Func<int>? port = null)
     {
-        var grau = Color.FromArgb(147, 162, 181);
         var stapel = new FlowLayoutPanel
         {
             Location = ort, Width = 500, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
             FlowDirection = FlowDirection.TopDown, WrapContents = false,
             BackColor = Color.FromArgb(28, 33, 40), Padding = new Padding(12, 8, 12, 12),
         };
-        Label Kopf(string text) => new()
+        if (!s.ConsoleMode)
         {
-            Text = text, ForeColor = Color.White, Font = new Font("Segoe UI Semibold", 11f), AutoSize = true,
-            Margin = new Padding(0, 6, 0, 4),
-        };
-        Label Notiz(string text) => new()
+            stapel.Controls.Add(Kopf(Loc.T("Playing on an Xbox or another PC?")));
+            stapel.Controls.Add(Notiz(Loc.T("Switch to “Xbox / 2nd PC” at the top of the window.")));
+            return stapel;
+        }
+
+        stapel.Controls.Add(Kopf(Loc.T("Xbox / 2nd PC")));
+        stapel.Controls.Add(Notiz(string.Format(Loc.T(
+            "In Forza on the Xbox or the other PC: Settings → HUD and Gameplay → Data Out: On, Data Out IP Address: {0}, Data Out IP Port: {1}."),
+            AdressenText(), port?.Invoke() ?? 5300)));
+
+        // ---- DAS SPIELBILD: vier Wege ------------------------------------------------
+        stapel.Controls.Add(Kopf(Loc.T("Game picture (optional)")));
+        stapel.Controls.Add(Notiz(Loc.T(
+            "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.")));
+
+        var texte = new Dictionary<string, string>
         {
-            Text = text, ForeColor = grau, AutoSize = true, MaximumSize = new Size(470, 0),
-            Margin = new Padding(0, 3, 0, 3),
+            ["none"] = Loc.T("None -- telemetry only"),
+            ["device"] = Loc.T("Capture card"),
+            ["obs"] = "OBS",
+            ["window"] = Loc.T("Xbox Remote Play"),
+            ["url"] = Loc.T("Stream address"),
         };
-        var neustart = new Button
+        var hilfen = new Dictionary<string, string>
         {
-            Text = Loc.T("Restart the app to apply"), AutoSize = true, FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(38, 44, 52), ForeColor = Color.WhiteSmoke, Visible = false,
-            Margin = new Padding(0, 8, 0, 0),
+            ["none"] = string.Empty,
+            ["device"] = Loc.T("Connect the Xbox to the capture card and pick the card here."),
+            ["obs"] = Loc.T("In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized."),
+            ["window"] = Loc.T("Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized."),
+            ["url"] = string.Empty,
         };
-        neustart.Click += (_, _) => Application.Restart();
-        void Geaendert()
+
+        var jetzt = Array.IndexOf(Quellen, (s.VideoSource ?? "none").ToLowerInvariant());
+        if (jetzt < 0) { jetzt = 0; }
+        var knoepfe = new List<RadioButton>();
+        var felder = new Dictionary<string, Control>();
+
+        // Aufnahmekarte: die Videogeraete dieses Rechners (ohne virtuelle Kameras).
+        var geraet = new ComboBox { Width = 300, DropDownStyle = ComboBoxStyle.DropDown, Text = s.VideoDevice ?? string.Empty,
+                                    Margin = new Padding(22, 0, 0, 2) };
+        // Xbox Remote Play: ein Fenster; vorgeschlagen wird das der Xbox-App.
+        var fenster = new ComboBox { Width = 300, DropDownStyle = ComboBoxStyle.DropDown,
+                                     Text = string.Equals(s.VideoSource, "window", StringComparison.OrdinalIgnoreCase)
+                                         ? s.VideoWindow ?? string.Empty : string.Empty,
+                                     Margin = new Padding(22, 0, 0, 2) };
+        var adresse = new TextBox { Width = 440, Text = s.VideoUrl ?? string.Empty,
+                                    PlaceholderText = "srt://… / rtmp://… / https://….m3u8", Margin = new Padding(22, 0, 0, 2) };
+        var ffmpeg = Notiz(string.Empty);
+        ffmpeg.Margin = new Padding(22, 0, 0, 2);
+        felder["device"] = geraet;
+        felder["window"] = fenster;
+        felder["url"] = adresse;
+
+        var vorschau = new PictureBox
+        {
+            Size = new Size(320, 180), SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Black,
+            Margin = new Padding(0, 8, 0, 2),
+        };
+        var zustand = Notiz(Loc.T("No picture yet"));
+
+        void Anwenden()
         {
             s.Save();
-            neustart.Visible = true;
+            Rivals.Bildquellen.Anwenden(s);
         }
 
-        stapel.Controls.Add(Kopf(Loc.T("Console or second PC")));
-        var an = new CheckBox
+        void ZeigeFelder()
         {
-            Text = Loc.T("The game runs on an Xbox or another PC"), ForeColor = Color.Gainsboro,
-            AutoSize = true, Checked = s.ConsoleMode,
-        };
-        an.CheckedChanged += (_, _) => { s.ConsoleMode = an.Checked; Geaendert(); };
-        stapel.Controls.Add(an);
-        stapel.Controls.Add(Notiz(string.Format(Loc.T(
-            "The game sends its telemetry here over the network. On the Xbox or the other PC set Data Out to "
-            + "this address: {0}, with the port on the left. Everything that only needs telemetry keeps "
-            + "working and shows in a dashboard window (double-click or F11 for full screen): delta, input "
-            + "traces, live map, tyre overview, lap recording and your records. Memory reading, the tune "
-            + "tools and controller haptics are off -- the game and the controller are on the other device."),
-            AdressenText())));
-
-        stapel.Controls.Add(Kopf(Loc.T("Video source for screen reading")));
-        stapel.Controls.Add(Notiz(Loc.T(
-            "Optional. With the game's picture on this PC the sign-up maps, car recommendations, car notes "
-            + "and mode detection work too. A window must stay visible; a video device (capture card or the "
-            + "OBS Virtual Camera) or a stream address works in the background. A stream address needs "
-            + "ffmpeg; the OBS Virtual Camera passes any source on without it.")));
-        var wahl = new ComboBox { Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
-        var arten = new[] { ("none", Loc.T("None -- telemetry only")), ("window", Loc.T("A window on this PC")),
-                            ("device", Loc.T("A video device")), ("url", Loc.T("A stream address")) };
-        foreach (var (_, text) in arten) { wahl.Items.Add(text); }
-        wahl.SelectedIndex = Math.Max(0, Array.FindIndex(arten, a => string.Equals(a.Item1, s.VideoSource, StringComparison.OrdinalIgnoreCase)));
-        stapel.Controls.Add(wahl);
-
-        var fenster = new TextBox { Width = 300, Text = s.VideoWindow ?? string.Empty, PlaceholderText = Loc.T("part of the window title, e.g. Projector") };
-        fenster.TextChanged += (_, _) => { s.VideoWindow = fenster.Text.Trim(); Geaendert(); };
-        var geraet = new ComboBox { Width = 300, DropDownStyle = ComboBoxStyle.DropDown, Text = s.VideoDevice ?? string.Empty };
-        geraet.TextChanged += (_, _) => { s.VideoDevice = geraet.Text.Trim(); Geaendert(); };
-        var adresse = new TextBox { Width = 460, Text = s.VideoUrl ?? string.Empty, PlaceholderText = "rtsp://… / https://….m3u8 / srt://…" };
-        adresse.TextChanged += (_, _) => { s.VideoUrl = adresse.Text.Trim(); Geaendert(); };
-        stapel.Controls.Add(fenster);
-        stapel.Controls.Add(geraet);
-        stapel.Controls.Add(adresse);
-        var geladen = false;
-        void Zeigen()
-        {
-            var art = arten[Math.Max(0, wahl.SelectedIndex)].Item1;
-            fenster.Visible = art == "window";
+            var art = Quellen[Math.Max(0, knoepfe.FindIndex(k => k.Checked))];
             geraet.Visible = art == "device";
+            fenster.Visible = art == "window";
             adresse.Visible = art == "url";
-            if (art == "device" && !geladen)
+            ffmpeg.Visible = art == "url";
+            foreach (var (schluessel, hilfe) in hilfen)
             {
-                geladen = true;
-                _ = Task.Run(async () =>
-                {
-                    var liste = await Rivals.Bildquellen.GeraeteAsync();
-                    try
-                    {
-                        geraet.BeginInvoke(() =>
-                        {
-                            var jetzt = geraet.Text;
-                            geraet.Items.Clear();
-                            foreach (var n in liste) { geraet.Items.Add(n); }
-                            geraet.Text = jetzt;
-                        });
-                    }
-                    catch (Exception) { }
-                });
+                if (felder.TryGetValue("hilfe:" + schluessel, out var h)) { h.Visible = art == schluessel && hilfe.Length > 0; }
+            }
+            vorschau.Visible = art != "none";
+            zustand.Visible = art != "none";
+            if (art == "url")
+            {
+                var gefunden = Rivals.Ffmpeg.Finden(s.FfmpegPath);
+                ffmpeg.Text = gefunden is null
+                    ? Loc.T("Needs ffmpeg: run “winget install Gyan.FFmpeg” once.")
+                    : Loc.T("ffmpeg found.");
             }
         }
-        wahl.SelectedIndexChanged += (_, _) =>
-        {
-            s.VideoSource = arten[Math.Max(0, wahl.SelectedIndex)].Item1;
-            Zeigen();
-            Geaendert();
-        };
-        Zeigen();
 
+        for (var i = 0; i < Quellen.Length; i++)
+        {
+            var art = Quellen[i];
+            var knopf = new RadioButton
+            {
+                Text = texte[art], AutoSize = true, ForeColor = Color.Gainsboro, Checked = i == jetzt,
+                Margin = new Padding(0, 3, 0, 0),
+            };
+            knopf.CheckedChanged += (_, _) =>
+            {
+                if (!knopf.Checked) { return; }
+                s.VideoSource = art;
+                if (art == "window" && string.IsNullOrWhiteSpace(fenster.Text))
+                {
+                    fenster.Text = Rivals.Fenster.XboxVorschlag() ?? "Xbox";
+                }
+                if (art == "window") { s.VideoWindow = fenster.Text.Trim(); }
+                ZeigeFelder();
+                Anwenden();
+            };
+            knoepfe.Add(knopf);
+            stapel.Controls.Add(knopf);
+            if (felder.TryGetValue(art, out var feld)) { stapel.Controls.Add(feld); }
+            if (art == "url") { stapel.Controls.Add(ffmpeg); }
+            if (hilfen[art].Length > 0)
+            {
+                var h = Notiz(hilfen[art]);
+                h.Margin = new Padding(22, 0, 0, 4);
+                felder["hilfe:" + art] = h;
+                stapel.Controls.Add(h);
+            }
+        }
+
+        // Aenderungen gelten sofort -- erst nach einer kurzen Tipp-Pause, damit nicht
+        // jeder Buchstabe eine Quelle startet.
+        var pause = new System.Windows.Forms.Timer { Interval = 700 };
+        pause.Tick += (_, _) => { pause.Stop(); Anwenden(); };
+        void Spaeter() { pause.Stop(); pause.Start(); }
+        geraet.TextChanged += (_, _) => { s.VideoDevice = geraet.Text.Trim(); Spaeter(); };
+        fenster.TextChanged += (_, _) =>
+        {
+            if (!string.Equals(s.VideoSource, "window", StringComparison.OrdinalIgnoreCase)) { return; }
+            s.VideoWindow = fenster.Text.Trim();
+            Spaeter();
+        };
+        adresse.TextChanged += (_, _) => { s.VideoUrl = adresse.Text.Trim(); Spaeter(); };
+
+        // Die Listen erst beim Aufklappen fuellen: Geraete zu suchen dauert einen Moment.
+        geraet.DropDown += async (_, _) =>
+        {
+            var liste = await Rivals.Bildquellen.GeraeteAsync();
+            var text = geraet.Text;
+            geraet.Items.Clear();
+            foreach (var n in liste.Where(n => !n.Contains("OBS", StringComparison.OrdinalIgnoreCase)))
+            {
+                geraet.Items.Add(n);
+            }
+            geraet.Text = text;
+        };
+        fenster.DropDown += (_, _) =>
+        {
+            var text = fenster.Text;
+            fenster.Items.Clear();
+            foreach (var (_, t) in Rivals.Fenster.Sichtbare().OrderBy(f => f.Titel)) { fenster.Items.Add(t); }
+            fenster.Text = text;
+        };
+        // Ein Geraet vorschlagen, wenn noch keines gewaehlt ist -- meist gibt es genau eines.
+        if (string.IsNullOrWhiteSpace(geraet.Text))
+        {
+            _ = Task.Run(async () =>
+            {
+                var liste = await Rivals.Bildquellen.GeraeteAsync();
+                var erstes = liste.FirstOrDefault(n => !n.Contains("OBS", StringComparison.OrdinalIgnoreCase));
+                if (erstes is null) { return; }
+                try { geraet.BeginInvoke(() => { if (string.IsNullOrWhiteSpace(geraet.Text)) { geraet.Text = erstes; } }); }
+                catch (Exception) { }
+            });
+        }
+
+        stapel.Controls.Add(vorschau);
+        stapel.Controls.Add(zustand);
+
+        // DIE VORSCHAU: was die App gerade sieht, damit man es nicht erraten muss. Nur
+        // solange der Reiter offen ist -- sonst kostet sie nichts.
+        var takt = new System.Windows.Forms.Timer { Interval = 700 };
+        takt.Tick += (_, _) =>
+        {
+            if (!stapel.Visible || stapel.FindForm() is not { WindowState: not FormWindowState.Minimized }) { return; }
+            var quelle = Rivals.Bildquellen.Aktiv;
+            if (quelle is null)
+            {
+                vorschau.Image?.Dispose();
+                vorschau.Image = null;
+                zustand.Text = s.VideoSource == "none" ? string.Empty : Loc.T("No picture yet");
+                return;
+            }
+            try
+            {
+                var bild = quelle.Neuestes();
+                if (bild is not null)
+                {
+                    var klein = new Bitmap(320, 180);
+                    using (var g = Graphics.FromImage(klein))
+                    {
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                        g.DrawImage(bild, new Rectangle(0, 0, 320, 180));
+                    }
+                    vorschau.Image?.Dispose();
+                    vorschau.Image = klein;
+                    zustand.Text = $"{quelle.Beschreibung} -- {bild.Width}×{bild.Height}";
+                }
+                else
+                {
+                    zustand.Text = quelle.Beschreibung;
+                }
+            }
+            catch (Exception)
+            {
+                // Das Bild wurde gerade ersetzt -- beim naechsten Takt.
+            }
+        };
+        takt.Start();
+        stapel.Disposed += (_, _) => { takt.Dispose(); pause.Dispose(); };
+        ZeigeFelder();
+
+        // ---- DER MODUS -----------------------------------------------------------------
         stapel.Controls.Add(Kopf(Loc.T("Which mode you are playing")));
         var modus = new ComboBox { Width = 300, DropDownStyle = ComboBoxStyle.DropDownList, FormattingEnabled = true };
         foreach (var m in new[] { "auto", "rivals", "horizon-play", "race", "freeroam" }) { modus.Items.Add(m); }
@@ -159,9 +302,72 @@ internal static class Konsole
         modus.SelectedIndexChanged += (_, _) => { s.LapMode = modus.SelectedItem as string ?? "auto"; s.Save(); };
         stapel.Controls.Add(modus);
         stapel.Controls.Add(Notiz(Loc.T(
-            "Without a video source the app cannot see which menu a lap came from. Set it here so your laps "
-            + "carry the right mode -- only Rivals and Horizon Play laps count on the website.")));
-        stapel.Controls.Add(neustart);
+            "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.")));
         return stapel;
+    }
+
+    private static Label Kopf(string text) => new()
+    {
+        Text = text, ForeColor = Color.White, Font = new Font("Segoe UI Semibold", 11f), AutoSize = true,
+        Margin = new Padding(0, 8, 0, 4),
+    };
+
+    private static Label Notiz(string text) => new()
+    {
+        Text = text, ForeColor = Grau, AutoSize = true, MaximumSize = new Size(470, 0),
+        Margin = new Padding(0, 2, 0, 3),
+    };
+
+    /// <summary>
+    /// Der Schalter oben im Fenster: "This PC" | "Xbox / 2nd PC" (seit 2026-09-28).
+    /// </summary>
+    /// <remarks>
+    /// Umschalten startet die App neu: der Modus entscheidet schon beim Start, woran der
+    /// Empfang gebunden wird (nur dieser Rechner oder das Netz), ob ein Controller gesucht
+    /// wird und welche Reiter es gibt. Das alles zur Laufzeit umzubauen waere viel
+    /// Maschinerie fuer einen seltenen Klick -- dieselbe Abwaegung wie bei der Sprache.
+    /// </remarks>
+    internal static Control Modusschalter(bool konsole, Action<bool> umschalten)
+    {
+        var zeile = new FlowLayoutPanel
+        {
+            AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false,
+            Margin = new Padding(0), Padding = new Padding(0),
+        };
+        RadioButton Knopf(string text, bool an) => new()
+        {
+            Text = text, Appearance = Appearance.Button, AutoSize = true, Checked = an,
+            FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(10, 2, 10, 2), Margin = new Padding(0, 0, 2, 0),
+            BackColor = an ? Color.FromArgb(125, 211, 252) : Color.FromArgb(38, 44, 52),
+            ForeColor = an ? Color.FromArgb(11, 15, 20) : Color.Gainsboro,
+            Font = new Font("Segoe UI Semibold", 9.5f),
+            Cursor = Cursors.Hand,
+        };
+        var pc = Knopf(Loc.T("This PC"), !konsole);
+        var xbox = Knopf(Loc.T("Xbox / 2nd PC"), konsole);
+        foreach (var k in new[] { pc, xbox })
+        {
+            k.FlatAppearance.BorderColor = Color.FromArgb(70, 82, 100);
+            k.FlatAppearance.CheckedBackColor = Color.FromArgb(125, 211, 252);
+        }
+        void Geklickt(bool nachKonsole, RadioButton knopf)
+        {
+            if (!knopf.Checked || nachKonsole == konsole) { return; }
+            umschalten(nachKonsole);
+            // Abgebrochen (oder noch nicht neu gestartet): den alten Zustand zeigen.
+            (konsole ? xbox : pc).Checked = true;
+        }
+        pc.CheckedChanged += (_, _) => Geklickt(false, pc);
+        xbox.CheckedChanged += (_, _) => Geklickt(true, xbox);
+        var titel = new Label
+        {
+            Text = Loc.T("The game runs on:"), AutoSize = true, ForeColor = Grau,
+            Margin = new Padding(0, 5, 8, 0),
+        };
+        zeile.Controls.Add(titel);
+        zeile.Controls.Add(pc);
+        zeile.Controls.Add(xbox);
+        return zeile;
     }
 }
