@@ -545,6 +545,14 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--trailer-hud", StringComparer.OrdinalIgnoreCase))
+        {
+            // Die Overlays einer aufgezeichneten Runde als Einzelbilder -- fuer Videos
+            // (Rivals/TrailerHud.cs). Die Overlays selbst halten sich aus Aufnahmen heraus.
+            Environment.ExitCode = TrailerHud.Run(args);
+            return;
+        }
+
         if (args.Contains("--screen-read", StringComparer.OrdinalIgnoreCase))
         {
             // "--screen-read bild.png ...": den Leser auf Aufnahmen laufen lassen, genau wie

@@ -475,6 +475,7 @@ internal sealed class OverlayController : IDisposable
         _menueTick.Tick += (_, _) =>
         {
             if (_disposed) { return; }
+            WartendeFeierZeigen();
             PruefeAutomenue();
             PruefeUmrisseZeit();
             AnmeldungOhneOverlay();
@@ -3609,14 +3610,14 @@ internal sealed class OverlayController : IDisposable
         string.Format(Loc.T("Personal best in class {0}!"), "A"), "1:02.345", 0.412,
         string.Format(Loc.T("Your previous best here: {0}"), "1:02.757"),
         Loc.T("Example: this is how a personal record looks."),
-        CelebrationHud.FeierArt.Persoenlich));
+        CelebrationHud.FeierArt.Persoenlich), sofort: true);
 
     /// <summary>"Try it" fuer die Meldung "neues Auto" -- mit Beispielwerten.</summary>
     public void NeuesAutoProbe() => ZeigeFeier(new CelebrationHud.Anlass(
         Loc.T("New car on the leaderboard!"), "1:31.208", 0,
         Loc.T("Its first time here on the website -- thanks to you!"),
         Loc.T("Example: this is how it looks when your lap adds a new car to the leaderboard."),
-        CelebrationHud.FeierArt.NeuesAuto, Loc.T("NEW")));
+        CelebrationHud.FeierArt.NeuesAuto, Loc.T("NEW")), sofort: true);
 
     /// <summary>
     /// Der Knopf "Try it": dieselbe Feier mit Beispielwerten -- auch bei abgeschalteter
@@ -3625,10 +3626,48 @@ internal sealed class OverlayController : IDisposable
     public void FeierProbe() => ZeigeFeier(new CelebrationHud.Anlass(
         Loc.T("You beat the leaderboard!"), "1:23.456", 0.556,
         string.Format(Loc.T("Website best {0}"), "1:24.012"),
-        Loc.T("Example: this is how it looks when a lap beats the website's time.")));
+        Loc.T("Example: this is how it looks when a lap beats the website's time.")), sofort: true);
 
-    private void ZeigeFeier(CelebrationHud.Anlass anlass)
+    /// <summary>Eine Feier, die wartet, bis nicht mehr gefahren wird -- und seit wann.</summary>
+    private (CelebrationHud.Anlass Anlass, DateTime Seit)? _wartendeFeier;
+
+    /// <summary>Welche Feier vorgeht, wenn zwei warten: Website-Rekord, neues Auto, eigene.</summary>
+    internal static int Rang(CelebrationHud.FeierArt art) => art switch
     {
+        CelebrationHud.FeierArt.Rekord => 3,
+        CelebrationHud.FeierArt.NeuesAuto => 2,
+        _ => 1,
+    };
+
+    /// <summary>Halbsekundentakt: eine wartende Feier zeigen, sobald nicht mehr gefahren wird.</summary>
+    private void WartendeFeierZeigen()
+    {
+        if (_wartendeFeier is not { } w) { return; }
+        // Zehn Minuten spaeter gehoert sie zu nichts mehr.
+        if (DateTime.UtcNow - w.Seit > TimeSpan.FromMinutes(10)) { _wartendeFeier = null; return; }
+        if (FaehrtGerade()) { return; }
+        _wartendeFeier = null;
+        ZeigeFeier(w.Anlass, sofort: true);
+    }
+
+    /// <param name="sofort">Nur fuer "Try it": sonst wartet die Feier, bis das Auto steht.</param>
+    /// <remarks>
+    /// NIE WAEHREND DER FAHRT (seit 2026-09-28, "no performance problems and hitching is
+    /// prio #1"). Eine Feier ist ein grosses Fenster, 25-mal je Sekunde neu gezeichnet:
+    /// gemessen 1,2 bis 1,7 s Zeichenzeit je Feier, und eine kam mitten in Runde 2 eines
+    /// Rennens. Jetzt wartet sie, bis das Auto steht, das Rennen vorbei ist oder ein
+    /// Menue kommt -- ueber dem Ergebnisschirm stoert sie niemanden.
+    /// </remarks>
+    private void ZeigeFeier(CelebrationHud.Anlass anlass, bool sofort = false)
+    {
+        if (!sofort && FaehrtGerade())
+        {
+            if (_wartendeFeier is not { } schon || Rang(anlass.Art) >= Rang(schon.Anlass.Art))
+            {
+                _wartendeFeier = (anlass, DateTime.UtcNow);
+            }
+            return;
+        }
         try
         {
             FollowGameArea();

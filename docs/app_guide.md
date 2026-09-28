@@ -142,7 +142,10 @@ Everything drawn over the game while you drive, and where it sits:
     roam keep their own records. Laps from before the mode was recorded count
     for every mode.
   - The card is a fifth smaller than the website celebration and stays for
-    under four seconds. If the same lap also beats the website, only the website
+    under four seconds.
+  - **No celebration while you drive.** Every card waits until the car stands
+    still, the race is over or a menu shows; the most important one shows first
+    (website record, then new car, then personal). If the same lap also beats the website, only the website
     celebration shows. The short sound and **Try it** are next to the switches.
 - **Archive every lap for heatmaps.**
 - **Layout editor.** Drag every block where you want it, resize with the mouse

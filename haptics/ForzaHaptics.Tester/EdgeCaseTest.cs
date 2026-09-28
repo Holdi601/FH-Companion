@@ -59,6 +59,39 @@ internal static class EdgeCaseTest
         LiveMapStaysWithoutStrip();
         LapModeFromMenus();
         PersonalRecordsDecide();
+        CelebrationsWaitWhileDriving();
+    }
+
+    /// <summary>
+    /// Keine Feier waehrend der Fahrt (2026-09-28, "no performance problems and hitching is
+    /// prio #1"): sie wartet, der Website-Rekord geht vor, und im Stand kommt sie.
+    /// </summary>
+    private static void CelebrationsWaitWhileDriving()
+    {
+        var typ = typeof(Rivals.OverlayController);
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var roh = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+        typ.GetField("_settings", flags)!.SetValue(roh, new Rivals.OverlaySettings());
+        var zeige = typ.GetMethod("ZeigeFeier", flags)!;
+        var warten = typ.GetField("_wartendeFeier", flags)!;
+        Rivals.CelebrationHud.Anlass A(Rivals.CelebrationHud.FeierArt art) => new("t", "1:00.000", 0.1, "v", "d", art);
+        (Rivals.CelebrationHud.Anlass Anlass, DateTime Seit)? Wartet() =>
+            ((Rivals.CelebrationHud.Anlass, DateTime)?)warten.GetValue(roh);
+
+        // FAHRT: frische Telemetrie, 30 m/s.
+        typ.GetField("_telemetryAt", flags)!.SetValue(roh, DateTime.UtcNow);
+        typ.GetField("_tempo", flags)!.SetValue(roh, 30f);
+        zeige.Invoke(roh, new object[] { A(Rivals.CelebrationHud.FeierArt.Persoenlich), false });
+        Soll(Wartet()?.Anlass.Art == Rivals.CelebrationHud.FeierArt.Persoenlich, "eine eigene Feier wartet waehrend der Fahrt nicht");
+        zeige.Invoke(roh, new object[] { A(Rivals.CelebrationHud.FeierArt.Rekord), false });
+        Soll(Wartet()?.Anlass.Art == Rivals.CelebrationHud.FeierArt.Rekord, "der Website-Rekord verdraengt die eigene Feier nicht");
+        zeige.Invoke(roh, new object[] { A(Rivals.CelebrationHud.FeierArt.Persoenlich), false });
+        Soll(Wartet()?.Anlass.Art == Rivals.CelebrationHud.FeierArt.Rekord, "eine eigene Feier verdraengt den wartenden Website-Rekord");
+
+        // STAND: keine frische Telemetrie mehr -> die wartende Feier kommt dran (und ist weg).
+        typ.GetField("_telemetryAt", flags)!.SetValue(roh, DateTime.UtcNow.AddMinutes(-1));
+        typ.GetMethod("WartendeFeierZeigen", flags)!.Invoke(roh, null);
+        Soll(Wartet() is null, "im Stand wird die wartende Feier nicht gezeigt");
     }
 
     /// <summary>

@@ -92,6 +92,8 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   personal best in the class or with a car, blue for a car's first time on
   your list. Each kind has its own switch. Records are kept per mode by
   default, so a wall-riding lap from a solo race never beats a Rivals best.
+- **Celebrations wait until you stop.** No card appears while you drive: they
+  show once the car stands still, the race is over or a menu is up.
 - **Layout editor.** Drag every block where you want it and resize it with the
   mouse wheel. You can preview the result on the real screen. Clicking a block
   jumps to its settings, and the settings side can be widened into columns.
