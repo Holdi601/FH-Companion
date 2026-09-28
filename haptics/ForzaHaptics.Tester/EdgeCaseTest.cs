@@ -56,6 +56,29 @@ internal static class EdgeCaseTest
         OverlayOutputAndCost();
         TyreOverview();
         ReplacedControllerGoesQuiet();
+        LiveMapStaysWithoutStrip();
+    }
+
+    /// <summary>
+    /// Streifen aus, Live-Karte an: ein Paket darf die Karte nicht verstecken
+    /// (2026-09-28: sie blinkte das ganze Rennen, weil UpdateDelta bei abgeschaltetem
+    /// Streifen HideHud() rief -- und das nahm die Karte mit).
+    /// </summary>
+    private static void LiveMapStaysWithoutStrip()
+    {
+        var typ = typeof(Rivals.OverlayController);
+        var roh = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var einst = new Rivals.OverlaySettings { DeltaHud = false, LiveMap = true };
+        using var karte = new Rivals.LiveMapHud(einst, new Rectangle(-32000, -32000, 1920, 1080));
+        karte.Show();
+        typ.GetField("_settings", flags)!.SetValue(roh, einst);
+        typ.GetField("_liveMap", flags)!.SetValue(roh, karte);
+        Soll(ForzaPacket.TryParse(SelfTest.LapPacket(1, 1, 500f, 20f, 0f, 1234, 700, 3), out var paket),
+             "Testpaket nicht lesbar");
+        typ.GetMethod("UpdateDelta", flags)!.Invoke(roh, new object[] { paket });
+        Soll(karte.Visible, "ein Paket bei abgeschaltetem Streifen versteckt die Live-Karte -- sie blinkt im Rennen");
+        karte.Hide();
     }
 
     /// <summary>

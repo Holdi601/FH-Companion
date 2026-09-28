@@ -88,7 +88,8 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   for the first lap of that car there; a lap sent later from the queue shows it
   only while Forza runs. It has its own switch, on by default.
 - **Layout editor.** Drag every block where you want it and resize it with the
-  mouse wheel. You can preview the result on the real screen.
+  mouse wheel. You can preview the result on the real screen. Clicking a block
+  jumps to its settings, and the settings side can be widened into columns.
 - **Recording window.** The overlays stay out of screen recordings, because the
   app reads the screen itself. For OBS, a separate window draws them on a key
   colour: capture it and add a colour-key filter. You can also switch the

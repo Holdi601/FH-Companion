@@ -1301,13 +1301,17 @@ internal sealed class OverlayController : IDisposable
 
     private void UpdateDelta(ForzaPacket packet)
     {
+        // Bei abgeschaltetem Streifen NUR DEN STREIFEN verstecken (HideStrip). Bis zum
+        // 2026-09-28 stand unten HideHud(), das auch die Live-Karte versteckt -- zehnmal
+        // je Sekunde, und UpdateLiveMap zeigte sie gleich wieder: sie blinkte das ganze
+        // Rennen, sobald der Streifen aus und die Karte an war.
         // Gefuettert wird der Recorder in OnTelemetryRaw, bei vollem Takt -- hier
         // wird nur gelesen, was dort schon steht.
         //
         // WAEHREND DER VORSCHAU NICHT. Das Spiel sendet auch im Menue Pakete, und
         // "kein Rennen" blendete den Streifen beim naechsten davon wieder aus.
         if (_hudPreview) { return; }
-        if (!_settings.DeltaHud) { HideHud(); return; }
+        if (!_settings.DeltaHud) { HideStrip(); return; }
 
         var rennen = packet.Get("IsRaceOn") >= 0.5;
         if (!rennen) { NachDemRennen(); return; }
@@ -1898,7 +1902,7 @@ internal sealed class OverlayController : IDisposable
             }
             else if (!_settings.HudTyres && _reifen.Visible) { _reifen.Hide(); }
             else if (_reifen.Visible) { _reifen.Render(); }
-            if (!_settings.DeltaHud) { HideHud(); return; }
+            if (!_settings.DeltaHud) { HideStrip(); return; }
             if (_hud is not null && !_hud.IsDisposed) { _hud.Invalidate(); }
         }
         catch (Exception)
@@ -1941,11 +1945,19 @@ internal sealed class OverlayController : IDisposable
         HideHud();
     }
 
+    /// <summary>Streifen UND Live-Karte weg: Rennen vorbei, Spiel nicht vorne, Vorschau zu.</summary>
     private void HideHud()
     {
         if (_hudPreview) { return; }
-        if (_hud is not null && !_hud.IsDisposed && _hud.Visible) { _hud.Hide(); }
+        HideStrip();
         if (_liveMap.Visible) { _liveMap.Hide(); }
+    }
+
+    /// <summary>Nur den Delta-Streifen weg -- die Live-Karte hat ihre eigenen Regeln (UpdateLiveMap).</summary>
+    private void HideStrip()
+    {
+        if (_hudPreview) { return; }
+        if (_hud is not null && !_hud.IsDisposed && _hud.Visible) { _hud.Hide(); }
     }
 
     private bool TelemetryFresh => (DateTime.UtcNow - _telemetryAt).TotalSeconds < 15;

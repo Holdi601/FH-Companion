@@ -46,13 +46,13 @@
   "Rivals/OwnTimesTab.cs:461"
  ],
  "Archive every lap for heatmaps": [
-  "Rivals/HudTab.cs:992"
+  "Rivals/HudTab.cs:1269"
  ],
  "Automatic: your laps, else Rivals": [
-  "Rivals/HudTab.cs:899"
+  "Rivals/HudTab.cs:1173"
  ],
  "Black": [
-  "Rivals/HudTab.cs:891"
+  "Rivals/HudTab.cs:1259"
  ],
  "CURRENT CONTROLLER OUTPUT": [
   "TelemetryInspector.cs:70"
@@ -66,7 +66,8 @@
   "Tuning/TunesTab.cs:418"
  ],
  "Car note": [
-  "Rivals/HudTab.cs:848"
+  "Rivals/HudTab.cs:834",
+  "Rivals/HudTab.cs:1210"
  ],
  "Cars": [
   "Tuning/TunesTab.cs:539",
@@ -79,7 +80,10 @@
   "Rivals/OwnTimesTab.cs:102"
  ],
  "Celebrate when a lap beats the website's time": [
-  "Rivals/HudTab.cs:857"
+  "Rivals/HudTab.cs:1219"
+ ],
+ "Celebrations": [
+  "Rivals/HudTab.cs:1218"
  ],
  "Check which tunes are on a car": [
   "Tuning/TunesTab.cs:68"
@@ -109,7 +113,7 @@
   "Rivals/OwnTimesTab.cs:256"
  ],
  "Course maps on the Event Sign Up screen": [
-  "Rivals/HudTab.cs:833"
+  "Rivals/HudTab.cs:1167"
  ],
  "Courses": [
   "Rivals/OwnTimesTab.cs:249"
@@ -133,6 +137,9 @@
  ],
  "Deletion plan": [
   "Tuning/TunesTab.cs:107"
+ ],
+ "Delta": [
+  "Rivals/HudTab.cs:837"
  ],
  "Desktop shortcut": [
   "MainForm.cs:296",
@@ -183,14 +190,17 @@
  "Enable lock mapping": [
   "MainForm.cs:1003"
  ],
+ "Event Sign Up maps": [
+  "Rivals/HudTab.cs:833"
+ ],
  "Every tune": [
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:3403"
+  "Rivals/OverlayController.cs:3443"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:3393"
+  "Rivals/OverlayController.cs:3433"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
@@ -222,11 +232,14 @@
  "Gap": [
   "Rivals/OwnTimesTab.cs:260"
  ],
+ "Ghost countdown": [
+  "Rivals/HudTab.cs:830"
+ ],
  "Graph output enabled": [
   "BlueprintEditor.cs:72"
  ],
  "Green": [
-  "Rivals/HudTab.cs:891"
+  "Rivals/HudTab.cs:1259"
  ],
  "Grip L/R: -- / --   Vibration: -- / --   Tone: -- / --": [
   "MainForm.cs:897"
@@ -249,15 +262,18 @@
  "In the game now:": [
   "Rivals/CarNotesTab.cs:190"
  ],
+ "Input traces": [
+  "Rivals/HudTab.cs:832"
+ ],
  "It holds the details you were given:": [
   "scripts/contrib_scan.py:70"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:3385",
-  "Rivals/OverlayController.cs:3392"
+  "Rivals/OverlayController.cs:3425",
+  "Rivals/OverlayController.cs:3432"
  ],
  "Key colour for OBS": [
-  "Rivals/HudTab.cs:890"
+  "Rivals/HudTab.cs:1258"
  ],
  "Language": [
   "MainForm.cs:288"
@@ -265,20 +281,26 @@
  "Last checked {0:yyyy-MM-dd HH:mm}: {1} tunes are on a car. Tunes saved after that show \"?\".": [
   "Tuning/TunesTab.cs:186"
  ],
+ "Layout": [
+  "Rivals/HudTab.cs:983"
+ ],
  "Limit": [
   "Tuning/TunesTab.cs:55"
  ],
  "Live FH6 telemetry connected.": [
   "MainForm.cs:2032"
  ],
+ "Live map": [
+  "Rivals/HudTab.cs:835"
+ ],
  "Live map during the race": [
-  "Rivals/HudTab.cs:836"
+  "Rivals/HudTab.cs:1154"
  ],
  "Live map: line thickness": [
-  "Rivals/HudTab.cs:983"
+  "Rivals/HudTab.cs:1159"
  ],
  "Live map: smoothing": [
-  "Rivals/HudTab.cs:985"
+  "Rivals/HudTab.cs:1161"
  ],
  "Live mapping is sending through the four native haptic channels.": [
   "MainForm.cs:2338"
@@ -298,7 +320,7 @@
   "MainForm.cs:180"
  ],
  "Magenta": [
-  "Rivals/HudTab.cs:891"
+  "Rivals/HudTab.cs:1259"
  ],
  "Make": [
   "Rivals/OwnTimesTab.cs:103"
@@ -314,15 +336,15 @@
   "Rivals/CarNotesTab.cs:198"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:3386",
-  "Rivals/OverlayController.cs:3394"
+  "Rivals/OverlayController.cs:3426",
+  "Rivals/OverlayController.cs:3434"
  ],
  "NODE PALETTE": [
   "BlueprintEditor.cs:63"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:3383",
-  "Rivals/OverlayController.cs:3391"
+  "Rivals/OverlayController.cs:3423",
+  "Rivals/OverlayController.cs:3431"
  ],
  "No car in view -- highlight one in My Cars, or drive one.": [
   "Rivals/CarNotesTab.cs:192"
@@ -358,6 +380,9 @@
  "Note": [
   "Rivals/CarNotesTab.cs:80"
  ],
+ "Note line": [
+  "Rivals/HudTab.cs:831"
+ ],
  "Note: the game area is {0}x{1}, not 16:9. The scan uses its centred 16:9 part; menu positions at this aspect ratio are an assumption.": [
   "scripts/contrib_scan.py:145"
  ],
@@ -387,7 +412,7 @@
   "MainForm.cs:1223"
  ],
  "Open the recording window": [
-  "Rivals/HudTab.cs:886"
+  "Rivals/HudTab.cs:1254"
  ],
  "Packets: --   Rate: --   Race: --": [
   "MainForm.cs:707"
@@ -408,7 +433,7 @@
   "MainForm.cs:1413"
  ],
  "Play a sound with it": [
-  "Rivals/HudTab.cs:859"
+  "Rivals/HudTab.cs:1221"
  ],
  "Point +": [
   "MainForm.cs:838",
@@ -449,6 +474,12 @@
  "Reconnect controllers": [
   "MainForm.cs:236"
  ],
+ "Recording": [
+  "Rivals/HudTab.cs:1266"
+ ],
+ "Recording and streaming": [
+  "Rivals/HudTab.cs:1246"
+ ],
  "Remove selected": [
   "BlueprintEditor.cs:1148"
  ],
@@ -468,10 +499,10 @@
   "Rivals/OwnTimes.cs:405"
  ],
  "Rivals maps are shown as": [
-  "Rivals/HudTab.cs:971"
+  "Rivals/HudTab.cs:1193"
  ],
  "Rivals maps only": [
-  "Rivals/HudTab.cs:901"
+  "Rivals/HudTab.cs:1175"
  ],
  "Saved": [
   "Tuning/TunesTab.cs:250",
@@ -481,7 +512,7 @@
   "Tuning/TunesTab.cs:95"
  ],
  "Say thanks when your lap adds a new car to the leaderboard": [
-  "Rivals/HudTab.cs:866"
+  "Rivals/HudTab.cs:1228"
  ],
  "Scan leaderboards on THIS PC and hand in the result.": [
   "scripts/contrib_scan.py:277"
@@ -492,6 +523,9 @@
  "Select a node to edit it.": [
   "BlueprintEditor.cs:620"
  ],
+ "Shared colours": [
+  "Rivals/HudTab.cs:1238"
+ ],
  "Show it on the real screen while I set it up": [
   "Rivals/HudTab.cs:87"
  ],
@@ -499,49 +533,49 @@
   "Rivals/OwnTimesTab.cs:71"
  ],
  "Show overlays over the game": [
-  "Rivals/HudTab.cs:879"
+  "Rivals/HudTab.cs:1247"
  ],
  "Show the applied tune's name and description in the car note": [
-  "Rivals/HudTab.cs:849"
+  "Rivals/HudTab.cs:1212"
  ],
  "Show the strip while racing": [
-  "Rivals/HudTab.cs:1110"
+  "Rivals/HudTab.cs:1041"
  ],
  "Show the time to beat for the website's leaderboard": [
-  "Rivals/HudTab.cs:853"
+  "Rivals/HudTab.cs:1071"
  ],
  "Show throttle, brake, clutch, steering, gear": [
-  "Rivals/HudTab.cs:1214"
+  "Rivals/HudTab.cs:1099"
  ],
  "Side by side": [
-  "Rivals/HudTab.cs:976"
+  "Rivals/HudTab.cs:1198"
  ],
  "Sign-up maps arranged": [
-  "Rivals/HudTab.cs:975"
+  "Rivals/HudTab.cs:1197"
  ],
  "Sign-up maps disappear after (seconds, 0 = when the race starts)": [
-  "Rivals/HudTab.cs:957"
+  "Rivals/HudTab.cs:1191"
  ],
  "Sign-up maps: line thickness": [
-  "Rivals/HudTab.cs:979"
+  "Rivals/HudTab.cs:1201"
  ],
  "Sign-up maps: smoothing": [
-  "Rivals/HudTab.cs:981"
+  "Rivals/HudTab.cs:1203"
  ],
  "Smooth traced line": [
-  "Rivals/HudTab.cs:972"
+  "Rivals/HudTab.cs:1194"
  ],
  "Smoothing takes out the pixel steps of the line. Turned up high, tight hairpins get rounder too.": [
-  "Rivals/HudTab.cs:987"
+  "Rivals/HudTab.cs:1205"
  ],
  "Solo": [
   "Rivals/OwnTimes.cs:406"
  ],
  "Soon the game will refuse new downloads.": [
-  "Rivals/OverlayController.cs:520"
+  "Rivals/OverlayController.cs:537"
  ],
  "Stacked": [
-  "Rivals/HudTab.cs:976"
+  "Rivals/HudTab.cs:1198"
  ],
  "Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers.": [
   "BlueprintEditor.cs:820"
@@ -623,7 +657,7 @@
   "Tuning/TunesTab.cs:358"
  ],
  "The app's Tunes tab lists the ones that are on no car.": [
-  "Rivals/OverlayController.cs:521"
+  "Rivals/OverlayController.cs:538"
  ],
  "The autostart entry could not be created.": [
   "MainForm.cs:1433"
@@ -645,10 +679,10 @@
   "Tuning/TunesTab.cs:554"
  ],
  "The game will refuse new downloads.": [
-  "Rivals/OverlayController.cs:519"
+  "Rivals/OverlayController.cs:536"
  ],
  "The game's map picture": [
-  "Rivals/HudTab.cs:973"
+  "Rivals/HudTab.cs:1195"
  ],
  "The game's save folder was not found.": [
   "Tuning/TunesTab.cs:174"
@@ -687,6 +721,9 @@
  "Time": [
   "Rivals/OwnTimesTab.cs:259"
  ],
+ "Time attack in the free world": [
+  "Rivals/HudTab.cs:1320"
+ ],
  "To upload: --upload, or just send the file.": [
   "scripts/contrib_scan.py:386"
  ],
@@ -694,8 +731,8 @@
   "Rivals/OwnTimesTab.cs:251"
  ],
  "Try it": [
-  "Rivals/HudTab.cs:860",
-  "Rivals/HudTab.cs:868"
+  "Rivals/HudTab.cs:1222",
+  "Rivals/HudTab.cs:1230"
  ],
  "Tune": [
   "Rivals/OwnTimesTab.cs:114",
@@ -705,10 +742,10 @@
   "Tuning/TunesTab.cs:418"
  ],
  "Tune storage almost full": [
-  "Rivals/OverlayController.cs:516"
+  "Rivals/OverlayController.cs:533"
  ],
  "Tune storage full": [
-  "Rivals/OverlayController.cs:516"
+  "Rivals/OverlayController.cs:533"
  ],
  "Tuner": [
   "Tuning/TunesTab.cs:539",
@@ -729,11 +766,14 @@
  "Type": [
   "Rivals/OwnTimesTab.cs:104"
  ],
+ "Tyre overview": [
+  "Rivals/HudTab.cs:836"
+ ],
  "Tyre overview while driving": [
-  "Rivals/HudTab.cs:841"
+  "Rivals/HudTab.cs:1143"
  ],
  "Tyre temperature in Fahrenheit": [
-  "Rivals/HudTab.cs:846"
+  "Rivals/HudTab.cs:1149"
  ],
  "Tyres": [
   "Rivals/TyreHud.cs:193"
@@ -772,8 +812,8 @@
   "Tuning/TunesTab.cs:378"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:3361",
-  "Rivals/OverlayController.cs:3402"
+  "Rivals/OverlayController.cs:3401",
+  "Rivals/OverlayController.cs:3442"
  ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:244"
@@ -803,14 +843,14 @@
   "Rivals/OwnTimesTab.cs:127"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:3358",
-  "Rivals/OverlayController.cs:3401"
+  "Rivals/OverlayController.cs:3398",
+  "Rivals/OverlayController.cs:3441"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
  ],
  "Your laps only (telemetry)": [
-  "Rivals/HudTab.cs:900"
+  "Rivals/HudTab.cs:1174"
  ],
  "a newer version is ready (skipped)": [
   "Rivals/RivalsTab.cs:530"
@@ -1021,7 +1061,7 @@
   "Tuning/TunesTab.cs:180"
  ],
  "{0} of {1} tunes -- {2} free.": [
-  "Rivals/OverlayController.cs:517"
+  "Rivals/OverlayController.cs:534"
  ],
  "{0} tunes by {1} tuners.": [
   "Tuning/TunesTab.cs:573"

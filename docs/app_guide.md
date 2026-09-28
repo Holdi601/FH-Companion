@@ -131,6 +131,10 @@ Everything drawn over the game while you drive, and where it sits:
 - **Archive every lap for heatmaps.**
 - **Layout editor.** Drag every block where you want it, resize with the mouse
   wheel, and optionally show it on the real screen while you set it up.
+  - Each block has its own section on the right: its switch, anchor, size,
+    settings and colours. Clicking a block in the picture jumps to its section.
+  - Drag the divider to widen the right side. With room, the sections sit in
+    several columns, so nothing needs scrolling. The width is remembered.
 - **Recording and streaming.** The overlays are kept out of screen recordings,
   because the app reads the screen itself and must not read its own panels.
   - **Open the recording window:** a normal window that draws the same overlays

@@ -326,6 +326,10 @@ internal sealed class OverlaySettings
     // Federweg, Pfuetze, Curb, Rumpeln (TyreHud). Ab Werk AUS -- es ist viel auf einmal,
     // und ein neues Fenster ueber dem Spiel soll niemand ungefragt bekommen.
 
+    /// <summary>Breite der Einstellungen rechts im Reiter "Lap delta HUD" (Bildpunkte).</summary>
+    /// <remarks>Keine Anordnung: sie gehoert zum Bildschirm, nicht zum Overlay.</remarks>
+    [JsonPropertyName("hud_editor_side_width")] public int HudEditorSideWidth { get; set; } = 290;
+
     [JsonPropertyName("hud_tyres")] public bool HudTyres { get; set; }
     [JsonPropertyName("hud_tyres_x")] public double HudTyresX { get; set; } = 0.985;
     [JsonPropertyName("hud_tyres_y")] public double HudTyresY { get; set; } = 0.50;

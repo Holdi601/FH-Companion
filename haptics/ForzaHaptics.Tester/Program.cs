@@ -333,11 +333,16 @@ internal static class Program
             }
             // Eine vierte Zahl ist die Hoehe -- damit auch das Ende der Seitenleiste ins Bild kommt.
             var hoehe = hp + 3 < args.Length && int.TryParse(args[hp + 3], out var h) ? h : 820;
-            using var form = new VorschauForm { Width = 1400, Height = hoehe, Text = "HUD editor" };
+            var breite = hp + 5 < args.Length && int.TryParse(args[hp + 5], out var fb) ? fb : 1400;
+            using var form = new VorschauForm { Width = breite, Height = hoehe, Text = "HUD editor" };
             var tab = new Rivals.HudTab(einst, () => { }, _ => { });
             form.Controls.Add(tab);
             form.Show();
+            // Eine fuenfte Zahl ist die Breite der Einstellungen rechts (Teiler).
+            if (hp + 4 < args.Length && int.TryParse(args[hp + 4], out var seite)) { tab.SeitenBreite(seite); }
+            Application.DoEvents();
             tab.ShowPart(teil);
+            tab.KlickAuf(teil);
             Application.DoEvents();
             using var bild = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             tab.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));
