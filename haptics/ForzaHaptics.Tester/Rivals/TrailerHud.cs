@@ -67,12 +67,28 @@ internal static class TrailerHud
         Console.WriteLine($"lap {lap.LapSeconds:0.000} s, {tele.Zeilen.Count} rows; reference: "
                           + (referenz is null ? "none" : $"{referenz.LapSeconds:0.000} s ({Path.GetFileName(refPfad)})"));
 
+        // Zahlen wie im englischen Spiel: "-0.886", nicht "-0,886".
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+        // EINE ANORDNUNG, wie sie jemand im Editor einstellen koennte: der Streifen etwas
+        // unter der Mitte oben (dort blendet das Spiel eigene Meldungen ein), die Reifen
+        // oben links (unten rechts sitzt der Tacho), die Karte rechts.
         var s = new OverlaySettings
         {
             DeltaHud = true, HudInputs = teile.Contains("inputs"), LiveMap = true, HudTyres = true,
-            // Etwas tiefer als ab Werk: mit der Live-Karte zusammen beruehren sie sich sonst.
-            HudTyresY = 0.56,
+            HudDeltaY = 0.13,
+            HudTyresX = 0.015, HudTyresY = 0.20, HudTyresAlign = "left",
         };
+        if (string.Equals(Wert("--layout"), "dashboard", StringComparison.OrdinalIgnoreCase))
+        {
+            // Das Dashboard (Konsolenmodus) auf einem eigenen Schirm: alles groesser.
+            s.HudDeltaX = 0.5; s.HudDeltaY = 0.05; s.HudDeltaScale = 1.5;
+            s.HudTyresX = 0.03; s.HudTyresY = 0.18; s.HudTyresScale = 1.3;
+            s.HudLiveMapX = 0.97; s.HudLiveMapY = 0.12; s.HudLiveMapAlign = "right"; s.HudLiveMapScale = 1.6;
+            s.HudInputsX = 0.97; s.HudInputsY = 0.62; s.HudInputsAlign = "right"; s.HudInputsScale = 1.4;
+        }
+        // Kein Geister-Countdown: hinter der Einblendphase zeichnet der Streifen keinen.
+        var keinGeist = -(float)(s.PopInSeconds + 1);
         using var streifen = new DeltaHud(new Rectangle(Point.Empty, groesse), s);
         var karte = (referenz ?? lap).Samples.Select(p => new PointF(p.X, p.Z)).ToList();
         var spur = new List<PointF>();
@@ -102,7 +118,7 @@ internal static class TrailerHud
                                     (float)paket.Get("Clutch") / 255f, (float)paket.Get("Steer") / 127f,
                                     (float)paket.Get("Gear"), referenz, refSek);
             }
-            streifen.Update(delta, bezeichnung, 0f);
+            streifen.Update(delta, bezeichnung, keinGeist);
             spur.Add(new PointF((float)paket.Get("PositionX"), (float)paket.Get("PositionZ")));
             if (t < von - 1e-6 || t > bis + 1e-6) { continue; }
 

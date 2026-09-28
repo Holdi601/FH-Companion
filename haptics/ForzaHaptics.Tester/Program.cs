@@ -720,7 +720,7 @@ internal static class Program
             }
             // Eine Strecke absichtlich ohne Umriss: der Kasten "not driven yet"
             // muss auch stimmen, und der faellt sonst nie auf.
-            drei.Add(("Never Driven Circuit", null));
+            if (Wert("sample") != "0") { drei.Add(("Never Driven Circuit", null)); }
             // states=done,now,next -- der Stand einer Meisterschaft, je Kachel.
             var stati = (Wert("states") ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => Enum.TryParse<Rivals.CourseShapeHud.TileState>(x, true, out var st) ? st : Rivals.CourseShapeHud.TileState.None)
@@ -729,7 +729,8 @@ internal static class Program
             using var bild = new Bitmap(schirm.Width, schirm.Height);
             using (var g = Graphics.FromImage(bild))
             {
-                g.Clear(Color.FromArgb(40, 46, 54));
+                // bg=none: durchsichtig, zum Unterlegen in Videos.
+                g.Clear(Wert("bg") == "none" ? Color.Transparent : Color.FromArgb(40, 46, 54));
                 hud.Paint(g);
             }
             var ziel = Wert("out") ?? Path.Combine(Path.GetTempPath(), "forza-shape-hud.png");
