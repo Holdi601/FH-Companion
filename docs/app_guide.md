@@ -128,6 +128,22 @@ Everything drawn over the game while you drive, and where it sits:
   little confetti and a soft chime. It appears only after the server accepted
   the lap, and only for the first lap of that car there. A lap sent later from
   the waiting queue shows it only while Forza runs. **Try it** shows it once.
+- **Personal records.** Your own laps, not the website, decide. Each lap is
+  compared with your laps on the same course, in the same class and with the
+  same start (standing or flying). A lap shows at most one card, the strongest:
+  - **Personal best in a class on a course** (green, on by default): faster
+    than any of your laps there in that class.
+  - **A car's first time on your list** (blue, on by default): the first lap of
+    that car on this course in this class, with its place on your list.
+  - **Personal best with a car** (green, on by default): faster than your
+    earlier laps with that car there, for every car, class and course.
+  - **Your first lap in a class on a course** (off by default).
+  - **Separate records per mode** (on): Rivals, Horizon Play, races and free
+    roam keep their own records. Laps from before the mode was recorded count
+    for every mode.
+  - The card is a fifth smaller than the website celebration and stays for
+    under four seconds. If the same lap also beats the website, only the website
+    celebration shows. The short sound and **Try it** are next to the switches.
 - **Archive every lap for heatmaps.**
 - **Layout editor.** Drag every block where you want it, resize with the mouse
   wheel, and optionally show it on the real screen while you set it up.

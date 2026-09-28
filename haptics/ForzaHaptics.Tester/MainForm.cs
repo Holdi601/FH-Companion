@@ -478,6 +478,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             show => _rivals.PreviewHud(show));
         hudTab.Controls.Add(hudEinstellungen);
         hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
+        hudEinstellungen.PersoenlichProbe += () => _rivals.PreviewPersonalRecord();
         hudEinstellungen.NeuesAutoProbe += () => _rivals.PreviewNewCar();
         hudEinstellungen.AufnahmeFensterWunsch += () => _rivals.OeffneAufnahmefenster();
         // War das Aufnahmefenster beim letzten Beenden offen, kommt es wieder.

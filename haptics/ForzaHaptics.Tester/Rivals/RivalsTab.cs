@@ -642,6 +642,13 @@ internal sealed class RivalsTab : UserControl
     }
 
     /// <summary>Die Feier einmal zeigen (Knopf "Try it" im Reiter "Lap delta HUD").</summary>
+    /// <summary>Eine Feier fuer einen eigenen Rekord zeigen (ihr "Try it").</summary>
+    public void PreviewPersonalRecord()
+    {
+        EnsureController();
+        Controller?.PersoenlichProbe();
+    }
+
     public void PreviewCelebration()
     {
         EnsureController();

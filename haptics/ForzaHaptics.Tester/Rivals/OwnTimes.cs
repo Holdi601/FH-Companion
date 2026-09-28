@@ -97,6 +97,17 @@ internal static class OwnTimes
             return _speicher;
         }
 
+        var raus = Einlesen(wurzel);
+        _speicher = raus;
+        _stand = stand;
+        _wurzel = wurzel;
+        return raus;
+    }
+
+    /// <summary>Alle eigenen Runden, frisch gelesen -- ohne den Zwischenspeicher.</summary>
+    /// <remarks>Fuer die eigenen Rekorde, die im Hintergrund laden (PersonalRecords).</remarks>
+    internal static List<Lap> Einlesen(string wurzel)
+    {
         var namen = new Dictionary<string, string>(StringComparer.Ordinal);
         var raus = new List<Lap>();
         if (Directory.Exists(wurzel))
@@ -108,11 +119,12 @@ internal static class OwnTimes
                 if (lap is not null) { raus.Add(lap); }
             }
         }
-        _speicher = raus;
-        _stand = stand;
-        _wurzel = wurzel;
         return raus;
     }
+
+    /// <summary>Eine einzelne, eben abgelegte Runde -- genau wie der Reiter sie liest.</summary>
+    internal static Lap? AusDatei(string wurzel, string datei) =>
+        AusPfad(wurzel, datei, new Dictionary<string, string>(StringComparer.Ordinal));
 
     private static Lap? AusPfad(string wurzel, string datei,
                                 Dictionary<string, string> namen)

@@ -37,7 +37,22 @@ internal sealed class CelebrationHud : LayeredHud
     /// Runde NEU auf eine Bestenliste kommt (Tuerkis, ein Auto mit Plus, ruhiger;
     /// seit 2026-09-27, auf Wunsch "a bit celebratory but more like thanks to you").
     /// </summary>
-    internal enum FeierArt { Rekord, NeuesAuto }
+    /// <remarks>
+    /// Seit 2026-09-28 dazu die EIGENEN Rekorde (PersonalRecords): Persoenlich (Gruen, wie
+    /// die persoenliche Bestzeit im Rennsport) und Repertoire (Blau: ein Auto zum ersten
+    /// Mal auf der eigenen Liste). Beide kleiner, kuerzer und mit weniger Konfetti --
+    /// sie kommen oft, die Website-Feier selten.
+    /// </remarks>
+    internal enum FeierArt { Rekord, NeuesAuto, Persoenlich, Repertoire }
+
+    /// <summary>Eine eigene Feier (nicht die der Website)?</summary>
+    internal static bool IstPersoenlich(FeierArt art) => art is FeierArt.Persoenlich or FeierArt.Repertoire;
+
+    /// <summary>Wie lange eine Feier dieser Art steht.</summary>
+    internal static double DauerVon(FeierArt art) => IstPersoenlich(art) ? 3.8 : Dauer;
+
+    /// <summary>Welche Art gerade laeuft -- oder null.</summary>
+    public FeierArt? Laeuft => _anlass?.Art;
 
     /// <summary>Was die Karte sagt -- fertig formuliert, in der Sprache des Nutzers.</summary>
     /// <param name="Chip">Fester Text fuer den Chip (etwa "NEW"); sonst zaehlt der Vorsprung hoch.</param>
@@ -85,7 +100,7 @@ internal sealed class CelebrationHud : LayeredHud
     private void Weiter()
     {
         _t = (DateTime.UtcNow - _beginn).TotalSeconds;
-        if (_t >= Dauer)
+        if (_t >= DauerVon(_anlass?.Art ?? FeierArt.Rekord))
         {
             Beenden();
             return;
@@ -193,10 +208,19 @@ internal sealed class CelebrationHud : LayeredHud
     /// <summary>Die Farben einer Feier. Alpha steht jeweils in der Zeichnung.</summary>
     private readonly record struct Palette(Color Titel, Color Hell, Color Tief, Color Licht, Color Chip, int StrahlAlpha);
 
-    private static Palette PaletteFuer(FeierArt art) => art == FeierArt.NeuesAuto
-        ? new Palette(Color.FromArgb(94, 234, 212), Color.FromArgb(167, 243, 229), Color.FromArgb(13, 148, 136),
-                      Color.FromArgb(120, 232, 214), Color.FromArgb(13, 148, 136), 44)
-        : new Palette(Gold, GoldHell, GoldTief, Color.FromArgb(255, 214, 120), Color.FromArgb(16, 185, 129), 70);
+    private static Palette PaletteFuer(FeierArt art) => art switch
+    {
+        FeierArt.NeuesAuto => new Palette(Color.FromArgb(94, 234, 212), Color.FromArgb(167, 243, 229),
+                                          Color.FromArgb(13, 148, 136), Color.FromArgb(120, 232, 214),
+                                          Color.FromArgb(13, 148, 136), 44),
+        FeierArt.Persoenlich => new Palette(Color.FromArgb(134, 239, 172), Color.FromArgb(187, 247, 208),
+                                            Color.FromArgb(21, 128, 61), Color.FromArgb(74, 222, 128),
+                                            Color.FromArgb(22, 163, 74), 22),
+        FeierArt.Repertoire => new Palette(Color.FromArgb(147, 197, 253), Color.FromArgb(191, 219, 254),
+                                           Color.FromArgb(29, 78, 216), Color.FromArgb(96, 165, 250),
+                                           Color.FromArgb(37, 99, 235), 20),
+        _ => new Palette(Gold, GoldHell, GoldTief, Color.FromArgb(255, 214, 120), Color.FromArgb(16, 185, 129), 70),
+    };
 
     private static Color A(Color c, float f) =>
         Color.FromArgb(Math.Clamp((int)(c.A * f), 0, 255), c.R, c.G, c.B);
@@ -216,12 +240,14 @@ internal sealed class CelebrationHud : LayeredHud
     /// <summary>Ein Bild der Feier, <paramref name="t"/> Sekunden nach Beginn.</summary>
     internal static void Male(Graphics g, Size flaeche, Anlass a, Konfetti k, double t)
     {
-        if (t < 0 || t >= Dauer) { return; }
+        var dauer = DauerVon(a.Art);
+        if (t < 0 || t >= dauer) { return; }
         // KEIN ClearType auf durchsichtigem Grund (siehe LayeredHud) -- hier noch einmal
         // gesetzt, damit Selbsttest und Einzelbilder genauso zeichnen wie das Fenster.
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-        var ganz = t > Dauer - Ausblenden ? (float)((Dauer - t) / Ausblenden) : 1f;
-        var s = Skala(flaeche);
+        var ganz = t > dauer - Ausblenden ? (float)((dauer - t) / Ausblenden) : 1f;
+        // Die eigenen Feiern ein Fuenftel kleiner.
+        var s = Skala(flaeche) * (IstPersoenlich(a.Art) ? 0.8f : 1f);
         var buehne = Buehne(flaeche);
         using var f = new Schriften(s);
         var karte = Lege(g, flaeche, a, f, s);
@@ -367,10 +393,15 @@ internal sealed class CelebrationHud : LayeredHud
             g.DrawPath(stift, form);
         }
 
-        if (a.Art == FeierArt.NeuesAuto)
+        if (a.Art is FeierArt.NeuesAuto or FeierArt.Repertoire)
         {
             // EIN AUTO FAEHRT HEREIN, dann springt das Plus auf.
             NeuesAutoSymbol(g, karte.Pokal, t, sicht, farben);
+        }
+        else if (a.Art == FeierArt.Persoenlich)
+        {
+            // EINE STOPPUHR mit "PB", der Zeiger laeuft einmal herum.
+            PbSymbol(g, karte.Pokal, t, sicht, farben);
         }
         else
         {
@@ -532,6 +563,49 @@ internal sealed class CelebrationHud : LayeredHud
         g.Restore(zustand);
     }
 
+    /// <summary>Eine gruene Stoppuhr: Zeiger laeuft einmal herum, dann steht "PB" darin.</summary>
+    private static void PbSymbol(Graphics g, RectangleF box, float t, float sicht, Palette farben)
+    {
+        var p = box.Width;
+        var auf = RausMitSchwung(Klemme(t / 0.45f));
+        var r = 0.36f * p * (0.7f + (0.3f * auf));
+        var m = new PointF(box.X + (p / 2f), box.Y + (p * 0.56f));
+        using (var knopf = new SolidBrush(A(farben.Tief, sicht)))
+        {
+            g.FillRectangle(knopf, m.X - (0.06f * p), m.Y - r - (0.13f * p), 0.12f * p, 0.1f * p);
+        }
+        using (var schein = new SolidBrush(A(Color.FromArgb(60, farben.Licht), sicht)))
+        {
+            g.FillEllipse(schein, m.X - (r * 1.3f), m.Y - (r * 1.3f), r * 2.6f, r * 2.6f);
+        }
+        using (var zifferblatt = new LinearGradientBrush(new RectangleF(m.X - r, m.Y - r, 2 * r, 2 * r),
+                   A(farben.Hell, sicht), A(farben.Tief, sicht), LinearGradientMode.ForwardDiagonal))
+        {
+            g.FillEllipse(zifferblatt, m.X - r, m.Y - r, 2 * r, 2 * r);
+        }
+        using (var innen = new SolidBrush(A(Color.FromArgb(235, 12, 24, 18), sicht)))
+        {
+            var ri = r * 0.8f;
+            g.FillEllipse(innen, m.X - ri, m.Y - ri, 2 * ri, 2 * ri);
+        }
+        // Der Zeiger: eine Umdrehung in 0,7 s, danach weg -- dann steht "PB" da.
+        var lauf = Klemme((t - 0.1f) / 0.7f);
+        if (lauf < 1f)
+        {
+            var w = (lauf * 360f - 90f) * MathF.PI / 180f;
+            using var zeiger = new Pen(A(farben.Hell, sicht), Math.Max(1.5f, 0.05f * p)) { EndCap = LineCap.Round };
+            g.DrawLine(zeiger, m, new PointF(m.X + (r * 0.68f * MathF.Cos(w)), m.Y + (r * 0.68f * MathF.Sin(w))));
+        }
+        else
+        {
+            var zeigen = Klemme((t - 0.8f) / 0.2f);
+            using var schrift = new Font("Segoe UI", Math.Max(6f, r * 0.72f), FontStyle.Bold, GraphicsUnit.Pixel);
+            using var weiss = new SolidBrush(A(Color.White, sicht * zeigen));
+            using var mittig = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString("PB", schrift, weiss, new RectangleF(m.X - r, m.Y - r, 2 * r, 2 * r), mittig);
+        }
+    }
+
     private static void Stern(Graphics g, Brush pinsel, float x, float y, float r, float drehung)
     {
         var innen = r * 0.24f;
@@ -583,6 +657,20 @@ internal sealed class CelebrationHud : LayeredHud
             Color.FromArgb(248, 250, 252), Color.FromArgb(255, 209, 102),
         };
 
+        // Eigene Bestzeit: Gruen und Weiss.
+        private static readonly Color[] Gruen =
+        {
+            Color.FromArgb(74, 222, 128), Color.FromArgb(134, 239, 172), Color.FromArgb(22, 163, 74),
+            Color.FromArgb(248, 250, 252),
+        };
+
+        // Neu auf der eigenen Liste: Blau und Weiss.
+        private static readonly Color[] Blau =
+        {
+            Color.FromArgb(96, 165, 250), Color.FromArgb(147, 197, 253), Color.FromArgb(37, 99, 235),
+            Color.FromArgb(248, 250, 252),
+        };
+
         /// <summary>Art: 0 Streifen, 1 Punkt, 2 Luftschlange. Quelle: -1/+1 Knallbonbon links/rechts, 0 von oben.</summary>
         internal readonly record struct Teil(int Art, int Quelle, Color Farbe, float X0, float Vx, float Vy,
                                              float Zug, float Schwere, float Breite, float Hoehe,
@@ -597,15 +685,22 @@ internal sealed class CelebrationHud : LayeredHud
         public Konfetti(int zufall, FeierArt stil = FeierArt.Rekord)
         {
             var r = new Random(zufall);
-            var ruhig = stil == FeierArt.NeuesAuto;
-            var Farben = ruhig ? Ruhig : Bunt;
+            var ruhig = stil != FeierArt.Rekord;
+            var klein = IstPersoenlich(stil);
+            var Farben = stil switch
+            {
+                FeierArt.NeuesAuto => Ruhig,
+                FeierArt.Persoenlich => Gruen,
+                FeierArt.Repertoire => Blau,
+                _ => Bunt,
+            };
             float Z(float a, float b) => a + ((float)r.NextDouble() * (b - a));
             var teile = new List<Teil>();
             // ZWEI KNALLBONBONS an den unteren Ecken der Karte -- passend zu den zwei
             // Knallen im Ton (CelebrationSound), links zuerst.
             foreach (var (quelle, zuend) in new[] { (-1, 0.05f), (1, 0.11f) })
             {
-                for (var i = 0; i < (ruhig ? 34 : 85); i++)
+                for (var i = 0; i < (klein ? 12 : ruhig ? 34 : 85); i++)
                 {
                     var art = r.NextDouble() < 0.62 ? 0 : r.NextDouble() < 0.7 ? 1 : 2;
                     var zug = art == 1 ? Z(2.3f, 3.0f) : Z(3.2f, 4.2f);
@@ -618,7 +713,7 @@ internal sealed class CelebrationHud : LayeredHud
                 }
             }
             // UND EIN LEICHTER REGEN von oben, verteilt ueber gut eine Sekunde.
-            for (var i = 0; i < (ruhig ? 55 : 90); i++)
+            for (var i = 0; i < (klein ? 14 : ruhig ? 55 : 90); i++)
             {
                 var art = r.NextDouble() < 0.7 ? 0 : 1;
                 teile.Add(new Teil(art, 0, Farben[r.Next(Farben.Length)], Z(0.03f, 0.97f),

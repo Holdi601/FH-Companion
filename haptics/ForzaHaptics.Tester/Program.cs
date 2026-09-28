@@ -1399,7 +1399,14 @@ internal static class Program
                                                 "Its first time here on the website -- thanks to you!",
                                                 "Goliath \u00b7 Toyota Supra RZ '98 \u00b7 A 800",
                                                 CelebrationHud.FeierArt.NeuesAuto, "NEW");
-            foreach (var (name, anlassJetzt) in new[] { ("feier", anlass), ("neu", neu) })
+            var pb = new CelebrationHud.Anlass("Personal best in class A!", "1:02.345", 0.412,
+                                               "Your previous best here: 1:02.757",
+                                               "Legend Island Circuit · Toyota Supra RZ '98 · A · Rivals",
+                                               CelebrationHud.FeierArt.Persoenlich);
+            var rep = new CelebrationHud.Anlass("New car on your list", "1:04.120", 0, "P3 of 7 on your list",
+                                                "Legend Island Circuit · Mazda RX-7 '97 · A",
+                                                CelebrationHud.FeierArt.Repertoire, "NEW");
+            foreach (var (name, anlassJetzt) in new[] { ("feier", anlass), ("neu", neu), ("pb", pb), ("rep", rep) })
             foreach (var t in new[] { 0.08, 0.2, 0.35, 0.6, 0.9, 1.4, 2.0, 2.8, 3.6, 4.6, 5.0 })
             {
                 var konfetti = new CelebrationHud.Konfetti(1234, anlassJetzt.Art);

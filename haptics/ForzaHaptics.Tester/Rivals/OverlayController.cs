@@ -197,6 +197,9 @@ internal sealed class OverlayController : IDisposable
                 ? LapArchive.Save(lap, _settings.LapTag)
                 : null;
 
+            // DIE EIGENE BESTENLISTE: war das ein persoenlicher Rekord? (seit 2026-09-28)
+            if (abgelegt is not null) { EigenerRekord(abgelegt, lap); }
+
             // AN DIE SEITE -- nur, wenn die Runde die Bestenliste des Autos schlaegt.
             // Im Hintergrund: ein langsamer Server darf das Rennen nie aufhalten.
             try
@@ -459,6 +462,7 @@ internal sealed class OverlayController : IDisposable
         };
         _liveMap = new LiveMapHud(_settings, screen);
         _reifen = new TyreHud(_settings, screen);
+        EigeneRundenLaden();
 
         _tick.Interval = Math.Max(250, (int)(_settings.PollSeconds * 1000));
         _tick.Tick += (_, _) => Tick();
@@ -3489,6 +3493,124 @@ internal sealed class OverlayController : IDisposable
             detail, CelebrationHud.FeierArt.NeuesAuto, Loc.T("NEW")));
     }
 
+    // ------------------------------------------------------------------ //
+    // Eigene Rekorde (seit 2026-09-28)
+    // ------------------------------------------------------------------ //
+
+    /// <summary>Die eigenen Runden fuer die Rekorde -- im Hintergrund geladen, dann fortgeschrieben.</summary>
+    private List<OwnTimes.Lap>? _eigeneRunden;
+    private readonly object _eigeneSchloss = new();
+    private bool _eigeneLaden;
+
+    private void EigeneRundenLaden()
+    {
+        if (_eigeneLaden) { return; }
+        _eigeneLaden = true;
+        Task.Run(() =>
+        {
+            try
+            {
+                var alle = OwnTimes.Einlesen(LapArchive.Root);
+                lock (_eigeneSchloss)
+                {
+                    // Was waehrend des Ladens dazukam, nicht verlieren.
+                    if (_eigeneRunden is { } schon)
+                    {
+                        alle.AddRange(schon.Where(n => !alle.Any(a => string.Equals(a.Path, n.Path,
+                                                                     StringComparison.OrdinalIgnoreCase))));
+                    }
+                    _eigeneRunden = alle;
+                }
+            }
+            catch (Exception e)
+            {
+                WriteDiagnostic("eigene Rekorde: " + e.Message);
+            }
+        });
+    }
+
+    /// <summary>Eine eben abgelegte Runde gegen die eigenen pruefen -- und feiern, wenn gewollt.</summary>
+    private void EigenerRekord(string pfad, RecordedLap lap)
+    {
+        try
+        {
+            var neu = OwnTimes.AusDatei(LapArchive.Root, pfad);
+            if (neu is null) { return; }
+            PersonalRecords.Ergebnis? e = null;
+            lock (_eigeneSchloss)
+            {
+                // Noch nicht geladen (die ersten Sekunden nach dem Start): nicht raten --
+                // die Runde kommt mit dem Laden ohnehin in die Liste.
+                if (_eigeneRunden is { } liste)
+                {
+                    e = PersonalRecords.Werte(liste, neu, _settings.PbPerMode);
+                    liste.Add(neu);
+                }
+            }
+            if (e is null || e.Art == PersonalRecords.Art.Keine) { return; }
+            LogLap($"personal: {e.Art} -- {RivalsAdvisor.LapText((int)Math.Round(neu.Seconds * 1000))}, "
+                   + $"place {e.Platz} of {e.Autos} ({neu.Klass}, {neu.Course}, {neu.Mode})");
+            if (!PersonalRecords.Gewollt(e.Art, _settings)) { return; }
+            var anlass = EigeneFeier(e, neu, lap);
+            // EINE SEKUNDE WARTEN: schlaegt dieselbe Runde auch die Website, kommt deren
+            // Feier gleich (LapAutoSubmit) -- und die geht vor.
+            var warte = new System.Windows.Forms.Timer { Interval = 1200 };
+            warte.Tick += (_, _) =>
+            {
+                warte.Stop();
+                warte.Dispose();
+                if (_disposed) { return; }
+                if (_feier.Laeuft is { } laeuft && !CelebrationHud.IstPersoenlich(laeuft)) { return; }
+                ZeigeFeier(anlass);
+            };
+            warte.Start();
+        }
+        catch (Exception ex)
+        {
+            WriteDiagnostic("eigener Rekord: " + ex.Message);
+        }
+    }
+
+    /// <summary>Die Karte zu einem eigenen Rekord -- fertig formuliert.</summary>
+    internal CelebrationHud.Anlass EigeneFeier(PersonalRecords.Ergebnis e, OwnTimes.Lap neu, RecordedLap? lap)
+    {
+        var zeit = RivalsAdvisor.LapText((int)Math.Round(neu.Seconds * 1000));
+        var strecke = !string.IsNullOrWhiteSpace(lap?.Track) ? lap!.Track!
+                      : !string.IsNullOrWhiteSpace(neu.CourseName) ? neu.CourseName
+                      : Loc.T("this course");
+        var auto = AutoName(neu.Ordinal);
+        var modus = neu.Mode is "unknown" or "" ? null : OwnTimes.ModeText(neu.Mode);
+        var platz = string.Format(Loc.T("P{0} of {1} on your list"), e.Platz, e.Autos);
+        var detail = string.Join(" · ", new[] { strecke, auto, neu.Klass, modus }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        var vorher = e.VorherSekunden is double v ? RivalsAdvisor.LapText((int)Math.Round(v * 1000)) : string.Empty;
+        var vorsprung = e.VorherSekunden is double w ? w - neu.Seconds : 0;
+        return e.Art switch
+        {
+            PersonalRecords.Art.KlassenRekord => new CelebrationHud.Anlass(
+                string.Format(Loc.T("Personal best in class {0}!"), neu.Klass), zeit, vorsprung,
+                string.Format(Loc.T("Your previous best here: {0}"), vorher), detail,
+                CelebrationHud.FeierArt.Persoenlich),
+            PersonalRecords.Art.AutoRekord => new CelebrationHud.Anlass(
+                Loc.T("Personal best with this car"), zeit, vorsprung,
+                string.Format(Loc.T("Previous best with it: {0}"), vorher) + " · " + platz, detail,
+                CelebrationHud.FeierArt.Persoenlich),
+            PersonalRecords.Art.NeuesAuto => new CelebrationHud.Anlass(
+                Loc.T("New car on your list"), zeit, 0, platz, detail,
+                CelebrationHud.FeierArt.Repertoire, Loc.T("NEW")),
+            _ => new CelebrationHud.Anlass(
+                string.Format(Loc.T("First lap in class {0} here"), neu.Klass), zeit, 0,
+                Loc.T("Now it is the time to beat"), detail,
+                CelebrationHud.FeierArt.Persoenlich, Loc.T("FIRST")),
+        };
+    }
+
+    /// <summary>"Try it" fuer die eigenen Rekorde -- mit Beispielwerten.</summary>
+    public void PersoenlichProbe() => ZeigeFeier(new CelebrationHud.Anlass(
+        string.Format(Loc.T("Personal best in class {0}!"), "A"), "1:02.345", 0.412,
+        string.Format(Loc.T("Your previous best here: {0}"), "1:02.757"),
+        Loc.T("Example: this is how a personal record looks."),
+        CelebrationHud.FeierArt.Persoenlich));
+
     /// <summary>"Try it" fuer die Meldung "neues Auto" -- mit Beispielwerten.</summary>
     public void NeuesAutoProbe() => ZeigeFeier(new CelebrationHud.Anlass(
         Loc.T("New car on the leaderboard!"), "1:31.208", 0,
@@ -3511,7 +3633,8 @@ internal sealed class OverlayController : IDisposable
         {
             FollowGameArea();
             _feier.Zeige(anlass, Environment.TickCount);
-            if (_settings.CelebrateSound) { CelebrationSound.Play(anlass.Art); }
+            var ton = CelebrationHud.IstPersoenlich(anlass.Art) ? _settings.PbSound : _settings.CelebrateSound;
+            if (ton) { CelebrationSound.Play(anlass.Art); }
         }
         catch (Exception e)
         {

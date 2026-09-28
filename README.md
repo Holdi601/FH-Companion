@@ -87,6 +87,11 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   thanks: a car rolls in, a "NEW" chip, a little confetti and a soft chime. Only
   for the first lap of that car there; a lap sent later from the queue shows it
   only while Forza runs. It has its own switch, on by default.
+- **Personal records.** Your own laps make a personal leaderboard per course
+  and class, and new bests get a smaller, shorter celebration: green for a
+  personal best in the class or with a car, blue for a car's first time on
+  your list. Each kind has its own switch. Records are kept per mode by
+  default, so a wall-riding lap from a solo race never beats a Rivals best.
 - **Layout editor.** Drag every block where you want it and resize it with the
   mouse wheel. You can preview the result on the real screen. Clicking a block
   jumps to its settings, and the settings side can be widened into columns.

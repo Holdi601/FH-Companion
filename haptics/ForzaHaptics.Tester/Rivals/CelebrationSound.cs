@@ -17,6 +17,7 @@ internal static class CelebrationSound
 
     private static readonly Lazy<byte[]> _wav = new(() => AlsWav(Proben()));
     private static readonly Lazy<byte[]> _wavNeu = new(() => AlsWav(ProbenNeuesAuto()));
+    private static readonly Lazy<byte[]> _wavPb = new(() => AlsWav(ProbenPersoenlich()));
     private static System.Media.SoundPlayer? _spieler;
 
     /// <summary>Der Ton als WAV (16 Bit, mono).</summary>
@@ -24,6 +25,9 @@ internal static class CelebrationSound
 
     /// <summary>Der Ton fuer ein neues Auto auf der Liste: ruhiger, ohne Knall.</summary>
     public static byte[] WavNeuesAuto => _wavNeu.Value;
+
+    /// <summary>Der Ton fuer einen eigenen Rekord: zwei helle Toene, kurz und leise.</summary>
+    public static byte[] WavPersoenlich => _wavPb.Value;
 
     /// <summary>Abspielen, ohne zu warten. Ein Fehler (kein Ausgabegeraet) bleibt still.</summary>
     public static void Play(CelebrationHud.FeierArt art = CelebrationHud.FeierArt.Rekord)
@@ -33,7 +37,12 @@ internal static class CelebrationSound
             _spieler?.Stop();
             _spieler?.Dispose();
             // Das Objekt BEHALTEN: es haelt den Puffer, aus dem Windows gerade spielt.
-            var wav = art == CelebrationHud.FeierArt.NeuesAuto ? WavNeuesAuto : Wav;
+            var wav = art switch
+            {
+                CelebrationHud.FeierArt.NeuesAuto => WavNeuesAuto,
+                CelebrationHud.FeierArt.Persoenlich or CelebrationHud.FeierArt.Repertoire => WavPersoenlich,
+                _ => Wav,
+            };
             _spieler = new System.Media.SoundPlayer(new MemoryStream(wav, writable: false));
             _spieler.Play();
         }
@@ -112,6 +121,20 @@ internal static class CelebrationSound
             Glocke(y, 0.62 + (i * 0.11) + (r.NextDouble() * 0.03), funken[r.Next(funken.Length)], 0.06, 0.1f);
         }
         return Normiert(y, Spitze * 0.85f);
+    }
+
+    /// <summary>
+    /// Der Ton fuer einen eigenen Rekord: eine Quinte aufwaerts (E6 -> H6), kurz, mit
+    /// einem leisen Funken -- deutlich zurueckhaltender als die Website-Feier, denn er
+    /// kommt oft (seit 2026-09-28).
+    /// </summary>
+    internal static float[] ProbenPersoenlich()
+    {
+        var y = new float[(int)(Rate * 0.9)];
+        Glocke(y, 0.02, 1318.51, 0.16, 0.7f);
+        Glocke(y, 0.11, 1975.53, 0.3, 0.8f);
+        Glocke(y, 0.2, 2637.0, 0.08, 0.15f);
+        return Normiert(y, Spitze * 0.6f);
     }
 
     /// <summary>Auf eine Spitze bringen und die letzten 0,3 s sanft auslaufen lassen.</summary>

@@ -326,6 +326,30 @@ internal sealed class OverlaySettings
     // Federweg, Pfuetze, Curb, Rumpeln (TyreHud). Ab Werk AUS -- es ist viel auf einmal,
     // und ein neues Fenster ueber dem Spiel soll niemand ungefragt bekommen.
 
+    // ---- EIGENE REKORDE (seit 2026-09-28, PersonalRecords) ------------------------
+    //
+    // Kleine Feiern fuer den eigenen Fortschritt, jede fuer sich abschaltbar: "either for
+    // every car course performance combo or just when new car in pi class or just for a
+    // new record in pi class on that course" (Nutzer).
+
+    /// <summary>Schneller als jede eigene Runde in dieser Klasse auf diesem Kurs.</summary>
+    [JsonPropertyName("pb_class_record")] public bool PbClassRecord { get; set; } = true;
+
+    /// <summary>Schneller als jede eigene Runde mit diesem Auto (Klasse, Kurs).</summary>
+    [JsonPropertyName("pb_car_record")] public bool PbCarRecord { get; set; } = true;
+
+    /// <summary>Ein Auto steht zum ersten Mal auf der eigenen Liste des Kurses in dieser Klasse.</summary>
+    [JsonPropertyName("pb_new_car")] public bool PbNewCar { get; set; } = true;
+
+    /// <summary>Die allererste eigene Runde in einer Klasse auf einem Kurs -- ab Werk aus, sonst feiert anfangs jede Runde.</summary>
+    [JsonPropertyName("pb_first_in_class")] public bool PbFirstInClass { get; set; }
+
+    /// <summary>Rekorde je Modus getrennt (Rivals, Horizon Play, Rennen, freie Fahrt).</summary>
+    [JsonPropertyName("pb_per_mode")] public bool PbPerMode { get; set; } = true;
+
+    /// <summary>Ein kurzer, leiser Ton zu den eigenen Rekorden.</summary>
+    [JsonPropertyName("pb_sound")] public bool PbSound { get; set; } = true;
+
     /// <summary>Breite der Einstellungen rechts im Reiter "Lap delta HUD" (Bildpunkte).</summary>
     /// <remarks>Keine Anordnung: sie gehoert zum Bildschirm, nicht zum Overlay.</remarks>
     [JsonPropertyName("hud_editor_side_width")] public int HudEditorSideWidth { get; set; } = 290;

@@ -37,6 +37,8 @@ internal sealed class HudTab : UserControl
     public event Action? FeierProbe;
     /// <summary>"Try it" bei der Meldung "neues Auto".</summary>
     public event Action? NeuesAutoProbe;
+    /// <summary>"Try it" bei den eigenen Rekorden.</summary>
+    public event Action? PersoenlichProbe;
     /// <summary>Das Aufnahmefenster oeffnen (Hauptfenster -> Rivals-Reiter).</summary>
     public event Action? AufnahmeFensterWunsch;
 
@@ -65,6 +67,7 @@ internal sealed class HudTab : UserControl
         _side.QuelleGeaendert += () => _canvas.VorschauVergessen();
         _side.FeierProbe += () => FeierProbe?.Invoke();
         _side.NeuesAutoProbe += () => NeuesAutoProbe?.Invoke();
+        _side.PersoenlichProbe += () => PersoenlichProbe?.Invoke();
         _side.AufnahmeFensterWunsch += () => AufnahmeFensterWunsch?.Invoke();
         _side.Select(HudPart.Delta);
 
@@ -821,6 +824,8 @@ internal sealed class HudPartPanel : Panel
     public event Action? FeierProbe;
     /// <summary>"Try it" bei der Meldung "neues Auto" gedrueckt.</summary>
     public event Action? NeuesAutoProbe;
+    /// <summary>"Try it" bei den eigenen Rekorden gedrueckt.</summary>
+    public event Action? PersoenlichProbe;
     /// <summary>"Open the recording window" gedrueckt.</summary>
     public event Action? AufnahmeFensterWunsch;
 
@@ -1233,6 +1238,30 @@ internal sealed class HudPartPanel : Panel
         Rein(probeNeu);
         Rein(Note("Calmer, in teal: when the server accepts a lap of a car that was not on "
                   + "that route and class board yet."));
+
+        // ---- EIGENE REKORDE (seit 2026-09-28): die eigene Bestenliste, klein gefeiert.
+        Abschnitt(Loc.T("Personal records"));
+        Rein(Note("Your own laps decide, not the website. Smaller and shorter than the website "
+                  + "celebration: green for a personal best, blue for a new car on your list."));
+        Schalter(Loc.T("Personal best in a class on a course"), settings.PbClassRecord, v => _settings.PbClassRecord = v);
+        Schalter(Loc.T("Personal best with a car (every car, class and course)"), settings.PbCarRecord,
+                 v => _settings.PbCarRecord = v);
+        Schalter(Loc.T("A car's first time on your list for a course and class"), settings.PbNewCar,
+                 v => _settings.PbNewCar = v);
+        Schalter(Loc.T("Your first lap in a class on a course"), settings.PbFirstInClass,
+                 v => _settings.PbFirstInClass = v);
+        Schalter(Loc.T("Separate records per mode"), settings.PbPerMode, v => _settings.PbPerMode = v);
+        Rein(Note("Rivals, Horizon Play, races and free roam each keep their own records, so a "
+                  + "wall-riding lap never beats a Rivals best. Laps from before the mode was "
+                  + "recorded count for every mode."));
+        Schalter(Loc.T("Play a short sound with them"), settings.PbSound, v => _settings.PbSound = v);
+        var probePb = Small(Loc.T("Try it"), () => PersoenlichProbe?.Invoke());
+        probePb.Width = 110;
+        probePb.Margin = new Padding(0, 2, 0, 4);
+        Rein(probePb);
+        Rein(Note("Compared are laps on the same course, in the same class and with the same "
+                  + "start (standing or flying). Each lap shows at most one: a class best before "
+                  + "a new car before a car best."));
 
         // ---- FARBEN FUER ALLE --------------------------------------------------------
         Abschnitt(Loc.T("Shared colours"));

@@ -58,6 +58,88 @@ internal static class EdgeCaseTest
         ReplacedControllerGoesQuiet();
         LiveMapStaysWithoutStrip();
         LapModeFromMenus();
+        PersonalRecordsDecide();
+    }
+
+    /// <summary>
+    /// Die eigene Bestenliste (2026-09-28): welcher Anlass, gegen welche Runden, und die
+    /// kleineren Feiern darauf.
+    /// </summary>
+    private static void PersonalRecordsDecide()
+    {
+        Rivals.OwnTimes.Lap L(int car, double sek, string klasse = "A", bool stehend = false, string modus = "rivals",
+                              string kurs = "c1", bool sprint = false) =>
+            new(kurs, "Test Circuit", klasse, car, "t", 700, sek, stehend, sprint, DateTime.Now, modus,
+                $"x/{kurs}/{klasse}/{car}/{sek}/{modus}/{stehend}/{Guid.NewGuid():N}.json");
+        var bisher = new List<Rivals.OwnTimes.Lap> { L(1, 60.0), L(1, 61.0), L(2, 59.5) };
+        Rivals.PersonalRecords.Ergebnis W(Rivals.OwnTimes.Lap neu, bool jeModus = true, List<Rivals.OwnTimes.Lap>? b = null) =>
+            Rivals.PersonalRecords.Werte(b ?? bisher, neu, jeModus);
+
+        var k = W(L(1, 59.0));
+        Soll(k.Art == Rivals.PersonalRecords.Art.KlassenRekord && k.VorherSekunden == 59.5 && k.Platz == 1 && k.Autos == 2,
+             $"Klassenrekord: {k}");
+        var a = W(L(1, 59.8));
+        Soll(a.Art == Rivals.PersonalRecords.Art.AutoRekord && a.VorherSekunden == 60.0 && a.Platz == 2 && a.Autos == 2,
+             $"Autorekord: {a}");
+        var n = W(L(3, 65.0));
+        Soll(n.Art == Rivals.PersonalRecords.Art.NeuesAuto && n.Platz == 3 && n.Autos == 3, $"neues Auto: {n}");
+        Soll(W(L(3, 59.0)).Art == Rivals.PersonalRecords.Art.KlassenRekord, "ein neues Auto mit Klassenbestzeit ist kein Klassenrekord");
+        Soll(W(L(1, 60.5)).Art == Rivals.PersonalRecords.Art.Keine, "eine langsamere Runde feiert");
+        Soll(W(L(1, 50.0, klasse: "S1")).Art == Rivals.PersonalRecords.Art.ErsteInKlasse, "andere Klasse wird mitverglichen");
+        Soll(W(L(1, 50.0, stehend: true)).Art == Rivals.PersonalRecords.Art.ErsteInKlasse,
+             "stehender Start wird gegen fliegende Runden verglichen");
+        Soll(W(L(1, 50.0, sprint: true)).Art == Rivals.PersonalRecords.Art.ErsteInKlasse,
+             "Sprint wird gegen Rundenzeiten verglichen");
+        // JE MODUS: ein Solo-Rennen hat eigene Rekorde ...
+        Soll(W(L(1, 58.0, modus: "race")).Art == Rivals.PersonalRecords.Art.ErsteInKlasse,
+             "je Modus: eine Rennrunde wird gegen Rivals-Runden gewertet");
+        Soll(W(L(1, 58.0, modus: "race"), jeModus: false).Art == Rivals.PersonalRecords.Art.KlassenRekord,
+             "ohne Trennung nach Modus zaehlt die Rennrunde nicht gegen Rivals");
+        // ... und Runden ohne Modus (vor dem Update) zaehlen fuer jeden Modus.
+        var mitAlt = new List<Rivals.OwnTimes.Lap>(bisher) { L(4, 58.0, modus: "unknown") };
+        Soll(W(L(1, 58.5), b: mitAlt).Art != Rivals.PersonalRecords.Art.KlassenRekord,
+             "eine alte Runde ohne Modus zaehlt nicht mit -- nach dem Update waere alles ein Rekord");
+        // Dieselbe Datei zaehlt nie gegen sich selbst.
+        var selbst = L(5, 57.0);
+        Soll(W(selbst, b: new List<Rivals.OwnTimes.Lap>(bisher) { selbst }).Art == Rivals.PersonalRecords.Art.KlassenRekord,
+             "die Runde wird gegen sich selbst verglichen");
+
+        var s = new Rivals.OverlaySettings();
+        Soll(Rivals.PersonalRecords.Gewollt(Rivals.PersonalRecords.Art.KlassenRekord, s)
+             && Rivals.PersonalRecords.Gewollt(Rivals.PersonalRecords.Art.AutoRekord, s)
+             && Rivals.PersonalRecords.Gewollt(Rivals.PersonalRecords.Art.NeuesAuto, s)
+             && !Rivals.PersonalRecords.Gewollt(Rivals.PersonalRecords.Art.ErsteInKlasse, s)
+             && !Rivals.PersonalRecords.Gewollt(Rivals.PersonalRecords.Art.Keine, s),
+             "Vorgaben der eigenen Rekorde stimmen nicht (drei an, erste Runde aus)");
+        s.PbCarRecord = false;
+        Soll(!Rivals.PersonalRecords.Gewollt(Rivals.PersonalRecords.Art.AutoRekord, s), "Autorekord laesst sich nicht abschalten");
+
+        // DIE FEIERN DAZU: kleiner, kuerzer, eigener Ton.
+        var ton = Rivals.CelebrationSound.ProbenPersoenlich();
+        Soll(ton.All(float.IsFinite) && ton.Max(Math.Abs) < Rivals.CelebrationSound.Spitze * 0.65f
+             && ton[^((int)(0.05 * Rivals.CelebrationSound.Rate))..].Max(Math.Abs) < 0.01,
+             "der Ton fuer eigene Rekorde ist nicht leiser als die Website-Feier oder endet nicht leise");
+        var flaeche = new Size(1920, 1080);
+        foreach (var art in new[] { Rivals.CelebrationHud.FeierArt.Persoenlich, Rivals.CelebrationHud.FeierArt.Repertoire })
+        {
+            var anlass = new Rivals.CelebrationHud.Anlass("Personal best in class A!", "1:02.345", 0.412,
+                                                          "Your previous best here: 1:02.757", "Test Circuit · Car · A", art);
+            var konfetti = new Rivals.CelebrationHud.Konfetti(3, art);
+            var gross = new Rivals.CelebrationHud.Konfetti(3, Rivals.CelebrationHud.FeierArt.Rekord);
+            Soll(konfetti.Teile.Length < gross.Teile.Length / 3, $"{art}: nicht weniger Konfetti als die Website-Feier");
+            int Gezeichnet(double t)
+            {
+                using var bild = new Bitmap(flaeche.Width, flaeche.Height, PixelFormat.Format32bppPArgb);
+                using (var g = Graphics.FromImage(bild)) { g.Clear(Color.Transparent); Rivals.CelebrationHud.Male(g, flaeche, anlass, konfetti, t); }
+                var n2 = 0;
+                for (var y = 0; y < 500; y += 5) { for (var x = 300; x < 1620; x += 7) { if (bild.GetPixel(x, y).A > 60) { n2++; } } }
+                return n2;
+            }
+            Soll(Gezeichnet(1.2) > 200, $"{art}: die Karte erscheint nicht");
+            Soll(Gezeichnet(3.9) == 0, $"{art}: steht nach 3,8 s noch da");
+            Soll(Rivals.CelebrationHud.IstPersoenlich(art) && Rivals.CelebrationHud.DauerVon(art) < Rivals.CelebrationHud.Dauer,
+                 $"{art}: nicht kuerzer als die Website-Feier");
+        }
     }
 
     /// <summary>
