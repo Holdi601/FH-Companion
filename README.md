@@ -19,6 +19,10 @@ A quick overview: https://www.youtube.com/watch?v=YM7poTzjVUk
 <https://rradick.duckdns.org:8787/rivals_auto_wertung.html>, and the app can be
 downloaded from <https://rradick.duckdns.org:8787/app>.
 
+**Setting up:** step by step with pictures, [on the PC you play on](docs/setup_pc.md)
+or [for an Xbox or a second PC](docs/setup_xbox.md). Both are also short videos on
+the download page.
+
 > FH Companion is an unofficial fan project. It is not affiliated with or endorsed
 > by Microsoft, Xbox Game Studios or Playground Games. Forza Horizon is a trademark
 > of Microsoft.

@@ -113,6 +113,13 @@ table.settings td:first-child { color: var(--muted); }
   border-left: 4px solid var(--bar); box-shadow: var(--shadow);
 }
 [dir="rtl"] .warn { border-left: 1px solid var(--border); border-right: 4px solid var(--bar); }
+/* Die Anleitungsvideos: nebeneinander, auf dem Telefon untereinander. */
+.guides { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin: 6px 0 12px; }
+.guides figure { margin: 0; }
+.guides video { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #000;
+  border: 1px solid var(--border); box-shadow: var(--shadow); display: block; }
+.guides figcaption { margin-top: 8px; font-size: 14px; color: var(--muted); }
+.guides figcaption b { color: var(--ink); font-weight: 600; margin-right: 8px; }
 footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 [dir="rtl"] ul { padding-left: 0; padding-right: 20px; }
 [dir="rtl"] table.settings td { padding: 3px 0 3px 18px; }
@@ -144,6 +151,19 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     <tr><td id="s-fmt">Data Out Format</td><td class="mono">Dash</td></tr>
   </table>
   <p id="setup3"></p>
+
+  <h2 id="h-guides"></h2>
+  <p id="guides"></p>
+  <div class="guides">
+    <figure>
+      <video controls preload="metadata" poster="/guide/fh-companion-setup-pc.jpg" src="/guide/fh-companion-setup-pc.mp4"></video>
+      <figcaption><b id="g-pc"></b><a class="g-text" id="g-pc-text" data-doc="setup_pc.md" rel="noopener noreferrer" target="_blank"></a></figcaption>
+    </figure>
+    <figure>
+      <video controls preload="metadata" poster="/guide/fh-companion-setup-xbox.jpg" src="/guide/fh-companion-setup-xbox.mp4"></video>
+      <figcaption><b id="g-xbox"></b><a class="g-text" id="g-xbox-text" data-doc="setup_xbox.md" rel="noopener noreferrer" target="_blank"></a></figcaption>
+    </figure>
+  </div>
 
   <h2 id="h-does"></h2>
   <ul>
@@ -206,6 +226,8 @@ var T = {
     hReq: "Requirements",
     req: "Windows 10 or 11, 64-bit. The runtime is in the package, no .NET to install. The tuning inspector reads the running game's memory and may need administrator rights.",
     back: "Back to the car ratings",
+    hGuides: "Setup guides", guides: "Two short videos: one for playing on this PC, one for playing on an Xbox or a second PC with FH Companion as a dashboard.",
+    gPc: "On this PC", gXbox: "Xbox or second PC", gText: "Step by step with pictures",
     dataOut: "Data Out", ip: "Data Out IP", port: "Data Out Port", fmt: "Data Out Format",
     noinfo: "Package details are not reachable right now — the download still works.",
     hSafe: "Windows may warn about this file",
@@ -234,6 +256,8 @@ var T = {
     hReq: "Voraussetzungen",
     req: "Windows 10 oder 11, 64 Bit. Die Laufzeitumgebung liegt im Paket, es muss kein .NET nachinstalliert werden. Der Tuning-Inspektor liest den Speicher des laufenden Spiels und braucht dafür gelegentlich Administratorrechte.",
     back: "Zurück zu den Auto-Wertungen",
+    hGuides: "Einrichtung", guides: "Zwei kurze Videos: eins für das Spielen auf diesem PC, eins für Xbox oder einen zweiten PC mit FH Companion als Dashboard.",
+    gPc: "Auf diesem PC", gXbox: "Xbox oder zweiter PC", gText: "Schritt für Schritt mit Bildern",
     dataOut: "Data Out", ip: "Data Out IP", port: "Data Out Port", fmt: "Data Out Format",
     noinfo: "Die Angaben zum Paket sind gerade nicht abrufbar — der Download funktioniert trotzdem.",
     hSafe: "Windows warnt möglicherweise vor dieser Datei",
@@ -262,6 +286,8 @@ var T = {
     hReq: "Requisitos",
     req: "Windows 10 u 11, 64 bits. El entorno de ejecución va incluido, no hay que instalar .NET. El inspector de tuning lee la memoria del juego y puede necesitar permisos de administrador.",
     back: "Volver a las valoraciones de coches",
+    hGuides: "Guías de configuración", guides: "Dos vídeos cortos: uno para jugar en este PC y otro para jugar en una Xbox o un segundo PC con FH Companion como panel.",
+    gPc: "En este PC", gXbox: "Xbox o segundo PC", gText: "Paso a paso con imágenes",
     noinfo: "Los datos del paquete no están disponibles ahora — la descarga funciona igualmente.",
     hSafe: "Windows puede advertir sobre este archivo",
     safe: "Defender puede marcar esta descarga como amenaza. El archivo no está firmado y casi nadie lo tiene, así que Windows lo juzga por su comportamiento: este programa lee la memoria del juego y se reemplaza al actualizarse, lo que desde fuera se ve igual. Cada versión se analiza antes de publicarse, y la suma de verificación de arriba permite comprobar que el archivo que recibiste es el que se compiló. Si Windows lo bloquea, elige Permitir en el dispositivo."
@@ -289,6 +315,8 @@ var T = {
     hReq: "Configuration requise",
     req: "Windows 10 ou 11, 64 bits. L'environnement d'exécution est inclus, aucun .NET à installer. L'inspecteur de réglages lit la mémoire du jeu et peut demander des droits administrateur.",
     back: "Retour aux notes des voitures",
+    hGuides: "Guides d'installation", guides: "Deux courtes vidéos : l'une pour jouer sur ce PC, l'autre pour jouer sur une Xbox ou un second PC avec FH Companion en tableau de bord.",
+    gPc: "Sur ce PC", gXbox: "Xbox ou second PC", gText: "Pas à pas en images",
     noinfo: "Les informations du paquet sont indisponibles — le téléchargement fonctionne quand même.",
     hSafe: "Windows peut vous avertir à propos de ce fichier",
     safe: "Defender peut signaler ce téléchargement comme une menace. Le fichier n'est pas signé et presque personne ne l'a, donc Windows le juge sur son comportement : ce programme lit la mémoire du jeu et se remplace lors des mises à jour, ce qui paraît identique de l'extérieur. Chaque version est analysée avant publication, et la somme de contrôle ci-dessus permet de vérifier que le fichier reçu est bien celui qui a été compilé. Si Windows bloque, choisissez Autoriser sur l'appareil."
@@ -316,6 +344,8 @@ var T = {
     hReq: "Requisitos",
     req: "Windows 10 ou 11, 64 bits. O runtime vem no pacote, sem .NET para instalar. O inspetor de tuning lê a memória do jogo e pode precisar de direitos de administrador.",
     back: "Voltar às avaliações de carros",
+    hGuides: "Guias de configuração", guides: "Dois vídeos curtos: um para jogar neste PC e outro para jogar numa Xbox ou num segundo PC com o FH Companion como painel.",
+    gPc: "Neste PC", gXbox: "Xbox ou segundo PC", gText: "Passo a passo com imagens",
     noinfo: "Os dados do pacote estão indisponíveis — o download funciona mesmo assim.",
     hSafe: "O Windows pode avisar sobre este arquivo",
     safe: "O Defender pode apontar este download como ameaça. O arquivo não é assinado e quase ninguém o tem, então o Windows julga pelo comportamento: este programa lê a memória do jogo e se substitui ao atualizar, o que de fora parece igual. Toda versão é verificada antes de publicada, e a soma acima permite conferir que o arquivo que você recebeu é o que foi compilado. Se o Windows bloquear, escolha Permitir no dispositivo."
@@ -343,6 +373,8 @@ var T = {
     hReq: "Requisiti",
     req: "Windows 10 o 11, 64 bit. Il runtime è incluso, nessun .NET da installare. L'ispettore di assetto legge la memoria del gioco e può richiedere i diritti di amministratore.",
     back: "Torna alle valutazioni delle auto",
+    hGuides: "Guide di configurazione", guides: "Due brevi video: uno per giocare su questo PC, uno per giocare su una Xbox o un secondo PC con FH Companion come dashboard.",
+    gPc: "Su questo PC", gXbox: "Xbox o secondo PC", gText: "Passo per passo con immagini",
     noinfo: "I dati del pacchetto non sono raggiungibili — il download funziona comunque.",
     hSafe: "Windows potrebbe avvisarti su questo file",
     safe: "Defender può segnalare questo download come minaccia. Il file non è firmato e quasi nessuno lo ha, quindi Windows lo giudica dal comportamento: questo programma legge la memoria del gioco e si sostituisce quando si aggiorna, cosa che da fuori appare identica. Ogni versione viene analizzata prima della pubblicazione, e il checksum qui sopra permette di verificare che il file ricevuto sia quello compilato. Se Windows blocca, scegli Consenti nel dispositivo."
@@ -370,6 +402,8 @@ var T = {
     hReq: "Wymagania",
     req: "Windows 10 lub 11, 64-bit. Środowisko uruchomieniowe jest w paczce, nie trzeba instalować .NET. Inspektor tuningu czyta pamięć gry i może wymagać uprawnień administratora.",
     back: "Powrót do ocen samochodów",
+    hGuides: "Poradniki konfiguracji", guides: "Dwa krótkie filmy: jeden do gry na tym PC, drugi do gry na Xboksie lub drugim PC z FH Companion jako panelem.",
+    gPc: "Na tym PC", gXbox: "Xbox lub drugi PC", gText: "Krok po kroku z obrazkami",
     noinfo: "Dane paczki są chwilowo niedostępne — pobieranie i tak działa.",
     hSafe: "Windows może ostrzec przed tym plikiem",
     safe: "Defender może zgłosić to pobranie jako zagrożenie. Plik nie jest podpisany i prawie nikt go nie ma, więc Windows ocenia go po zachowaniu: program czyta pamięć gry i podmienia sam siebie przy aktualizacji, co z zewnątrz wygląda tak samo. Każda wersja jest skanowana przed publikacją, a suma kontrolna powyżej pozwala sprawdzić, że otrzymany plik to ten zbudowany. Jeśli Windows blokuje, wybierz Zezwól na urządzeniu."
@@ -397,6 +431,8 @@ var T = {
     hReq: "Требования",
     req: "Windows 10 или 11, 64 бита. Среда выполнения в комплекте, .NET ставить не нужно. Инспектор тюнинга читает память игры и может потребовать прав администратора.",
     back: "Назад к рейтингам машин",
+    hGuides: "Руководства по настройке", guides: "Два коротких видео: одно для игры на этом ПК, другое — для игры на Xbox или втором ПК с FH Companion в роли панели.",
+    gPc: "На этом ПК", gXbox: "Xbox или второй ПК", gText: "Пошагово с картинками",
     noinfo: "Сведения о пакете сейчас недоступны — загрузка всё равно работает.",
     hSafe: "Windows может предупредить об этом файле",
     safe: "Defender может счесть эту загрузку угрозой. Файл не подписан и почти ни у кого его нет, поэтому Windows судит по поведению: программа читает память игры и заменяет себя при обновлении — снаружи это выглядит одинаково. Каждая сборка проверяется перед публикацией, а контрольная сумма выше позволяет убедиться, что полученный файл — это собранный файл. Если Windows блокирует, выберите «Разрешить на устройстве»."
@@ -424,6 +460,8 @@ var T = {
     hReq: "Gereksinimler",
     req: "Windows 10 veya 11, 64 bit. Çalışma zamanı pakette, .NET kurmanız gerekmez. Ayar denetleyicisi oyunun belleğini okur ve yönetici hakkı isteyebilir.",
     back: "Araç değerlendirmelerine dön",
+    hGuides: "Kurulum rehberleri", guides: "İki kısa video: biri bu PC'de oynamak için, diğeri FH Companion gösterge paneliyle Xbox'ta veya ikinci bir PC'de oynamak için.",
+    gPc: "Bu PC'de", gXbox: "Xbox veya ikinci PC", gText: "Resimlerle adım adım",
     noinfo: "Paket bilgileri şu an alınamıyor — indirme yine de çalışıyor.",
     hSafe: "Windows bu dosya için uyarabilir",
     safe: "Defender bu indirmeyi tehdit olarak bildirebilir. Dosya imzasız ve neredeyse kimsede yok, bu yüzden Windows davranışa bakar: bu program oyunun belleğini okur ve güncellenirken kendini değiştirir; dışarıdan aynı görünür. Her sürüm yayınlanmadan taranır ve yukarıdaki sağlama, aldığınız dosyanın derlenen dosya olduğunu doğrulamanızı sağlar. Windows engellerse Cihazda izin ver'i seçin."
@@ -451,6 +489,8 @@ var T = {
     hReq: "動作環境",
     req: "Windows 10 または 11、64 ビット。ランタイムは同梱されており .NET の導入は不要。チューンインスペクターはゲームのメモリを読むため、管理者権限が必要な場合があります。",
     back: "クルマ評価に戻る",
+    hGuides: "セットアップガイド", guides: "短い動画が2本：この PC でプレイする場合と、FH Companion をダッシュボードにして Xbox や2台目の PC でプレイする場合。",
+    gPc: "この PC で", gXbox: "Xbox または2台目の PC", gText: "画像付きの手順",
     noinfo: "パッケージ情報を取得できません — ダウンロードは可能です。",
     hSafe: "Windows がこのファイルを警告することがあります",
     safe: "Defender がこのダウンロードを脅威として報告する場合があります。署名がなく利用者もほとんどいないため、Windows は振る舞いで判断します。本プログラムは実行中のゲームのメモリを読み、更新時に自分自身を置き換えますが、外からは同じに見えます。公開前に毎回検査しており、上記のチェックサムで受け取ったファイルがビルドされたファイルであることを確認できます。ブロックされた場合は「デバイス上で許可」を選んでください。"
@@ -478,6 +518,8 @@ var T = {
     hReq: "요구 사항",
     req: "Windows 10 또는 11, 64비트. 런타임이 포함되어 있어 .NET 설치가 필요 없습니다. 튜닝 검사기는 게임 메모리를 읽으므로 관리자 권한이 필요할 수 있습니다.",
     back: "자동차 평가로 돌아가기",
+    hGuides: "설정 가이드", guides: "짧은 영상 두 개: 이 PC에서 플레이할 때, 그리고 FH Companion을 대시보드로 쓰며 Xbox나 두 번째 PC에서 플레이할 때.",
+    gPc: "이 PC에서", gXbox: "Xbox 또는 두 번째 PC", gText: "그림과 함께 단계별로",
     noinfo: "패키지 정보를 가져올 수 없습니다 — 다운로드는 가능합니다.",
     hSafe: "Windows가 이 파일을 경고할 수 있습니다",
     safe: "Defender가 이 다운로드를 위협으로 보고할 수 있습니다. 서명이 없고 사용자도 거의 없어 Windows는 동작으로 판단합니다. 이 프로그램은 실행 중인 게임의 메모리를 읽고 업데이트 시 스스로를 교체하는데, 밖에서는 똑같아 보입니다. 모든 배포본은 공개 전에 검사하며, 위의 체크섬으로 받은 파일이 빌드된 파일인지 확인할 수 있습니다. 차단되면 '장치에서 허용'을 선택하세요."
@@ -505,6 +547,8 @@ var T = {
     hReq: "系统要求",
     req: "Windows 10 或 11，64 位。运行时已包含在内，无需安装 .NET。调校检查器需读取游戏内存，可能需要管理员权限。",
     back: "返回车辆评分",
+    hGuides: "设置指南", guides: "两段短视频：一段用于在这台电脑上玩，另一段用于在 Xbox 或第二台电脑上玩、以 FH Companion 作为仪表板。",
+    gPc: "在这台电脑上", gXbox: "Xbox 或第二台电脑", gText: "图文分步说明",
     noinfo: "暂时无法获取安装包信息 — 下载仍然可用。",
     hSafe: "Windows 可能会对此文件发出警告",
     safe: "Defender 可能将此下载报为威胁。文件未签名且几乎无人使用，因此 Windows 按行为判断：本程序会读取游戏内存，并在更新时替换自身，从外部看完全一样。每个版本发布前都会扫描，上方的校验和可用于核对你拿到的文件就是构建出来的文件。若 Windows 阻止，请选择「允许在设备上运行」。"
@@ -532,6 +576,8 @@ var T = {
     hReq: "Vereisten",
     req: "Windows 10 of 11, 64-bits. De runtime zit in het pakket, geen .NET te installeren. De tuning-inspecteur leest het geheugen van het spel en heeft soms beheerdersrechten nodig.",
     back: "Terug naar de autobeoordelingen",
+    hGuides: "Installatiegidsen", guides: "Twee korte video's: één voor spelen op deze pc, één voor spelen op een Xbox of een tweede pc met FH Companion als dashboard.",
+    gPc: "Op deze pc", gXbox: "Xbox of tweede pc", gText: "Stap voor stap met afbeeldingen",
     noinfo: "Pakketgegevens zijn nu niet bereikbaar — downloaden werkt wel.",
     hSafe: "Windows waarschuwt mogelijk voor dit bestand",
     safe: "Defender kan deze download als bedreiging melden. Het bestand is niet ondertekend en vrijwel niemand heeft het, dus Windows oordeelt op gedrag: dit programma leest het geheugen van het spel en vervangt zichzelf bij een update, wat van buiten hetzelfde oogt. Elke versie wordt vóór publicatie gescand, en met de controlesom hierboven kun je nagaan dat het bestand dat je kreeg het gebouwde bestand is. Blokkeert Windows het, kies dan Toestaan op apparaat."
@@ -559,6 +605,8 @@ var T = {
     hReq: "Krav",
     req: "Windows 10 eller 11, 64-bitars. Körtiden ingår, inget .NET att installera. Trimningsinspektören läser spelets minne och kan behöva administratörsrättigheter.",
     back: "Tillbaka till bilbetygen",
+    hGuides: "Installationsguider", guides: "Två korta videor: en för att spela på den här datorn, en för att spela på en Xbox eller en andra dator med FH Companion som instrumentpanel.",
+    gPc: "På den här datorn", gXbox: "Xbox eller andra dator", gText: "Steg för steg med bilder",
     noinfo: "Paketuppgifterna går inte att nå just nu — nedladdningen fungerar ändå.",
     hSafe: "Windows kan varna för den här filen",
     safe: "Defender kan rapportera nedladdningen som ett hot. Filen är osignerad och nästan ingen har den, så Windows dömer efter beteende: programmet läser spelets minne och byter ut sig självt vid uppdatering, vilket utifrån ser likadant ut. Varje version skannas före publicering, och kontrollsumman ovan låter dig verifiera att filen du fick är den som byggdes. Om Windows blockerar, välj Tillåt på enheten."
@@ -586,6 +634,8 @@ var T = {
     hReq: "Požadavky",
     req: "Windows 10 nebo 11, 64bitový. Běhové prostředí je součástí balíčku, .NET instalovat netřeba. Inspektor ladění čte paměť hry a může vyžadovat práva správce.",
     back: "Zpět na hodnocení vozů",
+    hGuides: "Návody k nastavení", guides: "Dvě krátká videa: jedno pro hraní na tomto PC, druhé pro hraní na Xboxu nebo druhém PC s FH Companion jako panelem.",
+    gPc: "Na tomto PC", gXbox: "Xbox nebo druhé PC", gText: "Krok za krokem s obrázky",
     noinfo: "Údaje o balíčku teď nejsou dostupné — stažení přesto funguje.",
     hSafe: "Windows může před tímto souborem varovat",
     safe: "Defender může toto stažení označit za hrozbu. Soubor není podepsaný a téměř nikdo ho nemá, takže Windows soudí podle chování: program čte paměť hry a při aktualizaci se sám nahradí, což zvenku vypadá stejně. Každá verze se před zveřejněním kontroluje a kontrolní součet výše umožňuje ověřit, že soubor, který jste dostali, je ten sestavený. Pokud Windows blokuje, zvolte Povolit v zařízení."
@@ -613,6 +663,8 @@ var T = {
     hReq: "المتطلبات",
     req: "Windows 10 أو 11، 64 بت. بيئة التشغيل مدرجة في الحزمة، ولا حاجة لتثبيت .NET. مفتّش الضبط يقرأ ذاكرة اللعبة وقد يحتاج صلاحيات المسؤول.",
     back: "العودة إلى تقييمات السيارات",
+    hGuides: "أدلة الإعداد", guides: "مقطعا فيديو قصيران: أحدهما للعب على هذا الحاسوب، والآخر للعب على Xbox أو حاسوب ثانٍ مع FH Companion كلوحة عرض.",
+    gPc: "على هذا الحاسوب", gXbox: "Xbox أو حاسوب ثانٍ", gText: "خطوة بخطوة مع صور",
     noinfo: "تعذر جلب معلومات الحزمة — والتنزيل يعمل مع ذلك.",
     hSafe: "قد يحذّرك Windows من هذا الملف",
     safe: "قد يُبلّغ Defender عن هذا التنزيل كتهديد. الملف غير موقّع ولا يكاد يملكه أحد، لذلك يحكم Windows عليه من سلوكه: هذا البرنامج يقرأ ذاكرة اللعبة ويستبدل نفسه عند التحديث، وهو ما يبدو من الخارج متماثلًا. تُفحص كل نسخة قبل نشرها، والمجموع الاختباري أعلاه يتيح التحقق من أن الملف الذي حصلت عليه هو الملف الذي بُني. إذا حجبه Windows فاختر \"السماح على الجهاز\"."
@@ -653,6 +705,18 @@ function apply(code) {
   put("tagline", "tagline"); put("dl", "dl");
   put("h-setup", "hSetup"); put("setup1", "setup1"); put("setup2", "setup2");
   put("setup3", "setup3");
+  put("h-guides", "hGuides"); put("guides", "guides");
+  put("g-pc", "gPc"); put("g-xbox", "gXbox"); put("g-pc-text", "gText"); put("g-xbox-text", "gText");
+  // Die Textanleitungen liegen im Quelltext (docs/). Ohne oeffentlichen Quelltext
+  // (config/local.json "source_url" leer) keine Links -- lieber keiner als ein 404.
+  var quelle = "__SOURCE_URL__";
+  Array.prototype.forEach.call(document.querySelectorAll("a.g-text"), function (a) {
+    if (/^https:\/\//.test(quelle)) {
+      a.href = quelle.replace(/\/+$/, "") + "/blob/main/docs/" + a.getAttribute("data-doc");
+    } else {
+      a.style.display = "none";
+    }
+  });
   put("h-does", "hDoes");
   put("f1", "f1"); put("f2", "f2"); put("f3", "f3"); put("f4", "f4"); put("f5", "f5");
   put("f6", "f6"); put("f7", "f7"); put("f8", "f8"); put("f9", "f9");

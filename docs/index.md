@@ -5,6 +5,7 @@ scanner behind the car ratings.
 
 ## The app
 
+- [Setting up on this PC](setup_pc.md) and [for an Xbox or a second PC](setup_xbox.md): the first start, step by step with pictures.
 - [The app, tab by tab](app_guide.md): every tab and every overlay feature, and what each one is for.
 - [Play overlay](play_overlay.md): the in-game panels -- what to drive on the three offered routes, and where the car you are in places per class -- and how the screen is read.
 - [Time attack in the free world](free_roam_time_attack.md): the app's own clock outside a race.

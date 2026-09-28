@@ -153,6 +153,11 @@ INHALT = [
     # ohne dass irgendwo ein Fehler erschiene.
     "dist/fh-companion-latest.zip.meta.json",
     "dist/forza-contrib-tool.zip",
+    # Die Anleitungsvideos fuer die Download-Seite (/guide/...).
+    "dist/tutorials/fh-companion-setup-pc.mp4",
+    "dist/tutorials/fh-companion-setup-xbox.mp4",
+    "dist/tutorials/fh-companion-setup-pc.jpg",
+    "dist/tutorials/fh-companion-setup-xbox.jpg",
 ]
 
 GEHEIM = ["config/contrib_keys.json"]

@@ -349,6 +349,50 @@ def make_handler(root: Path, page: Path, builder: Path):
                         self.note(f"{filename}: Abruf abgebrochen")
                         return
 
+        def send_video(self, path) -> None:
+            """Ein Video ausliefern, auf Wunsch nur einen Bereich (Range: bytes=a-b)."""
+            import re as _re
+            groesse = path.stat().st_size
+            anfang, ende, status = 0, groesse - 1, 200
+            bereich = (self.headers.get("Range") or "").strip()
+            treffer = _re.match(r"^bytes=(\d*)-(\d*)$", bereich)
+            if treffer and (treffer.group(1) or treffer.group(2)):
+                a, b = treffer.groups()
+                if not a:
+                    anfang = max(0, groesse - int(b))
+                else:
+                    anfang = int(a)
+                    ende = min(groesse - 1, int(b)) if b else groesse - 1
+                if anfang > ende or anfang >= groesse:
+                    self.send_response(416)
+                    self.send_header("Content-Range", f"bytes */{groesse}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                status = 206
+            self.send_response(status)
+            self.send_header("Content-Type", "image/jpeg" if path.suffix == ".jpg" else "video/mp4")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(ende - anfang + 1))
+            if status == 206:
+                self.send_header("Content-Range", f"bytes {anfang}-{ende}/{groesse}")
+            self._kurz_cachen = True
+            self.end_headers()
+            if self.command == "HEAD":
+                return
+            with path.open("rb") as handle:
+                handle.seek(anfang)
+                rest = ende - anfang + 1
+                while rest > 0:
+                    chunk = handle.read(min(1 << 20, rest))
+                    if not chunk:
+                        break
+                    try:
+                        self.wfile.write(chunk)
+                    except (BrokenPipeError, ConnectionResetError):
+                        return
+                    rest -= len(chunk)
+
         def read_body(self) -> bytes:
             try:
                 length = int(self.headers.get("Content-Length") or 0)
@@ -389,7 +433,8 @@ def make_handler(root: Path, page: Path, builder: Path):
                 if self.gebremst("download"):
                     return
             elif (self.path.startswith("/api/") or self.path.startswith("/fonts/")
-                  or self.path.startswith("/brand/") or self.path == "/favicon.ico"):
+                  or self.path.startswith("/brand/") or self.path == "/favicon.ico"
+                  or self.path.startswith("/guide/")):
                 if self.gebremst("api"):
                     return
             elif self.gebremst("page"):
@@ -420,6 +465,15 @@ def make_handler(root: Path, page: Path, builder: Path):
                 self.end_headers()
                 if self.command != "HEAD":
                     self.wfile.write(roh)
+                return
+            if self.path.startswith("/guide/"):
+                # DIE ANLEITUNGSVIDEOS (dist/tutorials/), mit Byte-Bereichen: ohne sie
+                # spielt Safari ein Video gar nicht, und anderswo geht Spulen nicht.
+                datei = analytics_api.guide_video(self.path[len("/guide/"):])
+                if datei is None:
+                    self.send_error(404)
+                    return
+                self.send_video(datei)
                 return
             if self.path == "/favicon.ico" or self.path.startswith("/brand/"):
                 # LOGO UND SYMBOL (server/brand/), wie die Schriften vom eigenen Server.
@@ -558,6 +612,12 @@ def make_handler(root: Path, page: Path, builder: Path):
                 seite = app_file.read_bytes().replace(
                     b"__SITE_TITLE__", _html.escape(local_settings.site_title()).encode("utf-8"))
                 seite = seite.replace(b"__SOURCE_LINK__", quelltext_link())
+                # Fuer die Links zu den Textanleitungen (docs/setup_*.md): nur eine
+                # https-Adresse, in einem JS-String -- darum ohne Anfuehrungszeichen.
+                quelle = local_settings.source_url() or ""
+                if not quelle.startswith("https://") or any(z in quelle for z in "\"'<>\\"):
+                    quelle = ""
+                seite = seite.replace(b"__SOURCE_URL__", quelle.encode("utf-8"))
                 self.send_api(200, "text/html; charset=utf-8", seite)
                 return
             if self.path in ("/mitmachen", "/mitmachen/", "/contribute",
