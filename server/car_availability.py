@@ -47,6 +47,9 @@ WIKI_SEITE = "https://forza.fandom.com/wiki/"
 KENNUNG = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FHCompanion-carlist/1.0"
 
 FORMAT = "fhc-cars-1"
+# Hoch zaehlen, wenn sich das Bauen aendert: der Server baut dann sofort neu, statt die
+# alte Liste bis zu 20 Stunden weiter auszuliefern. 2 = eine id je Name (2026-09-29).
+BAUWEISE = 2
 # Unter so vielen Autos ist die Liste kaputt (Seite umgebaut, halbe Antwort) -- nie speichern.
 MINDESTENS = 400
 # So alt darf die Datei werden, bevor der Server sie neu baut.
@@ -454,6 +457,7 @@ def bauen(log=print) -> dict:
     log(f"verbunden: {zahlen['wiki']} mit Wiki-Seite, {zahlen['id']} mit car_id")
     return {
         "format": FORMAT,
+        "builder": BAUWEISE,
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "list_updated": _stand_der_liste(html),
         "sources": {"list": LISTE_URL, "wiki": WIKI_SEITE},
@@ -484,6 +488,17 @@ _laeuft = False
 _schloss = threading.Lock()
 
 
+def veraltet(ziel: Path = AUSGABE, jetzt: float | None = None) -> bool:
+    """Neu bauen? Wenn es keine Datei gibt, sie aelter als 20 h ist oder anders gebaut wurde."""
+    try:
+        alter = (jetzt if jetzt is not None else time.time()) - ziel.stat().st_mtime
+        if alter > HOECHSTALTER_S:
+            return True
+        return json.loads(ziel.read_text(encoding="utf-8")).get("builder") != BAUWEISE
+    except (OSError, ValueError, AttributeError):
+        return True
+
+
 def im_hintergrund(log=print, ziel: Path = AUSGABE) -> None:
     """Im Server: bei Bedarf sofort, danach stuendlich nachsehen, ob die Datei aelter als 20 h ist."""
     global _laeuft
@@ -494,11 +509,7 @@ def im_hintergrund(log=print, ziel: Path = AUSGABE) -> None:
 
     def lauf():
         while True:
-            try:
-                alter = time.time() - ziel.stat().st_mtime
-            except OSError:
-                alter = float("inf")
-            if alter > HOECHSTALTER_S:
+            if veraltet(ziel):
                 aktualisieren(log, ziel)
             time.sleep(3600)
 

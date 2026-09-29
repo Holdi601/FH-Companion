@@ -336,8 +336,7 @@ def copy_car_list(root: Path) -> int:
     import time as _time
     _sys.path.insert(0, str(WORKSPACE / "server"))
     import car_availability
-    alt = not CAR_LIST.exists() or _time.time() - CAR_LIST.stat().st_mtime > car_availability.HOECHSTALTER_S
-    if alt:
+    if car_availability.veraltet(CAR_LIST):
         car_availability.aktualisieren(lambda m: say("  " + m), CAR_LIST)
     if not CAR_LIST.exists():
         say("  Autoliste: keine -- die App holt sie vom Server")

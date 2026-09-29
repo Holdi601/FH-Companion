@@ -272,6 +272,29 @@ class Aktualisieren(unittest.TestCase):
         self.assertEqual(len(aufrufe), 3)
 
 
+class Veraltet(unittest.TestCase):
+    def test_regeln(self):
+        with tempfile.TemporaryDirectory() as t:
+            ziel = Path(t) / "x.json"
+            self.assertTrue(ca.veraltet(ziel), "ohne Datei nicht neu bauen")
+            ziel.write_text(json.dumps({"builder": ca.BAUWEISE}), encoding="utf-8")
+            self.assertFalse(ca.veraltet(ziel), "frische Datei gleicher Bauweise wird neu gebaut")
+            self.assertTrue(ca.veraltet(ziel, jetzt=time.time() + ca.HOECHSTALTER_S + 60), "alte Datei bleibt")
+            ziel.write_text(json.dumps({"builder": ca.BAUWEISE - 1}), encoding="utf-8")
+            self.assertTrue(ca.veraltet(ziel), "andere Bauweise bleibt bis zu 20 h stehen")
+            ziel.write_text("{kaputt", encoding="utf-8")
+            self.assertTrue(ca.veraltet(ziel), "kaputte Datei bleibt stehen")
+            ziel.write_text("[]", encoding="utf-8")
+            self.assertTrue(ca.veraltet(ziel), "eine Liste statt eines Objekts wirft")
+
+    def test_gebaut_mit_bauweise(self):
+        zeilen = "".join(f"<tr><td>M</td><td>2020 Auto {i}</td><td>T</td><td>500 C</td><td>X</td>"
+                         f"<td>Autoshow</td><td></td></tr>" for i in range(450))
+        with mock.patch.object(ca, "_holen", return_value=f"<table>{zeilen}</table>".encode()), \
+                mock.patch.object(ca, "wiki_seiten", return_value=[]):
+            self.assertEqual(ca.bauen(lambda m: None)["builder"], ca.BAUWEISE)
+
+
 class Schnittstelle(unittest.TestCase):
     def test_api_cars(self):
         import analytics_api
