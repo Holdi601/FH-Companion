@@ -319,7 +319,7 @@
  "The server's certificate could not be checked on this PC -- sending over plain http, as before.": "无法在此电脑上验证服务器证书，将像以前一样通过普通 http 发送。",
  "The values on the left are every field in the official 324-byte FH6 packet plus useful derived signals. The table above shows the outputs currently owned by this application across native Steam Controller actuators and standard Xbox, PlayStation, or 8BitDo rumble motors.": "左侧是官方 324 字节 FH6 数据包的全部字段，以及一些有用的派生信号。上方表格显示本程序当前占用的输出：既包括 Steam Controller 的原生执行器，也包括 Xbox、PlayStation 和 8BitDo 手柄的普通振动马达。",
  "The window is minimized. Restore it; it may stay behind other windows.": "窗口已最小化。请还原它；它可以留在其他窗口后面。",
- "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. Turn the game's own vibration down on the Xbox, so the two do not fight over the motors.": "这样应用的振动就会像在电脑上一样工作：重启后 Vibration test 和 Blueprint editor 会回来。请在 Xbox 上调低游戏自身的振动，以免两者争抢马达。",
+ "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.": "这样应用的振动就会像在电脑上一样工作：重启后 Vibration test 和 Blueprint editor 会回来。只要有遥测数据传入，应用就会覆盖 Remote Play 转发的振动，就像在电脑上对游戏那样。要完全关掉它，只能在 Xbox 上关闭游戏自身的振动设置。",
  "There is no speaker: audible sound comes straight out of the haptic motors, so it sounds more like a synth than a recording.": "这里没有扬声器：能听见的声音直接来自触感马达，因此更像合成器而不是录音。",
  "This PC": "这台电脑",
  "This PC now belongs to the scanner. Do not click, do not type,": "这台电脑现在归扫描器所用。不要点击，不要打字，",

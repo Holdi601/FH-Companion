@@ -309,10 +309,19 @@ internal static class EdgeCaseTest
         // --- Schalter
         var e = new Rivals.OverlaySettings();
         Soll(e.ControllerHier && e.SpeicherLesen, "Vorgaben: Controller hier und Speicher lesen");
+        Soll(!e.VibrationJedenTakt, "am PC geht jeder Takt an den Controller (Funkzeit)");
         e.ConsoleMode = true;
         Soll(!e.ControllerHier && !e.SpeicherLesen, "Konsole: Controller oder Speicher gelten als hier");
+        Soll(!e.VibrationJedenTakt, "Konsole ohne Remote Play treibt einen Controller");
         e.ConsoleControllerHere = true;
         Soll(e.ControllerHier && !e.SpeicherLesen, "Remote Play: Controller nicht hier, oder Speicher gelesen");
+        Soll(e.VibrationJedenTakt, "Remote Play: die weitergereichte Vibration der Konsole wird nicht jeden Takt ueberschrieben");
+        using (var pads = new GenericGamepadHaptics())
+        using (var ds = new DualSenseHaptics())
+        {
+            Soll(pads.Auffrischen == TimeSpan.FromSeconds(1) && ds.Auffrischen == TimeSpan.FromSeconds(1),
+                 "gleiche Werte gehen am PC oefter als einmal je Sekunde hinaus");
+        }
         e.ConsoleMode = false;
         e.ReadGameMemory = false;
         Soll(!e.SpeicherLesen, "abgeschalteter Speicher wird trotzdem gelesen");

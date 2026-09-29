@@ -1237,7 +1237,17 @@ internal sealed class MainForm : Form, ITelemetryHost
                 // KONSOLENMODUS: dafuer das Dashboard -- ausser der HUD liegt ueber dem
                 // Fenster von Remote Play (wie am PC). Mit Remote Play haengt der
                 // Controller an diesem Rechner: dann wird er auch hier verbunden.
-                if (_rivals.Settings.ConsoleControllerHere) { await ConnectControllerAsync(); }
+                if (_rivals.Settings.ConsoleControllerHere)
+                {
+                    // Die Vibration, die Remote Play von der Konsole weiterreicht, jeden
+                    // Takt ueberschreiben -- wie das Rumpeln von Forza am PC.
+                    if (_rivals.Settings.VibrationJedenTakt)
+                    {
+                        _gamepads.Auffrischen = TimeSpan.Zero;
+                        _dualSense.Auffrischen = TimeSpan.Zero;
+                    }
+                    await ConnectControllerAsync();
+                }
                 _ = StartTelemetryAsync();
                 if (!_rivals.Settings.HudUeberFenster) { _rivals.OeffneAufnahmefenster(); }
                 return;

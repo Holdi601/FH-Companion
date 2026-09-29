@@ -58,7 +58,7 @@
   "Rivals/CarCollectionTab.cs:138"
  ],
  "Any other window that shows the game works too: pick it from the list.": [
-  "Konsole.cs:246"
+  "Konsole.cs:250"
  ],
  "Any way": [
   "Rivals/CarCollectionTab.cs:134"
@@ -103,7 +103,7 @@
   "Rivals/CarCollectionTab.cs:571"
  ],
  "Capture card": [
-  "Konsole.cs:233"
+  "Konsole.cs:237"
  ],
  "Car": [
   "Rivals/CarCollectionTab.cs:162",
@@ -171,13 +171,13 @@
   "Rivals/CarCollectionTab.cs:504"
  ],
  "Connect the Xbox to the capture card and pick the card here.": [
-  "Konsole.cs:243"
+  "Konsole.cs:247"
  ],
  "Connect this directly to an output node to verify one controller actuator at an exact force.": [
   "BlueprintEditor.cs:663"
  ],
  "Controller": [
-  "Konsole.cs:183"
+  "Konsole.cs:188"
  ],
  "Copy as text": [
   "Tuning/TuningTab.cs:88"
@@ -226,13 +226,13 @@
  ],
  "Desktop shortcut": [
   "MainForm.cs:317",
-  "MainForm.cs:1457",
-  "MainForm.cs:1508",
-  "MainForm.cs:1545"
+  "MainForm.cs:1467",
+  "MainForm.cs:1518",
+  "MainForm.cs:1555"
  ],
  "Desktop shortcut ✓": [
-  "MainForm.cs:1457",
-  "MainForm.cs:1508"
+  "MainForm.cs:1467",
+  "MainForm.cs:1518"
  ],
  "Details: {0}": [
   "Tuning/TunesTab.cs:397"
@@ -244,7 +244,7 @@
   "Rivals/RivalsTab.cs:155"
  ],
  "Discovering controllers...": [
-  "MainForm.cs:1747"
+  "MainForm.cs:1757"
  ],
  "Done": [
   "BlueprintEditor.cs:1150"
@@ -286,22 +286,22 @@
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how a personal record looks.": [
-  "Rivals/OverlayController.cs:3869"
+  "Rivals/OverlayController.cs:3872"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:3886"
+  "Rivals/OverlayController.cs:3889"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:3876"
+  "Rivals/OverlayController.cs:3879"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
  ],
  "FH Companion restarts in PC mode: the game runs on this PC.": [
-  "MainForm.cs:2120"
+  "MainForm.cs:2130"
  ],
  "FH Companion restarts in Xbox / 2nd PC mode: the telemetry comes over the network and the HUD shows in a dashboard window.": [
-  "MainForm.cs:2119"
+  "MainForm.cs:2129"
  ],
  "FH6 on the Xbox / other PC: Data Out On  |  IP {0}  |  Port must match below": [
   "MainForm.cs:747"
@@ -313,7 +313,7 @@
   "MainForm.cs:749"
  ],
  "FIRST": [
-  "Rivals/OverlayController.cs:3861"
+  "Rivals/OverlayController.cs:3864"
  ],
  "Feel wheel lock separately": [
   "MainForm.cs:1045"
@@ -327,10 +327,10 @@
   "Rivals/CarNotesTab.cs:64"
  ],
  "First lap in class {0} here": [
-  "Rivals/OverlayController.cs:3859"
+  "Rivals/OverlayController.cs:3862"
  ],
  "Forza is running": [
-  "MainForm.cs:1332"
+  "MainForm.cs:1342"
  ],
  "Free roam": [
   "Rivals/OwnTimes.cs:425"
@@ -342,7 +342,7 @@
   "scripts/contrib_scan.py:149"
  ],
  "Game picture (optional)": [
-  "Konsole.cs:226"
+  "Konsole.cs:230"
  ],
  "Gap": [
   "Rivals/OwnTimesTab.cs:260"
@@ -384,10 +384,10 @@
   "scripts/contrib_scan.py:329"
  ],
  "In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized.": [
-  "Konsole.cs:244"
+  "Konsole.cs:248"
  ],
  "In the dashboard window": [
-  "Konsole.cs:396"
+  "Konsole.cs:400"
  ],
  "In the game now:": [
   "Rivals/CarNotesTab.cs:190"
@@ -402,11 +402,11 @@
   "scripts/contrib_scan.py:70"
  ],
  "It shows while that window is in front. Move and size the HUD in the Lap delta HUD tab, as on the PC.": [
-  "Konsole.cs:404"
+  "Konsole.cs:408"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:3750",
-  "Rivals/OverlayController.cs:3875"
+  "Rivals/OverlayController.cs:3753",
+  "Rivals/OverlayController.cs:3878"
  ],
  "Key colour for OBS": [
   "Rivals/HudTab.cs:1287"
@@ -424,7 +424,7 @@
   "Tuning/TunesTab.cs:55"
  ],
  "Live FH6 telemetry connected.": [
-  "MainForm.cs:2155"
+  "MainForm.cs:2165"
  ],
  "Live map": [
   "Rivals/HudTab.cs:840"
@@ -439,7 +439,7 @@
   "Rivals/HudTab.cs:1166"
  ],
  "Live mapping is sending through the four native haptic channels.": [
-  "MainForm.cs:2467"
+  "MainForm.cs:2477"
  ],
  "Live mapping off.": [
   "MainForm.cs:992",
@@ -485,25 +485,25 @@
   "Rivals/CarNotesTab.cs:198"
  ],
  "My controller is connected to this PC (Xbox Remote Play)": [
-  "Konsole.cs:186"
+  "Konsole.cs:191"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:3751",
-  "Rivals/OverlayController.cs:3857",
-  "Rivals/OverlayController.cs:3877"
+  "Rivals/OverlayController.cs:3754",
+  "Rivals/OverlayController.cs:3860",
+  "Rivals/OverlayController.cs:3880"
  ],
  "NODE PALETTE": [
   "BlueprintEditor.cs:63"
  ],
  "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.": [
-  "Konsole.cs:303"
+  "Konsole.cs:307"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:3748",
-  "Rivals/OverlayController.cs:3874"
+  "Rivals/OverlayController.cs:3751",
+  "Rivals/OverlayController.cs:3877"
  ],
  "New car on your list": [
-  "Rivals/OverlayController.cs:3856"
+  "Rivals/OverlayController.cs:3859"
  ],
  "No Discord window found. Open Discord and watch the stream, popped out or full screen.": [
   "Rivals/Bildquelle.cs:78"
@@ -525,14 +525,14 @@
   "Tuning/TunesTab.cs:619"
  ],
  "No native haptic channel is open.": [
-  "MainForm.cs:2393"
+  "MainForm.cs:2403"
  ],
  "No newer list on the server.": [
   "Rivals/CarCollectionTab.cs:451"
  ],
  "No picture yet": [
-  "Konsole.cs:278",
-  "Konsole.cs:444"
+  "Konsole.cs:282",
+  "Konsole.cs:448"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
@@ -541,7 +541,7 @@
   "Rivals/Bildquelle.cs:82"
  ],
  "None -- telemetry only": [
-  "Konsole.cs:232"
+  "Konsole.cs:236"
  ],
  "Normalized combined tire slip": [
   "MainForm.cs:799"
@@ -579,7 +579,7 @@
   "scripts/contrib_scan.py:362"
  ],
  "Now it is the time to beat": [
-  "Rivals/OverlayController.cs:3860"
+  "Rivals/OverlayController.cs:3863"
  ],
  "OCR readers at once. More is faster, but the reader pool has already crashed at twelve on the main machine.": [
   "scripts/contrib_scan.py:296"
@@ -597,7 +597,7 @@
   "Tuning/TunesTab.cs:91"
  ],
  "Open FH Companion": [
-  "MainForm.cs:1319"
+  "MainForm.cs:1329"
  ],
  "Open on the wiki": [
   "Rivals/CarCollectionTab.cs:192"
@@ -606,10 +606,10 @@
   "Rivals/HudTab.cs:1283"
  ],
  "Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard.": [
-  "Konsole.cs:248"
+  "Konsole.cs:252"
  ],
  "Over the game window, like playing on the PC": [
-  "Konsole.cs:401"
+  "Konsole.cs:405"
  ],
  "Owned": [
   "Rivals/CarCollectionTab.cs:131"
@@ -627,14 +627,14 @@
   "Rivals/HudTab.cs:1246"
  ],
  "Personal best in class {0}!": [
-  "Rivals/OverlayController.cs:3848",
-  "Rivals/OverlayController.cs:3867"
+  "Rivals/OverlayController.cs:3851",
+  "Rivals/OverlayController.cs:3870"
  ],
  "Personal best with a car (every car, class and course)": [
   "Rivals/HudTab.cs:1247"
  ],
  "Personal best with this car": [
-  "Rivals/OverlayController.cs:3852"
+  "Rivals/OverlayController.cs:3855"
  ],
  "Personal records": [
   "Rivals/HudTab.cs:1243"
@@ -645,14 +645,14 @@
  ],
  "Pin to taskbar": [
   "MainForm.cs:320",
-  "MainForm.cs:1458",
-  "MainForm.cs:1509",
-  "MainForm.cs:1563",
-  "MainForm.cs:1571"
+  "MainForm.cs:1468",
+  "MainForm.cs:1519",
+  "MainForm.cs:1573",
+  "MainForm.cs:1581"
  ],
  "Pinned to taskbar ✓": [
-  "MainForm.cs:1458",
-  "MainForm.cs:1509"
+  "MainForm.cs:1468",
+  "MainForm.cs:1519"
  ],
  "Play a short sound with them": [
   "Rivals/HudTab.cs:1257"
@@ -661,7 +661,7 @@
   "Rivals/HudTab.cs:1226"
  ],
  "Playing on an Xbox or another PC?": [
-  "Konsole.cs:215"
+  "Konsole.cs:220"
  ],
  "Point +": [
   "MainForm.cs:924",
@@ -680,7 +680,7 @@
   "Tuning/TunesTab.cs:422"
  ],
  "Previous best with it: {0}": [
-  "Rivals/OverlayController.cs:3853"
+  "Rivals/OverlayController.cs:3856"
  ],
  "Price": [
   "Rivals/CarCollectionTab.cs:165"
@@ -692,11 +692,11 @@
   "MainForm.cs:319"
  ],
  "P{0} of {1} on your list": [
-  "Rivals/OverlayController.cs:3841"
+  "Rivals/OverlayController.cs:3844"
  ],
  "Quit": [
   "Disclosure.cs:442",
-  "MainForm.cs:1321"
+  "MainForm.cs:1331"
  ],
  "Read game memory": [
   "MainForm.cs:356"
@@ -748,7 +748,7 @@
   "MainForm.cs:920"
  ],
  "Restart the app now to apply this?": [
-  "Konsole.cs:197"
+  "Konsole.cs:202"
  ],
  "Rivals": [
   "Rivals/OwnTimes.cs:417"
@@ -871,7 +871,7 @@
   "Rivals/OwnTimesTab.cs:263"
  ],
  "Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.": [
-  "Konsole.cs:245"
+  "Konsole.cs:249"
  ],
  "Start listening": [
   "MainForm.cs:771"
@@ -887,20 +887,20 @@
  ],
  "Start with Forza": [
   "MainForm.cs:325",
-  "MainForm.cs:1459",
-  "MainForm.cs:1531"
+  "MainForm.cs:1469",
+  "MainForm.cs:1541"
  ],
  "Start with Forza (waits in the notification area from sign-in)": [
   "Disclosure.cs:407"
  ],
  "Start with Forza ✓": [
-  "MainForm.cs:1459"
+  "MainForm.cs:1469"
  ],
  "Starts with Windows, waits invisibly in the notification area and opens when Forza starts. Click again to switch it off.": [
   "MainForm.cs:327"
  ],
  "Still waiting for Forza in the notification area. Right-click the icon to quit.": [
-  "MainForm.cs:1394"
+  "MainForm.cs:1404"
  ],
  "Stop": [
   "MainForm.cs:775",
@@ -914,10 +914,10 @@
   "Rivals/RivalsTab.cs:363"
  ],
  "Stream address": [
-  "Konsole.cs:238"
+  "Konsole.cs:242"
  ],
  "Stream in the browser (Twitch, YouTube, Kick …)": [
-  "Konsole.cs:237"
+  "Konsole.cs:241"
  ],
  "Submit my laps when they beat the leaderboard": [
   "Rivals/RivalsTab.cs:116"
@@ -926,10 +926,10 @@
   "Rivals/CarCollectionTab.cs:587"
  ],
  "Switch mode": [
-  "MainForm.cs:2121"
+  "MainForm.cs:2131"
  ],
  "Switch to “Xbox / 2nd PC” at the top of the window.": [
-  "Konsole.cs:216"
+  "Konsole.cs:221"
  ],
  "Tesseract OCR is not installed. The leaderboard rows are read with it, and it is a separate program -- not a Python package. Install it from https://github.com/UB-Mannheim/tesseract/wiki or with: winget install -e --id UB-Mannheim.TesseractOCR": [
   "scripts/contrib_scan.py:165"
@@ -942,7 +942,7 @@
   "Tuning/TunesTab.cs:357"
  ],
  "Test running. Press Stop now at any time.": [
-  "MainForm.cs:1959"
+  "MainForm.cs:1969"
  ],
  "Test the exact vibration force": [
   "MainForm.cs:625"
@@ -951,7 +951,7 @@
   "MainForm.cs:977"
  ],
  "The Start menu entry could not be created.": [
-  "MainForm.cs:1561"
+  "MainForm.cs:1571"
  ],
  "The Trial “{0}”": [
   "Rivals/CarCollectionTab.cs:604"
@@ -966,14 +966,14 @@
   "Rivals/OverlayController.cs:557"
  ],
  "The autostart entry could not be created.": [
-  "MainForm.cs:1529"
+  "MainForm.cs:1539"
  ],
  "The car list is not loaded yet -- wait a moment and try again.": [
   "Tuning/TunesTab.cs:348"
  ],
  "The desktop shortcut could not be created.": [
   "Disclosure.cs:303",
-  "MainForm.cs:1543"
+  "MainForm.cs:1553"
  ],
  "The file is here, and can be sent by hand:": [
   "scripts/contrib_scan.py:264"
@@ -985,7 +985,7 @@
   "Tuning/TunesTab.cs:554"
  ],
  "The game runs on:": [
-  "Konsole.cs:545"
+  "Konsole.cs:552"
  ],
  "The game will refuse new downloads.": [
   "Rivals/OverlayController.cs:555"
@@ -1021,14 +1021,14 @@
  "The window is minimized. Restore it; it may stay behind other windows.": [
   "Rivals/FensterQuelle.cs:95"
  ],
- "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. Turn the game's own vibration down on the Xbox, so the two do not fight over the motors.": [
-  "Konsole.cs:190"
+ "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.": [
+  "Konsole.cs:195"
  ],
  "There is no speaker: audible sound comes straight out of the haptic motors, so it sounds more like a synth than a recording.": [
   "MainForm.cs:1001"
  ],
  "This PC": [
-  "Konsole.cs:527"
+  "Konsole.cs:534"
  ],
  "This PC now belongs to the scanner. Do not click, do not type,": [
   "scripts/contrib_scan.py:332"
@@ -1135,10 +1135,10 @@
   "MainForm.cs:891"
  ],
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": [
-  "MainForm.cs:2401"
+  "MainForm.cs:2411"
  ],
  "Waiting for telemetry on {0}, port {1}": [
-  "MainForm.cs:2047"
+  "MainForm.cs:2057"
  ],
  "Waiting for telemetry...": [
   "TelemetryInspector.cs:27"
@@ -1147,11 +1147,11 @@
   "Tuning/TunesTab.cs:378"
  ],
  "Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox.": [
-  "Konsole.cs:247"
+  "Konsole.cs:251"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:3726",
-  "Rivals/OverlayController.cs:3885"
+  "Rivals/OverlayController.cs:3729",
+  "Rivals/OverlayController.cs:3888"
  ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:259"
@@ -1166,10 +1166,10 @@
   "MainForm.cs:1118"
  ],
  "Where the HUD shows": [
-  "Konsole.cs:393"
+  "Konsole.cs:397"
  ],
  "Which mode you are playing": [
-  "Konsole.cs:477"
+  "Konsole.cs:484"
  ],
  "Window not found: “{0}”": [
   "Rivals/FensterQuelle.cs:103"
@@ -1184,16 +1184,16 @@
   "Konsole.cs:132"
  ],
  "Windows asks for permission ...": [
-  "Konsole.cs:150"
+  "Konsole.cs:155"
  ],
  "Windows did not allow the change.": [
-  "Konsole.cs:164"
+  "Konsole.cs:169"
  ],
  "Windows leaves pinning to you. This prepares everything and shows the one click it takes.": [
   "MainForm.cs:322"
  ],
  "Windows only lets you pin programs yourself, so this takes one click from you: right-click this program's icon in the taskbar and choose “Pin to taskbar”. The Start menu entry it needs is in place, and this button shows a tick once the pin is there.": [
-  "MainForm.cs:1570"
+  "MainForm.cs:1580"
  ],
  "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.": [
   "Disclosure.cs:423"
@@ -1205,30 +1205,30 @@
   "Rivals/CarCollectionTab.cs:589"
  ],
  "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.": [
-  "Konsole.cs:227"
+  "Konsole.cs:231"
  ],
  "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.": [
-  "Konsole.cs:484"
+  "Konsole.cs:491"
  ],
  "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.": [
   "Rivals/RivalsTab.cs:177"
  ],
  "Xbox / 2nd PC": [
-  "Konsole.cs:220",
-  "Konsole.cs:528"
+  "Konsole.cs:225",
+  "Konsole.cs:535"
  ],
  "Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.": [
   "MainForm.cs:384"
  ],
  "Xbox Remote Play": [
-  "Konsole.cs:235"
+  "Konsole.cs:239"
  ],
  "Year": [
   "Rivals/OwnTimesTab.cs:127"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:3723",
-  "Rivals/OverlayController.cs:3884"
+  "Rivals/OverlayController.cs:3726",
+  "Rivals/OverlayController.cs:3887"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
@@ -1243,8 +1243,8 @@
   "Konsole.cs:127"
  ],
  "Your previous best here: {0}": [
-  "Rivals/OverlayController.cs:3849",
-  "Rivals/OverlayController.cs:3868"
+  "Rivals/OverlayController.cs:3852",
+  "Rivals/OverlayController.cs:3871"
  ],
  "a newer version is ready (skipped)": [
   "Rivals/RivalsTab.cs:531"
@@ -1312,7 +1312,7 @@
   "Rivals/CarNotesTab.cs:295"
  ],
  "ffmpeg found.": [
-  "Konsole.cs:304"
+  "Konsole.cs:308"
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:142",
@@ -1427,7 +1427,7 @@
   "Konsole.cs:98"
  ],
  "this course": [
-  "Rivals/OverlayController.cs:3838"
+  "Rivals/OverlayController.cs:3841"
  ],
  "this version stays skipped": [
   "Rivals/RivalsTab.cs:553"
@@ -1446,7 +1446,7 @@
   "Rivals/OwnTimesTab.cs:118"
  ],
  "waiting for Forza": [
-  "MainForm.cs:1332"
+  "MainForm.cs:1342"
  ],
  "week {0}": [
   "Rivals/CarCollectionTab.cs:593"

@@ -107,9 +107,13 @@ The haptics part contains:
   equal-power crossfade between the standard low- and high-frequency motors.
 - Graph profiles can be saved and loaded as `.fhgraph.json`.
 - While connected, the application reasserts all four native output channels
-  and every opened standard gamepad at 50 Hz. Channels not owned by the graph
-  are explicitly forced to zero so game/Steam rumble is overwritten by the
-  telemetry-driven output.
+  at 50 Hz. Channels not owned by the graph are explicitly forced to zero so
+  game/Steam rumble is overwritten by the telemetry-driven output. Standard
+  gamepads (XInput) and the DualSense get a report only when the values change,
+  plus one per second: over Bluetooth those reports share airtime with the
+  controller's input. With Xbox Remote Play (controller on this PC) they are
+  reasserted at 50 Hz again, because the Xbox app forwards the console's rumble
+  to the same controller; input goes through the stream there anyway.
 - `Always on Top` pins the window above the game and other applications.
 
 Closing the window immediately sends a zero-force command and stops the UDP

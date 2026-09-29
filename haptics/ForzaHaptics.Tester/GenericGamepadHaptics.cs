@@ -28,7 +28,13 @@ internal sealed class GenericGamepadHaptics : IDisposable
     // ueber Bluetooth teilen sich diese Berichte die Funkzeit mit den Eingaben des
     // Controllers, und die gehoeren dem Spiel. Gleiche Werte gehen hoechstens einmal je
     // Sekunde erneut hinaus, falls ein anderes Programm den Controller zurueckgesetzt hat.
-    internal static readonly TimeSpan Auffrischen = TimeSpan.FromSeconds(1);
+    //
+    // MIT XBOX REMOTE PLAY JEDEN TAKT (seit 2026-09-29): dort schreibt die Xbox-App die
+    // Vibration der Konsole auf denselben Controller, bei jeder Aenderung -- einmal je
+    // Sekunde ueberschrieben kam sie fast ungebremst durch. Die Funkzeit zaehlt dort
+    // nicht: jede Eingabe geht ohnehin erst durch den Stream zur Konsole.
+    internal static readonly TimeSpan AuffrischenNormal = TimeSpan.FromSeconds(1);
+    public TimeSpan Auffrischen { get; set; } = AuffrischenNormal;
     private readonly Dictionary<uint, (ushort Low, ushort High, DateTime Zeit)> _xinputGesendet = [];
 
     public int DeviceCount => _devices.Count;

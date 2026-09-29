@@ -354,6 +354,12 @@ internal sealed class OverlaySettings
     /// <summary>Haengt der Controller an diesem Rechner? Am PC immer, auf der Xbox nur mit Remote Play.</summary>
     [JsonIgnore] public bool ControllerHier => !ConsoleMode || ConsoleControllerHere;
 
+    /// <summary>
+    /// Mit Remote Play reicht die Xbox-App die Vibration der Konsole an denselben
+    /// Controller weiter: dann jeden Takt ueberschreiben statt nur bei Aenderung.
+    /// </summary>
+    [JsonIgnore] public bool VibrationJedenTakt => ConsoleMode && ConsoleControllerHere;
+
     /// <summary>Wird der Spielspeicher gelesen? Nie im Konsolenmodus (das Spiel laeuft nicht hier).</summary>
     [JsonIgnore] public bool SpeicherLesen => !ConsoleMode && ReadGameMemory;
 

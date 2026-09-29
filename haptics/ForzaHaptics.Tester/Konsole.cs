@@ -193,7 +193,7 @@ internal static class Konsole
         };
         stapel.Controls.Add(haken);
         stapel.Controls.Add(Notiz(Loc.T(
-            "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. Turn the game's own vibration down on the Xbox, so the two do not fight over the motors.")));
+            "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.")));
         haken.CheckedChanged += (_, _) =>
         {
             s.ConsoleControllerHere = haken.Checked;

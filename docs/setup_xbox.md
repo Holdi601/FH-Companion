@@ -110,8 +110,11 @@ minimized. Windows draws a yellow frame around it while an app captures it.
 **Vibration with Remote Play.** Your controller is plugged into this PC, so the
 app's own vibration works as on the PC. Under **Controller**, tick **My controller
 is connected to this PC (Xbox Remote Play)** and restart the app when it asks: the
-Vibration test and the Blueprint editor come back. Turn the game's own vibration
-down on the Xbox, so the two do not fight over the motors.
+Vibration test and the Blueprint editor come back. While telemetry arrives, the
+app overwrites the vibration that Remote Play passes on from the Xbox, the same way
+it overwrites the game's own rumble on the PC. A little can still come through,
+and the trigger motors of an Xbox controller are out of the app's reach: for a
+completely quiet controller, turn vibration off in the game's settings on the Xbox.
 
 Data Out on the Xbox (step 3) is still needed: the delta and the other parts come
 from the telemetry, not from the picture.

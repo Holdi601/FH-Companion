@@ -23,7 +23,9 @@ internal sealed partial class DualSenseHaptics : IDisposable
     // ueber Bluetooth teilen sich diese Berichte die Funkzeit mit den Eingaben des
     // Controllers, und die gehoeren dem Spiel. Gleiche Werte gehen hoechstens einmal je
     // Sekunde erneut hinaus, falls ein anderes Programm den Controller zurueckgesetzt hat.
-    internal static readonly TimeSpan Auffrischen = TimeSpan.FromSeconds(1);
+    // Mit Xbox Remote Play jeden Takt, wie in GenericGamepadHaptics begruendet.
+    internal static readonly TimeSpan AuffrischenNormal = TimeSpan.FromSeconds(1);
+    public TimeSpan Auffrischen { get; set; } = AuffrischenNormal;
     private readonly Dictionary<string, (byte[] Bericht, DateTime Zeit)> _gesendet = [];
 
     public string? ActiveTargetId { get; set; }
