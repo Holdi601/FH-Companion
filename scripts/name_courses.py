@@ -170,6 +170,9 @@ def setze_namen(wurzel: Path, paare: list[tuple[str, str]]) -> int:
             continue
         alt = (notiz.get("Name") or "").strip()
         notiz["Name"] = name
+        # Von Hand gesetzt: die App berichtigt ihn nie nach der Mehrheit der Runden
+        # (LapArchive.NamenNachtragen) und verlegt den Kurs nie nach "unfinished".
+        notiz["NameEvidence"] = "manual"
         # ALLE anderen Felder bleiben, wie sie sind -- vor allem StartX/StartZ.
         # Sie sind der Anker, an dem spaetere Runden diese Strecke wiederfinden;
         # ein verschobener Anker zerschneidet den Bestand.

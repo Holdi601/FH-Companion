@@ -526,6 +526,47 @@ def passung(spur: list[tuple[float, float]], linie: np.ndarray):
     return float(d.mean()), float(verzerrung), float(a)
 
 
+def enden_passen(spur: list[tuple[float, float]], name: str) -> bool | None:
+    """Liegen Start und Ziel der Spur an den Enden der gezeichneten Linie?
+
+    Seit 2026-09-30. Die Form allein benannte einen abgebrochenen Lauf von Tokyo City
+    Docks Charge (2,7 von 6,5 km) als "Chiheisen Scramble": die Linie passte, aber ihr
+    Start lag 185 px neben dem der Spur. Richtungsunabhaengig -- manche Linien sind
+    vom Ziel her gespeichert. None: keine geordnete Linie, oder ein Rundkurs.
+    """
+    karte = None
+    for j in (WORKSPACE / "data" / "route_maps").glob("*.json"):
+        try:
+            d = json.loads(j.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if (d.get("name") or "").lower() == name.lower():
+            karte = d
+            break
+    if not karte or not karte.get("path"):
+        return None
+    P = np.asarray(spur, dtype=np.float64)
+    offen = np.hypot(*(P[0] - P[-1])) > 120
+    if karte.get("closed"):
+        # Ein Rundkurs endet, wo er beginnt. Eine Spur von A nach B ist keiner --
+        # so war es bei "Chiheisen Scramble"; wo eine Runde beginnt, sagt die Linie nicht.
+        return False if offen else None
+    if not offen:
+        return None
+    linie = np.asarray(karte["path"], dtype=np.float64)
+    wert = passung(spur, linie)
+    if wert is None:
+        return None
+    a = wert[2]
+    bx = linie[:, 0].min() - a * P[:, 0].min()
+    by = linie[:, 1].min() + a * P[:, 1].max()
+    start = np.array([a * P[0, 0] + bx, -a * P[0, 1] + by])
+    ende = np.array([a * P[-1, 0] + bx, -a * P[-1, 1] + by])
+    vor = max(np.hypot(*(start - linie[0])), np.hypot(*(ende - linie[-1])))
+    rueck = max(np.hypot(*(start - linie[-1])), np.hypot(*(ende - linie[0])))
+    return min(vor, rueck) <= 60
+
+
 def zuordnen(wurzel: Path, setzen: bool) -> int:
     """Jeden geernteten Schirm einem eigenen Kurs zuordnen."""
     kurse = eigene_kurse(wurzel)
@@ -591,13 +632,18 @@ def zuordnen(wurzel: Path, setzen: bool) -> int:
                   f"gegen {km} km), nichts geschrieben")
             continue
 
+        if enden_passen(k["track"], name) is False:
+            print("      -> Form passt, Start und Ziel nicht -- ein abgebrochener "
+                  "Lauf einer anderen Strecke? Nichts geschrieben")
+            continue
+
         if k["name"] and k["name"] != name:
             print(f"      -> heisst schon '{k['name']}', bleibt so")
             continue
 
         print(f"      -> {schluessel} IST {name}")
         if setzen:
-            pfad = wurzel / schluessel / "course.json"
+            pfad = kurs_pfad(wurzel, schluessel) / "course.json"
             notiz = json.loads(pfad.read_text(encoding="utf-8"))
             notiz["Name"] = name
             notiz["NameEvidence"] = "map-fit"

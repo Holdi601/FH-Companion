@@ -156,8 +156,23 @@ Once a course has a name, its folder carries it: the app renames
 its next start, and a new course gets the named folder straight away when the lap
 knows its route. The coordinate key in brackets stays the identity: it is what
 every lap file stores as `Course`, what goes to the website, and what
-`--setzen` accepts. Two folders with the same name are two different start and
-finish lines, and the key tells them apart.
+`--setzen` accepts, and a name set with `--setzen` is never changed by the app.
+
+Runs that stopped before the finish live in `laps\unfinished`, not among the
+courses. The game reports a restart, a pause or leaving the race exactly like a
+finish, so every restart used to become its own "course" ending wherever the car
+was: 31 of 70 folders in one archive were such pieces, 16 of them from
+Shimanoyama Sprint alone. A run counts as unfinished when it starts on the start
+line of a longer known course, stays on that course's road, and stops well
+before its finish. It gets no route name, is no personal record and is never
+submitted. Its folder is named after the course it belongs to, for example
+`unfinished\Shimanoyama Sprint (course_-6350_-3750_to_-7075_-3350)`. Existing
+pieces are moved there at start-up.
+
+A course named automatically also changes its name when its own laps clearly
+disagree: at least three laps name another route, three times as many as name
+the current one. That is how `course_100_4375_to_450_3575` went from "Venus
+Sprint" to "Shikisai Sprint".
 
 Two automatic routes to those names were tried and both fail on the data:
 

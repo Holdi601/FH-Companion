@@ -149,6 +149,15 @@ internal sealed class OverlayController : IDisposable
 
             // Ins Archiv geht JEDE Runde, auch die langsame: eine Karte lebt von
             // den misslungenen Runden, die Bibliothek nur von der besten.
+            //
+            // ABGEBROCHEN? (seit 2026-09-30) Das Spiel meldet einen Neustart, eine Pause und
+            // das Verlassen des Rennens wie ein Ziel. Eine Fahrt, die auf dem Weg einer
+            // bekannten laengeren Strecke vor deren Ziel endet, bekommt keinen Namen, zaehlt
+            // nicht als gefahrene Strecke einer Reihe und geht weder in die eigene
+            // Bestenliste noch an die Seite.
+            var abgebrochen = false;
+            try { abgebrochen = LapArchive.Einordnen(lap); } catch (Exception) { }
+
             // DEN MODUS DAZUSCHREIBEN, BEVOR ABGELEGT WIRD.
             //
             // Nur wenn die Runde ihn nicht schon selbst kennt: eine Freiwelt-Fahrt
@@ -172,8 +181,8 @@ internal sealed class OverlayController : IDisposable
             // FUER DIE MEISTERSCHAFT: welche der angebotenen Strecken war das?
             // Eine Rivals-Runde gehoert zu keiner Anmeldung: dort kaeme der Name aus
             // einem laengst verlassenen Angebot, sobald eine Laenge zufaellig passt.
-            _rundenImRennen++;
-            var zuordnung = lap.Mode == "rivals" ? null : StreckeZurRunde(lap);
+            if (!abgebrochen) { _rundenImRennen++; }
+            var zuordnung = lap.Mode == "rivals" || abgebrochen ? null : StreckeZurRunde(lap);
             _letzteStrecke = zuordnung?.Name ?? _letzteStrecke;
 
             // DEN STRECKENNAMEN DAZUSCHREIBEN, falls der Anmeldeschirm ihn hergibt.
@@ -201,6 +210,14 @@ internal sealed class OverlayController : IDisposable
                 ? LapArchive.Save(lap, _settings.LapTag)
                 : null;
             lap.FullTrack = volleSpur;
+
+            if (abgebrochen)
+            {
+                LogLap($"unfinished run: {lap.LapSeconds:0.000} s, {lap.LengthMetres:0} m, ended on the road of "
+                       + $"{lap.UnfinishedOf} before its finish -- archived under unfinished, not a record, not submitted"
+                       + (abgelegt is not null ? $" ({abgelegt})" : string.Empty));
+                return;
+            }
 
             // DIE EIGENE BESTENLISTE: war das ein persoenlicher Rekord? (seit 2026-09-28)
             if (abgelegt is not null) { EigenerRekord(abgelegt, lap); }
@@ -523,8 +540,12 @@ internal sealed class OverlayController : IDisposable
             if (!_settings.ConsoleMode) { try { _ = Tuning.TuneStorage.AppliedFor(0); } catch (Exception) { } }
             try
             {
+                // Zuerst die abgebrochenen Fahrten aus der Reihe der Kurse nehmen -- sonst
+                // bekaemen sie Namen und Ordner wie echte Strecken.
+                var a = LapArchive.UnfertigeAussortieren();
+                if (a > 0) { WriteDiagnostic($"Abgebrochene Fahrten nach unfinished verlegt: {a} Ordner"); }
                 var n = LapArchive.NamenNachtragen();
-                if (n > 0) { WriteDiagnostic($"Kursnamen aus den Runden nachgetragen: {n}"); }
+                if (n > 0) { WriteDiagnostic($"Kursnamen aus den Runden nachgetragen oder berichtigt: {n}"); }
                 // Danach die Ordner nach ihren Strecken benennen: "Soni Circuit (course_…)".
                 var u = LapArchive.OrdnerBenennen();
                 if (u > 0) { WriteDiagnostic($"Kursordner nach Strecken benannt: {u}"); }
@@ -2161,7 +2182,7 @@ internal sealed class OverlayController : IDisposable
             var wurzel = LapArchive.Root;
             if (Directory.Exists(wurzel))
             {
-                foreach (var ordner in Directory.EnumerateDirectories(wurzel))
+                foreach (var ordner in LapArchive.KursOrdner(wurzel))
                 {
                     var kurs = LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
                     var u = CourseShape.For(kurs, _settings.ShapeSourceChoice, wurzel);
@@ -3043,6 +3064,9 @@ internal sealed class OverlayController : IDisposable
             .Select(s => (s, state.TrackLengths.TryGetValue(s, out var l) ? l.LapMetres : 0))
             .ToList();
         _letzterSchirm = (DateTime.UtcNow, state.Klass ?? string.Empty, routen);
+        var runden = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var s in state.Tracks) { runden[s] = state.TrackLengths.TryGetValue(s, out var l) ? l.Laps : 0; }
+        _schirmRunden = runden;
         _schirmReihe = state.SeriesIndex > 0 || state.TrackStatus.Count > 0;
         _schirmAb = state.FirstOwnIndex;
     }
@@ -3057,6 +3081,26 @@ internal sealed class OverlayController : IDisposable
     /// Freifahrt am Abend noch mit dem Rennen vom Nachmittag zu beschriften.
     /// </remarks>
     private static readonly TimeSpan SchirmGilt = TimeSpan.FromMinutes(45);
+
+    /// <summary>Je Strecke des zuletzt gelesenen Schirms: wie viele Runden. 1 heisst Sprint.</summary>
+    private Dictionary<string, int> _schirmRunden = new(StringComparer.Ordinal);
+
+    /// <summary>Passt die gefahrene Laenge zu der auf dem Schirm?</summary>
+    /// <remarks>
+    /// Seit 2026-09-30 getrennt nach Sprint und Rundkurs; vorher galten fuer beide 6 %.
+    /// Gemessen an 466 benannten Runden: ein SPRINT wird zwischen -1,4 % und +3,0 % der
+    /// angeschriebenen Laenge gefahren, eine RUNDE zwischen -3,4 % und +6,2 %, weil die
+    /// erste den Weg von der Startaufstellung mitzaehlt. Mit 6 % fuer beide ging eine
+    /// 7,67-km-Fahrt (Shikisai Sprint, 7,7 km) als "Venus Sprint" (8,0 km, -4,1 %) durch.
+    /// </remarks>
+    internal static bool LaengePasst(double angeschrieben, float gefahren, int runden)
+    {
+        if (angeschrieben <= 0) { return false; }
+        var abweichung = (gefahren - angeschrieben) / angeschrieben;
+        return runden > 1
+            ? Math.Abs(abweichung) <= 0.06
+            : abweichung >= -0.025 && abweichung <= 0.04;
+    }
 
     /// <summary>
     /// Welche der angebotenen Strecken war das gerade -- wenn es eindeutig ist.
@@ -3099,7 +3143,7 @@ internal sealed class OverlayController : IDisposable
             if (erwartet >= 0)
             {
                 var (name, meter) = schirm.Routen[erwartet];
-                if (meter > 0 && Math.Abs(meter - lap.LengthMetres) / meter <= 0.06)
+                if (LaengePasst(meter, lap.LengthMetres, _schirmRunden.GetValueOrDefault(name)))
                 {
                     return (name, "series-order+length");
                 }
@@ -3109,8 +3153,7 @@ internal sealed class OverlayController : IDisposable
         string? treffer = null;
         foreach (var (name, meter) in schirm.Routen)
         {
-            if (meter <= 0) { continue; }
-            if (Math.Abs(meter - lap.LengthMetres) / meter > 0.06) { continue; }
+            if (!LaengePasst(meter, lap.LengthMetres, _schirmRunden.GetValueOrDefault(name))) { continue; }
             if (treffer is not null) { return null; }   // zwei passen: keiner gilt
             treffer = name;
         }

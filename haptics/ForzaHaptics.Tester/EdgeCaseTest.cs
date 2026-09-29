@@ -42,6 +42,7 @@ internal static class EdgeCaseTest
         ChampionshipStates();
         CourseNamesFromLaps();
         CourseFoldersCarryTheName();
+        UnfinishedRunsAreSortedOut();
         ShapeDisplayTime();
         TuneForLap();
         AppliedTuneForNote();
@@ -1937,6 +1938,137 @@ internal static class EdgeCaseTest
     /// Kursordner mit 34 Runden hiess nach seiner Kennung, also griff die Rivalen-Karte,
     /// und deren Linie war an einer zu kleinen Karte falsch nachgezeichnet.
     /// </remarks>
+    /// <summary>
+    /// Ein Neustart ist keine Strecke: eine Fahrt, die auf dem Weg einer bekannten laengeren
+    /// Strecke vor deren Ziel endet, liegt unter "unfinished" -- ohne Namen, ohne Bestzeit.
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-09-30. 31 von 70 Kursordnern im eigenen Bestand waren solche Stuecke, zwei
+    /// davon mit falschem Namen; dazu hiess ein Kurs "Venus Sprint", obwohl fuenf seiner
+    /// Runden "Shikisai Sprint" sagten.
+    /// </remarks>
+    private static void UnfinishedRunsAreSortedOut()
+    {
+        var wurzel = Path.Combine(Path.GetTempPath(), $"forza-unfinished-test-{Environment.ProcessId}");
+        try
+        {
+            // Ein L ab (500, 500): 2000 m nach Osten, dann 2000 m nach Norden (oder Sueden).
+            var sekunde = 0;
+            Rivals.RecordedLap Fahrt(float bis, bool sueden = false, string? strecke = null)
+            {
+                var punkte = new List<Rivals.LapSample>();
+                for (var m = 0f; m <= bis + 0.1f; m += 10f)
+                {
+                    var (x, z) = m <= 2000f ? (500f + m, 500f) : (2500f, sueden ? 500f - (m - 2000f) : 500f + (m - 2000f));
+                    punkte.Add(new Rivals.LapSample(m, m / 40f, X: x, Z: z, Throttle: 1f));
+                }
+                sekunde += 100;
+                return new Rivals.RecordedLap
+                {
+                    LapSeconds = bis / 40f, LengthMetres = bis, CarOrdinal = 7, PerformanceIndex = 600, CarClass = 2,
+                    Drivetrain = 1, Cylinders = 6, MaxRpm = 7000, IdleRpm = 800, StartX = 500f, StartZ = 500f,
+                    EndedAtFinish = true, StandingStart = true, Track = strecke, TrackEvidence = strecke is null ? null : "signup+length",
+                    RecordedAt = DateTimeOffset.Now.AddSeconds(-sekunde), Samples = punkte,
+                };
+            }
+            (bool Abbruch, string Pfad) Ablegen(Rivals.RecordedLap f)
+            {
+                var abbruch = Rivals.LapArchive.Einordnen(f, wurzel);
+                var pfad = Rivals.LapArchive.Save(f, null, wurzel);
+                Soll(pfad is not null, "Abbruch: eine Fahrt liess sich nicht ablegen");
+                return (abbruch, pfad!);
+            }
+            var unfertig = Path.Combine(wurzel, Rivals.LapArchive.UnfertigOrdner);
+
+            // Ein Abbruch VOR der ersten vollen Fahrt: es gibt noch nichts Laengeres -- er wird ein Kurs.
+            var frueh = Ablegen(Fahrt(1200f));
+            Soll(!frueh.Abbruch, "Abbruch: ohne bekannte laengere Strecke als Abbruch erkannt");
+
+            // Zwei volle Fahrten mit Namen.
+            var voll = Ablegen(Fahrt(4000f, strecke: "Test Sprint"));
+            Ablegen(Fahrt(4000f));
+            Soll(!voll.Abbruch, "Abbruch: eine volle Fahrt gilt als Abbruch");
+            var vollKennung = Rivals.LapArchive.CourseKey(Fahrt(4000f), wurzel);
+
+            // Ein Abbruch DANACH, mit einem Namen, der nur der Laenge nach passte.
+            var spaet = Fahrt(3000f, strecke: "Other Route");
+            var (abbruch, pfad) = Ablegen(spaet);
+            Soll(abbruch && spaet.Unfinished && spaet.Track is null && spaet.UnfinishedOf == vollKennung,
+                 $"Abbruch: nicht erkannt (unfinished={spaet.Unfinished}, von '{spaet.UnfinishedOf}', Name '{spaet.Track}')");
+            Soll(pfad.StartsWith(unfertig + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                 && pfad.Contains("Test Sprint (course_", StringComparison.Ordinal),
+                 $"Abbruch: abgelegt unter '{pfad}'");
+
+            // Eine andere Strasse vom selben Start: kein Abbruch.
+            Soll(!Ablegen(Fahrt(3000f, sueden: true)).Abbruch, "Abbruch: eine abbiegende Strasse gilt als Abbruch");
+
+            // Beim Start: der fruehe Abbruch wird aus den Kursen genommen.
+            var verlegt = Rivals.LapArchive.UnfertigeAussortieren(wurzel);
+            Soll(verlegt == 1, $"Abbruch: {verlegt} statt 1 Ordner verlegt");
+            Soll(Rivals.LapArchive.UnfertigeAussortieren(wurzel) == 0, "Abbruch: ein zweiter Start verlegt noch einmal");
+            var kurse = Rivals.LapArchive.KursOrdner(wurzel).Select(Path.GetFileName).OrderBy(n => n).ToList();
+            Soll(kurse.Count == 2 && kurse.Any(k => k!.StartsWith("Test Sprint (", StringComparison.Ordinal)),
+                 $"Abbruch: als Kurse bleiben '{string.Join(", ", kurse)}'");
+            Soll(Directory.GetDirectories(unfertig).Length == 2
+                 && Directory.GetDirectories(unfertig).All(d => Path.GetFileName(d).StartsWith("Test Sprint (course_", StringComparison.Ordinal)),
+                 $"Abbruch: unter unfinished liegt '{string.Join(", ", Directory.GetDirectories(unfertig).Select(Path.GetFileName))}'");
+
+            // Eigene Zeiten und Autos kennen nur die echten Strecken.
+            var zeiten = Rivals.OwnTimes.Einlesen(wurzel).Select(l => l.Course).Distinct().ToList();
+            Soll(zeiten.Count == 2 && zeiten.Contains(vollKennung), $"Abbruch: eigene Zeiten unter '{string.Join(", ", zeiten)}'");
+            // Die Vorschau der Umrisse zaehlt ebenfalls nur Kurse.
+            Soll(Rivals.LapArchive.KursOrdner(wurzel).All(o => !Path.GetFileName(o).Equals(Rivals.LapArchive.UnfertigOrdner, StringComparison.OrdinalIgnoreCase)),
+                 "Abbruch: der Ordner unfinished gilt als Kurs");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, true); } catch (Exception) { }
+        }
+
+        // DIE MEHRHEIT DER RUNDEN berichtigt einen automatisch vergebenen Namen -- nie einen von Hand.
+        var namen = Path.Combine(Path.GetTempPath(), $"forza-majority-test-{Environment.ProcessId}");
+        try
+        {
+            void Kurs(string key, string name, string beleg, int shikisai, int venus)
+            {
+                var ordner = Path.Combine(namen, key);
+                Directory.CreateDirectory(Path.Combine(ordner, "S1"));
+                File.WriteAllText(Path.Combine(ordner, "course.json"),
+                                  System.Text.Json.JsonSerializer.Serialize(new { Name = name, NameEvidence = beleg }));
+                var i = 0;
+                foreach (var (strecke, anzahl) in new[] { ("Shikisai Sprint", shikisai), ("Venus Sprint", venus) })
+                {
+                    for (var k = 0; k < anzahl; k++, i++)
+                    {
+                        File.WriteAllText(Path.Combine(ordner, "S1", $"lap{i}.json"), System.Text.Json.JsonSerializer.Serialize(
+                            new { Lap = new { lapSeconds = 30, track = strecke, trackEvidence = "series-order+length" } }));
+                    }
+                }
+            }
+            Kurs("course_1_to_2", "Venus Sprint", "signup+length", 5, 1);
+            Kurs("course_3_to_4", "Venus Sprint", "manual", 5, 1);
+            Kurs("course_5_to_6", "Venus Sprint", "map-fit", 2, 0);
+            var n = Rivals.LapArchive.NamenNachtragen(namen);
+            string Name(string key) => System.Text.Json.JsonDocument.Parse(
+                File.ReadAllText(Path.Combine(namen, key, "course.json"))).RootElement.GetProperty("Name").GetString() ?? "";
+            Soll(Name("course_1_to_2") == "Shikisai Sprint", $"Mehrheit: 5 zu 1 Runden, der Kurs heisst weiter '{Name("course_1_to_2")}'");
+            Soll(Name("course_3_to_4") == "Venus Sprint", "Mehrheit: ein von Hand gesetzter Name wurde ueberschrieben");
+            Soll(Name("course_5_to_6") == "Venus Sprint", "Mehrheit: zwei Runden genuegten schon");
+            Soll(n == 1, $"Mehrheit: {n} statt 1 Kurs berichtigt");
+        }
+        finally
+        {
+            try { Directory.Delete(namen, true); } catch (Exception) { }
+        }
+
+        // DIE LAENGE: ein Sprint eng, ein Rundkurs weit (gemessen an 466 Runden).
+        Soll(!Rivals.OverlayController.LaengePasst(8000, 7672f, 1), "Laenge: 7,67 km gilt als Venus Sprint (8,0 km)");
+        Soll(Rivals.OverlayController.LaengePasst(7700, 7672f, 1), "Laenge: 7,67 km gilt nicht als Shikisai Sprint (7,7 km)");
+        Soll(Rivals.OverlayController.LaengePasst(6600, 6798f, 1), "Laenge: +3,0 % bei einem Sprint abgelehnt");
+        Soll(Rivals.OverlayController.LaengePasst(1900, 1836f, 3), "Laenge: -3,4 % bei einer Runde abgelehnt");
+        Soll(!Rivals.OverlayController.LaengePasst(0, 1836f, 3), "Laenge: ohne angeschriebene Laenge passt alles");
+    }
+
     /// <summary>
     /// Der Kursordner heisst "Soni Circuit (course_…)" -- die Kennung in den Runden bleibt die alte.
     /// </summary>

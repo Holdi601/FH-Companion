@@ -43,7 +43,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 from local_settings import app_data  # noqa: E402  (FHCompanion, bis 2026-09-26 ForzaGripHaptics)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lap_folders import kennung, kurs_ordner, kurs_pfad  # noqa: E402,F401
+from lap_folders import kennung, kurs_ordner, kurs_pfad, ist_unfertig  # noqa: E402,F401
 WURZEL = app_data() / "laps"
 
 
@@ -106,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
 
     nach_strecke: dict[str, list[dict]] = defaultdict(list)
     for pfad in WURZEL.rglob("*.json"):
-        if pfad.name == "course.json":
+        if pfad.name == "course.json" or ist_unfertig(WURZEL, pfad):
             continue
         # Die Kennung, nicht der Ordnername ("Soni Circuit (course_...)").
         teil = pfad.relative_to(WURZEL).parts[0]

@@ -55,7 +55,7 @@ TOLERANZ_M = 120.0
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 from local_settings import app_data  # noqa: E402  (FHCompanion, bis 2026-09-26 ForzaGripHaptics)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lap_folders import kennung, kurs_ordner, kurs_pfad  # noqa: E402,F401
+from lap_folders import kennung, kurs_ordner, kurs_pfad, ist_unfertig  # noqa: E402,F401
 WURZEL = app_data() / "laps"
 
 
@@ -63,7 +63,9 @@ def runden(wurzel: Path) -> list[dict]:
     """Jede abgelegte Runde mit ihrem Pfad, Start und Ziel."""
     gefunden = []
     for datei in wurzel.rglob("*.json"):
-        if datei.name == "course.json":
+        # Abgebrochene Fahrten sind keine Strecke -- sie zurueckzuordnen hiesse, die
+        # Stuecke wieder zwischen die Kurse zu legen.
+        if datei.name == "course.json" or ist_unfertig(wurzel, datei):
             continue
         try:
             d = json.loads(datei.read_text(encoding="utf-8"))

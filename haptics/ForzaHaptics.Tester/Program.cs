@@ -183,6 +183,20 @@ internal static class Program
             Environment.Exit(Rivals.FreeRoamReplay.Run(args));
         }
 
+        // Den Rundenbestand aufraeumen wie beim Start: Abbrueche verlegen, Namen
+        // nachtragen oder berichtigen, Ordner benennen. Mit einem Pfad fuer eine Kopie.
+        if (args.Contains("--tidy-laps", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--tidy-laps", StringComparison.OrdinalIgnoreCase));
+            var wurzel = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)
+                ? Path.GetFullPath(args[i + 1]) : Rivals.LapArchive.Root;
+            Console.WriteLine($"Rundenbestand: {wurzel}");
+            Console.WriteLine($"  nach {Rivals.LapArchive.UnfertigOrdner} verlegt: {Rivals.LapArchive.UnfertigeAussortieren(wurzel)}");
+            Console.WriteLine($"  Namen nachgetragen oder berichtigt: {Rivals.LapArchive.NamenNachtragen(wurzel)}");
+            Console.WriteLine($"  Ordner benannt: {Rivals.LapArchive.OrdnerBenennen(wurzel)}");
+            Environment.Exit(0);
+        }
+
         // Kopflos pruefbar machen, was sonst nur am Fenster zu sehen waere: welche
         // Sprache gewaehlt wurde, wie viele Saetze vorliegen und wie eine Auswahl
         // tatsaechlich uebersetzt wird. Ohne das bleibt "die Sprache funktioniert"
@@ -818,7 +832,7 @@ internal static class Program
             }
             else
             {
-                foreach (var ordner in Directory.EnumerateDirectories(wurzel))
+                foreach (var ordner in Rivals.LapArchive.KursOrdner(wurzel))
                 {
                     var kurs = Rivals.LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
                     var u = Rivals.CourseShape.For(kurs, einst.ShapeSourceChoice, wurzel);
@@ -1032,7 +1046,7 @@ internal static class Program
                 : Rivals.ShapeSource.Auto;
             var wurzel = Rivals.LapArchive.Root;
             var kurse = Directory.Exists(wurzel)
-                ? Directory.GetDirectories(wurzel).Select(d => Rivals.LapArchive.KennungAus(Path.GetFileName(d)) ?? Path.GetFileName(d))
+                ? Rivals.LapArchive.KursOrdner(wurzel).Select(d => Rivals.LapArchive.KennungAus(Path.GetFileName(d)) ?? Path.GetFileName(d))
                            .Where(k => !string.IsNullOrEmpty(k)).OrderBy(k => k).ToList()
                 : new List<string?>();
             const int Kachel = 190, Spalten = 8, Rand = 10;

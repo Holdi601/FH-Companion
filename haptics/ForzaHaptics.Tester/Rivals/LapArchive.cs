@@ -226,6 +226,323 @@ internal static class LapArchive
         return $"course_{x}_{z}_to_{zx}_{zz}";
     }
 
+    // ------------------------------------------------------------------ Abgebrochene Fahrten
+    //
+    // EIN ABBRUCH IST KEINE STRECKE (seit 2026-09-30). Das Spiel meldet das Ende eines
+    // Rennens gleich, ob man ueber die Ziellinie faehrt, neu startet, pausiert oder das
+    // Rennen verlaesst. Jeder Neustart wurde darum als "Sprint bis hierher" abgelegt,
+    // und weil der Endpunkt jedes Mal woanders lag, bekam er einen eigenen Kursordner:
+    // 31 der 70 Ordner im eigenen Bestand waren solche Stuecke, 16 davon allein von
+    // Shimanoyama Sprint. Zwei trugen sogar einen falschen Namen -- 5,9 km Matsumi Climb
+    // passten der Laenge nach auf "Norikura Descent" (5,8 km) vom Anmeldeschirm.
+    //
+    // Erkannt am Weg: dieselbe Startlinie wie eine LAENGERE bekannte Strecke, die ganze
+    // Fahrt liegt auf deren Weg, und sie endet deutlich vor deren Ziel. Gemessen am
+    // Bestand: echte Ziele streuen 2,5 bis 9 m, Abbrueche 16 bis 132 m; 440 von 445
+    // beendeten Fahrten gehen mit Vollgas ueber die Linie, 6 von 78 Abbruechen.
+    // Solche Fahrten liegen unter "unfinished", bekommen keinen Streckennamen und
+    // zaehlen fuer keine Bestenliste und keine Einreichung.
+
+    /// <summary>Der Ordner fuer abgebrochene Fahrten, neben den Kursen.</summary>
+    public const string UnfertigOrdner = "unfinished";
+
+    /// <summary>So nah muss eine Fahrt am Weg der laengeren Strecke bleiben, in Metern.</summary>
+    private const float AmWeg = 25f;
+
+    /// <summary>So weit vor deren Ziel muss sie enden, um als Abbruch zu gelten, in Metern.</summary>
+    private const float VorDemZiel = 80f;
+
+    /// <summary>Der Weg der laengsten Fahrt eines Kurses -- gemerkt, bis eine Runde dazukommt.</summary>
+    private sealed record Referenz(int Laps, float[] X, float[] Z, float[] M);
+
+    private static readonly Dictionary<string, Referenz> Referenzen = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly Regex LaengeImKopf = new(@"""lengthMetres""\s*:\s*([0-9.eE+-]+)", RegexOptions.CultureInvariant);
+
+    private static readonly Regex LetzterPunkt = new(
+        @"""X""\s*:\s*(-?[0-9.eE+-]+)\s*,\s*""Y""\s*:\s*-?[0-9.eE+-]+\s*,\s*""Z""\s*:\s*(-?[0-9.eE+-]+)",
+        RegexOptions.CultureInvariant | RegexOptions.RightToLeft);
+
+    /// <summary>
+    /// Eine eben beendete Fahrt einordnen: war sie der abgebrochene Anfang einer
+    /// bekannten, laengeren Strecke, wird sie so markiert und verliert ihren Namen.
+    /// </summary>
+    /// <remarks>
+    /// VOR dem Benennen und Ablegen aufrufen. Ein Name, der ueber die Laenge vom
+    /// Anmeldeschirm kam, ist bei einer abgebrochenen Fahrt Zufall -- ihre Laenge ist
+    /// nicht die der Strecke.
+    /// </remarks>
+    /// <returns>True, wenn die Fahrt ein Abbruch ist.</returns>
+    public static bool Einordnen(RecordedLap lap, string? root = null)
+    {
+        if (UnfertigVon(lap, root) is not { } voll) { return false; }
+        lap.Unfinished = true;
+        lap.UnfinishedOf = voll;
+        lap.Track = null;
+        lap.TrackEvidence = "unfinished";
+        return true;
+    }
+
+    /// <summary>
+    /// Ist diese Fahrt der abgebrochene Anfang einer bekannten, laengeren Strecke?
+    /// Dann deren Kennung, sonst null.
+    /// </summary>
+    public static string? UnfertigVon(RecordedLap lap, string? root = null)
+    {
+        try
+        {
+            // Nur eine Fahrt, die mit dem Rennen endete, kann abgebrochen sein; eine
+            // Runde, die an der Linie in die naechste ueberging, ist vollstaendig.
+            if (!lap.EndedAtFinish || lap.FreeRoam || lap.Samples.Count < 3 || !lap.HasStart) { return null; }
+            var ende = lap.Samples[^1];
+            // Wer am Start endet, ist einmal herum -- die letzte Runde eines Rundkurses.
+            if (Abstand(lap.StartX, lap.StartZ, ende.X, ende.Z) <= RecordedLap.StartTolerance) { return null; }
+            var punkte = lap.Samples.Select(s => (s.X, s.Z)).ToList();
+            var wurzel = root ?? Root;
+            lock (OrdnerSchloss)
+            {
+                // Endet sie dort, wo schon drei Fahrten auf wenige Meter genau endeten, ist
+                // sie angekommen -- das ist eine Ziellinie. Spart auch die Suche.
+                if (FindCourseFolder(wurzel, lap) is { } k && EngesZiel(KursPfad(wurzel, k))) { return null; }
+                return UnfertigVon(wurzel, lap.StartX, lap.StartZ, punkte, lap.LengthMetres, null);
+            }
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static string? UnfertigVon(string wurzel, float sx, float sz,
+                                       IReadOnlyList<(float X, float Z)> punkte, float meter, string? ausser)
+    {
+        string? beste = null;
+        var besteLaenge = 0f;
+        var ende = punkte[^1];
+        foreach (var ordner in KursOrdner(wurzel))
+        {
+            var kennung = KennungAus(Path.GetFileName(ordner))!;
+            if (string.Equals(kennung, ausser, StringComparison.OrdinalIgnoreCase)) { continue; }
+            var notiz = LiesNotiz(ordner);
+            if (notiz is null || (notiz.StartX == 0f && notiz.StartZ == 0f)) { continue; }
+            if (Abstand(notiz.StartX, notiz.StartZ, sx, sz) > RecordedLap.StartTolerance) { continue; }
+            if (notiz.LongestMetres < meter + VorDemZiel) { continue; }
+            var r = ReferenzVon(ordner, notiz.Laps);
+            if (r is null || r.M[^1] < meter + VorDemZiel) { continue; }
+            // Endet sie am Ziel dieser Strecke, IST sie diese Strecke.
+            if (Abstand(ende.X, ende.Z, r.X[^1], r.Z[^1]) <= VorDemZiel) { continue; }
+            var (ab, bei) = Naechster(r, ende.X, ende.Z);
+            if (ab > AmWeg || r.M[^1] - bei < VorDemZiel) { continue; }
+            // UND DER GANZE WEG DAVOR liegt auch auf ihr -- sonst ist es eine andere
+            // Strasse, die zufaellig auf ihr endet.
+            var schritt = Math.Max(1, punkte.Count / 60);
+            int gesamt = 0, daneben = 0;
+            for (var i = 0; i < punkte.Count; i += schritt)
+            {
+                gesamt++;
+                if (Naechster(r, punkte[i].X, punkte[i].Z).Abstand > AmWeg) { daneben++; }
+            }
+            if (daneben * 10 > gesamt) { continue; }
+            if (r.M[^1] > besteLaenge)
+            {
+                beste = kennung;
+                besteLaenge = r.M[^1];
+            }
+        }
+        return beste;
+    }
+
+    /// <summary>
+    /// Kursordner, die nur abgebrochene Fahrten einer anderen Strecke enthalten, nach
+    /// "unfinished" verlegen -- einmal beim Start, vor dem Benennen.
+    /// </summary>
+    /// <remarks>
+    /// Verlegt, nicht geloescht: die Fahrten bleiben, nur stehen sie nicht mehr als
+    /// eigene Strecken zwischen den echten. Der Ordner heisst dann nach der Strecke, zu
+    /// der er gehoert: "unfinished\Shimanoyama Sprint (course_…)".
+    ///
+    /// Ausgenommen: ein von Hand benannter Kurs, und ein Kurs, dessen Fahrten (drei
+    /// oder mehr) alle auf wenige Meter am selben Punkt enden -- das ist eine Ziellinie.
+    /// </remarks>
+    /// <returns>Wie viele Ordner verlegt wurden.</returns>
+    public static int UnfertigeAussortieren(string? wurzel = null)
+    {
+        wurzel ??= Root;
+        var n = 0;
+        lock (OrdnerSchloss)
+        {
+            var alle = KursOrdner(wurzel).Select(o => (Ordner: o, Notiz: LiesNotiz(o))).ToList();
+            foreach (var (ordner, notiz) in alle)
+            {
+                try
+                {
+                    if (notiz is null || (notiz.StartX == 0f && notiz.StartZ == 0f)) { continue; }
+                    if (IstStreckenname(notiz.Name) && VonHand(notiz.NameEvidence)) { continue; }
+                    if ((notiz.FinishX != 0f || notiz.FinishZ != 0f)
+                        && Abstand(notiz.StartX, notiz.StartZ, notiz.FinishX, notiz.FinishZ) <= RecordedLap.StartTolerance)
+                    {
+                        continue;
+                    }
+                    // Billig vorab: gibt es ueberhaupt eine laengere Strecke vom selben Start?
+                    if (!alle.Any(c => c.Ordner != ordner && c.Notiz is { } cn
+                                       && Abstand(cn.StartX, cn.StartZ, notiz.StartX, notiz.StartZ) <= RecordedLap.StartTolerance
+                                       && cn.LongestMetres >= notiz.LongestMetres + VorDemZiel))
+                    {
+                        continue;
+                    }
+                    if (!Directory.Exists(ordner) || EngesZiel(ordner)) { continue; }
+                    var eigen = ReferenzVon(ordner, notiz.Laps);
+                    if (eigen is null) { continue; }
+                    var kennung = KennungAus(Path.GetFileName(ordner))!;
+                    var punkte = eigen.X.Zip(eigen.Z, (x, z) => (x, z)).ToList();
+                    var voll = UnfertigVon(wurzel, notiz.StartX, notiz.StartZ, punkte, eigen.M[^1], kennung);
+                    if (voll is null) { continue; }
+
+                    var vollName = LiesNotiz(KursPfad(wurzel, voll))?.Name;
+                    var alterName = notiz.Name?.Trim() ?? string.Empty;
+                    notiz.UnfinishedOf = voll;
+                    notiz.NameEvidence = "unfinished" + (IstStreckenname(alterName) ? $" (was: {alterName})" : string.Empty);
+                    notiz.Name = string.Empty;
+                    File.WriteAllText(Path.Combine(ordner, "course.json"), JsonSerializer.Serialize(
+                        notiz, new JsonSerializerOptions { WriteIndented = true }));
+
+                    var basis = Path.Combine(wurzel, UnfertigOrdner);
+                    Directory.CreateDirectory(basis);
+                    var ziel = Path.Combine(basis, OrdnerName(kennung, vollName));
+                    for (var i = 2; Directory.Exists(ziel); i++)
+                    {
+                        ziel = Path.Combine(basis, OrdnerName($"{kennung}_{i}", vollName));
+                    }
+                    Directory.Move(ordner, ziel);
+                    n++;
+                }
+                catch (Exception)
+                {
+                    // Gesperrt oder unlesbar: der Ordner bleibt, wo er ist.
+                }
+            }
+        }
+        return n;
+    }
+
+    /// <summary>Enden drei oder mehr Fahrten eines Ordners alle auf wenige Meter am selben Punkt?</summary>
+    private static bool EngesZiel(string ordner)
+    {
+        var enden = new List<(float X, float Z)>();
+        foreach (var datei in Directory.EnumerateFiles(ordner, "*.json", SearchOption.AllDirectories))
+        {
+            if (Path.GetFileName(datei).Equals("course.json", StringComparison.OrdinalIgnoreCase)) { continue; }
+            if (EndeAusDatei(datei) is { } e) { enden.Add(e); }
+            if (enden.Count >= 40) { break; }
+        }
+        if (enden.Count < 3) { return false; }
+        var mx = enden.Average(e => e.X);
+        var mz = enden.Average(e => e.Z);
+        return enden.All(e => Abstand(e.X, e.Z, mx, mz) <= 15f);
+    }
+
+    /// <summary>Der letzte Messpunkt einer abgelegten Fahrt, aus dem Dateiende gelesen.</summary>
+    private static (float X, float Z)? EndeAusDatei(string datei)
+    {
+        try
+        {
+            using var strom = File.OpenRead(datei);
+            var n = (int)Math.Min(8192, strom.Length);
+            strom.Seek(-n, SeekOrigin.End);
+            var puffer = new byte[n];
+            var gelesen = strom.Read(puffer, 0, n);
+            var m = LetzterPunkt.Match(System.Text.Encoding.UTF8.GetString(puffer, 0, gelesen));
+            if (!m.Success) { return null; }
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            return (float.Parse(m.Groups[1].Value, inv), float.Parse(m.Groups[2].Value, inv));
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Der Weg der laengsten Fahrt eines Kursordners.</summary>
+    private static Referenz? ReferenzVon(string ordner, int laps)
+    {
+        lock (Referenzen)
+        {
+            if (Referenzen.TryGetValue(ordner, out var gemerkt) && gemerkt.Laps == laps) { return gemerkt; }
+        }
+        // Die Laenge steht vorn in jeder Datei; nur die laengste wird ganz gelesen.
+        string? laengste = null;
+        var meter = 0f;
+        foreach (var datei in Directory.EnumerateFiles(ordner, "*.json", SearchOption.AllDirectories))
+        {
+            if (Path.GetFileName(datei).Equals("course.json", StringComparison.OrdinalIgnoreCase)) { continue; }
+            var m = LaengeImKopf.Match(Kopf(datei));
+            if (m.Success
+                && float.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.Float,
+                                  System.Globalization.CultureInfo.InvariantCulture, out var l)
+                && l > meter)
+            {
+                meter = l;
+                laengste = datei;
+            }
+        }
+        if (laengste is null) { return null; }
+        var lap = JsonSerializer.Deserialize<ArchivedLap>(File.ReadAllText(laengste))?.Lap;
+        if (lap is null || lap.Samples.Count < 3) { return null; }
+        var neu = new Referenz(laps,
+                               lap.Samples.Select(s => s.X).ToArray(),
+                               lap.Samples.Select(s => s.Z).ToArray(),
+                               lap.Samples.Select(s => s.Metres).ToArray());
+        lock (Referenzen) { Referenzen[ordner] = neu; }
+        return neu;
+    }
+
+    private static string Kopf(string datei)
+    {
+        using var strom = File.OpenRead(datei);
+        var puffer = new byte[600];
+        var n = strom.Read(puffer, 0, puffer.Length);
+        return System.Text.Encoding.UTF8.GetString(puffer, 0, n);
+    }
+
+    /// <summary>Der naechste Punkt des Weges: wie weit weg, und bei welchem Meter.</summary>
+    private static (float Abstand, float Bei) Naechster(Referenz r, float x, float z)
+    {
+        var best = float.MaxValue;
+        var bei = 0f;
+        for (var i = 0; i < r.X.Length; i++)
+        {
+            var dx = r.X[i] - x;
+            var dz = r.Z[i] - z;
+            var d = (dx * dx) + (dz * dz);
+            if (d < best)
+            {
+                best = d;
+                bei = r.M[i];
+            }
+        }
+        return (MathF.Sqrt(best), bei);
+    }
+
+    private static float Abstand(float ax, float az, float bx, float bz) =>
+        MathF.Sqrt(((ax - bx) * (ax - bx)) + ((az - bz) * (az - bz)));
+
+    private static CourseNote? LiesNotiz(string ordner)
+    {
+        try
+        {
+            var pfad = Path.Combine(ordner, "course.json");
+            return File.Exists(pfad) ? JsonSerializer.Deserialize<CourseNote>(File.ReadAllText(pfad)) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Ein von Hand gesetzter Name: leerer Beleg oder "manual".</summary>
+    internal static bool VonHand(string? beleg) =>
+        string.IsNullOrWhiteSpace(beleg) || string.Equals(beleg.Trim(), "manual", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Der Ordner einer schon bekannten Strecke, oder null.</summary>
     /// <remarks>
     /// Der NAECHSTE passende, nicht der erste: liegen ausnahmsweise zwei bekannte
@@ -325,13 +642,19 @@ internal static class LapArchive
             // EINMAL bestimmt und dann weitergereicht: die Suche liest Ordner, und
             // dreimal dieselbe Suche koennte dreimal verschieden ausgehen, wenn
             // dazwischen geschrieben wird.
-            var kurs = CourseKey(lap, wurzel);
+            // Eine abgebrochene Fahrt (Einordnen) liegt neben den Kursen, nicht zwischen ihnen.
+            var basis = lap.Unfinished ? Path.Combine(wurzel, UnfertigOrdner) : wurzel;
+            var kurs = CourseKey(lap, basis);
             // Der Ordner, wie er heute heisst. Ein NEUER Kurs traegt den Streckennamen
             // gleich mit; ein alter bekommt ihn beim naechsten Start (OrdnerBenennen).
-            var kursOrdner = KursPfad(wurzel, kurs);
-            if (!Directory.Exists(kursOrdner) && IstStreckenname(lap.Track))
+            // Ein Abbruch heisst nach der Strecke, deren Anfang er ist.
+            var kursOrdner = KursPfad(basis, kurs);
+            var ordnerName = lap.Unfinished
+                ? (lap.UnfinishedOf is { } voll ? LiesNotiz(KursPfad(wurzel, voll))?.Name : null)
+                : lap.Track;
+            if (!Directory.Exists(kursOrdner) && IstStreckenname(ordnerName))
             {
-                kursOrdner = Path.Combine(wurzel, OrdnerName(kurs, lap.Track));
+                kursOrdner = Path.Combine(basis, OrdnerName(kurs, ordnerName));
             }
             var ordner = Path.Combine(
                 kursOrdner,
@@ -434,6 +757,7 @@ internal static class LapArchive
                 notiz.Name = lap.Track!.Trim();
                 notiz.NameEvidence = lap.TrackEvidence;
             }
+            if (lap.Unfinished && lap.UnfinishedOf is { } voll) { notiz.UnfinishedOf = voll; }
             notiz.Laps += 1;
             notiz.ShortestMetres = notiz.ShortestMetres <= 0
                 ? lap.LengthMetres
@@ -488,7 +812,10 @@ internal static class LapArchive
                 var pfad = Path.Combine(ordner, "course.json");
                 if (!File.Exists(pfad)) { continue; }
                 var notiz = JsonSerializer.Deserialize<CourseNote>(File.ReadAllText(pfad));
-                if (notiz is null || IstStreckenname(notiz.Name)) { continue; }
+                if (notiz is null) { continue; }
+                var schonBenannt = IstStreckenname(notiz.Name);
+                // Von Hand gesetzt: eine Entscheidung, keine Vermutung -- bleibt.
+                if (schonBenannt && VonHand(notiz.NameEvidence)) { continue; }
                 var namen = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 string? beleg = null;
                 foreach (var datei in Directory.EnumerateFiles(ordner, "*.json", SearchOption.AllDirectories))
@@ -512,11 +839,32 @@ internal static class LapArchive
                         // Eine unlesbare Runde zaehlt nicht.
                     }
                 }
-                if (namen.Count != 1) { continue; }
-                var (einzig, anzahl) = namen.First();
-                if (anzahl < 2) { continue; }
-                notiz.Name = einzig;
-                notiz.NameEvidence = "laps:" + (beleg ?? "unknown");
+                if (!schonBenannt)
+                {
+                    if (namen.Count != 1) { continue; }
+                    var (einzig, anzahl) = namen.First();
+                    if (anzahl < 2) { continue; }
+                    notiz.Name = einzig;
+                    notiz.NameEvidence = "laps:" + (beleg ?? "unknown");
+                }
+                else
+                {
+                    // DIE RUNDEN WIDERSPRECHEN DEM NAMEN (seit 2026-09-30).
+                    //
+                    // Ein Kurs erbt den Namen seiner ersten benannten Runde und behielt
+                    // ihn fuer immer. "course_100_4375" hiess so "Venus Sprint" -- eine
+                    // Runde vom 2026-09-22, deren Laenge 4 % neben Venus Sprint lag --,
+                    // waehrend fuenf spaetere Runden "Shikisai Sprint" sagten und Form wie
+                    // Laenge auch. Ein automatisch vergebener Name weicht darum, wenn
+                    // mindestens drei Runden einen anderen nennen und dreimal so viele
+                    // wie den bisherigen.
+                    var jetzt = namen.GetValueOrDefault(notiz.Name.Trim());
+                    var anders = namen.Where(x => !string.Equals(x.Key, notiz.Name.Trim(), StringComparison.OrdinalIgnoreCase))
+                                      .OrderByDescending(x => x.Value).FirstOrDefault();
+                    if (anders.Key is null || anders.Value < 3 || anders.Value < 3 * Math.Max(1, jetzt)) { continue; }
+                    notiz.NameEvidence = $"laps-majority {anders.Value}:{jetzt} (was: {notiz.Name.Trim()})";
+                    notiz.Name = anders.Key;
+                }
                 File.WriteAllText(pfad, JsonSerializer.Serialize(
                     notiz, new JsonSerializerOptions { WriteIndented = true }));
                 benannt++;
@@ -567,5 +915,9 @@ internal static class LapArchive
         public float ShortestMetres { get; set; }
         public float LongestMetres { get; set; }
         public DateTimeOffset LastSeen { get; set; }
+
+        /// <summary>Nur unter "unfinished": die Strecke, deren abgebrochener Anfang das ist.</summary>
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public string? UnfinishedOf { get; set; }
     }
 }

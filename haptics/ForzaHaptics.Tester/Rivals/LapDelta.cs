@@ -187,6 +187,24 @@ internal sealed class RecordedLap
     public bool EndedAtFinish { get; set; }
 
     /// <summary>
+    /// Die Fahrt brach vor dem Ziel ab: Neustart, Pause, Rennen verlassen (seit 2026-09-30).
+    /// </summary>
+    /// <remarks>
+    /// Gesetzt von <see cref="LapArchive.Einordnen"/>: dieselbe Startlinie wie eine laengere
+    /// bekannte Strecke, und die Fahrt endet auf deren Weg, deutlich vor deren Ziel. Eine
+    /// solche Fahrt bekommt keinen Streckennamen, liegt im Bestand unter "unfinished" und
+    /// zaehlt weder als Rekord noch fuer die Seite.
+    /// </remarks>
+    [JsonPropertyName("unfinished")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Unfinished { get; set; }
+
+    /// <summary>Die Kennung der Strecke, deren abgebrochener Anfang das ist.</summary>
+    [JsonPropertyName("unfinishedOf")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? UnfinishedOf { get; set; }
+
+    /// <summary>
     /// Der Anteil der Runde, auf dem mindestens ein Rad im Wasser stand (0 bis 1).
     /// </summary>
     /// <remarks>

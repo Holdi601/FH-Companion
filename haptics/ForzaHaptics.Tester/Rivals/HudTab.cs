@@ -627,7 +627,7 @@ internal sealed class HudLayoutCanvas : Control
             var wurzel = LapArchive.Root;
             if (Directory.Exists(wurzel))
             {
-                foreach (var ordner in Directory.EnumerateDirectories(wurzel))
+                foreach (var ordner in LapArchive.KursOrdner(wurzel))
                 {
                     var kurs = LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
                     var u = CourseShape.For(kurs, _settings.ShapeSourceChoice, wurzel);

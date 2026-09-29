@@ -6,6 +6,10 @@ Identitaet -- in jeder Rundendatei ("Course"), bei der Einreichung, auf dem
 Server. Wer vom Ordner zur Kennung will, nimmt kennung(); wer von der Kennung
 zum Ordner, kurs_pfad(). Alte Ordner, die nur "course_..." heissen, gelten
 weiter.
+
+Abgebrochene Fahrten (Neustart, Pause, Rennen verlassen) liegen seit demselben Tag
+unter "unfinished" neben den Kursen -- kurs_ordner() zaehlt sie nicht mit, und wer
+alle Runden per rglob einsammelt, sollte sie mit ist_unfertig() auslassen.
 """
 
 from __future__ import annotations
@@ -14,6 +18,16 @@ import re
 from pathlib import Path
 
 _AM_ENDE = re.compile(r"\((course_[^()\s]+)\)\s*$")
+
+UNFERTIG = "unfinished"
+
+
+def ist_unfertig(wurzel: Path, datei: Path) -> bool:
+    """Liegt die Datei unter "unfinished" -- eine abgebrochene Fahrt, kein Kurs?"""
+    try:
+        return datei.relative_to(wurzel).parts[0] == UNFERTIG
+    except ValueError:
+        return False
 
 
 def kennung(ordner_name: str) -> str | None:
