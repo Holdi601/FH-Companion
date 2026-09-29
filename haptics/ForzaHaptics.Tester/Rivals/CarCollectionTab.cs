@@ -322,7 +322,7 @@ internal sealed class CarCollectionTab : UserControl
         z = new ListViewItem(a.Anzeige) { Tag = a };
         z.SubItems.Add(a.Klasse is null ? string.Empty : $"{a.Klasse} {a.Pi}");
         z.SubItems.Add(a.Typ);
-        z.SubItems.Add(Preis(a) is { } p ? p.ToString("N0") + " CR" : string.Empty);
+        z.SubItems.Add(Preis(a) is { } p ? string.Format(Loc.T("{0} CR"), p.ToString("N0")) : string.Empty);
         z.SubItems.Add(string.Join("  ·  ", a.Wege.Where(w => w.Art != "auction").Take(3).Select(WegKurz)));
         _zeilen[a] = z;
         return z;
@@ -519,7 +519,9 @@ internal sealed class CarCollectionTab : UserControl
     {
         "dlc" => "DLC: " + (w.Text("pack") ?? "?"),
         "playlist" when w.Zahl("series") is { } s => ArtName(w.Art) + " (" + string.Format(Loc.T("Series {0}"), s) + ")",
-        "barn" or "treasure" when w.Text("where") is { } o => ArtName(w.Art) + ": " + o,
+        // Dieselben ganzen Saetze wie in WegLang, nicht "Name" + ": " + Ort.
+        "barn" when w.Text("where") is { } o => string.Format(Loc.T("Barn Find: {0}"), o),
+        "treasure" when w.Text("where") is { } o => string.Format(Loc.T("Treasure car: {0}"), o),
         _ => ArtName(w.Art),
     };
 

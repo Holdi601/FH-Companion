@@ -210,7 +210,7 @@ internal sealed class TunesTab : UserControl
     {
         var rat = _berater();
         if (rat?.CarIndexForId(id) is { } ix && rat.RealCarName(ix) is { } name) { return name; }
-        return $"car {id}";
+        return string.Format(Loc.T("car {0}"), id);
     }
 
     private void Spalten(params (string Text, int Breite)[] spalten)

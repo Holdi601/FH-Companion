@@ -211,8 +211,110 @@ internal static class BadgeReader
     /// such thing -- its coloured areas are neither uniform nor rectangular. Once the
     /// square is known, the glyph is simply what is not the paint, inside it.
     /// </remarks>
+    /// <remarks>
+    /// GESTREAMTE BILDER (seit 2026-09-29): Xbox Remote Play, ein Discord- oder
+    /// Browser-Strom sind komprimiertes Video. Auf einem solchen Bild schwankte die
+    /// Platte eines "B" im Gruenkanal zwischen 61 und 148 -- die Flutfuellung mit 26
+    /// Stufen Toleranz zerfiel in Stuecke, und die Klasse blieb leer. Eine hoehere
+    /// Toleranz hilft nicht: die rote Karte dahinter liegt nur gut 40 Stufen weg, die
+    /// Platte liefe in sie aus. Darum ein zweiter Versuch auf einem WEICHGEZEICHNETEN
+    /// Bild: das glaettet die Blockbildung, ohne Platte und Karte zu verbinden.
+    /// </remarks>
     private static (Rectangle Box, byte[] Ink, int Width)? FindGlyph(Bitmap region)
-        => FindGlyphOnPlate(region) ?? FindGlyphOnFlats(region);
+    {
+        var scharf = FindGlyphOnPlate(region);
+        if (scharf is not null) { return scharf; }
+        // Weich und etwas nachsichtiger: im Strom frisst der unscharfe Rand des weissen
+        // Zeichens Farbe der Platte -- gemessen 69 % statt der verlangten 70 %. Die
+        // zerrissenen Flecken eines Fotos kamen auf demselben Bild auf 25 bis 42 %.
+        using var weich = Weich(region);
+        return FindGlyphOnPlate(weich, 0.58) ?? FindGlyphOnFlats(region);
+    }
+
+    /// <summary>Zweimal ein 3x3-Mittel -- fast ein 5x5-Gauss, und billig.</summary>
+    internal static Bitmap Weich(Bitmap region)
+    {
+        var w = region.Width;
+        var h = region.Height;
+        var a = new int[w * h * 3];
+        var data = region.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            unsafe
+            {
+                var scan = (byte*)data.Scan0;
+                for (var y = 0; y < h; y++)
+                {
+                    for (var x = 0; x < w; x++)
+                    {
+                        var at = y * data.Stride + x * 4;
+                        var to = (y * w + x) * 3;
+                        a[to] = scan[at + 2];
+                        a[to + 1] = scan[at + 1];
+                        a[to + 2] = scan[at];
+                    }
+                }
+            }
+        }
+        finally
+        {
+            region.UnlockBits(data);
+        }
+        var b = new int[a.Length];
+        for (var runde = 0; runde < 2; runde++)
+        {
+            for (var y = 0; y < h; y++)
+            {
+                for (var x = 0; x < w; x++)
+                {
+                    for (var k = 0; k < 3; k++)
+                    {
+                        int summe = 0, n = 0;
+                        for (var dy = -1; dy <= 1; dy++)
+                        {
+                            var yy = y + dy;
+                            if (yy < 0 || yy >= h) { continue; }
+                            for (var dx = -1; dx <= 1; dx++)
+                            {
+                                var xx = x + dx;
+                                if (xx < 0 || xx >= w) { continue; }
+                                summe += a[(yy * w + xx) * 3 + k];
+                                n++;
+                            }
+                        }
+                        b[(y * w + x) * 3 + k] = summe / n;
+                    }
+                }
+            }
+            (a, b) = (b, a);
+        }
+        var raus = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+        var ziel = raus.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            unsafe
+            {
+                var scan = (byte*)ziel.Scan0;
+                for (var y = 0; y < h; y++)
+                {
+                    for (var x = 0; x < w; x++)
+                    {
+                        var at = y * ziel.Stride + x * 4;
+                        var von = (y * w + x) * 3;
+                        scan[at + 2] = (byte)a[von];
+                        scan[at + 1] = (byte)a[von + 1];
+                        scan[at] = (byte)a[von + 2];
+                        scan[at + 3] = 255;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            raus.UnlockBits(ziel);
+        }
+        return raus;
+    }
 
     /// <summary>The chroma of a packed colour: how far it is from a grey.</summary>
     private static int Chroma(int rgb)
@@ -240,7 +342,7 @@ internal static class BadgeReader
     /// so it fails the fill; a stretch of yellow barrier is rectangular but slanted
     /// and blank, so it fails both the fill and the character.
     /// </remarks>
-    private static (Rectangle Box, byte[] Ink, int Width)? FindGlyphOnPlate(Bitmap region)
+    private static (Rectangle Box, byte[] Ink, int Width)? FindGlyphOnPlate(Bitmap region, double fuellung = 0.70)
     {
         var width = region.Width;
         var height = region.Height;
@@ -332,7 +434,7 @@ internal static class BadgeReader
             }
             var box = Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
             // Solid: the paint fills its own box, less the character it carries.
-            if (area < box.Width * box.Height * 0.70)
+            if (area < box.Width * box.Height * fuellung)
             {
                 continue;
             }
@@ -343,18 +445,28 @@ internal static class BadgeReader
             }
             // And something is written on it: pixels inside that are not the paint.
             var written = 0;
+            var weiss = 0;
             for (var y = box.Top; y < box.Bottom; y++)
             {
                 for (var x = box.Left; x < box.Right; x++)
                 {
-                    if (Apart(pixels[y * width + x], paint) > PlateInk)
+                    var p = pixels[y * width + x];
+                    if (Apart(p, paint) > PlateInk)
                     {
                         written++;
+                        if (Math.Min((p >> 16) & 0xFF, Math.Min((p >> 8) & 0xFF, p & 0xFF)) >= 150) { weiss++; }
                     }
                 }
             }
             var share = (double)written / Math.Max(1, box.Width * box.Height);
             if (share < 0.03 || share > 0.45)
+            {
+                continue;
+            }
+            // NACHSICHTIG NUR MIT WEISSER SCHRIFT: im zweiten Durchgang nahm die groessere
+            // rote Flaeche der Karte den Platz der Platte ein. Das Zeichen einer Klasse ist
+            // weiss, das "Geschriebene" auf einem Fotofleck nicht.
+            if (fuellung < 0.70 && weiss < written * 0.35)
             {
                 continue;
             }

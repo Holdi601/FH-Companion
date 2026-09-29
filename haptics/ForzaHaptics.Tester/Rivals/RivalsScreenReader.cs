@@ -65,8 +65,10 @@ internal sealed class ScreenState
     /// <summary>Wie viele Rennen die Reihe hat (0 = unbekannt).</summary>
     public int SeriesCount { get; set; }
 
+    // In jeder Spielsprache (GameText): "Horizon プレイ", "Horizon-Play", "Horɨzon Play".
     public bool IsHorizonPlay =>
-        Series?.Contains("Horizon Play", StringComparison.OrdinalIgnoreCase) == true;
+        Series is { Length: > 0 } s
+        && GameText.Varianten("horizon_play", "Horizon Play").Any(v => GameText.Falte(s).Contains(v, StringComparison.Ordinal));
 
     /// <summary>Die Zeilen oben links, mit "|" getrennt ("Rivals", "Routes") -- leer, wenn keine.</summary>
     public string Kopf { get; set; } = string.Empty;
@@ -76,7 +78,7 @@ internal sealed class ScreenState
     /// "Time to Beat". Seit 2026-09-28 -- vorher erkannte die App Rivals gar nicht, und
     /// eine Rivals-Runde nach einem Horizon-Play-Abend landete als "horizon-play".
     /// </summary>
-    public bool IsRivalsMenu => Kopf.Split('|').Any(z => TextMatch.Similarity(TextMatch.Normalise(z), "rivals") >= 0.8);
+    public bool IsRivalsMenu => Kopf.Split('|').Any(z => GameText.Aehnlich(z, "rivals", "Rivals"));
 
     /// <summary>Auf dem Rivals-Schirm: die gezeigte Strecke.</summary>
     public string? RivalsRoute { get; set; }
@@ -405,6 +407,10 @@ internal sealed class RivalsScreenReader
     private static readonly Regex RouteLengthMuster = new(
         @"Length\W*([0-9]+(?:[.,][0-9]+)?)\s*KM", RegexOptions.IgnoreCase);
 
+    /// <summary>Eine Laenge in km, in jeder Spielsprache: "1,9 KM", "1,9 км", "1,9 χλμ.", "1.9 千米".</summary>
+    private static readonly Regex KmZahl = new(
+        @"([0-9]+(?:[.,][0-9]+)?)\s*(?:KM|КМ|ΧΛΜ|千米|公里)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     /// <summary>
     /// Die Ueberschrift lesen -- und auf dem Rivals-Schirm Strecke und Laenge.
     /// </summary>
@@ -431,6 +437,11 @@ internal sealed class RivalsScreenReader
                     beste = (treffer.Track, treffer.Score);
                 }
                 var km = RouteLengthMuster.Match(zeile.Text);
+                // Andere Spielsprachen: "Distancia de la ruta: 1,9 KM" (GameText).
+                if (!km.Success && GameText.Enthaelt(zeile.Text, "route_length_plain", "Route Length"))
+                {
+                    km = KmZahl.Match(zeile.Text);
+                }
                 if (km.Success && double.TryParse(km.Groups[1].Value.Replace(',', '.'),
                         System.Globalization.NumberStyles.Float,
                         System.Globalization.CultureInfo.InvariantCulture, out var wert))
@@ -503,7 +514,14 @@ internal sealed class RivalsScreenReader
         }
         foreach (var line in routeLines)
         {
+            // Englisch (verlesen erlaubt), dann die Kopfzeile jeder Spielsprache:
+            // "Accediendo a Carreras de Horizon Play 2/3 - 20,6 KM".
             var reihe = ReiheMuster.Match(line.Text);
+            foreach (var muster in GameText.ReihenMuster())
+            {
+                if (reihe.Success) { break; }
+                reihe = muster.Match(line.Text);
+            }
             if (!reihe.Success) { continue; }
             var k = reihe.Groups["k"].Value[0] - '0';
             var n = reihe.Groups["n"].Value[0] - '0';
@@ -552,7 +570,8 @@ internal sealed class RivalsScreenReader
         if (beste is null) { return null; }
 
         var m = KmMuster.Match(beste.Value.Text);
-        if (!double.TryParse(m.Groups[1].Value,
+        // Mit Komma in den meisten Spielsprachen: "8,5 KM".
+        if (!double.TryParse(m.Groups[1].Value.Replace(',', '.'),
                              System.Globalization.NumberStyles.Float,
                              System.Globalization.CultureInfo.InvariantCulture,
                              out var km) || km <= 0)
@@ -579,18 +598,15 @@ internal sealed class RivalsScreenReader
     private const double StatusNaheY = 50;
 
     /// <summary>"In Progress" oder "Up Next" in einer Zeile -- auch angehaengt und verlesen.</summary>
+    /// <remarks>
+    /// In jeder Spielsprache (GameText, seit 2026-09-29): "En curso" / "Siguiente",
+    /// "Läuft" / "Als Nächstes" ... Verlesen zaehlt, solange die letzten Woerter der
+    /// Zeile einer Schreibweise zu 80 % gleichen ("In Pr0gress", "Up Nexl").
+    /// </remarks>
     internal static RouteStatus StatusIn(string text)
     {
-        var norm = TextMatch.Normalise(text);
-        if (norm.Length == 0) { return RouteStatus.None; }
-        if (norm.EndsWith("in progress", StringComparison.Ordinal)) { return RouteStatus.InProgress; }
-        if (norm.EndsWith("up next", StringComparison.Ordinal)) { return RouteStatus.UpNext; }
-        // Verlesen ("In Pr0gress", "Up Nexl"): die letzten zwei Woerter gegen beide halten.
-        var woerter = norm.Split(' ');
-        if (woerter.Length < 2) { return RouteStatus.None; }
-        var schluss = woerter[^2] + " " + woerter[^1];
-        if (TextMatch.Similarity(schluss, "in progress") >= 0.8) { return RouteStatus.InProgress; }
-        if (TextMatch.Similarity(schluss, "up next") >= 0.8) { return RouteStatus.UpNext; }
+        if (GameText.EndetMit(text, "in_progress", "In Progress")) { return RouteStatus.InProgress; }
+        if (GameText.EndetMit(text, "up_next", "Up Next")) { return RouteStatus.UpNext; }
         return RouteStatus.None;
     }
 
@@ -606,10 +622,14 @@ internal sealed class RivalsScreenReader
         @"J[o0]in[il1]ng\s+(?<name>.+?)\s+(?<k>[1-9])\s*[/1Il|\\]\s*(?<n>[1-9])(?!\d)",
         RegexOptions.IgnoreCase);
 
-    /// <summary>"8.5 KM - 3 LAPS", auch ohne den Rundenteil.</summary>
+    /// <summary>"8.5 KM - 3 LAPS", auch ohne den Rundenteil -- und in jeder Spielsprache.</summary>
+    /// <remarks>
+    /// "8,5 KM - 3 VUELTAS", "8,5 км - 3 КРУГА", "8,5 χλμ." -- die Einheit, wie das Spiel
+    /// sie in seinen Sprachen schreibt, das Wort fuer Runden beliebig.
+    /// </remarks>
     private static readonly Regex KmMuster = new(
-        @"([0-9]+(?:[.,][0-9]+)?)\s*KM(?:\s*[-\u2013]\s*([0-9]+)\s*LAPS?)?",
-        RegexOptions.IgnoreCase);
+        @"([0-9]+(?:[.,][0-9]+)?)\s*(?:KM|КМ|ΧΛΜ\.?|千米|公里)(?:\s*[-\u2013]\s*([0-9]+)\s*[\p{L}.]*)?",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// <summary>
     /// A one-make header, even when the OCR ate a letter of it.
@@ -631,7 +651,7 @@ internal sealed class RivalsScreenReader
         {
             return false;
         }
-        foreach (var phrase in new[] { "spec racing", "one make" })
+        foreach (var phrase in GameText.Varianten("spec_racing", "Spec Racing").Append("one make"))
         {
             // Compare only the leading window: the header carries a distance and an
             // event count after the name.

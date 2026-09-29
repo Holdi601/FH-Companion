@@ -363,8 +363,9 @@ internal static class Shortcuts
                       Directory.GetParent(AppContext.BaseDirectory.TrimEnd('\\', '/'))?.FullName
                       ?? AppContext.BaseDirectory);
                 Setze("IconLocation", exe + ",0");
-                Setze("Description", "Lap-time overlay and controller haptics "
-                                     + "for Forza Horizon 6");
+                // Der Hinweis, den der Explorer beim Darueberfahren zeigt -- in der Sprache
+                // der App; gilt fuer die Verknuepfung, bis sie neu angelegt wird.
+                Setze("Description", Loc.T("Lap-time overlay and controller haptics for Forza Horizon 6"));
 
                 lnkTyp.InvokeMember("Save",
                                     System.Reflection.BindingFlags.InvokeMethod,

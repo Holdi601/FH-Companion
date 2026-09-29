@@ -49,6 +49,16 @@ internal sealed class RivalsAdvisor
         {
             _normTracks[TextMatch.Normalise(name)] = name;
         }
+        // DIE NAMEN IN DEN ANDEREN SPIELSPRACHEN (seit 2026-09-29), aus den Tabellen des
+        // Spiels (GameText): "Descenso del puente Rainbow" ist "Rainbow Bridge Descent".
+        // Ein englischer Name geht vor -- eine Uebersetzung ueberschreibt nie eine Strecke.
+        foreach (var name in _d.Tracks)
+        {
+            foreach (var anders in GameText.Streckennamen(name))
+            {
+                _normTracks.TryAdd(GameText.Falte(anders), name);
+            }
+        }
         for (var i = 0; i < _d.CarNames.Count; i++)
         {
             var key = TextMatch.Normalise(_d.CarNames[i]);
@@ -509,7 +519,7 @@ internal sealed class RivalsAdvisor
     /// </remarks>
     public (string Track, double Score)? MatchTrack(string text, double cutoff = 0.62)
     {
-        var probe = TextMatch.Normalise(text);
+        var probe = GameText.Falte(text);
         if (probe.Length == 0)
         {
             return null;

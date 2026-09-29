@@ -1,0 +1,2034 @@
+# -*- coding: utf-8 -*-
+"""Norwegisch (Bokmaal, "nb"): alle Saetze der Oberflaeche (2026-09-29). Nicht von Muttersprachlern geprueft.
+
+Forza Horizon 6 liefert Norwegisch aus, die App bisher nicht. Menuenamen des SPIELS stehen
+im amtlichen norwegischen Wortlaut des Spiels (Innstillinger, HUD og spillopplevelse, Data ut,
+Bilene mine, Oppgradering og trim, Arrangementregistrering, Rivaler, Vibrasjon, Av/Paa ...).
+Namen, die der Code NICHT uebersetzt (Frequency mix, Maximum, Average), bleiben in den
+Saetzen englisch, damit man findet, was auf dem Schirm steht. Die Reiter der App
+(Rundedelta-HUD, Tuning-inspektør, Bilnotater ...) heissen in den Saetzen wie ihre Uebersetzung.
+
+Geschrieben nach Schluessel, nicht nach Position: die englischen Saetze wurden aus
+config/lang/_keys.json uebernommen, nicht abgetippt.
+"""
+
+_NB = {
+    "#{0} of {1}":
+        "#{0} av {1}",
+    "(no shared tune)":
+        "(ingen delt tune)",
+    "(none)":
+        "(ingen)",
+    "(own setup or stock)":
+        "(eget oppsett eller standard)",
+    "(unknown)":
+        "(ukjent)",
+    "+{0} more of your cars":
+        "+{0} flere av bilene dine",
+    "1. In the game, open the pause menu on the CARS tab (My Cars, Upgrades & Tuning).":
+        "1. Åpne pausemenyen i spillet på fanen BILER (Bilene mine, Oppgradering og trim).",
+    "2. Click OK. The app switches to the game and drives the menus.":
+        "2. Klikk på OK. Appen bytter til spillet og styrer menyene.",
+    "3. Do not touch keyboard or controller while it runs. Alt+Tab or the Pause key stops it.":
+        "3. Ikke rør tastatur eller kontroller mens den kjører. Alt+Tab eller Pause-tasten stopper den.",
+    "A car's first time on your list for a course and class":
+        "En bil for første gang på listen din for en bane og klasse",
+    "A card with your time, confetti and a short sound, near the top of the screen for about five seconds.":
+        "Et kort med tiden din, konfetti og en kort lyd, øverst på skjermen i omtrent fem sekunder.",
+    "A line under the delta: your car's best time on the website for this route and class. Beat it and the lap goes onto the leaderboard.":
+        "En linje under deltaet: bilens beste tid på nettstedet for denne ruten og klassen. Slå den, så havner runden på ledertavlen.",
+    "A newer version of the app is available.":
+        "En nyere versjon av appen er tilgjengelig.",
+    "A tune that is on a car is never deleted.":
+        "En tune som ligger på en bil, blir aldri slettet.",
+    "Absolute value":
+        "Absoluttverdi",
+    "Active":
+        "Aktiv",
+    "Adaptive trigger effect":
+        "Adaptiv avtrekkereffekt",
+    "Add Bézier curve":
+        "Legg til Bézier-kurve",
+    "Add constant test source":
+        "Legg til konstant testkilde",
+    "Add controller output":
+        "Legg til kontrollerutgang",
+    "Add custom group":
+        "Legg til egen gruppe",
+    "Add every car in my garage":
+        "Legg til alle bilene i garasjen min",
+    "Add it to the Start menu":
+        "Legg den til i Start-menyen",
+    "Add point":
+        "Legg til punkt",
+    "Add source node":
+        "Legg til kildenode",
+    "Add telemetry source":
+        "Legg til telemetrikilde",
+    "Add wheel preset":
+        "Legg til hjulforhåndsinnstilling",
+    "Adds resistance after the selected trigger position.":
+        "Legger til motstand etter den valgte avtrekkerposisjonen.",
+    "Aftermarket dealer":
+        "Aftermarket-forhandler",
+    "Ahead of the reference":
+        "Foran referansen",
+    "All cars":
+        "Alle biler",
+    "All four tyres at a glance: colour is temperature, the outline turns yellow at the limit and red when the tyre slides, and the tyre tilts with its slip angle. The bars show wheelspin or locking and the suspension travel; icons show puddles, kerbs and bumpy ground.":
+        "Alle fire dekkene med ett blikk: fargen er temperaturen, omrisset blir gult ved grensen og rødt når dekket sklir, og dekket vippes med skrensvinkelen. Stolpene viser hjulspinn eller låsing og fjæringsvandringen; ikoner viser vannpytter, kantsteiner og humpete underlag.",
+    "All telemetry + outputs":
+        "All telemetri + utganger",
+    "All tunes":
+        "Alle tunes",
+    "Allow in Windows Firewall":
+        "Tillat i Windows-brannmuren",
+    "Also enable the haptic tone":
+        "Slå også på den haptiske tonen",
+    "Always on Top":
+        "Alltid øverst",
+    "Anchor":
+        "Anker",
+    "Any class":
+        "Alle klasser",
+    "Any other window that shows the game works too: pick it from the list, or with a preview of every window.":
+        "Alle andre vinduer som viser spillet, fungerer også: velg det i listen, eller med en forhåndsvisning av hvert vindu.",
+    "Any way":
+        "Alle måter",
+    "App: {0}":
+        "App: {0}",
+    "Apply":
+        "Bruk",
+    "Archive every lap for heatmaps":
+        "Arkiver hver runde for varmekart",
+    "Area":
+        "Område",
+    "Auction House":
+        "Auksjonshus",
+    "Automatic: your laps, else Rivals":
+        "Automatisk: rundene dine, ellers Rivaler",
+    "Autoshow":
+        "Autoshow",
+    "Autoshow: {0} CR":
+        "Autoshow: {0} CR",
+    "Autumn":
+        "Høst",
+    "Average":
+        "Gjennomsnitt",
+    "BRK":
+        "BRM",
+    "Backing plate":
+        "Bakplate",
+    "Barn Find":
+        "Låvefunn",
+    "Barn Find: {0}":
+        "Låvefunn: {0}",
+    "Before the race: one map per offered route, until you pick a car.":
+        "Før løpet: ett kart per tilbudt rute, til du velger en bil.",
+    "Behind the reference":
+        "Bak referansen",
+    "Black":
+        "Svart",
+    "Blueprint editor":
+        "Blueprint-editor",
+    "Body frequency mix":
+        "Frekvensmiks i huset",
+    "Both adaptive triggers":
+        "Begge adaptive avtrekkere",
+    "Both body":
+        "Begge i huset",
+    "Both body haptics":
+        "Begge haptikkene i huset",
+    "Both body motors":
+        "Begge motorene i huset",
+    "Both grips":
+        "Begge håndtakene",
+    "Both motors":
+        "Begge motorene",
+    "Both sides":
+        "Begge sider",
+    "Both trigger motors":
+        "Begge avtrekkermotorene",
+    "Both triggers":
+        "Begge avtrekkerne",
+    "Bow snap":
+        "Buesmekk",
+    "Brake: {0}":
+        "Brems: {0}",
+    "Buttons":
+        "Knapper",
+    "Bézier: {0} points":
+        "Bézier: {0} punkter",
+    "CLU":
+        "KOB",
+    "CONSTANT":
+        "KONSTANT",
+    "CURRENT CONTROLLER OUTPUT":
+        "NÅVÆRENDE UTGANG FRA KONTROLLEREN",
+    "CURVE":
+        "KURVE",
+    "Calmer, in teal: when the server accepts a lap of a car that was not on that route and class board yet.":
+        "Roligere, i blågrønt: når serveren godtar en runde med en bil som ikke var på ledertavlen for den ruten og klassen ennå.",
+    "Campaign":
+        "Kampanje",
+    "Campaign: the {0} wristband":
+        "Kampanje: armbåndet {0}",
+    "Cancel = skip this version":
+        "Avbryt = hopp over denne versjonen",
+    "Capture card":
+        "Opptakskort",
+    "Car":
+        "Bil",
+    "Car Mastery":
+        "Car Mastery",
+    "Car Mastery of the {0}":
+        "Car Mastery for {0}",
+    "Car collection":
+        "Bilsamling",
+    "Car list from forza.net/fh6cars ({0}); ways to get them from the Forza Wiki (CC BY-SA).":
+        "Billiste fra forza.net/fh6cars ({0}); hvordan du får dem, fra Forza Wiki (CC BY-SA).",
+    "Car note":
+        "Bilnotat",
+    "Car note heading":
+        "Overskrift for bilnotat",
+    "Car note plate":
+        "Plate for bilnotat",
+    "Car note text":
+        "Tekst for bilnotat",
+    "Car notes":
+        "Bilnotater",
+    "Car ordinal {0}":
+        "Bilordinal {0}",
+    "Car {0} from the telemetry is not in this garage -- it was bought after the database was last written.":
+        "Bil {0} fra telemetrien er ikke i denne garasjen -- den ble kjøpt etter at databasen sist ble skrevet.",
+    "Cars":
+        "Biler",
+    "Cars with the most unused tunes":
+        "Biler med flest ubrukte tunes",
+    "Category":
+        "Kategori",
+    "Celebrate when a lap beats the website's time":
+        "Feir når en runde slår tiden på nettstedet",
+    "Celebrations":
+        "Feiringer",
+    "Centre":
+        "Midten",
+    "Channel":
+        "Kanal",
+    "Check for a newer list":
+        "Se etter en nyere liste",
+    "Check for app updates":
+        "Se etter appoppdateringer",
+    "Check which tunes are on a car":
+        "Sjekk hvilke tunes som ligger på en bil",
+    "Check your connection, then press “Check for a newer list”.":
+        "Sjekk tilkoblingen, og trykk så på «Se etter en nyere liste».",
+    "Checking Windows Firewall ...":
+        "Sjekker Windows-brannmuren ...",
+    "Choose Forza telemetry":
+        "Velg Forza-telemetri",
+    "Class":
+        "Klasse",
+    "Class {0} · {1} – what to drive":
+        "Klasse {0} · {1} – hva du skal kjøre",
+    "Class {0} – what to drive":
+        "Klasse {0} – hva du skal kjøre",
+    "Clear graph":
+        "Tøm grafen",
+    "Close":
+        "Lukk",
+    "Co-op":
+        "Samarbeid",
+    "Collection Journal":
+        "Collection Journal",
+    "Colours":
+        "Farger",
+    "Combine inputs":
+        "Kombiner innganger",
+    "Compared are laps on the same course, in the same class and with the same start (standing or flying). Each lap shows at most one: a class best before a new car before a car best.":
+        "Det sammenlignes runder på samme bane, i samme klasse og med samme start (stående eller flygende). Hver runde viser høyst én: klasserekord foran ny bil foran bilrekord.",
+    "Connect the Xbox to the capture card and pick the card here.":
+        "Koble Xboxen til opptakskortet, og velg kortet her.",
+    "Connect this directly to an output node to verify one controller actuator at an exact force.":
+        "Koble denne direkte til en utgangsnode for å prøve én aktuator i kontrolleren med en nøyaktig styrke.",
+    "Constant output (%)":
+        "Konstant utgang (%)",
+    "Constant test":
+        "Konstant test",
+    "Constant: inactive":
+        "Konstant: inaktiv",
+    "Constant: {0}":
+        "Konstant: {0}",
+    "Continue":
+        "Fortsett",
+    "Continuous":
+        "Kontinuerlig",
+    "Continuous tone / vibration":
+        "Kontinuerlig tone / vibrasjon",
+    "Continuous trigger effect":
+        "Kontinuerlig avtrekkereffekt",
+    "Controller":
+        "Kontroller",
+    "Controller channel":
+        "Kontrollerkanal",
+    "Controller discovery timed out. The window remains usable; reconnect or power-cycle the controller.":
+        "Søket etter kontrollere fikk tidsavbrudd. Vinduet kan fortsatt brukes; koble til kontrolleren på nytt, eller slå den av og på.",
+    "Controller output":
+        "Kontrollerutgang",
+    "Controller target":
+        "Kontrollermål",
+    "Copy as text":
+        "Kopier som tekst",
+    "Could not check Windows Firewall. If nothing arrives, allow UDP port {0} there:":
+        "Kunne ikke sjekke Windows-brannmuren. Hvis ingenting kommer fram, tillat UDP-port {0} der:",
+    "Could not listen on UDP port {0}: {1}":
+        "Kunne ikke lytte på UDP-port {0}: {1}",
+    "Could not read the routes":
+        "Kunne ikke lese rutene",
+    "Counted down in blue. Telemetry does not carry it, so correct it here if the countdown ends at the wrong moment.":
+        "Telles ned i blått. Telemetrien har det ikke med, så korriger det her hvis nedtellingen slutter på feil tidspunkt.",
+    "Country":
+        "Land",
+    "Counts UP once the ghost ends -- the seconds the others take to pop back in, one after another.":
+        "Teller OPP når spøkelset slutter -- sekundene de andre bruker på å dukke opp igjen, én etter én.",
+    "Course":
+        "Bane",
+    "Course maps on the Event Sign Up screen":
+        "Banekart på skjermen Arrangementregistrering",
+    "Course outline":
+        "Banens omriss",
+    "Course plate":
+        "Baneplate",
+    "Course start point":
+        "Banens startpunkt",
+    "Courses":
+        "Baner",
+    "Creates a hard resistance wall followed by a release/click.":
+        "Lager en hard motstandsvegg etterfulgt av en utløsning/et klikk.",
+    "Creator":
+        "Skaper",
+    "Current value":
+        "Nåværende verdi",
+    "Dashboard":
+        "Dashbord",
+    "Data Out":
+        "Data ut",
+    "Data Out IP Address":
+        "IP-adresse for data ut",
+    "Data Out IP Port":
+        "IP-port for data ut",
+    "Date":
+        "Dato",
+    "Delete":
+        "Slett",
+    "Delete layout":
+        "Slett oppsett",
+    "Delete node":
+        "Slett node",
+    "Delete selected node":
+        "Slett valgt node",
+    "Delete the layout \"{0}\"?":
+        "Slette oppsettet \"{0}\"?",
+    "Delete these tunes in the game":
+        "Slett disse tunene i spillet",
+    "Delete tunes in the game":
+        "Slett tunes i spillet",
+    "Deleting has to happen in the game -- this app only reads the save.":
+        "Slettingen må skje i spillet -- denne appen leser bare lagringsfilen.",
+    "Deletion plan":
+        "Sletteplan",
+    "Delta":
+        "Delta",
+    "Desktop shortcut":
+        "Snarvei på skrivebordet",
+    "Desktop shortcut ✓":
+        "Snarvei på skrivebordet ✓",
+    "Details: {0}":
+        "Detaljer: {0}",
+    "Discard waiting laps":
+        "Forkast ventende runder",
+    "Discard {0} waiting lap(s)? They will not be submitted.":
+        "Forkaste {0} ventende runde(r)? De blir ikke sendt inn.",
+    "Discovering controllers...":
+        "Søker etter kontrollere...",
+    "Done":
+        "Ferdig",
+    "Done. Starting the new version.":
+        "Ferdig. Starter den nye versjonen.",
+    "Done: {runs} run(s), {rows} rows":
+        "Ferdig: {runs} kjøring(er), {rows} rader",
+    "Double-click: add a point  |  Right-click an inner point: remove it":
+        "Dobbeltklikk: legg til et punkt  |  Høyreklikk på et indre punkt: fjern det",
+    "Download and replace it now? The app closes and starts again; your settings stay.":
+        "Laste ned og erstatte den nå? Appen lukkes og starter på nytt; innstillingene dine blir værende.",
+    "Drag from a node's right port to another node's left port.\n\nDrag headers to move nodes. Right-click a node to delete it.":
+        "Dra fra en nodes høyre port til en annen nodes venstre port.\n\nDra i overskriftene for å flytte noder. Høyreklikk på en node for å slette den.",
+    "Drag the blocks where you want them. Mouse wheel over a block resizes it. Everything saves itself.":
+        "Dra blokkene dit du vil ha dem. Musehjulet over en blokk endrer størrelsen. Alt lagres av seg selv.",
+    "Drag the yellow end points vertically and the grey Bézier handles anywhere. Left is 0% grip, right is 100%.":
+        "Dra de gule endepunktene loddrett og de grå Bézier-håndtakene hvor som helst. Venstre er 0 % grep, høyre er 100 %.",
+    "Draw the grip → haptics curve":
+        "Tegn kurven grep → haptikk",
+    "Driven with the app":
+        "Kjørt med appen",
+    "Each press takes the next step, from the narrowest to the widest, and says so on screen. The key only does this while Forza is running.":
+        "Hvert trykk tar neste trinn, fra det smaleste til det bredeste, og sier det på skjermen. Tasten gjør dette bare mens Forza kjører.",
+    "Edit curve: {0}":
+        "Rediger kurve: {0}",
+    "Edit multi-point Bézier curve":
+        "Rediger Bézier-kurve med flere punkter",
+    "Effect":
+        "Effekt",
+    "Effect ends at trigger travel (%)":
+        "Effekten slutter ved avtrekkervandring (%)",
+    "Effect starts at trigger travel (%)":
+        "Effekten starter ved avtrekkervandring (%)",
+    "Enable live mapping":
+        "Slå på direkte kobling",
+    "Enable lock mapping":
+        "Slå på låsekobling",
+    "Enter this in Forza on the Xbox or the other PC, under Settings › HUD and Gameplay:":
+        "Skriv inn dette i Forza på Xboxen eller den andre PC-en, under Innstillinger › HUD og spillopplevelse:",
+    "Event Sign Up maps":
+        "Kart for Arrangementregistrering",
+    "Event Sign Up maps (before the race)":
+        "Kart for Arrangementregistrering (før løpet)",
+    "Every tune":
+        "Hver tune",
+    "Example: this is how a personal record looks.":
+        "Eksempel: slik ser en personlig rekord ut.",
+    "Example: this is how it looks when a lap beats the website's time.":
+        "Eksempel: slik ser det ut når en runde slår tiden på nettstedet.",
+    "Example: this is how it looks when your lap adds a new car to the leaderboard.":
+        "Eksempel: slik ser det ut når runden din legger til en ny bil på ledertavlen.",
+    "Examples:":
+        "Eksempler:",
+    "Exclusive fullscreen hides the overlay entirely — use borderless.":
+        "Eksklusiv fullskjerm skjuler overlegget helt — bruk vindu uten kanter.",
+    "Expand workspace":
+        "Utvid arbeidsflaten",
+    "Experimental firmware effect with tension and snap-back. It may vary across controller firmware.":
+        "Eksperimentell fastvareeffekt med spenning og tilbakesmekk. Den kan variere mellom fastvareversjoner i kontrolleren.",
+    "F7 switches to points":
+        "F7 bytter til poeng",
+    "F7 switches to the time sum":
+        "F7 bytter til tidssummen",
+    "FH Companion restarts in PC mode: the game runs on this PC.":
+        "FH Companion starter på nytt i PC-modus: spillet kjører på denne PC-en.",
+    "FH Companion restarts in Xbox / 2nd PC mode: the telemetry comes over the network and the HUD shows in a dashboard window.":
+        "FH Companion starter på nytt i modusen Xbox / 2. PC: telemetrien kommer over nettverket, og HUD-en vises i et dashbordvindu.",
+    "FH6 on the Xbox / other PC: Data Out On  |  IP {0}  |  Port must match below":
+        "FH6 på Xboxen / den andre PC-en: Data ut: På  |  IP {0}  |  porten må stemme med den nedenfor",
+    "FH6 reports a slip ratio for each tyre. Negative slip under braking is normalised here to a lock level of 0-100%.":
+        "FH6 oppgir et slippforhold for hvert dekk. Negativt slipp ved nedbremsing normaliseres her til en låsegrad på 0-100 %.",
+    "FH6: Data Out On  |  IP 127.0.0.1  |  Format Sled  |  Port must match below":
+        "FH6: Data ut: På  |  IP 127.0.0.1  |  Format Sled  |  porten må stemme med den nedenfor",
+    "FIRST":
+        "FØRSTE",
+    "Feel wheel lock separately":
+        "Kjenn hjullåsing separat",
+    "Festival Playlist":
+        "Festival Playlist",
+    "Field":
+        "Felt",
+    "Filter by name":
+        "Filtrer etter navn",
+    "Filter telemetry by field or category...":
+        "Filtrer telemetri etter felt eller kategori...",
+    "Finished 10-second vibration test.":
+        "Vibrasjonstesten på 10 sekunder er ferdig.",
+    "First lap in class {0} here":
+        "Første runde i klasse {0} her",
+    "Fit nodes":
+        "Tilpass nodene",
+    "Fixed carrier frequency / pitch (Hz)":
+        "Fast bærefrekvens / tonehøyde (Hz)",
+    "Fixed strength / volume (%)":
+        "Fast styrke / volum (%)",
+    "Focus canvas":
+        "Fokuser lerretet",
+    "Forza does not run a clock outside a race -- this app does. Every route you have driven already has a start line, so you can practise one in free roam and the strip works as it does in a race. Custom routes from EventLab count too: a course is recognised by where its line is, never by a name.":
+        "Forza har ingen klokke utenfor et løp -- denne appen har det. Hver rute du har kjørt, har allerede en startlinje, så du kan øve på den i fri kjøring, og stripen virker som i et løp. Egne ruter fra EventLab teller også: en bane kjennes igjen på hvor linjen ligger, aldri på et navn.",
+    "Forza haptic graph":
+        "Forza-haptikkgraf",
+    "Forza is running":
+        "Forza kjører",
+    "Forza's telemetry names the car but says nothing about what was done to it. That lives in the game's own garage database -- which exists only in memory. This reads it out and lists every part and every tuning slider on the car you are driving.":
+        "Forzas telemetri nevner bilen, men sier ingenting om hva som er gjort med den. Det ligger i spillets egen garasjedatabase -- som bare finnes i minnet. Dette leser den ut og viser hver del og hver tuning-glidebryter på bilen du kjører.",
+    "Forza: Settings → HUD and Gameplay → Data Out":
+        "Forza: Innstillinger → HUD og spillopplevelse → Data ut",
+    "Free roam":
+        "Fri kjøring",
+    "Frequency":
+        "Frekvens",
+    "Frequency at 0% input (Hz)":
+        "Frekvens ved 0 % inngang (Hz)",
+    "Frequency at 100% input (Hz)":
+        "Frekvens ved 100 % inngang (Hz)",
+    "Frequency mix":
+        "Frekvensmiks",
+    "Frequency mix (low ↔ high body)":
+        "Frekvensmiks (lav ↔ høy i huset)",
+    "Frequency mix (low ↔ high motor)":
+        "Frekvensmiks (lav ↔ høy motor)",
+    "Frequency only":
+        "Bare frekvens",
+    "From":
+        "Kilde",
+    "Front left ratio: {0}":
+        "Forhold foran venstre: {0}",
+    "Front left: {0}":
+        "Foran venstre: {0}",
+    "Front right ratio: {0}":
+        "Forhold foran høyre: {0}",
+    "Front right: {0}":
+        "Foran høyre: {0}",
+    "Front wheels - grip":
+        "Forhjul - grep",
+    "Front wheels - lock":
+        "Forhjul - låsing",
+    "GEAR":
+        "GIR",
+    "GHOST {0}":
+        "SPØKELSE {0}",
+    "GROUP":
+        "GRUPPE",
+    "Game area {0}x{1} at {2},{3}, read at 1920x1080 (scale {4:.2f}).":
+        "Spillområde {0}x{1} ved {2},{3}, lest som 1920x1080 (skala {4:.2f}).",
+    "Game picture (optional)":
+        "Spillbilde (valgfritt)",
+    "Gamepad":
+        "Spillkontroll",
+    "Gap":
+        "Avstand",
+    "Ghost countdown":
+        "Spøkelsesnedtelling",
+    "Ghost text":
+        "Spøkelsestekst",
+    "Ghost, calm phase":
+        "Spøkelse, rolig fase",
+    "Ghost, warning phase":
+        "Spøkelse, varselfase",
+    "Gift":
+        "Gave",
+    "Graph output enabled":
+        "Grafutgang på",
+    "Graph: {0}":
+        "Graf: {0}",
+    "Green":
+        "Grønn",
+    "Grip":
+        "Grep",
+    "Grip L/R: -- / --   Vibration: -- / --   Tone: -- / --":
+        "Grep V/H: -- / --   Vibrasjon: -- / --   Tone: -- / --",
+    "Group: {0}":
+        "Gruppe: {0}",
+    "Haptic command failed: {0}":
+        "Haptisk kommando mislyktes: {0}",
+    "Haptic output":
+        "Haptisk utgang",
+    "Haptic tone on the trackpads":
+        "Haptisk tone på styreflatene",
+    "Haptic/trigger firewall active":
+        "Haptikk-/avtrekkerbrannmur aktiv",
+    "Haptic/trigger firewall applies only to this controller":
+        "Haptikk-/avtrekkerbrannmuren gjelder bare denne kontrolleren",
+    "Hide it from the real screen":
+        "Skjul den på den ekte skjermen",
+    "High body":
+        "Høy i huset",
+    "High motor":
+        "Høy motor",
+    "High-frequency body haptic":
+        "Høyfrekvent haptikk i huset",
+    "High-frequency body motor":
+        "Høyfrekvent motor i huset",
+    "High-frequency motor":
+        "Høyfrekvent motor",
+    "Highlight a car in My Cars, drive one, or add your whole garage below.":
+        "Marker en bil i Bilene mine, kjør en, eller legg til hele garasjen nedenfor.",
+    "How to get it":
+        "Slik får du den",
+    "I have read the above and understand what this program does.":
+        "Jeg har lest det ovenstående og forstår hva dette programmet gjør.",
+    "If that address does not work, try: {0}":
+        "Hvis den adressen ikke fungerer, prøv: {0}",
+    "If you are sure it works anyway: --skip-checks":
+        "Hvis du er sikker på at det fungerer likevel: --skip-checks",
+    "In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized.":
+        "I OBS: høyreklikk på forhåndsvisningen → Windowed Projector (Program). Den kan ligge bak andre vinduer på en skjerm, bare ikke minimert.",
+    "In the dashboard window":
+        "I dashbordvinduet",
+    "In the game now:":
+        "I spillet nå:",
+    "In your garage":
+        "I garasjen din",
+    "Input modulates":
+        "Inngangen modulerer",
+    "Input traces":
+        "Inndataspor",
+    "Invert 0 ↔ 1":
+        "Inverter 0 ↔ 1",
+    "It holds the details you were given:":
+        "Den inneholder opplysningene du har fått:",
+    "It shows while that window is in front. Move and size the HUD in the Lap delta HUD tab, as on the PC.":
+        "Den vises mens det vinduet er foran. Plassering og størrelse på HUD-en stiller du inn i fanen Rundedelta-HUD, som på PC-en.",
+    "Its first time here on the website -- thanks to you!":
+        "Dens første tid her på nettstedet -- takket være deg!",
+    "Key":
+        "Nøkkel",
+    "Key colour for OBS":
+        "Nøkkelfarge for OBS",
+    "L2 + R2 adaptive":
+        "L2 + R2 adaptiv",
+    "L2 adaptive":
+        "L2 adaptiv",
+    "L2 adaptive trigger":
+        "L2 adaptiv avtrekker",
+    "LOCK":
+        "LÅS",
+    "Language":
+        "Språk",
+    "Language: system default":
+        "Språk: systemstandard",
+    "Lap delta HUD":
+        "Rundedelta-HUD",
+    "Lap-time overlay and controller haptics for Forza Horizon 6":
+        "Overlegg for rundetider og kontrollerhaptikk for Forza Horizon 6",
+    "Last checked {0:yyyy-MM-dd HH:mm}: {1} tunes are on a car. Tunes saved after that show \"?\".":
+        "Sist sjekket {0:yyyy-MM-dd HH:mm}: {1} tunes ligger på en bil. Tunes lagret etter det viser \"?\".",
+    "Layout":
+        "Oppsett",
+    "Left edge":
+        "Venstre kant",
+    "Left grip":
+        "Venstre håndtak",
+    "Left grip motor":
+        "Venstre håndtaksmotor",
+    "Left grip: {0}":
+        "Grep venstre: {0}",
+    "Left lock: {0}":
+        "Låsing venstre: {0}",
+    "Left pad":
+        "Venstre pad",
+    "Left side":
+        "Venstre side",
+    "Left trackpad":
+        "Venstre styreflate",
+    "Left trigger":
+        "Venstre avtrekker",
+    "Left trigger motor":
+        "Venstre avtrekkermotor",
+    "Left wheels - grip":
+        "Venstre hjul - grep",
+    "Left wheels - lock":
+        "Venstre hjul - låsing",
+    "Limit":
+        "Grense",
+    "Line thickness":
+        "Linjetykkelse",
+    "Listener stopped.":
+        "Mottakeren er stoppet.",
+    "Listening on UDP port {0} on {1}. Set Data Out on the Xbox/PC to one of these.":
+        "Lytter på UDP-port {0} på {1}. Sett Data ut på Xboxen/PC-en til en av disse.",
+    "Listening on UDP port {0}. Drive in FH6 to produce packets...":
+        "Lytter på UDP-port {0}. Kjør i FH6 for å lage pakker...",
+    "Live FH6 telemetry connected.":
+        "FH6-telemetri tilkoblet.",
+    "Live grip telemetry":
+        "Live-telemetri for grep",
+    "Live map":
+        "Live-kart",
+    "Live map (during the race)":
+        "Live-kart (under løpet)",
+    "Live map during the race":
+        "Live-kart under løpet",
+    "Live map: driven part":
+        "Live-kart: kjørt del",
+    "Live map: line thickness":
+        "Live-kart: linjetykkelse",
+    "Live map: smoothing":
+        "Live-kart: utjevning",
+    "Live map: your car":
+        "Live-kart: bilen din",
+    "Live mapping is sending through the four native haptic channels.":
+        "Den direkte koblingen sender gjennom de fire egne haptiske kanalene.",
+    "Live mapping off.":
+        "Direkte kobling av.",
+    "Live: {0}":
+        "Live: {0}",
+    "Load":
+        "Last inn",
+    "Load graph profile":
+        "Last inn grafprofil",
+    "Load grip preset":
+        "Last inn grepforhåndsinnstilling",
+    "Load layout":
+        "Last inn oppsett",
+    "Lock L/R: -- / --   Output: -- / --":
+        "Låsing V/H: -- / --   Utgang: -- / --",
+    "Lock mapping off.":
+        "Låsekobling av.",
+    "Looking for a Steam Controller...":
+        "Søker etter en Steam Controller...",
+    "Low body":
+        "Lav i huset",
+    "Low motor":
+        "Lav motor",
+    "Low-frequency body haptic":
+        "Lavfrekvent haptikk i huset",
+    "Low-frequency body motor":
+        "Lavfrekvent motor i huset",
+    "Low-frequency motor":
+        "Lavfrekvent motor",
+    "Loyalty reward":
+        "Lojalitetsbelønning",
+    "Loyalty reward for playing {0}":
+        "Lojalitetsbelønning for å ha spilt {0}",
+    "Magenta":
+        "Magenta",
+    "Make":
+        "Merke",
+    "Marked as yours":
+        "Markert som din",
+    "Maximum":
+        "Maksimum",
+    "Maximum (strongest wins)":
+        "Maksimum (sterkeste vinner)",
+    "Maximum uses the strongest input. Average blends them; SumClamped adds them up to 100%. If several output nodes target the same actuator, the strongest live output wins.":
+        "Maksimum bruker det sterkeste inngangssignalet. Gjennomsnitt blander dem; SumClamped legger dem sammen opptil 100 %. Hvis flere utgangsnoder sikter mot samme aktuator, vinner det sterkeste aktive signalet.",
+    "Minimum":
+        "Minimum",
+    "Missing":
+        "Mangler",
+    "Mode":
+        "Modus",
+    "Multiple input connections":
+        "Flere inngangskoblinger",
+    "My Cars":
+        "Bilene mine",
+    "My best here with anything":
+        "Min beste her med hva som helst",
+    "My controller is connected to this PC (Xbox Remote Play)":
+        "Kontrolleren min er koblet til denne PC-en (Xbox Remote Play)",
+    "My inputs":
+        "Mine inndata",
+    "My times":
+        "Mine tider",
+    "NEW":
+        "NY",
+    "NO OCR LANGUAGE":
+        "INGEN OCR-SPRÅK",
+    "NODE PALETTE":
+        "NODEPALETT",
+    "NODE PROPERTIES":
+        "NODEEGENSKAPER",
+    "Name":
+        "Navn",
+    "Name assumed from the ordinal — not confirmed.":
+        "Navnet er antatt ut fra ordinalen — ikke bekreftet.",
+    "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.":
+        "Trenger ffmpeg: kjør «winget install Gyan.FFmpeg» én gang.",
+    "New car on the leaderboard!":
+        "Ny bil på ledertavlen!",
+    "New car on your list":
+        "Ny bil på listen din",
+    "New version available":
+        "Ny versjon tilgjengelig",
+    "No = ask again at the next start":
+        "Nei = spør igjen ved neste start",
+    "No Discord window found. Open Discord and watch the stream, popped out or full screen.":
+        "Fant ikke noe Discord-vindu. Åpne Discord og se på strømmen, i eget vindu eller i fullskjerm.",
+    "No XInput controller found; checking direct PlayStation/SDL devices...":
+        "Fant ingen XInput-kontroller; sjekker direkte PlayStation-/SDL-enheter...",
+    "No board for these routes in this class yet.":
+        "Ingen ledertavle for disse rutene i denne klassen ennå.",
+    "No car in view -- highlight one in My Cars, or drive one.":
+        "Ingen bil i sikte -- marker en i Bilene mine, eller kjør en.",
+    "No car list yet -- it comes from the server.":
+        "Ingen billiste ennå -- den kommer fra serveren.",
+    "No car matches the filter":
+        "Ingen bil passer til filteret",
+    "No cars seen yet":
+        "Ingen biler sett ennå",
+    "No garage found in the game's memory -- open My Cars once, then try again.":
+        "Fant ingen garasje i spillets minne -- åpne Bilene mine én gang, og prøv igjen.",
+    "No lap by this car in the records yet.":
+        "Ingen runde med denne bilen i rekordene ennå.",
+    "No layout called \"{0}\".":
+        "Ingen oppsett som heter \"{0}\".",
+    "No native haptic channel is open.":
+        "Ingen egen haptisk kanal er åpen.",
+    "No newer list on the server.":
+        "Ingen nyere liste på serveren.",
+    "No picture yet":
+        "Ikke noe bilde ennå",
+    "No reference yet":
+        "Ingen referanse ennå",
+    "No route name matched.":
+        "Ingen rutenavn passet.",
+    "No server in the configuration -- send the file by hand.":
+        "Ingen server i konfigurasjonen -- send filen manuelt.",
+    "No stream found in a browser window. Open it on Twitch, YouTube or Kick; keep its tab in front.":
+        "Fant ingen strøm i et nettleservindu. Åpne den på Twitch, YouTube eller Kick; hold fanen dens foran.",
+    "No writable controller found. Steam: {0}  |  DualSense: {1}  |  Standard: {2}":
+        "Fant ingen skrivbar kontroller. Steam: {0}  |  DualSense: {1}  |  Standard: {2}",
+    "No-contact start: seconds the ghost lasts after GO":
+        "Start uten kontakt: sekunder spøkelset varer etter GO",
+    "None -- telemetry only":
+        "Ingen -- bare telemetri",
+    "Normalize maximum":
+        "Normaliser maksimum",
+    "Normalize minimum":
+        "Normaliser minimum",
+    "Normalized combined tire slip":
+        "Normalisert samlet dekkslipp",
+    "Not checked yet -- reads the game's memory while it runs, takes up to a minute.":
+        "Ikke sjekket ennå -- leser minnet til spillet mens det kjører, tar opptil ett minutt.",
+    "Not checked yet, so this is sorted by all tunes -- press \"Check which tunes are on a car\" to rank by unused ones.":
+        "Ikke sjekket ennå, så dette er sortert etter alle tunes -- trykk på \"Sjekk hvilke tunes som ligger på en bil\" for å rangere etter ubrukte.",
+    "Not listening.":
+        "Lytter ikke.",
+    "Not obtainable":
+        "Kan ikke skaffes",
+    "Not sure":
+        "Usikker",
+    "Note":
+        "Notat",
+    "Note line":
+        "Notatlinje",
+    "Note: the game area is {0}x{1}, not 16:9. The scan uses its centred 16:9 part; menu positions at this aspect ratio are an assumption.":
+        "Merk: spillområdet er {0}x{1}, ikke 16:9. Skanningen bruker den midtstilte 16:9-delen; menyenes plassering i dette sideforholdet er en antakelse.",
+    "Nothing to delete in this selection.":
+        "Ingenting å slette i dette utvalget.",
+    "Nothing to pack -- no board was finished.":
+        "Ingenting å pakke -- ingen ledertavle ble ferdig.",
+    "Now it is the time to beat":
+        "Nå er det tiden som skal slås",
+    "Now line":
+        "Nå-linje",
+    "Number":
+        "Nummer",
+    "OBS: add a Window Capture of this window above the game capture, then a Color Key filter in the same colour. Keep the window open -- on another screen or behind the game, not minimised.":
+        "OBS: legg til en Window Capture av dette vinduet over spillopptaket, deretter et Color Key-filter i samme farge. Hold vinduet åpent -- på en annen skjerm eller bak spillet, ikke minimert.",
+    "OCR readers at once. More is faster, but the reader pool has already crashed at twelve on the main machine.":
+        "OCR-lesere samtidig. Flere er raskere, men leserpoolen har allerede krasjet ved tolv på hovedmaskinen.",
+    "OUTPUT":
+        "UTGANG",
+    "Off":
+        "Av",
+    "Off: nothing is drawn over Forza, so the overlays cannot affect its frames. The recording window still shows them -- for example on a second screen.":
+        "Av: ingenting tegnes over Forza, så overleggene kan ikke påvirke bildene. Opptaksvinduet viser dem fortsatt -- for eksempel på en annen skjerm.",
+    "Oldest unused":
+        "Eldste ubrukte",
+    "On":
+        "På",
+    "On a car":
+        "På en bil",
+    "On · 127.0.0.1 · port {0}":
+        "På · 127.0.0.1 · port {0}",
+    "One list, never both: a glance mid-menu can only hold one order.":
+        "Én liste, aldri begge: et blikk midt i menyen rommer bare én rekkefølge.",
+    "One map of the course you are driving, with your car on it. It is drawn from your own laps -- only they know where on the map the car is. On a course you have not driven yet it grows as you drive.":
+        "Ett kart over banen du kjører, med bilen din på. Det tegnes fra dine egne runder -- bare de vet hvor på kartet bilen er. På en bane du ikke har kjørt ennå, vokser det mens du kjører.",
+    "One socket, one port: the overlay reads the very same telemetry the haptics use, so nothing has to be started twice and there is no second port to keep in step. The game must run BORDERLESS windowed: an exclusive-fullscreen swap chain draws over every other window, so no overlay of any kind can appear on top of it.":
+        "Én socket, én port: overlegget leser nøyaktig den samme telemetrien som haptikken bruker, så ingenting må startes to ganger, og det finnes ingen port nummer to å holde i takt. Spillet må kjøre i vindu UTEN KANTER: en swap chain i eksklusiv fullskjerm tegner over alle andre vinduer, så ingen form for overlegg kan vises over den.",
+    "One-make event — the car is fixed.":
+        "Enmodellsløp — bilen er fastsatt.",
+    "Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site.":
+        "Bare en runde som er raskere enn bilens beste tid på ledertavlen, blir sendt: gamertaggen din, bilen, ruten, tiden og telemetrien fra runden. Serveren sjekker den på nytt før den vises på nettstedet.",
+    "Only cars that appear on a scanned leaderboard can be placed.":
+        "Bare biler som står på en skannet ledertavle, kan plasseres.",
+    "Only tunes that are on no car":
+        "Bare tunes som ikke ligger på noen bil",
+    "Only two masked regions are read: the 01/02/03 route list on the left, and the lone class badge in the card's top-right corner. The card's lower half prints the featured car's own class and PI, which on a Spec Racing event is the spec car and not the restriction — reading it would answer the wrong question. The masks are fractions of the screen, so they hold at any resolution.":
+        "Bare to maskerte områder leses: rutelisten 01/02/03 til venstre og det ene klassemerket øverst til høyre på kortet. Den nedre halvdelen av kortet viser klassen og PI for den fremhevede bilen, som i et Spec Racing-arrangement er spesifikasjonsbilen og ikke begrensningen — å lese den ville svare på feil spørsmål. Maskene er brøkdeler av skjermen, så de holder ved alle oppløsninger.",
+    "Open FH Companion":
+        "Åpne FH Companion",
+    "Open on the wiki":
+        "Åpne på wikien",
+    "Open the Event Sign Up screen, then press again.":
+        "Åpne skjermen Arrangementregistrering, og trykk så igjen.",
+    "Open the recording window":
+        "Åpne opptaksvinduet",
+    "Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard.":
+        "Åpne strømmen din i nettleseren, i fullskjerm eller i kinomodus. Den ligger noen sekunder etter, noe som holder for å lese menyer; HUD-en blir i dashbordet.",
+    "Output":
+        "Utgang",
+    "Over the game window, like playing on the PC":
+        "Over spillvinduet, som når du spiller på PC-en",
+    "Owned":
+        "Eid",
+    "Owned cars: the cars you have driven with the app. Tick the others you own.":
+        "Egne biler: bilene du har kjørt med appen. Kryss av for de andre du eier.",
+    "Owned cars: your garage, read {0}. Ticks you set count over it.":
+        "Egne biler: garasjen din, lest {0}. Kryssene du setter, går foran den.",
+    "PI {0} (from telemetry)":
+        "PI {0} (fra telemetrien)",
+    "POP-IN {0}":
+        "POP-IN {0}",
+    "Packets: --   Rate: --   Race: --":
+        "Pakker: --   Takt: --   Løp: --",
+    "Packets: {0}   Rate: {1}/s   Size: {2} bytes   Race: {3}":
+        "Pakker: {0}   Takt: {1}/s   Størrelse: {2} byte   Løp: {3}",
+    "Page Down / Page Up walk the rest of the field":
+        "Page Down / Page Up blar gjennom resten av feltet",
+    "Palette":
+        "Palett",
+    "Part":
+        "Del",
+    "Parts":
+        "Deler",
+    "Personal best in a class on a course":
+        "Personlig rekord i en klasse på en bane",
+    "Personal best in class {0}!":
+        "Personlig rekord i klasse {0}!",
+    "Personal best with a car (every car, class and course)":
+        "Personlig rekord med en bil (hver bil, klasse og bane)",
+    "Personal best with this car":
+        "Personlig rekord med denne bilen",
+    "Personal records":
+        "Personlige rekorder",
+    "Pick a car on the left":
+        "Velg en bil til venstre",
+    "Pick with a preview …":
+        "Velg med forhåndsvisning …",
+    "Pin the panel that is up":
+        "Fest panelet som vises",
+    "Pin to taskbar":
+        "Fest til oppgavelinjen",
+    "Pinned to taskbar ✓":
+        "Festet til oppgavelinjen ✓",
+    "Play a short sound with them":
+        "Spill av en kort lyd med dem",
+    "Play a sound with it":
+        "Spill av en lyd med den",
+    "Playing on an Xbox or another PC?":
+        "Spiller du på en Xbox eller en annen PC?",
+    "Point +":
+        "Punkt +",
+    "Point -":
+        "Punkt -",
+    "Points":
+        "Poeng",
+    "Points — beating the field on every route":
+        "Poeng — slå feltet på hver rute",
+    "Pop-in phase":
+        "Pop-in-fase",
+    "Pop-in phase (seconds)":
+        "Pop-in-fase (sekunder)",
+    "Position, size and colours are stored under a name. Hotkeys and screen regions are not part of it. Click a block in the picture to jump to its settings; drag the divider on the left to widen this side.":
+        "Plassering, størrelse og farger lagres under et navn. Hurtigtaster og skjermområder er ikke med. Klikk på en blokk i bildet for å gå til innstillingene for den; dra skillelinjen til venstre for å gjøre denne siden bredere.",
+    "Press \"Check which tunes are on a car\" first -- without it the app cannot tell which tunes are safe to delete.":
+        "Trykk først på \"Sjekk hvilke tunes som ligger på en bil\" -- uten det vet ikke appen hvilke tunes som trygt kan slettes.",
+    "Press this where you want a start line of your own -- a back road, a pass, a circuit nobody built. Drive over it again and you have a time. Free-roam times are kept apart from race times: out here there are no track limits.":
+        "Trykk på denne der du vil ha din egen startlinje -- en bakvei, et fjellpass, en bane ingen har bygget. Kjør over den igjen, så har du en tid. Tider fra fri kjøring holdes adskilt fra løpstider: her ute finnes det ingen banegrenser.",
+    "Previous best with it: {0}":
+        "Tidligere beste med den: {0}",
+    "Price":
+        "Pris",
+    "Properties":
+        "Egenskaper",
+    "Pulse on-time (%)":
+        "Pulsens på-tid (%)",
+    "Pulse rate (pulses/second)":
+        "Pulsrate (pulser/sekund)",
+    "Pulse rate is the Morse-like rhythm. For an unbroken audible tone, choose Continuous tone / vibration and set the carrier frequency above.":
+        "Pulsraten er den morseaktige rytmen. For en sammenhengende hørbar tone velger du Kontinuerlig tone / vibrasjon og stiller inn bærefrekvensen ovenfor.",
+    "Pulse rate repeatedly enables and releases the selected L2/R2 effect.":
+        "Pulsraten slår den valgte L2/R2-effekten på og slipper den igjen, om og om igjen.",
+    "Pulsed":
+        "Pulset",
+    "Pulsed beep":
+        "Pulset pip",
+    "Pulsed trigger effect":
+        "Pulset avtrekkereffekt",
+    "Put a shortcut on my desktop":
+        "Legg en snarvei på skrivebordet mitt",
+    "Puts a shortcut to this copy of the program on your desktop. One that points to a moved or deleted copy is replaced.":
+        "Legger en snarvei til denne kopien av programmet på skrivebordet. En snarvei som peker til en flyttet eller slettet kopi, blir erstattet.",
+    "P{0} of {1} on your list":
+        "P{0} av {1} på listen din",
+    "Quit":
+        "Avslutt",
+    "R2 adaptive":
+        "R2 adaptiv",
+    "R2 adaptive trigger":
+        "R2 adaptiv avtrekker",
+    "Read game memory":
+        "Les spillets minne",
+    "Read my garage":
+        "Les garasjen min",
+    "Read the running game":
+        "Les spillet som kjører",
+    "Read the screen now":
+        "Les skjermen nå",
+    "Read the whole screen":
+        "Les hele skjermen",
+    "Read your garage while the game runs -- or tick the cars you own.":
+        "Les garasjen din mens spillet kjører -- eller kryss av for bilene du eier.",
+    "Reading the game's memory is switched off (top of the window).":
+        "Lesing av spillets minne er slått av (øverst i vinduet).",
+    "Reading the screen":
+        "Lesing av skjermen",
+    "Reads the game's memory while it runs -- takes up to a minute.":
+        "Leser minnet til spillet mens det kjører -- tar opptil ett minutt.",
+    "Ready":
+        "Klar",
+    "Rear left ratio: {0}":
+        "Forhold bak venstre: {0}",
+    "Rear left: {0}":
+        "Bak venstre: {0}",
+    "Rear right ratio: {0}":
+        "Forhold bak høyre: {0}",
+    "Rear right: {0}":
+        "Bak høyre: {0}",
+    "Rear wheels - grip":
+        "Bakhjul - grep",
+    "Rear wheels - lock":
+        "Bakhjul - låsing",
+    "Receiving telemetry. The HUD appears as soon as you drive.":
+        "Mottar telemetri. HUD-en vises så snart du kjører.",
+    "Reconnect controllers":
+        "Koble til kontrollerne på nytt",
+    "Recording":
+        "Opptak",
+    "Recording and streaming":
+        "Opptak og strømming",
+    "Reference inputs":
+        "Referansens inndata",
+    "Refresh data":
+        "Oppdater data",
+    "Remaining: {0}":
+        "Gjenstår: {0}",
+    "Remove selected":
+        "Fjern valgte",
+    "Replacing the program files ...":
+        "Erstatter programfilene ...",
+    "Reset":
+        "Tilbakestill",
+    "Reset curve":
+        "Tilbakestill kurven",
+    "Reset tone":
+        "Tilbakestill tonen",
+    "Reset vibration":
+        "Tilbakestill vibrasjonen",
+    "Resistance":
+        "Motstand",
+    "Resistance at slope start (% of output)":
+        "Motstand ved starten av stigningen (% av utgangen)",
+    "Resistance rises across the selected travel range—useful for brake pressure or bow tension.":
+        "Motstanden øker over det valgte vandringsområdet—nyttig for bremsetrykk eller buespenning.",
+    "Resistance strength":
+        "Motstandsstyrke",
+    "Response curve":
+        "Responskurve",
+    "Restart the app now to apply this?":
+        "Starte appen på nytt nå, så dette trer i kraft?",
+    "Right edge":
+        "Høyre kant",
+    "Right grip":
+        "Høyre håndtak",
+    "Right grip motor":
+        "Høyre håndtaksmotor",
+    "Right grip: {0}":
+        "Grep høyre: {0}",
+    "Right lock: {0}":
+        "Låsing høyre: {0}",
+    "Right pad":
+        "Høyre pad",
+    "Right side":
+        "Høyre side",
+    "Right trackpad":
+        "Høyre styreflate",
+    "Right trigger":
+        "Høyre avtrekker",
+    "Right trigger motor":
+        "Høyre avtrekkermotor",
+    "Right wheels - grip":
+        "Høyre hjul - grep",
+    "Right wheels - lock":
+        "Høyre hjul - låsing",
+    "Rivals":
+        "Rivaler",
+    "Rivals maps are shown as":
+        "Rivaler-kart vises som",
+    "Rivals maps only":
+        "Bare Rivaler-kart",
+    "Rivals overlay":
+        "Rivaler-overlegg",
+    "Rivals, Horizon Play, races and free roam each keep their own records, so a wall-riding lap never beats a Rivals best. Laps from before the mode was recorded count for every mode.":
+        "Rivaler, Horizon Play, løp og fri kjøring har hver sine rekorder, så en runde langs veggen slår aldri en Rivaler-rekord. Runder fra før modusen ble registrert, teller for alle moduser.",
+    "SLIDE":
+        "SKLIR",
+    "SPIN":
+        "SPINN",
+    "STR":
+        "STY",
+    "Same PI class, any car":
+        "Samme PI-klasse, hvilken som helst bil",
+    "Same car in this PI class":
+        "Samme bil i denne PI-klassen",
+    "Same car, any tune":
+        "Samme bil, hvilken som helst tune",
+    "Same car, same tune":
+        "Samme bil, samme tune",
+    "Save":
+        "Lagre",
+    "Save graph profile":
+        "Lagre grafprofil",
+    "Save layout":
+        "Lagre oppsett",
+    "Save mask preview":
+        "Lagre forhåndsvisning av masken",
+    "Saved":
+        "Lagret",
+    "Saved between":
+        "Lagret mellom",
+    "Say thanks when your lap adds a new car to the leaderboard":
+        "Si takk når runden din legger til en ny bil på ledertavlen",
+    "Scan leaderboards on THIS PC and hand in the result.":
+        "Skann ledertavler på DENNE PC-en, og lever inn resultatet.",
+    "Scroll through My Cars in the game with the picture source on -- every highlighted car counts. Or tick the cars you own.":
+        "Bla gjennom Bilene mine i spillet med bildekilden på -- hver markerte bil teller. Eller kryss av for bilene du eier.",
+    "Search telemetry...":
+        "Søk i telemetri...",
+    "Seconds of history behind the now line":
+        "Sekunder med historikk bak nå-linjen",
+    "Seconds of the reference lap shown ahead":
+        "Sekunder av referanserunden som vises foran",
+    "Seconds on screen per press":
+        "Sekunder på skjermen per trykk",
+    "Seen in My Cars":
+        "Sett i Bilene mine",
+    "Select a car to see every way to get it.":
+        "Velg en bil for å se alle måter å få den på.",
+    "Select a force and start the test.":
+        "Velg en styrke, og start testen.",
+    "Select a node to edit it.":
+        "Velg en node for å redigere den.",
+    "Selected: {0}":
+        "Valgt: {0}",
+    "Separate records per mode":
+        "Egne rekorder per modus",
+    "Series milestone, {0} points":
+        "Series-milepæl, {0} poeng",
+    "Series {0}":
+        "Series {0}",
+    "Setting":
+        "Innstilling",
+    "Shared colours":
+        "Felles farger",
+    "Short messages under the strip, for example when a lap was stored. It uses the delta colours.":
+        "Korte meldinger under stripen, for eksempel når en runde ble lagret. Den bruker deltafargene.",
+    "Show it on the real screen while I set it up":
+        "Vis den på den ekte skjermen mens jeg setter den opp",
+    "Show my laps":
+        "Vis rundene mine",
+    "Show overlays over the game":
+        "Vis overlegg over spillet",
+    "Show panels":
+        "Vis paneler",
+    "Show the applied tune's name and description in the car note":
+        "Vis navnet og beskrivelsen til den brukte tunen i bilnotatet",
+    "Show the route panel by itself when it recognises the screen":
+        "Vis rutepanelet av seg selv når det kjenner igjen skjermen",
+    "Show the strip while racing":
+        "Vis stripen under løpet",
+    "Show the time to beat for the website's leaderboard":
+        "Vis tiden som må slås for ledertavlen på nettstedet",
+    "Show throttle, brake, clutch, steering, gear":
+        "Vis gass, brems, clutch, styring, gir",
+    "Shown AHEAD of the now line, on the shaded side -- what the reference is about to do, so you can copy it. Your own line stops at now: it has no future to show. The reference is read at the place you are, not at the same clock time.":
+        "Vises FORAN nå-linjen, på den skyggelagte siden -- det referansen er i ferd med å gjøre, så du kan kopiere det. Din egen linje stopper ved nå: den har ingen fremtid å vise. Referansen leses der du er, ikke ved samme klokkeslett.",
+    "Side by side":
+        "Side om side",
+    "Sign-up maps arranged":
+        "Registreringskart ordnet",
+    "Sign-up maps disappear after (seconds, 0 = when the race starts)":
+        "Registreringskart forsvinner etter (sekunder, 0 = når løpet starter)",
+    "Sign-up maps: line thickness":
+        "Registreringskart: linjetykkelse",
+    "Sign-up maps: smoothing":
+        "Registreringskart: utjevning",
+    "Signal group":
+        "Signalgruppe",
+    "Silence when input is exactly 0%":
+        "Stille når inngangen er nøyaktig 0 %",
+    "Size (mouse wheel works too)":
+        "Størrelse (musehjulet virker også)",
+    "Slider":
+        "Glidebryter",
+    "Slider position, 0 to 1 -- not the number the game shows you. The screen says 2.1 BAR where the database says 0.4; the display value simply is not stored. Turning it back would need every field calibrated by hand (slider to each end, value read off).":
+        "Glidebryterposisjon, 0 til 1 -- ikke tallet spillet viser deg. Skjermen sier 2.1 BAR der databasen sier 0.4; visningsverdien lagres rett og slett ikke. Å regne den tilbake ville kreve at hvert felt ble kalibrert for hånd (glidebryteren til hver ende, verdien lest av).",
+    "Small label":
+        "Liten etikett",
+    "Smooth traced line":
+        "Glatt opptegnet linje",
+    "Smoothing takes out the pixel steps of the line. Turned up high, tight hairpins get rounder too.":
+        "Utjevningen fjerner pikseltrinnene i linjen. Skrudd høyt opp blir også krappe hårnålssvinger rundere.",
+    "Snap-back strength (% of output)":
+        "Styrke på tilbakesmekk (% av utgangen)",
+    "Solo":
+        "Solo",
+    "Solo / co-op race":
+        "Solo-/samarbeidsløp",
+    "Something not working? Copy a report for whoever helps you":
+        "Fungerer noe ikke? Kopier en rapport til den som hjelper deg",
+    "Soon the game will refuse new downloads.":
+        "Snart nekter spillet nye nedlastinger.",
+    "Spring":
+        "Vår",
+    "Stacked":
+        "Under hverandre",
+    "Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers.":
+        "Vanlige kontrollere tilbyr styrken til den langsomme og den raske motoren, ikke en faktisk bærefrekvens. Velg Frekvensmiks for at frekvensmoduleringen skal tone over mellom disse motorene. Vibrasjon i avtrekkerne finnes vanligvis bare på kompatible Xbox-kontrollere.",
+    "Standings by points":
+        "Stilling etter poeng",
+    "Standings by total time":
+        "Stilling etter samlet tid",
+    "Start":
+        "Start",
+    "Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.":
+        "Start Remote Play i Xbox-appen eller på xbox.com/play. Vinduet kan ligge bak andre vinduer på en skjerm, bare ikke minimert.",
+    "Start listening":
+        "Begynn å lytte",
+    "Start overlay":
+        "Start overlegget",
+    "Start the game first -- the garage is read from its memory.":
+        "Start spillet først -- garasjen leses fra minnet til spillet.",
+    "Start with Forza":
+        "Start med Forza",
+    "Start with Forza (waits in the notification area from sign-in)":
+        "Start med Forza (venter i varslingsområdet fra pålogging)",
+    "Start with Forza ✓":
+        "Start med Forza ✓",
+    "Starts with Windows, waits invisibly in the notification area and opens when Forza starts. Click again to switch it off.":
+        "Starter med Windows, venter usynlig i varslingsområdet og åpnes når Forza starter. Klikk igjen for å slå det av.",
+    "State":
+        "Tilstand",
+    "Steam Controller · native four-channel haptics":
+        "Steam Controller · egen firekanals haptikk",
+    "Steam Controller: {0} native channels":
+        "Steam Controller: {0} egne kanaler",
+    "Step":
+        "Trinn",
+    "Step 0 is the stock part. A part number carries the car it belongs to in its leading digits: when those are not this car's, the part comes from somewhere else -- either a catalogue many cars share (clutch, gearbox, driveline, differential) or, for the engine's internals, from another car entirely. That is an engine swap, and it is named.":
+        "Trinn 0 er standarddelen. Et delenummer bærer bilen det hører til i de første sifrene: når de ikke er denne bilens, kommer delen fra et annet sted -- enten fra en katalog mange biler deler (clutch, girkasse, drivlinje, differensial) eller, for motorens indre deler, fra en helt annen bil. Det er et motorbytte, og det blir navngitt.",
+    "Still waiting for Forza in the notification area. Right-click the icon to quit.":
+        "Venter fortsatt på Forza i varslingsområdet. Høyreklikk på ikonet for å avslutte.",
+    "Stop":
+        "Stopp",
+    "Stop now":
+        "Stopp nå",
+    "Stop overlay":
+        "Stopp overlegget",
+    "Stopped.":
+        "Stoppet.",
+    "Stream address":
+        "Strømadresse",
+    "Stream in the browser (Twitch, YouTube, Kick …)":
+        "Strøm i nettleseren (Twitch, YouTube, Kick …)",
+    "Strength":
+        "Styrke",
+    "Strength + frequency":
+        "Styrke + frekvens",
+    "Strength at 0% input (%)":
+        "Styrke ved 0 % inngang (%)",
+    "Strength at 100% input (%)":
+        "Styrke ved 100 % inngang (%)",
+    "Strength only":
+        "Bare styrke",
+    "Submit my laps when they beat the leaderboard":
+        "Send inn rundene mine når de slår ledertavlen",
+    "Sum (clamped to 100%)":
+        "Sum (begrenset til 100 %)",
+    "Summer":
+        "Sommer",
+    "Switch mode":
+        "Bytt modus",
+    "Switch points / time":
+        "Bytt poeng / tid",
+    "Switch this while racing":
+        "Bytt dette under løpet",
+    "Switch to “Xbox / 2nd PC” at the top of the window.":
+        "Bytt til «Xbox / 2. PC» øverst i vinduet.",
+    "TELEMETRY":
+        "TELEMETRI",
+    "THR":
+        "GASS",
+    "Tag written with every recorded lap -- it becomes a folder, so \"wet\" or \"tune-b\" keeps those laps apart. Laps are split by course, PI class, car and tune on their own.":
+        "Merke som skrives med hver registrerte runde -- det blir en mappe, så \"vått\" eller \"tune-b\" holder de rundene adskilt. Runder deles uansett etter bane, PI-klasse, bil og tune.",
+    "Telemetry field":
+        "Telemetrifelt",
+    "Telemetry listener failed: {0}":
+        "Telemetrimottakeren feilet: {0}",
+    "Tension slope":
+        "Spenningsstigning",
+    "Tesseract OCR is not installed. The leaderboard rows are read with it, and it is a separate program -- not a Python package. Install it from https://github.com/UB-Mannheim/tesseract/wiki or with: winget install -e --id UB-Mannheim.TesseractOCR":
+        "Tesseract OCR er ikke installert. Radene på ledertavlen leses med det, og det er et eget program -- ikke en Python-pakke. Installer det fra https://github.com/UB-Mannheim/tesseract/wiki eller med: winget install -e --id UB-Mannheim.TesseractOCR",
+    "Test run in the game (deletes nothing)":
+        "Prøvekjøring i spillet (sletter ingenting)",
+    "Test run: the app goes through {1} cars in the game and checks {0} tunes, without deleting anything.":
+        "Prøvekjøring: appen går gjennom {1} biler i spillet og sjekker {0} tunes uten å slette noe.",
+    "Test running. Press Stop now at any time.":
+        "Testen kjører. Trykk på «Stopp nå» når som helst.",
+    "Test source active":
+        "Testkilde aktiv",
+    "Test the exact vibration force":
+        "Test den nøyaktige vibrasjonsstyrken",
+    "Test tone":
+        "Test tonen",
+    "That is a whole screen, not a window. Pick the window that shows the game.":
+        "Det er en hel skjerm, ikke et vindu. Velg vinduet som viser spillet.",
+    "The Rivals overlay tab has a \"Save mask preview\" button: it draws both regions on a capture, which is how a mask that has drifted is spotted.":
+        "Fanen Rivaler-overlegg har en knapp \"Lagre forhåndsvisning av masken\": den tegner begge områdene på et skjermbilde, og slik oppdager man en maske som har forskjøvet seg.",
+    "The Start menu entry could not be created.":
+        "Oppføringen i Start-menyen kunne ikke opprettes.",
+    "The Trial “{0}”":
+        "The Trial «{0}»",
+    "The ZIP contains no folder.":
+        "ZIP-filen inneholder ingen mappe.",
+    "The app does not know this car's id yet, so it cannot find it in your garage. Highlight it in My Cars in the game, or tick it if you have it.":
+        "Appen kjenner ennå ikke ID-en til denne bilen og finner den derfor ikke i garasjen din. Marker den i Bilene mine i spillet, eller kryss av for den hvis du har den.",
+    "The app will delete {0} tunes on {1} cars in the game.":
+        "Appen sletter {0} tunes på {1} biler i spillet.",
+    "The app's Tunes tab lists the ones that are on no car.":
+        "Appens fane Tunes viser dem som ikke ligger på noen bil.",
+    "The autostart entry could not be created.":
+        "Autostart-oppføringen kunne ikke opprettes.",
+    "The car list is not loaded yet -- wait a moment and try again.":
+        "Billisten er ikke lastet inn ennå -- vent litt, og prøv igjen.",
+    "The countdown colours its BACKGROUND, not its digits: calm, then warning, then pop-in. The text colour is yours to pick.":
+        "Nedtellingen farger BAKGRUNNEN, ikke sifrene: rolig, så advarsel, så pop-in. Tekstfargen velger du selv.",
+    "The desktop shortcut could not be created.":
+        "Snarveien på skrivebordet kunne ikke opprettes.",
+    "The downloaded file does not match what the server announced (expected {0}..., got {1}...). Nothing was replaced.":
+        "Den nedlastede filen stemmer ikke med det serveren oppga (forventet {0}..., fikk {1}...). Ingenting ble erstattet.",
+    "The file is here, and can be sent by hand:":
+        "Filen ligger her og kan sendes manuelt:",
+    "The game area is {0}x{1}. Below 1280x720 the leaderboard text is too small to read reliably -- use a larger window or resolution.":
+        "Spillområdet er {0}x{1}. Under 1280x720 er teksten på ledertavlen for liten til å leses pålitelig -- bruk et større vindu eller en høyere oppløsning.",
+    "The game does not record which tune a lap was driven with: \"~\" marks laps given to the tune saved last before them.":
+        "Spillet lagrer ikke hvilken tune en runde ble kjørt med: \"~\" markerer runder som er tilordnet tunen som ble lagret sist før dem.",
+    "The game runs on:":
+        "Spillet kjører på:",
+    "The game will refuse new downloads.":
+        "Spillet vil nekte nye nedlastinger.",
+    "The game's map picture":
+        "Spillets kartbilde",
+    "The game's process cannot be opened (error {0}). Starting this program as administrator usually helps.":
+        "Prosessen til spillet kan ikke åpnes (feil {0}). Det hjelper vanligvis å starte dette programmet som administrator.",
+    "The game's save folder was not found.":
+        "Fant ikke lagringsmappen til spillet.",
+    "The grey box is the game's own lap time and progress -- it sits top left and cannot be moved, so keep clear of it.":
+        "Den grå boksen er spillets egen rundetid og fremdrift -- den sitter øverst til venstre og kan ikke flyttes, så hold avstand til den.",
+    "The language changes when the program next starts.":
+        "Språket endres neste gang programmet starter.",
+    "The layout could not be written.":
+        "Oppsettet kunne ikke skrives.",
+    "The next tab will map these live grip values through your Bézier curve to the haptics.":
+        "Neste fane fører disse grepverdiene gjennom Bézier-kurven din til haptikken.",
+    "The note shows over the game while this car is highlighted in My Cars or driven.":
+        "Notatet vises over spillet mens denne bilen er markert i Bilene mine eller blir kjørt.",
+    "The order below is for these routes in general.":
+        "Rekkefølgen nedenfor gjelder disse rutene generelt.",
+    "The package does not carry a valid signature from the publisher. Nothing was replaced: either it was changed on the way, or the server delivers an unsigned package.":
+        "Pakken har ingen gyldig signatur fra utgiveren. Ingenting ble erstattet: enten ble den endret underveis, eller så leverer serveren en usignert pakke.",
+    "The package's signature is not valid (any more). Nothing was replaced.":
+        "Signaturen til pakken er ikke gyldig (lenger). Ingenting ble erstattet.",
+    "The report is on the clipboard. Paste it into a message to whoever helps you.":
+        "Rapporten ligger på utklippstavlen. Lim den inn i en melding til den som hjelper deg.",
+    "The route names have to be on screen as text.":
+        "Rutenavnene må stå på skjermen som tekst.",
+    "The scanner ended with code {code}. Whatever finished is packed anyway.":
+        "Skanneren avsluttet med kode {code}. Det som ble ferdig, pakkes likevel.",
+    "The server could not be reached.":
+        "Serveren kunne ikke nås.",
+    "The server names a download address on another computer. Nothing was downloaded.":
+        "Serveren oppgir en nedlastingsadresse på en annen datamaskin. Ingenting ble lastet ned.",
+    "The server's certificate could not be checked on this PC -- sending over plain http, as before.":
+        "Sertifikatet til serveren kunne ikke kontrolleres på denne PC-en -- sender over vanlig http, som før.",
+    "The small labels and the backing plate behind the strip, the note line, the input traces and the tyre overview.":
+        "De små etikettene og bakplaten bak stripen, notatlinjen, inndatasporene og dekkoversikten.",
+    "The sweep has not reached them. The site's Scan status tab lists what exists.":
+        "Skanningen har ikke nådd dem ennå. Fanen Scan status på nettstedet viser hva som finnes.",
+    "The update did not go through. Nothing was replaced; the app keeps running as before.":
+        "Oppdateringen gikk ikke gjennom. Ingenting ble erstattet; appen kjører videre som før.",
+    "The values on the left are every field in the official 324-byte FH6 packet plus useful derived signals. The table above shows the outputs currently owned by this application across native Steam Controller actuators and standard Xbox, PlayStation, or 8BitDo rumble motors.":
+        "Verdiene til venstre er alle feltene i den offisielle 324-byte FH6-pakken pluss nyttige avledede signaler. Tabellen ovenfor viser utgangene dette programmet holder akkurat nå, både Steam Controllerens egne aktuatorer og vanlige vibrasjonsmotorer i Xbox-, PlayStation- og 8BitDo-kontrollere.",
+    "The window is minimized. Restore it; it may stay behind other windows.":
+        "Vinduet er minimert. Gjenopprett det; det kan godt ligge bak andre vinduer.",
+    "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.":
+        "Da fungerer appens vibrasjoner som på PC-en: Vibrasjonstest og Blueprint-editor kommer tilbake etter en omstart. Så lenge telemetri kommer inn, overskriver appen vibrasjonen som Remote Play sender videre, slik den gjør med spillet på PC-en. Bare spillets egen innstilling for Vibrasjon på Xboxen gjør den helt stille.",
+    "There is no speaker: audible sound comes straight out of the haptic motors, so it sounds more like a synth than a recording.":
+        "Det finnes ingen høyttaler: hørbar lyd kommer rett fra de haptiske motorene, så det høres mer ut som en synth enn et opptak.",
+    "This PC":
+        "Denne PC-en",
+    "This PC now belongs to the scanner. Do not click, do not type,":
+        "Denne PC-en tilhører nå skanneren. Ikke klikk, ikke skriv,",
+    "This cannot start yet:":
+        "Dette kan ikke starte ennå:",
+    "This ordinal matches no car in the records.":
+        "Denne ordinalen passer ikke til noen bil i rekordene.",
+    "This stays inside the final tool so you can calibrate the controller at any time.":
+        "Dette blir værende i det ferdige verktøyet, så du kan kalibrere kontrolleren når som helst.",
+    "This window closes by itself. Nothing else is being installed.":
+        "Dette vinduet lukkes av seg selv. Ingenting annet blir installert.",
+    "Time":
+        "Tid",
+    "Time attack in the free world":
+        "Tidskjøring i den åpne verdenen",
+    "Time sum — raw total pace":
+        "Tidssum — rått samlet tempo",
+    "To upload: --upload, or just send the file.":
+        "For å laste opp: --upload, eller bare send filen.",
+    "Total time":
+        "Samlet tid",
+    "Treasure car":
+        "Skattebil",
+    "Treasure car: {0}":
+        "Skattebil: {0}",
+    "Try it":
+        "Prøv",
+    "Tune":
+        "Tune",
+    "Tune (probably): {0}":
+        "Tune (sannsynligvis): {0}",
+    "Tune storage almost full":
+        "Tune-lageret er nesten fullt",
+    "Tune storage full":
+        "Tune-lageret er fullt",
+    "Tune: {0}":
+        "Tune: {0}",
+    "Tuner":
+        "Tuner",
+    "Tuners behind your best laps":
+        "Tunere bak de beste rundene dine",
+    "Tuners by number of your tunes":
+        "Tunere etter antall av tunene dine",
+    "Tunes":
+        "Tunes",
+    "Tunes on a car":
+        "Tunes på en bil",
+    "Tunes saved":
+        "Lagrede tunes",
+    "Tuning inspector":
+        "Tuning-inspektør",
+    "Tuning inspector, garage and which tune is on which car read the game's memory, only when you press their button. Switched off, the app reads My Cars and the tune list from the screen instead.":
+        "Tuning-inspektør, garasjen og hvilken tune som ligger på hvilken bil, leser spillets minne, bare når du trykker på knappen deres. Slått av leser appen Bilene mine og tune-listen fra skjermen i stedet.",
+    "Tuning sliders":
+        "Tuning-glidebrytere",
+    "Two figures: same car, and same PI class":
+        "To tall: samme bil, og samme PI-klasse",
+    "Two panels over the game, from the same records as the website. They answer different questions, so they are never up together: each has its own button, and neither stays.":
+        "To paneler over spillet, fra de samme rekordene som nettstedet. De svarer på ulike spørsmål, så de vises aldri samtidig: hvert har sin egen knapp, og ingen av dem blir stående.",
+    "Type":
+        "Type",
+    "Type a name for the layout first.":
+        "Skriv inn et navn på oppsettet først.",
+    "Tyre overview":
+        "Dekkoversikt",
+    "Tyre overview (while driving)":
+        "Dekkoversikt (under kjøring)",
+    "Tyre overview while driving":
+        "Dekkoversikt under kjøring",
+    "Tyre temperature in Fahrenheit":
+        "Dekktemperatur i Fahrenheit",
+    "Tyres":
+        "Dekk",
+    "UDP port":
+        "UDP-port",
+    "UDP received, but packet length {0} is not a supported Forza packet.":
+        "UDP mottatt, men pakkelengden {0} er ikke en støttet Forza-pakke.",
+    "Unavailable saved controller ({0})":
+        "Lagret kontroller er ikke tilgjengelig ({0})",
+    "Unit":
+        "Enhet",
+    "Unnamed course":
+        "Bane uten navn",
+    "Unused tunes":
+        "Ubrukte tunes",
+    "Update failed":
+        "Oppdateringen mislyktes",
+    "Uploading to {server} ...":
+        "Laster opp til {server} ...",
+    "Verify FH6 grip data":
+        "Kontroller FH6-grepdata",
+    "Vibrate for 10 seconds":
+        "Vibrer i 10 sekunder",
+    "Vibrates inside L2/R2. Output strength controls amplitude and output frequency controls trigger pulse frequency.":
+        "Vibrerer inne i L2/R2. Utgangsstyrken styrer amplituden, og utgangsfrekvensen styrer pulsfrekvensen i avtrekkeren.",
+    "Vibrating at {0}%  |  {1} seconds left":
+        "Vibrerer på {0} %  |  {1} sekunder igjen",
+    "Vibration":
+        "Vibrasjon",
+    "Vibration in the grips":
+        "Vibrasjon i håndtakene",
+    "Vibration test":
+        "Vibrasjonstest",
+    "WScript.Shell could not be created":
+        "WScript.Shell kunne ikke opprettes",
+    "WScript.Shell is not available on this Windows":
+        "WScript.Shell er ikke tilgjengelig i denne Windows-versjonen",
+    "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.":
+        "Venter på fersk FH6-telemetri; haptikken er stoppet for sikkerhets skyld.",
+    "Waiting for telemetry on {0}, port {1}":
+        "Venter på telemetri på {0}, port {1}",
+    "Waiting for telemetry...":
+        "Venter på telemetri...",
+    "Waiting for the game's pause menu on the CARS tab ...":
+        "Venter på spillets pausemeny på fanen BILER ...",
+    "Waiting for the program to close ...":
+        "Venter på at programmet lukkes ...",
+    "Warn this many seconds before the ghost ends":
+        "Varsle så mange sekunder før spøkelset slutter",
+    "Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox.":
+        "Se Xboxens strøm i Discord på denne PC-en, i eget vindu eller i fullskjerm. Din egen strøm trenger en ekstra Discord-konto her: samtalen din flytter over til Xboxen.",
+    "Weapon click":
+        "Våpenklikk",
+    "Website best {0}":
+        "Nettstedets beste {0}",
+    "What it compares against":
+        "Hva den sammenligner med",
+    "What it is":
+        "Hva det er",
+    "What it shows":
+        "Hva den viser",
+    "What this program does, and what leaves your computer":
+        "Hva dette programmet gjør, og hva som forlater datamaskinen din",
+    "What to drive":
+        "Hva du skal kjøre",
+    "What {0} does":
+        "Hva {0} gjør",
+    "Wheel-lock detection from braking slip ratio":
+        "Registrering av hjullåsing fra slippforholdet ved bremsing",
+    "Wheelspin":
+        "Wheelspin",
+    "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.":
+        "Når en låsing oppdages, overstyrer dette signalet den vanlige grepvibrasjonen på den siden av bilen der den skjer.",
+    "Where the HUD shows":
+        "Hvor HUD-en vises",
+    "Where the sign-up maps come from":
+        "Hvor registreringskartene kommer fra",
+    "Which mode you are playing":
+        "Hvilken modus du spiller",
+    "Which mode you are playing, written with every lap. \"automatic\" works it out from the menu you came from: the Rivals screen, a Horizon Play sign-up, or an ordinary sign-up (a solo or co-op race). Free-roam runs prove themselves by their own clock. Only Rivals and Horizon Play laps count on the website; a lap whose mode is unknown is not sent.":
+        "Hvilken modus du spiller, skrives med hver runde. \"automatisk\" finner det ut fra menyen du kom fra: Rivaler-skjermen, en Horizon Play-registrering eller en vanlig registrering (et solo- eller samarbeidsløp). Kjøringer i fri kjøring beviser seg selv med sin egen klokke. Bare runder fra Rivaler og Horizon Play teller på nettstedet; en runde med ukjent modus blir ikke sendt.",
+    "Window not found: “{0}”":
+        "Fant ikke vinduet: «{0}»",
+    "Windows Firewall blocks this program, so nothing from the Xbox arrives. Allow it once:":
+        "Windows-brannmuren blokkerer dette programmet, så ingenting fra Xboxen kommer fram. Tillat det én gang:",
+    "Windows Firewall lets the telemetry in.":
+        "Windows-brannmuren slipper telemetrien inn.",
+    "Windows Firewall may block the telemetry. Allow it once:":
+        "Windows-brannmuren blokkerer kanskje telemetrien. Tillat det én gang:",
+    "Windows asks for permission ...":
+        "Windows ber om tillatelse ...",
+    "Windows did not allow the change.":
+        "Windows tillot ikke endringen.",
+    "Windows leaves pinning to you. This prepares everything and shows the one click it takes.":
+        "Windows overlater festingen til deg. Dette forbereder alt og viser det ene klikket som skal til.",
+    "Windows only lets you pin programs yourself, so this takes one click from you: right-click this program's icon in the taskbar and choose “Pin to taskbar”. The Start menu entry it needs is in place, and this button shows a tick once the pin is there.":
+        "Windows lar deg bare feste programmer selv, så dette krever ett klikk fra deg: høyreklikk på ikonet til dette programmet på oppgavelinjen, og velg «Fest til oppgavelinjen». Oppføringen i Start-menyen som trengs, er på plass, og denne knappen viser en hake så snart programmet er festet.",
+    "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.":
+        "Windows lar deg bare feste til oppgavelinjen selv: høyreklikk på oppføringen i Start-menyen, og velg «Fest til oppgavelinjen».",
+    "Wins":
+        "Seirer",
+    "Winter":
+        "Vinter",
+    "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.":
+        "Med spillets bilde på denne PC-en leser appen også registreringsskjermen, Bilene mine og hvilken modus du spiller.",
+    "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.":
+        "Uten spillbilde kan ikke appen se hvilken meny en runde kom fra. Still det inn her -- bare runder fra Rivaler og Horizon Play teller på nettstedet.",
+    "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.":
+        "Uten gamertag vises rundene dine på nettstedet under et midlertidig spillernavn. En gamertag du legger inn senere, erstatter det på alle rundene dine, også de tidligere.",
+    "Xbox / 2nd PC":
+        "Xbox / 2. PC",
+    "Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.":
+        "Modusen Xbox / 2. PC: telemetrien kommer over nettverket, kontrolleren er koblet til konsollen.",
+    "Xbox Remote Play":
+        "Xbox Remote Play",
+    "YOUR TIMES ON THESE ROUTES ({0})":
+        "DINE TIDER PÅ DISSE RUTENE ({0})",
+    "Year":
+        "År",
+    "Yes = now":
+        "Ja = nå",
+    "You beat the leaderboard!":
+        "Du slo ledertavlen!",
+    "Your best laps":
+        "Dine beste runder",
+    "Your car":
+        "Bilen din",
+    "Your first lap in a class on a course":
+        "Din første runde i en klasse på en bane",
+    "Your laps are drawn from where you actually drove; the Rivals maps are the game's own drawings, for routes you have never driven.":
+        "Rundene dine tegnes fra der du faktisk kjørte; Rivaler-kartene er spillets egne tegninger, for ruter du aldri har kjørt.",
+    "Your laps only (telemetry)":
+        "Bare rundene dine (telemetri)",
+    "Your network is set to Public; the rule then covers that too.":
+        "Nettverket ditt er satt til Offentlig; regelen dekker da også det.",
+    "Your own laps decide, not the website. Smaller and shorter than the website celebration: green for a personal best, blue for a new car on your list.":
+        "Dine egne runder avgjør, ikke nettstedet. Mindre og kortere enn feiringen for nettstedet: grønn for en personlig rekord, blå for en ny bil på listen din.",
+    "Your previous best here: {0}":
+        "Din tidligere beste her: {0}",
+    "Your window is not in the list? Copy the list of all windows":
+        "Er ikke vinduet ditt i listen? Kopier listen over alle vinduer",
+    "a low place usually means few surviving laps, not a slow car":
+        "en lav plassering betyr som regel få gjenværende runder, ikke en treg bil",
+    "a newer version is ready (skipped)":
+        "en nyere versjon er klar (hoppet over)",
+    "a note for whoever receives this":
+        "et notat til mottakeren",
+    "a possible seasonal reward":
+        "en mulig sesongbelønning",
+    "accepted: {rows} rows in {runs} run(s)":
+        "godtatt: {rows} rader i {runs} kjøring(er)",
+    "all":
+        "alle",
+    "already downloaded, signature valid":
+        "allerede lastet ned, signaturen er gyldig",
+    "and leave Forza in the foreground. Ctrl+C stops it.":
+        "og la Forza ligge i forgrunnen. Ctrl+C stopper den.",
+    "any start":
+        "alle starter",
+    "asking the server ...":
+        "spør serveren ...",
+    "automatic":
+        "automatisk",
+    "best fit: {0} {1} (#{2} of {3})":
+        "beste treff: {0} {1} (#{2} av {3})",
+    "best per car and course":
+        "beste per bil og bane",
+    "bought for {0} CR":
+        "kjøpt for {0} CR",
+    "built: {0}":
+        "bygget: {0}",
+    "by points · {0} route(s)":
+        "etter poeng · {0} rute(r)",
+    "by time sum · {0} route(s)":
+        "etter tidssum · {0} rute(r)",
+    "car {0}":
+        "bil {0}",
+    "checking the server ...":
+        "sjekker serveren ...",
+    "class guessed from the {0}":
+        "klassen er gjettet ut fra {0}",
+    "class {0}":
+        "klasse {0}",
+    "class: none":
+        "klasse: ingen",
+    "class: not found":
+        "klasse: ikke funnet",
+    "class: {0}":
+        "klasse: {0}",
+    "comma separated, e.g. D,C,B,A,S1,S2,R":
+        "kommaseparert, f.eks. D,C,B,A,S1,S2,R",
+    "compare: two figures -- same car, and same PI class":
+        "sammenlign: to tall -- samme bil, og samme PI-klasse",
+    "compare: {0}":
+        "sammenlign: {0}",
+    "console mode -- telemetry over the network, no video source (screen reading off)":
+        "konsollmodus -- telemetri over nettverket, ingen bildekilde (skjermlesing av)",
+    "console mode -- telemetry over the network, {0}":
+        "konsollmodus -- telemetri over nettverket, {0}",
+    "console mode -- waiting for telemetry from the network":
+        "konsollmodus -- venter på telemetri fra nettverket",
+    "copied to the clipboard.":
+        "kopiert til utklippstavlen.",
+    "could not load {0}":
+        "kunne ikke laste {0}",
+    "dataset failed to load: {0}":
+        "datasettet kunne ikke lastes: {0}",
+    "do not scan, only pack what is already there":
+        "ikke skann, bare pakk det som allerede finnes",
+    "done":
+        "ferdig",
+    "down":
+        "nedgradert",
+    "downloaded, signature valid":
+        "lastet ned, signaturen er gyldig",
+    "downloading ... {0} MB":
+        "laster ned ... {0} MB",
+    "downloading ... {0} of {1} MB":
+        "laster ned ... {0} av {1} MB",
+    "driven":
+        "kjørt",
+    "driving":
+        "kjører",
+    "e.g. 0-3 or 5,7,9 -- the order of the carousel.":
+        "f.eks. 0-3 eller 5,7,9 -- rekkefølgen i karusellen.",
+    "every build of this car":
+        "alle bygg av denne bilen",
+    "ffmpeg found.":
+        "ffmpeg funnet.",
+    "flying":
+        "flygende",
+    "flying lap":
+        "flygende runde",
+    "flying sprint":
+        "flygende sprint",
+    "forzahorizon6.exe is not running -- start the game, then read.":
+        "forzahorizon6.exe kjører ikke -- start spillet, og les så.",
+    "forzahorizon6.exe is not running.":
+        "forzahorizon6.exe kjører ikke.",
+    "forzahorizon6.exe is running.":
+        "forzahorizon6.exe kjører.",
+    "found after {0} GB.":
+        "funnet etter {0} GB.",
+    "free roam -- cross one of your {0} start lines to start the clock":
+        "fri kjøring -- kryss en av dine {0} startlinjer for å starte klokken",
+    "free roam -- no start lines known yet; drive a route once, or set one":
+        "fri kjøring -- ingen kjente startlinjer ennå; kjør en rute én gang, eller sett en",
+    "from":
+        "fra",
+    "game area {0}x{1} at {2},{3}":
+        "spillområde {0}x{1} ved {2},{3}",
+    "garage":
+        "garasje",
+    "garage read: {0} car(s).":
+        "garasjen lest: {0} bil(er).",
+    "head to head ({0}): {1}":
+        "direkte oppgjør ({0}): {1}",
+    "highlighted in My Cars":
+        "markert i Bilene mine",
+    "hp":
+        "hk",
+    "idle - no telemetry on UDP {0}; set FH6 Data Out On":
+        "inaktiv - ingen telemetri på UDP {0}; sett Data ut i FH6 til På",
+    "idle - waiting for {0}; tests still work":
+        "inaktiv - venter på {0}; testene virker fortsatt",
+    "idle — waiting for {0}.exe":
+        "inaktiv — venter på {0}.exe",
+    "idle — {0}.exe is not the active window":
+        "inaktiv — {0}.exe er ikke det aktive vinduet",
+    "kept the previous one ({0})":
+        "beholdt det forrige ({0})",
+    "lap stored: {0} s, {1} m":
+        "runde lagret: {0} s, {1} m",
+    "lap stored: {0} s, {1} m, car {2}, PI {3}, wet {4}":
+        "runde lagret: {0} s, {1} m, bil {2}, PI {3}, vått {4}",
+    "lap {0} s -- slower than your own best, kept the best":
+        "runde {0} s -- tregere enn din egen beste, beholdt den beste",
+    "laps":
+        "runder",
+    "laps and sprints":
+        "runder og sprinter",
+    "last time; it can come back":
+        "sist gang; den kan komme tilbake",
+    "later":
+        "senere",
+    "listening on {0}, no packets yet":
+        "lytter på {0}, ingen pakker ennå",
+    "minimized":
+        "minimert",
+    "motor intensity":
+        "motorintensitet",
+    "new version: {0}":
+        "ny versjon: {0}",
+    "new: {0} ({1} MB)":
+        "ny: {0} ({1} MB)",
+    "next":
+        "neste",
+    "no":
+        "nei",
+    "no board yet for {0}":
+        "ingen ledertavle ennå for {0}",
+    "no car in the telemetry yet":
+        "ingen bil i telemetrien ennå",
+    "no dataset — set dataset_url, or restore the shipped {0}":
+        "ingen datasett — angi dataset_url, eller gjenopprett det medfølgende {0}",
+    "no garage database found in the game's memory.":
+        "fant ingen garasjedatabase i spillets minne.",
+    "no map harvested":
+        "ikke noe kart hentet",
+    "no position yet -- drive a moment, then press again":
+        "ingen posisjon ennå -- kjør litt, og trykk så igjen",
+    "no records to answer from — check the server address, or unzip the package again: it ships {0}":
+        "ingen rekorder å svare ut fra — sjekk serveradressen, eller pakk ut pakken på nytt: den inneholder {0}",
+    "no running clock -- nothing is being timed":
+        "ingen klokke går -- ingenting blir tatt tid på",
+    "no server set":
+        "ingen server angitt",
+    "no title":
+        "uten tittel",
+    "none":
+        "ingen",
+    "not driven yet":
+        "ikke kjørt ennå",
+    "not on this car":
+        "ikke på denne bilen",
+    "not scanned yet: {0}":
+        "ikke skannet ennå: {0}",
+    "not uploaded: {error}":
+        "ikke lastet opp: {error}",
+    "now":
+        "nå",
+    "one-make event":
+        "enmodellsløp",
+    "only this build":
+        "bare dette bygget",
+    "ordinal {0}":
+        "ordinal {0}",
+    "overlay for recording":
+        "overlegg for opptak",
+    "pack what is there, do not scan":
+        "pakk det som finnes, ikke skann",
+    "parts bought for {0} CR":
+        "deler kjøpt for {0} CR",
+    "personal best, any car":
+        "personlig rekord, hvilken som helst bil",
+    "preview -- {0}":
+        "forhåndsvisning -- {0}",
+    "preview failed: {0}":
+        "forhåndsvisningen mislyktes: {0}",
+    "preview: {0}":
+        "forhåndsvisning: {0}",
+    "read failed: {0}":
+        "lesingen mislyktes: {0}",
+    "reading ...":
+        "leser ...",
+    "rebuilt on this machine":
+        "bygget på nytt på denne maskinen",
+    "rejected ({code}): {detail}":
+        "avvist ({code}): {detail}",
+    "replacing ...":
+        "erstatter ...",
+    "routes recognised":
+        "ruter gjenkjent",
+    "routes: none matched":
+        "ruter: ingen treff",
+    "routes: {0}":
+        "ruter: {0}",
+    "same PI class":
+        "samme PI-klasse",
+    "same PI class, this course":
+        "samme PI-klasse, denne banen",
+    "same car in this PI class":
+        "samme bil i denne PI-klassen",
+    "same car, same tune":
+        "samme bil, samme tune",
+    "same car, this course":
+        "samme bil, denne banen",
+    "saved":
+        "lagret",
+    "search car":
+        "søk etter bil",
+    "searching the game's memory for its database ...":
+        "gjennomsøker spillets minne etter databasen ...",
+    "season milestone, {0} points":
+        "sesongmilepæl, {0} poeng",
+    "send it afterwards":
+        "send den etterpå",
+    "server not reachable: {0}":
+        "serveren kan ikke nås: {0}",
+    "several of your courses share these lengths — cannot tell them apart":
+        "flere av banene dine har disse lengdene — kan ikke skille dem fra hverandre",
+    "showing the points order":
+        "viser rekkefølgen etter poeng",
+    "showing the time order":
+        "viser rekkefølgen etter tid",
+    "sprint":
+        "sprint",
+    "sprints":
+        "sprinter",
+    "standing":
+        "stående",
+    "standing lap":
+        "stående runde",
+    "standing sprint":
+        "stående sprint",
+    "start line \"{0}\" set here; cross it again to stop the clock":
+        "startlinjen \"{0}\" er satt her; kryss den igjen for å stoppe klokken",
+    "stock class":
+        "standardklasse",
+    "stopped":
+        "stoppet",
+    "telemetry says you are in car {0}":
+        "telemetrien sier at du sitter i bil {0}",
+    "telemetry: not connected to the app's listener":
+        "telemetri: ikke koblet til appens mottaker",
+    "telemetry: the app is listening on UDP {0} — this panel reads that same stream, there is no second port":
+        "telemetri: appen lytter på UDP {0} — dette panelet leser den samme strømmen, det finnes ingen port nummer to",
+    "telemetry: the listener is stopped (port {0}) — starting the overlay starts it":
+        "telemetri: mottakeren er stoppet (port {0}) — når du starter overlegget, starter den",
+    "the app is up to date":
+        "appen er oppdatert",
+    "the clipboard refused the text.":
+        "utklippstavlen avviste teksten.",
+    "the game writes lap time and progress here":
+        "spillet skriver rundetid og fremdrift her",
+    "the garage row could not be read: ":
+        "garasjeraden kunne ikke leses: ",
+    "the listener is not running on {0}":
+        "mottakeren kjører ikke på {0}",
+    "the program file is not where it is expected":
+        "programfilen ligger ikke der den skal",
+    "the screen did not give a distance for every route":
+        "skjermen oppga ikke en distanse for hver rute",
+    "the server names no version":
+        "serveren oppgir ingen versjon",
+    "the shortcut could not be created":
+        "snarveien kunne ikke opprettes",
+    "the “{0}” championship":
+        "mesterskapet «{0}»",
+    "this PC's network address":
+        "nettverksadressen til denne PC-en",
+    "this car":
+        "denne bilen",
+    "this copy does not know its own version":
+        "denne kopien kjenner ikke sin egen versjon",
+    "this course":
+        "denne banen",
+    "this version stays skipped":
+        "denne versjonen blir fortsatt hoppet over",
+    "tick failed: {0}":
+        "tikk mislyktes: {0}",
+    "to":
+        "til",
+    "to beat: nothing -- this car is not on the website's board yet":
+        "å slå: ingenting -- denne bilen er ikke på nettstedets ledertavle ennå",
+    "to beat: {0} -- website best, this car":
+        "å slå: {0} -- nettstedets beste, denne bilen",
+    "to beat: {0} -- your submitted time":
+        "å slå: {0} -- tiden du har sendt inn",
+    "too thin for the time sum: {0}":
+        "for tynt for tidssummen: {0}",
+    "tune \"{0}\"":
+        "tune \"{0}\"",
+    "understeers from turn 3, tyres go off after 4 laps":
+        "understyrer fra sving 3, dekkene faller av etter 4 runder",
+    "unknown":
+        "ukjent",
+    "unpacking ...":
+        "pakker ut ...",
+    "unsaved":
+        "ikke lagret",
+    "up":
+        "oppgradert",
+    "usable: no":
+        "brukbar: nei",
+    "usable: yes":
+        "brukbar: ja",
+    "waiting for Forza":
+        "venter på Forza",
+    "watching — OCR {0}":
+        "følger med — OCR {0}",
+    "watching — no OCR language installed, the route panel cannot read":
+        "følger med — ingen OCR-språk installert, rutepanelet kan ikke lese",
+    "week {0}":
+        "uke {0}",
+    "what usually fixes it":
+        "hva som vanligvis løser det",
+    "window: {0}":
+        "vindu: {0}",
+    "wrote {0} — the routes box must hold the 01/02/03 list, the class box only the badge":
+        "skrev {0} — rutefeltet må inneholde listen 01/02/03, klassefeltet bare merket",
+    "yes":
+        "ja",
+    "you have no recorded laps on these routes":
+        "du har ingen registrerte runder på disse rutene",
+    "your best lap on each of the three routes above":
+        "din beste runde på hver av de tre rutene ovenfor",
+    "your gamertag (optional)":
+        "gamertaggen din (valgfritt)",
+    "yours: {0}":
+        "din: {0}",
+    "{0} (standing start)":
+        "{0} (stående start)",
+    "{0} -- final":
+        "{0} -- endelig",
+    "{0} -- no flying lap here yet, recording ({1} m)":
+        "{0} -- ingen flygende runde her ennå, tar opp ({1} m)",
+    "{0} -- no standing-start lap here yet, recording ({1} m)":
+        "{0} -- ingen runde med stående start her ennå, tar opp ({1} m)",
+    "{0} -- none yet":
+        "{0} -- ingen ennå",
+    "{0} -- off the reference line":
+        "{0} -- utenfor referanselinjen",
+    "{0} -- reference lap ended here":
+        "{0} -- referanserunden sluttet her",
+    "{0} -- switched off":
+        "{0} -- slått av",
+    "{0} -- {1} tunes":
+        "{0} -- {1} tunes",
+    "{0} CR":
+        "{0} CR",
+    "{0} GB searched, {1} database(s) so far ...":
+        "{0} GB gjennomsøkt, {1} database(r) så langt ...",
+    "{0} GB searched, {1} database(s).":
+        "{0} GB gjennomsøkt, {1} database(r).",
+    "{0} Xbox/PlayStation/8BitDo-compatible gamepad(s)":
+        "{0} Xbox/PlayStation/8BitDo-kompatible kontroller(e)",
+    "{0} best laps of yours, on tunes by {1} tuners.":
+        "{0} av dine beste runder, på tunes fra {1} tunere.",
+    "{0} boards":
+        "{0} ledertavler",
+    "{0} car(s) hidden: the dataset has no name for them, only an id":
+        "{0} bil(er) skjult: datasettet har ikke noe navn på dem, bare en ID",
+    "{0} car(s) in {1} class(es), scored over {2} course(s). On each course, place 1 earns as many points as cars you drove there, like on the website; standing and flying starts count separately. * = the total includes the slowest time on courses that car did not drive.":
+        "{0} bil(er) i {1} klasse(r), regnet over {2} bane(r). På hver bane får 1. plass like mange poeng som antall biler du har kjørt der, som på nettstedet; stående og flygende start teller hver for seg. * = den samlede tiden inneholder den tregeste tiden på baner som den bilen ikke har kjørt.",
+    "{0} cars in your garage are not identified yet -- highlight them in My Cars in the game, or tick them here.":
+        "{0} biler i garasjen din er ikke identifisert ennå -- marker dem i Bilene mine i spillet, eller kryss dem av her.",
+    "{0} cars in your garage, {1} new in the list.":
+        "{0} biler i garasjen din, {1} nye i listen.",
+    "{0} cars; {1} tunes on no car. Start at the top when you delete in the game.":
+        "{0} biler; {1} tunes på ingen bil. Start øverst når du sletter i spillet.",
+    "{0} cyl":
+        "{0} syl",
+    "{0} hp":
+        "{0} hk",
+    "{0} is not writable: the app sits in a protected folder. Unpack the package by hand, or move the app to a folder you can write to.":
+        "{0} er ikke skrivbar: appen ligger i en beskyttet mappe. Pakk ut pakken manuelt, eller flytt appen til en mappe du kan skrive til.",
+    "{0} is updating itself.":
+        "{0} oppdaterer seg selv.",
+    "{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on and the server answers -- checked again against the leaderboard of that day.":
+        "{0} runde(r) slår ledertavlen og venter på å bli sendt inn. De sendes så snart innsending er slått på og serveren svarer -- sjekket på nytt mot ledertavlen for den dagen.",
+    "{0} lap(s) on {1} course(s), of {2} recorded. Assists, gearbox and valid/invalid are leaderboard facts the telemetry does not send, so they cannot filter your own laps.":
+        "{0} runde(r) på {1} bane(r), av {2} registrerte. Hjelpemidler, girkasse og gyldig/ugyldig er opplysninger fra ledertavlen som telemetrien ikke sender, så de kan ikke filtrere dine egne runder.",
+    "{0} lines of text in the masks":
+        "{0} tekstlinjer i maskene",
+    "{0} native DualSense controller(s)":
+        "{0} DualSense-kontroller(e), direkte",
+    "{0} of {1} cars owned -- {2} missing":
+        "{0} av {1} biler eid -- {2} mangler",
+    "{0} of {1} tune slots in use -- {2} free":
+        "{0} av {1} tune-plasser i bruk -- {2} ledige",
+    "{0} of {1} tunes -- {2} free.":
+        "{0} av {1} tunes -- {2} ledige.",
+    "{0} owned · {1} missing · {2} not sure":
+        "{0} eid · {1} mangler · {2} usikre",
+    "{0} packets/s  ·  Race active  ·  {1} packet fields + {2} derived":
+        "{0} pakker/s  ·  Løp aktivt  ·  {1} pakkefelt + {2} avledede",
+    "{0} packets/s  ·  Race inactive  ·  {1} packet fields + {2} derived":
+        "{0} pakker/s  ·  Løp inaktivt  ·  {1} pakkefelt + {2} avledede",
+    "{0} points":
+        "{0} poeng",
+    "{0} pts":
+        "{0} p",
+    "{0} tunes by {1} tuners.":
+        "{0} tunes fra {1} tunere.",
+    "{0} tunes on {1} cars would be deleted, by {2} tuners: {3}":
+        "{0} tunes på {1} biler ville blitt slettet, fra {2} tunere: {3}",
+    "{0} tunes shown. {1} tunes are on no car and could go.":
+        "{0} tunes vist. {1} tunes ligger ikke på noen bil og kan slettes.",
+    "{0}/{1} routes":
+        "{0}/{1} ruter",
+    "{0}: opacity":
+        "{0}: opasitet",
+    "{path} is missing.":
+        "{path} mangler.",
+    "{path}: {key} is missing":
+        "{path}: {key} mangler",
+    "{rows} rows":
+        "{rows} rader",
+}
+
+import re as _re
+
+_PLATZ = _re.compile(r"\{[^{}]*\}")
+for _en, _nb in _NB.items():
+    assert sorted(_PLATZ.findall(_en)) == sorted(_PLATZ.findall(_nb)), _en
+
+ZUSATZ = {"nb": _NB}

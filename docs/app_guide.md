@@ -23,6 +23,12 @@ On the first start the app explains what it does on your PC and what leaves it,
 and asks you to confirm. The link "What this program does" at the top of the
 window shows that text again.
 
+**Languages.** The app follows the Windows display language (or the language you
+pick at the top of the window). The game may run in any of its own languages: the
+app reads the Event Sign Up and Horizon Play screens, My Cars and the tune list in
+every language the game has. It knows the game's wording from the game's own text
+tables, not from a translation of its own.
+
 ## Start with Forza
 
 The button **Start with Forza** at the top right of the window puts the app in

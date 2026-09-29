@@ -30,7 +30,7 @@ internal sealed class BlueprintEditor : UserControl
         [
             new ControllerOutputTarget(
                 OutputSignalNode.SteamNativeTargetId,
-                "Steam Controller · native four-channel haptics",
+                Loc.T("Steam Controller · native four-channel haptics"),
                 true,
                 false,
                 true,
@@ -84,28 +84,28 @@ internal sealed class BlueprintEditor : UserControl
             }
         };
 
-        var addConstant = PaletteButton("Add constant test source");
+        var addConstant = PaletteButton(Loc.T("Add constant test source"));
         addConstant.Click += (_, _) => AddNode(new ConstantSignalNode(
-            "Constant test",
+            Loc.T("Constant test"),
             NextLocation(),
             0.25));
-        var addTelemetry = PaletteButton("Add telemetry source");
+        var addTelemetry = PaletteButton(Loc.T("Add telemetry source"));
         addTelemetry.Click += (_, _) => AddTelemetryNode();
-        var addPreset = PaletteButton("Add wheel preset");
+        var addPreset = PaletteButton(Loc.T("Add wheel preset"));
         addPreset.Click += (_, _) => ShowWheelPresetMenu(addPreset);
-        var addGroup = PaletteButton("Add custom group");
-        addGroup.Click += (_, _) => AddNode(new GroupSignalNode("Signal group", NextLocation()));
-        var addCurve = PaletteButton("Add Bézier curve");
-        addCurve.Click += (_, _) => AddNode(new CurveSignalNode("Response curve", NextLocation()));
-        var addOutput = PaletteButton("Add controller output");
+        var addGroup = PaletteButton(Loc.T("Add custom group"));
+        addGroup.Click += (_, _) => AddNode(new GroupSignalNode(Loc.T("Signal group"), NextLocation()));
+        var addCurve = PaletteButton(Loc.T("Add Bézier curve"));
+        addCurve.Click += (_, _) => AddNode(new CurveSignalNode(Loc.T("Response curve"), NextLocation()));
+        var addOutput = PaletteButton(Loc.T("Add controller output"));
         addOutput.Click += (_, _) => AddNode(CreateOutputForSelectedController());
-        var resetDefault = PaletteButton("Load grip preset");
+        var resetDefault = PaletteButton(Loc.T("Load grip preset"));
         resetDefault.Click += (_, _) => LoadDefaultGraph();
-        var save = PaletteButton("Save graph profile");
+        var save = PaletteButton(Loc.T("Save graph profile"));
         save.Click += (_, _) => SaveGraph();
-        var load = PaletteButton("Load graph profile");
+        var load = PaletteButton(Loc.T("Load graph profile"));
         load.Click += (_, _) => LoadGraph();
-        var clear = PaletteButton("Clear graph");
+        var clear = PaletteButton(Loc.T("Clear graph"));
         clear.Click += (_, _) =>
         {
             _graph.Nodes.Clear();
@@ -191,20 +191,20 @@ internal sealed class BlueprintEditor : UserControl
         };
         _outerSplit.Panel1.Controls.Add(_palette);
         _outerSplit.Panel2.Controls.Add(_innerSplit);
-        var togglePalette = ToolbarButton("Palette");
+        var togglePalette = ToolbarButton(Loc.T("Palette"));
         togglePalette.Click += (_, _) => _outerSplit.Panel1Collapsed = !_outerSplit.Panel1Collapsed;
-        var toggleProperties = ToolbarButton("Properties");
+        var toggleProperties = ToolbarButton(Loc.T("Properties"));
         toggleProperties.Click += (_, _) => _innerSplit.Panel2Collapsed = !_innerSplit.Panel2Collapsed;
-        var focus = ToolbarButton("Focus canvas");
+        var focus = ToolbarButton(Loc.T("Focus canvas"));
         focus.Click += (_, _) =>
         {
             var enteringFocus = !_outerSplit.Panel1Collapsed || !_innerSplit.Panel2Collapsed;
             _outerSplit.Panel1Collapsed = enteringFocus;
             _innerSplit.Panel2Collapsed = enteringFocus;
-            focus.Text = enteringFocus ? "Show panels" : "Focus canvas";
+            focus.Text = enteringFocus ? Loc.T("Show panels") : Loc.T("Focus canvas");
             RefreshCanvasExtent();
         };
-        var fit = ToolbarButton("Fit nodes");
+        var fit = ToolbarButton(Loc.T("Fit nodes"));
         fit.Click += (_, _) => FitNodes();
         var zoomOut = ToolbarButton("−");
         zoomOut.Width = 36;
@@ -221,7 +221,7 @@ internal sealed class BlueprintEditor : UserControl
         var zoomIn = ToolbarButton("+");
         zoomIn.Width = 36;
         zoomIn.Click += (_, _) => SetZoom(_canvas.Zoom + 0.1f);
-        var expand = ToolbarButton("Expand workspace");
+        var expand = ToolbarButton(Loc.T("Expand workspace"));
         expand.Click += (_, _) =>
         {
             _canvas.MinimumWorldSize = new Size(
@@ -444,7 +444,7 @@ internal sealed class BlueprintEditor : UserControl
         var targetId = _selectedControllerId();
         var target = _controllerTargets().FirstOrDefault(choice => choice.Id == targetId);
         var output = new OutputSignalNode(
-            "Controller output",
+            Loc.T("Controller output"),
             NextLocation(),
             target?.IsSteamNative == true
                 ? SteamControllerHaptics.LeftGrip
@@ -462,15 +462,15 @@ internal sealed class BlueprintEditor : UserControl
     private void ShowWheelPresetMenu(Control owner)
     {
         var menu = new ContextMenuStrip();
-        AddPresetItem(menu, "Left wheels - grip", "Derived.GripLeft");
-        AddPresetItem(menu, "Right wheels - grip", "Derived.GripRight");
-        AddPresetItem(menu, "Front wheels - grip", "Derived.GripFront");
-        AddPresetItem(menu, "Rear wheels - grip", "Derived.GripRear");
+        AddPresetItem(menu, Loc.T("Left wheels - grip"), "Derived.GripLeft");
+        AddPresetItem(menu, Loc.T("Right wheels - grip"), "Derived.GripRight");
+        AddPresetItem(menu, Loc.T("Front wheels - grip"), "Derived.GripFront");
+        AddPresetItem(menu, Loc.T("Rear wheels - grip"), "Derived.GripRear");
         menu.Items.Add(new ToolStripSeparator());
-        AddPresetItem(menu, "Left wheels - lock", "Derived.LockLeft");
-        AddPresetItem(menu, "Right wheels - lock", "Derived.LockRight");
-        AddPresetItem(menu, "Front wheels - lock", "Derived.LockFront");
-        AddPresetItem(menu, "Rear wheels - lock", "Derived.LockRear");
+        AddPresetItem(menu, Loc.T("Left wheels - lock"), "Derived.LockLeft");
+        AddPresetItem(menu, Loc.T("Right wheels - lock"), "Derived.LockRight");
+        AddPresetItem(menu, Loc.T("Front wheels - lock"), "Derived.LockFront");
+        AddPresetItem(menu, Loc.T("Rear wheels - lock"), "Derived.LockRear");
         menu.Show(owner, new Point(owner.Width, 0));
     }
 
@@ -571,7 +571,7 @@ internal sealed class BlueprintEditor : UserControl
     {
         using var dialog = new SaveFileDialog
         {
-            Filter = "Forza haptic graph (*.fhgraph.json)|*.fhgraph.json|JSON (*.json)|*.json",
+            Filter = Loc.T("Forza haptic graph") + " (*.fhgraph.json)|*.fhgraph.json|JSON (*.json)|*.json",
             FileName = "forza-haptics.fhgraph.json"
         };
         if (dialog.ShowDialog(this) == DialogResult.OK)
@@ -587,7 +587,7 @@ internal sealed class BlueprintEditor : UserControl
     {
         using var dialog = new OpenFileDialog
         {
-            Filter = "Forza haptic graph (*.fhgraph.json)|*.fhgraph.json|JSON (*.json)|*.json"
+            Filter = Loc.T("Forza haptic graph") + " (*.fhgraph.json)|*.fhgraph.json|JSON (*.json)|*.json"
         };
         if (dialog.ShowDialog(this) != DialogResult.OK)
         {
@@ -605,7 +605,7 @@ internal sealed class BlueprintEditor : UserControl
 
         var title = new Label
         {
-            Text = node is null ? "NODE PROPERTIES" : node.Type.ToString().ToUpperInvariant(),
+            Text = node is null ? Loc.T("NODE PROPERTIES") : TypName(node.Type),
             Font = new Font("Segoe UI Semibold", 11),
             ForeColor = Color.WhiteSmoke,
             Dock = DockStyle.Top,
@@ -637,7 +637,7 @@ internal sealed class BlueprintEditor : UserControl
         _properties.Controls.Add(stack);
         title.BringToFront();
 
-        var nodeTitle = TextProperty(stack, "Name", node.Title);
+        var nodeTitle = TextProperty(stack, Loc.T("Name"), node.Title);
         nodeTitle.TextChanged += (_, _) =>
         {
             node.Title = nodeTitle.Text;
@@ -649,33 +649,39 @@ internal sealed class BlueprintEditor : UserControl
             case ConstantSignalNode constant:
                 var constantValue = NumberProperty(
                     stack,
-                    "Constant output (%)",
+                    Loc.T("Constant output (%)"),
                     constant.Value * 100,
                     0,
                     100,
                     1);
                 constantValue.ValueChanged += (_, _) =>
                     constant.Value = (double)constantValue.Value / 100.0;
-                var constantActive = CheckProperty(stack, "Test source active", constant.Active);
+                var constantActive = CheckProperty(stack, Loc.T("Test source active"), constant.Active);
                 constantActive.CheckedChanged += (_, _) => constant.Active = constantActive.Checked;
                 stack.Controls.Add(new Label
                 {
                     Text = Loc.T("Connect this directly to an output node to verify one controller actuator at an exact force."),
                     ForeColor = Color.FromArgb(242, 162, 96),
-                    Width = 245,
-                    Height = 58
+                    MinimumSize = new Size(245, 58),
+                    MaximumSize = new Size(245, 0),
+                    AutoSize = true
                 });
                 break;
             case TelemetrySignalNode telemetry:
                 BuildTelemetryProperties(stack, telemetry);
                 break;
             case GroupSignalNode group:
-                var groupMode = ComboProperty(stack, "Combine inputs", Enum.GetValues<SignalGroupMode>(), group.Mode);
+                var groupMode = ComboProperty(
+                    stack,
+                    Loc.T("Combine inputs"),
+                    Enum.GetValues<SignalGroupMode>(),
+                    group.Mode,
+                    GruppenModus);
                 groupMode.SelectedValueChanged += (_, _) =>
                     group.Mode = (SignalGroupMode)groupMode.SelectedItem!;
                 break;
             case CurveSignalNode curve:
-                var editCurve = ActionButton("Edit multi-point Bézier curve");
+                var editCurve = ActionButton(Loc.T("Edit multi-point Bézier curve"));
                 editCurve.Click += (_, _) => EditCurve(curve);
                 stack.Controls.Add(editCurve);
                 break;
@@ -684,7 +690,7 @@ internal sealed class BlueprintEditor : UserControl
                 break;
         }
 
-        var delete = ActionButton("Delete selected node");
+        var delete = ActionButton(Loc.T("Delete selected node"));
         delete.BackColor = Color.FromArgb(105, 54, 58);
         delete.Click += (_, _) =>
         {
@@ -699,7 +705,7 @@ internal sealed class BlueprintEditor : UserControl
 
     private void BuildTelemetryProperties(FlowLayoutPanel stack, TelemetrySignalNode node)
     {
-        LabelProperty(stack, "Telemetry field");
+        LabelProperty(stack, Loc.T("Telemetry field"));
         var fields = new ComboBox
         {
             Width = 245,
@@ -723,25 +729,25 @@ internal sealed class BlueprintEditor : UserControl
         };
         stack.Controls.Add(fields);
 
-        var minimum = NumberProperty(stack, "Normalize minimum", node.Minimum, -1000000, 1000000, 3);
+        var minimum = NumberProperty(stack, Loc.T("Normalize minimum"), node.Minimum, -1000000, 1000000, 3);
         minimum.ValueChanged += (_, _) => node.Minimum = (double)minimum.Value;
-        var maximum = NumberProperty(stack, "Normalize maximum", node.Maximum, -1000000, 1000000, 3);
+        var maximum = NumberProperty(stack, Loc.T("Normalize maximum"), node.Maximum, -1000000, 1000000, 3);
         maximum.ValueChanged += (_, _) => node.Maximum = (double)maximum.Value;
-        var absolute = CheckProperty(stack, "Absolute value", node.Absolute);
+        var absolute = CheckProperty(stack, Loc.T("Absolute value"), node.Absolute);
         absolute.CheckedChanged += (_, _) => node.Absolute = absolute.Checked;
-        var invert = CheckProperty(stack, "Invert 0 ↔ 1", node.Invert);
+        var invert = CheckProperty(stack, Loc.T("Invert 0 ↔ 1"), node.Invert);
         invert.CheckedChanged += (_, _) => node.Invert = invert.Checked;
     }
 
     private void BuildOutputProperties(FlowLayoutPanel stack, OutputSignalNode node)
     {
-        LabelProperty(stack, "Controller target");
+        LabelProperty(stack, Loc.T("Controller target"));
         var targets = _controllerTargets().ToList();
         if (targets.All(target => target.Id != node.TargetId))
         {
             targets.Add(new ControllerOutputTarget(
                 node.TargetId,
-                $"Unavailable saved controller ({node.TargetId})",
+                string.Format(Loc.T("Unavailable saved controller ({0})"), node.TargetId),
                 node.TargetId == OutputSignalNode.SteamNativeTargetId,
                 node.TargetId.StartsWith("dualsense:", StringComparison.Ordinal),
                 true,
@@ -779,10 +785,10 @@ internal sealed class BlueprintEditor : UserControl
         var channelNames = selectedTarget.IsSteamNative
             ? new[]
             {
-                new ChannelChoice(SteamControllerHaptics.LeftGrip, "Left grip motor"),
-                new ChannelChoice(SteamControllerHaptics.RightGrip, "Right grip motor"),
-                new ChannelChoice(SteamControllerHaptics.LeftPad, "Left trackpad"),
-                new ChannelChoice(SteamControllerHaptics.RightPad, "Right trackpad")
+                new ChannelChoice(SteamControllerHaptics.LeftGrip, Loc.T("Left grip motor")),
+                new ChannelChoice(SteamControllerHaptics.RightGrip, Loc.T("Right grip motor")),
+                new ChannelChoice(SteamControllerHaptics.LeftPad, Loc.T("Left trackpad")),
+                new ChannelChoice(SteamControllerHaptics.RightPad, Loc.T("Right trackpad"))
             }
             : selectedTarget.IsDualSenseNative
                 ? BuildDualSenseChannelChoices()
@@ -792,7 +798,7 @@ internal sealed class BlueprintEditor : UserControl
             node.Channel = channelNames[0].Channel;
         }
 
-        LabelProperty(stack, "Controller channel");
+        LabelProperty(stack, Loc.T("Controller channel"));
         var channel = new ComboBox
         {
             Width = 245,
@@ -819,18 +825,19 @@ internal sealed class BlueprintEditor : UserControl
             {
                 Text = Loc.T("Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers."),
                 ForeColor = Color.FromArgb(242, 162, 96),
-                Width = 245,
-                Height = 106
+                MinimumSize = new Size(245, 106),
+                MaximumSize = new Size(245, 0),
+                AutoSize = true
             });
         }
 
-        LabelProperty(stack, "Multiple input connections");
+        LabelProperty(stack, Loc.T("Multiple input connections"));
         var inputModeChoices = new[]
         {
-            new InputModeChoice(SignalGroupMode.Maximum, "Maximum (strongest wins)"),
-            new InputModeChoice(SignalGroupMode.Minimum, "Minimum"),
-            new InputModeChoice(SignalGroupMode.Average, "Average"),
-            new InputModeChoice(SignalGroupMode.SumClamped, "Sum (clamped to 100%)")
+            new InputModeChoice(SignalGroupMode.Maximum, GruppenModus(SignalGroupMode.Maximum)),
+            new InputModeChoice(SignalGroupMode.Minimum, GruppenModus(SignalGroupMode.Minimum)),
+            new InputModeChoice(SignalGroupMode.Average, GruppenModus(SignalGroupMode.Average)),
+            new InputModeChoice(SignalGroupMode.SumClamped, GruppenModus(SignalGroupMode.SumClamped))
         };
         var inputMode = new ComboBox
         {
@@ -848,21 +855,22 @@ internal sealed class BlueprintEditor : UserControl
         {
             Text = Loc.T("Maximum uses the strongest input. Average blends them; SumClamped adds them up to 100%. If several output nodes target the same actuator, the strongest live output wins."),
             ForeColor = Color.FromArgb(165, 170, 180),
-            Width = 245,
-            Height = 78
+            MinimumSize = new Size(245, 78),
+            MaximumSize = new Size(245, 0),
+            AutoSize = true
         });
 
-        LabelProperty(stack, "Effect");
+        LabelProperty(stack, Loc.T("Effect"));
         EffectChoice[] effectChoices = adaptiveTrigger
             ?
             [
-                new EffectChoice(HapticEffectMode.Rumble, "Continuous trigger effect"),
-                new EffectChoice(HapticEffectMode.Beep, "Pulsed trigger effect")
+                new EffectChoice(HapticEffectMode.Rumble, Loc.T("Continuous trigger effect")),
+                new EffectChoice(HapticEffectMode.Beep, Loc.T("Pulsed trigger effect"))
             ]
             :
             [
-                new EffectChoice(HapticEffectMode.Rumble, "Continuous tone / vibration"),
-                new EffectChoice(HapticEffectMode.Beep, "Pulsed beep")
+                new EffectChoice(HapticEffectMode.Rumble, Loc.T("Continuous tone / vibration")),
+                new EffectChoice(HapticEffectMode.Beep, Loc.T("Pulsed beep"))
             ];
         var effect = new ComboBox
         {
@@ -880,7 +888,7 @@ internal sealed class BlueprintEditor : UserControl
         };
         stack.Controls.Add(effect);
 
-        LabelProperty(stack, "Input modulates");
+        LabelProperty(stack, Loc.T("Input modulates"));
         var frequencyRelevant =
             !adaptiveTrigger ||
             node.DualSenseTriggerEffect == DualSenseTriggerEffectMode.Vibration;
@@ -892,15 +900,15 @@ internal sealed class BlueprintEditor : UserControl
         ModulationChoice[] modulationChoices = frequencyRelevant
             ?
             [
-                new ModulationChoice(HapticModulationMode.StrengthOnly, "Strength only"),
-                new ModulationChoice(HapticModulationMode.FrequencyOnly, "Frequency only"),
+                new ModulationChoice(HapticModulationMode.StrengthOnly, Loc.T("Strength only")),
+                new ModulationChoice(HapticModulationMode.FrequencyOnly, Loc.T("Frequency only")),
                 new ModulationChoice(
                     HapticModulationMode.StrengthAndFrequency,
-                    "Strength + frequency")
+                    Loc.T("Strength + frequency"))
             ]
             :
             [
-                new ModulationChoice(HapticModulationMode.StrengthOnly, "Resistance strength")
+                new ModulationChoice(HapticModulationMode.StrengthOnly, Loc.T("Resistance strength"))
             ];
         var modulation = new ComboBox
         {
@@ -923,7 +931,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var strength = NumberProperty(
                 stack,
-                "Fixed strength / volume (%)",
+                Loc.T("Fixed strength / volume (%)"),
                 node.MaximumStrength * 100,
                 0,
                 100,
@@ -935,7 +943,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var minimumStrength = NumberProperty(
                 stack,
-                "Strength at 0% input (%)",
+                Loc.T("Strength at 0% input (%)"),
                 node.MinimumStrength * 100,
                 0,
                 100,
@@ -944,7 +952,7 @@ internal sealed class BlueprintEditor : UserControl
                 node.MinimumStrength = (double)minimumStrength.Value / 100.0;
             var maximumStrength = NumberProperty(
                 stack,
-                "Strength at 100% input (%)",
+                Loc.T("Strength at 100% input (%)"),
                 node.MaximumStrength * 100,
                 0,
                 100,
@@ -958,7 +966,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var frequency = NumberProperty(
                 stack,
-                "Fixed carrier frequency / pitch (Hz)",
+                Loc.T("Fixed carrier frequency / pitch (Hz)"),
                 node.MinimumFrequencyHz,
                 adaptiveTrigger ? 1 : 20,
                 adaptiveTrigger ? 255 : 800,
@@ -974,7 +982,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var minimumFrequency = NumberProperty(
                 stack,
-                "Frequency at 0% input (Hz)",
+                Loc.T("Frequency at 0% input (Hz)"),
                 node.MinimumFrequencyHz,
                 adaptiveTrigger ? 1 : 20,
                 adaptiveTrigger ? 255 : 800,
@@ -986,7 +994,7 @@ internal sealed class BlueprintEditor : UserControl
             };
             var maximumFrequency = NumberProperty(
                 stack,
-                "Frequency at 100% input (Hz)",
+                Loc.T("Frequency at 100% input (Hz)"),
                 node.MaximumFrequencyHz,
                 adaptiveTrigger ? 1 : 20,
                 adaptiveTrigger ? 255 : 800,
@@ -1000,7 +1008,7 @@ internal sealed class BlueprintEditor : UserControl
 
         var silenceAtZero = CheckProperty(
             stack,
-            "Silence when input is exactly 0%",
+            Loc.T("Silence when input is exactly 0%"),
             node.SilenceAtZero);
         silenceAtZero.CheckedChanged += (_, _) =>
             node.SilenceAtZero = silenceAtZero.Checked;
@@ -1009,7 +1017,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var beepRate = NumberProperty(
                 stack,
-                "Pulse rate (pulses/second)",
+                Loc.T("Pulse rate (pulses/second)"),
                 node.BeepRateHz,
                 0.1m,
                 30,
@@ -1017,7 +1025,7 @@ internal sealed class BlueprintEditor : UserControl
             beepRate.ValueChanged += (_, _) => node.BeepRateHz = (double)beepRate.Value;
             var dutyCycle = NumberProperty(
                 stack,
-                "Pulse on-time (%)",
+                Loc.T("Pulse on-time (%)"),
                 node.BeepDutyCycle * 100,
                 5,
                 95,
@@ -1027,11 +1035,12 @@ internal sealed class BlueprintEditor : UserControl
             stack.Controls.Add(new Label
             {
                 Text = adaptiveTrigger
-                    ? "Pulse rate repeatedly enables and releases the selected L2/R2 effect."
-                    : "Pulse rate is the Morse-like rhythm. For an unbroken audible tone, choose Continuous tone / vibration and set the carrier frequency above.",
+                    ? Loc.T("Pulse rate repeatedly enables and releases the selected L2/R2 effect.")
+                    : Loc.T("Pulse rate is the Morse-like rhythm. For an unbroken audible tone, choose Continuous tone / vibration and set the carrier frequency above."),
                 ForeColor = Color.FromArgb(242, 162, 96),
-                Width = 245,
-                Height = 72
+                MinimumSize = new Size(245, 72),
+                MaximumSize = new Size(245, 0),
+                AutoSize = true
             });
         }
     }
@@ -1042,9 +1051,10 @@ internal sealed class BlueprintEditor : UserControl
     {
         var effect = ComboProperty(
             stack,
-            "Adaptive trigger effect",
+            Loc.T("Adaptive trigger effect"),
             Enum.GetValues<DualSenseTriggerEffectMode>(),
-            node.DualSenseTriggerEffect);
+            node.DualSenseTriggerEffect,
+            TriggerEffektName);
         effect.SelectedValueChanged += (_, _) =>
         {
             node.DualSenseTriggerEffect =
@@ -1054,7 +1064,7 @@ internal sealed class BlueprintEditor : UserControl
 
         var start = NumberProperty(
             stack,
-            "Effect starts at trigger travel (%)",
+            Loc.T("Effect starts at trigger travel (%)"),
             node.TriggerStartPosition * 100,
             0,
             100,
@@ -1069,7 +1079,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var end = NumberProperty(
                 stack,
-                "Effect ends at trigger travel (%)",
+                Loc.T("Effect ends at trigger travel (%)"),
                 node.TriggerEndPosition * 100,
                 0,
                 100,
@@ -1083,7 +1093,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var beginningStrength = NumberProperty(
                 stack,
-                "Resistance at slope start (% of output)",
+                Loc.T("Resistance at slope start (% of output)"),
                 node.TriggerSecondaryStrength * 100,
                 0,
                 100,
@@ -1097,7 +1107,7 @@ internal sealed class BlueprintEditor : UserControl
         {
             var snap = NumberProperty(
                 stack,
-                "Snap-back strength (% of output)",
+                Loc.T("Snap-back strength (% of output)"),
                 node.TriggerSnapStrength * 100,
                 0,
                 100,
@@ -1111,20 +1121,21 @@ internal sealed class BlueprintEditor : UserControl
             Text = node.DualSenseTriggerEffect switch
             {
                 DualSenseTriggerEffectMode.Resistance =>
-                    "Adds resistance after the selected trigger position.",
+                    Loc.T("Adds resistance after the selected trigger position."),
                 DualSenseTriggerEffectMode.TensionSlope =>
-                    "Resistance rises across the selected travel range—useful for brake pressure or bow tension.",
+                    Loc.T("Resistance rises across the selected travel range—useful for brake pressure or bow tension."),
                 DualSenseTriggerEffectMode.WeaponClick =>
-                    "Creates a hard resistance wall followed by a release/click.",
+                    Loc.T("Creates a hard resistance wall followed by a release/click."),
                 DualSenseTriggerEffectMode.Vibration =>
-                    "Vibrates inside L2/R2. Output strength controls amplitude and output frequency controls trigger pulse frequency.",
+                    Loc.T("Vibrates inside L2/R2. Output strength controls amplitude and output frequency controls trigger pulse frequency."),
                 DualSenseTriggerEffectMode.BowSnap =>
-                    "Experimental firmware effect with tension and snap-back. It may vary across controller firmware.",
+                    Loc.T("Experimental firmware effect with tension and snap-back. It may vary across controller firmware."),
                 _ => string.Empty
             },
             ForeColor = Color.FromArgb(242, 162, 96),
-            Width = 245,
-            Height = 72
+            MinimumSize = new Size(245, 72),
+            MaximumSize = new Size(245, 0),
+            AutoSize = true
         });
     }
 
@@ -1132,7 +1143,7 @@ internal sealed class BlueprintEditor : UserControl
     {
         using var dialog = new Form
         {
-            Text = $"Edit curve: {curve.Title}",
+            Text = string.Format(Loc.T("Edit curve: {0}"), curve.Title),
             ClientSize = new Size(560, 350),
             StartPosition = FormStartPosition.CenterParent,
             BackColor = Color.FromArgb(18, 20, 24),
@@ -1184,7 +1195,12 @@ internal sealed class BlueprintEditor : UserControl
         return number;
     }
 
-    private static ComboBox ComboProperty<T>(Control parent, string name, T[] values, T selected)
+    private static ComboBox ComboProperty<T>(
+        Control parent,
+        string name,
+        T[] values,
+        T selected,
+        Func<T, string>? anzeige = null)
     {
         LabelProperty(parent, name);
         var combo = new ComboBox
@@ -1192,6 +1208,21 @@ internal sealed class BlueprintEditor : UserControl
             Width = 245,
             DropDownStyle = ComboBoxStyle.DropDownList
         };
+        if (anzeige is not null)
+        {
+            // DIE LISTE HAELT DEN WERT, DIE ANZEIGE DEN UEBERSETZTEN NAMEN: SelectedItem
+            // bleibt die Aufzaehlung. Erst den Formatierer, dann einschalten, dann die
+            // Eintraege -- sonst stehen sie schon mit dem Aufzaehlungsnamen darin.
+            combo.Format += (_, e) =>
+            {
+                if (e.ListItem is T wert)
+                {
+                    e.Value = anzeige(wert);
+                }
+            };
+            combo.FormattingEnabled = true;
+        }
+
         combo.Items.AddRange(values.Cast<object>().ToArray());
         combo.SelectedItem = selected;
         parent.Controls.Add(combo);
@@ -1217,8 +1248,9 @@ internal sealed class BlueprintEditor : UserControl
         {
             Text = text,
             ForeColor = Color.FromArgb(175, 180, 190),
-            Width = 245,
-            Height = 24,
+            MinimumSize = new Size(245, 24),
+            MaximumSize = new Size(245, 0),
+            AutoSize = true,
             Padding = new Padding(0, 6, 0, 0)
         });
 
@@ -1234,6 +1266,41 @@ internal sealed class BlueprintEditor : UserControl
             Margin = new Padding(0, 12, 0, 0)
         };
 
+    /// <summary>Die Knotenart als Ueberschrift der Eigenschaften.</summary>
+    private static string TypName(SignalNodeType type) =>
+        type switch
+        {
+            SignalNodeType.Constant => Loc.T("CONSTANT"),
+            SignalNodeType.Telemetry => Loc.T("TELEMETRY"),
+            SignalNodeType.Group => Loc.T("GROUP"),
+            SignalNodeType.Curve => Loc.T("CURVE"),
+            SignalNodeType.Output => Loc.T("OUTPUT"),
+            _ => type.ToString().ToUpperInvariant()
+        };
+
+    /// <summary>Wie mehrere Eingaenge zusammengehen -- der Name in der Auswahl.</summary>
+    private static string GruppenModus(SignalGroupMode mode) =>
+        mode switch
+        {
+            SignalGroupMode.Maximum => Loc.T("Maximum (strongest wins)"),
+            SignalGroupMode.Minimum => Loc.T("Minimum"),
+            SignalGroupMode.Average => Loc.T("Average"),
+            SignalGroupMode.SumClamped => Loc.T("Sum (clamped to 100%)"),
+            _ => mode.ToString()
+        };
+
+    /// <summary>Der Name eines Abzugseffekts -- die Aufzaehlung bleibt, was gespeichert wird.</summary>
+    private static string TriggerEffektName(DualSenseTriggerEffectMode mode) =>
+        mode switch
+        {
+            DualSenseTriggerEffectMode.Resistance => Loc.T("Resistance"),
+            DualSenseTriggerEffectMode.TensionSlope => Loc.T("Tension slope"),
+            DualSenseTriggerEffectMode.WeaponClick => Loc.T("Weapon click"),
+            DualSenseTriggerEffectMode.Vibration => Loc.T("Vibration"),
+            DualSenseTriggerEffectMode.BowSnap => Loc.T("Bow snap"),
+            _ => mode.ToString()
+        };
+
     private sealed record ChannelChoice(int Channel, string Name);
     private sealed record EffectChoice(HapticEffectMode Mode, string Name);
     private sealed record InputModeChoice(SignalGroupMode Mode, string Name);
@@ -1245,38 +1312,38 @@ internal sealed class BlueprintEditor : UserControl
         if (target.SupportsMainRumble)
         {
             choices.AddRange([
-                new ChannelChoice(GenericGamepadHaptics.LowMotor, "Low-frequency body motor"),
-                new ChannelChoice(GenericGamepadHaptics.HighMotor, "High-frequency body motor"),
-                new ChannelChoice(GenericGamepadHaptics.BothMotors, "Both body motors"),
+                new ChannelChoice(GenericGamepadHaptics.LowMotor, Loc.T("Low-frequency body motor")),
+                new ChannelChoice(GenericGamepadHaptics.HighMotor, Loc.T("High-frequency body motor")),
+                new ChannelChoice(GenericGamepadHaptics.BothMotors, Loc.T("Both body motors")),
                 new ChannelChoice(
                     GenericGamepadHaptics.FrequencyMix,
-                    "Frequency mix (low ↔ high motor)")
+                    Loc.T("Frequency mix (low ↔ high motor)"))
             ]);
         }
 
         if (target.SupportsTriggerRumble)
         {
             choices.AddRange([
-                new ChannelChoice(GenericGamepadHaptics.LeftTrigger, "Left trigger motor"),
-                new ChannelChoice(GenericGamepadHaptics.RightTrigger, "Right trigger motor"),
-                new ChannelChoice(GenericGamepadHaptics.BothTriggers, "Both trigger motors")
+                new ChannelChoice(GenericGamepadHaptics.LeftTrigger, Loc.T("Left trigger motor")),
+                new ChannelChoice(GenericGamepadHaptics.RightTrigger, Loc.T("Right trigger motor")),
+                new ChannelChoice(GenericGamepadHaptics.BothTriggers, Loc.T("Both trigger motors"))
             ]);
         }
 
         return choices.Count > 0
             ? choices.ToArray()
-            : [new ChannelChoice(GenericGamepadHaptics.BothMotors, "Both body motors")];
+            : [new ChannelChoice(GenericGamepadHaptics.BothMotors, Loc.T("Both body motors"))];
     }
 
     private static ChannelChoice[] BuildDualSenseChannelChoices() =>
     [
-        new(DualSenseHaptics.LowBodyMotor, "Low-frequency body haptic"),
-        new(DualSenseHaptics.HighBodyMotor, "High-frequency body haptic"),
-        new(DualSenseHaptics.BothBodyMotors, "Both body haptics"),
-        new(DualSenseHaptics.FrequencyMix, "Frequency mix (low ↔ high body)"),
-        new(DualSenseHaptics.LeftAdaptiveTrigger, "L2 adaptive trigger"),
-        new(DualSenseHaptics.RightAdaptiveTrigger, "R2 adaptive trigger"),
-        new(DualSenseHaptics.BothAdaptiveTriggers, "Both adaptive triggers")
+        new(DualSenseHaptics.LowBodyMotor, Loc.T("Low-frequency body haptic")),
+        new(DualSenseHaptics.HighBodyMotor, Loc.T("High-frequency body haptic")),
+        new(DualSenseHaptics.BothBodyMotors, Loc.T("Both body haptics")),
+        new(DualSenseHaptics.FrequencyMix, Loc.T("Frequency mix (low ↔ high body)")),
+        new(DualSenseHaptics.LeftAdaptiveTrigger, Loc.T("L2 adaptive trigger")),
+        new(DualSenseHaptics.RightAdaptiveTrigger, Loc.T("R2 adaptive trigger")),
+        new(DualSenseHaptics.BothAdaptiveTriggers, Loc.T("Both adaptive triggers"))
     ];
 }
 
@@ -1360,7 +1427,7 @@ internal sealed class BlueprintCanvas : Control
         if (e.Button == MouseButtons.Right && node is not null)
         {
             var menu = new ContextMenuStrip();
-            var delete = menu.Items.Add("Delete node");
+            var delete = menu.Items.Add(Loc.T("Delete node"));
             delete.Click += (_, _) =>
             {
                 _graph.RemoveNode(node.Id);
@@ -1489,9 +1556,21 @@ internal sealed class BlueprintCanvas : Control
         using var titleBrush = new SolidBrush(Color.White);
         graphics.DrawString(node.Title, titleFont, titleBrush, rectangle.X + 9, rectangle.Y + 7);
         using var detailBrush = new SolidBrush(Color.FromArgb(185, 190, 200));
-        graphics.DrawString(NodeDetail(node), Font, detailBrush, rectangle.X + 9, rectangle.Y + 42);
+        // ZWEI ZEILEN PLATZ, im Knoten: eine uebersetzte Zeile ist oft laenger als die
+        // englische und lief sonst ueber den rechten Rand hinaus.
+        using var detailFormat = new StringFormat
+        {
+            Trimming = StringTrimming.EllipsisCharacter,
+            FormatFlags = StringFormatFlags.LineLimit
+        };
         graphics.DrawString(
-            $"Live: {LiveValues.GetValueOrDefault(node.Id):P1}",
+            NodeDetail(node),
+            Font,
+            detailBrush,
+            new RectangleF(rectangle.X + 9, rectangle.Y + 42, rectangle.Width - 18, 32),
+            detailFormat);
+        graphics.DrawString(
+            string.Format(Loc.T("Live: {0}"), LiveValues.GetValueOrDefault(node.Id).ToString("P1")),
             Font,
             titleBrush,
             rectangle.X + 9,
@@ -1511,18 +1590,30 @@ internal sealed class BlueprintCanvas : Control
     private static string NodeDetail(SignalNode node) =>
         node switch
         {
-            ConstantSignalNode constant =>
-                $"Constant: {(constant.Active ? constant.Value.ToString("P1") : "inactive")}",
+            ConstantSignalNode constant => constant.Active
+                ? string.Format(Loc.T("Constant: {0}"), constant.Value.ToString("P1"))
+                : Loc.T("Constant: inactive"),
             TelemetrySignalNode telemetry => telemetry.TelemetryKey,
-            GroupSignalNode group => $"Group: {group.Mode}",
-            CurveSignalNode curve => $"Bézier: {curve.Curve.Nodes.Count} points",
+            GroupSignalNode group => string.Format(Loc.T("Group: {0}"), GruppenKurz(group.Mode)),
+            CurveSignalNode curve => string.Format(Loc.T("Bézier: {0} points"), curve.Curve.Nodes.Count),
             OutputSignalNode output =>
                 $"{ChannelName(output)} · {EffectName(output.EffectMode)} · {FrequencyDetail(output)}",
             _ => ""
         };
 
+    /// <summary>Der Gruppenmodus kurz, fuer die Zeile im Knoten.</summary>
+    private static string GruppenKurz(SignalGroupMode mode) =>
+        mode switch
+        {
+            SignalGroupMode.Maximum => Loc.T("Maximum"),
+            SignalGroupMode.Minimum => Loc.T("Minimum"),
+            SignalGroupMode.Average => Loc.T("Average"),
+            SignalGroupMode.SumClamped => Loc.T("Sum (clamped to 100%)"),
+            _ => mode.ToString()
+        };
+
     private static string EffectName(HapticEffectMode mode) =>
-        mode == HapticEffectMode.Beep ? "Pulsed" : "Continuous";
+        mode == HapticEffectMode.Beep ? Loc.T("Pulsed") : Loc.T("Continuous");
 
     private static string FrequencyDetail(OutputSignalNode output) =>
         output.ModulationMode == HapticModulationMode.StrengthOnly
@@ -1535,13 +1626,13 @@ internal sealed class BlueprintCanvas : Control
         {
             return output.Channel switch
             {
-                DualSenseHaptics.LowBodyMotor => "Low body",
-                DualSenseHaptics.HighBodyMotor => "High body",
-                DualSenseHaptics.BothBodyMotors => "Both body",
-                DualSenseHaptics.FrequencyMix => "Body frequency mix",
-                DualSenseHaptics.LeftAdaptiveTrigger => "L2 adaptive",
-                DualSenseHaptics.RightAdaptiveTrigger => "R2 adaptive",
-                DualSenseHaptics.BothAdaptiveTriggers => "L2 + R2 adaptive",
+                DualSenseHaptics.LowBodyMotor => Loc.T("Low body"),
+                DualSenseHaptics.HighBodyMotor => Loc.T("High body"),
+                DualSenseHaptics.BothBodyMotors => Loc.T("Both body"),
+                DualSenseHaptics.FrequencyMix => Loc.T("Body frequency mix"),
+                DualSenseHaptics.LeftAdaptiveTrigger => Loc.T("L2 adaptive"),
+                DualSenseHaptics.RightAdaptiveTrigger => Loc.T("R2 adaptive"),
+                DualSenseHaptics.BothAdaptiveTriggers => Loc.T("L2 + R2 adaptive"),
                 _ => "DualSense"
             };
         }
@@ -1550,24 +1641,24 @@ internal sealed class BlueprintCanvas : Control
         {
             return output.Channel switch
             {
-                GenericGamepadHaptics.LowMotor => "Low motor",
-                GenericGamepadHaptics.HighMotor => "High motor",
-                GenericGamepadHaptics.BothMotors => "Both motors",
-                GenericGamepadHaptics.FrequencyMix => "Frequency mix",
-                GenericGamepadHaptics.LeftTrigger => "Left trigger",
-                GenericGamepadHaptics.RightTrigger => "Right trigger",
-                GenericGamepadHaptics.BothTriggers => "Both triggers",
-                _ => "Gamepad"
+                GenericGamepadHaptics.LowMotor => Loc.T("Low motor"),
+                GenericGamepadHaptics.HighMotor => Loc.T("High motor"),
+                GenericGamepadHaptics.BothMotors => Loc.T("Both motors"),
+                GenericGamepadHaptics.FrequencyMix => Loc.T("Frequency mix"),
+                GenericGamepadHaptics.LeftTrigger => Loc.T("Left trigger"),
+                GenericGamepadHaptics.RightTrigger => Loc.T("Right trigger"),
+                GenericGamepadHaptics.BothTriggers => Loc.T("Both triggers"),
+                _ => Loc.T("Gamepad")
             };
         }
 
         return output.Channel switch
         {
-            SteamControllerHaptics.LeftGrip => "Left grip",
-            SteamControllerHaptics.RightGrip => "Right grip",
-            SteamControllerHaptics.LeftPad => "Left pad",
-            SteamControllerHaptics.RightPad => "Right pad",
-            _ => "Unknown"
+            SteamControllerHaptics.LeftGrip => Loc.T("Left grip"),
+            SteamControllerHaptics.RightGrip => Loc.T("Right grip"),
+            SteamControllerHaptics.LeftPad => Loc.T("Left pad"),
+            SteamControllerHaptics.RightPad => Loc.T("Right pad"),
+            _ => Loc.T("unknown")
         };
     }
 
@@ -1643,7 +1734,7 @@ internal sealed class TelemetryPickerDialog : Form
         ClientSize = new Size(520, 520);
         StartPosition = FormStartPosition.CenterParent;
 
-        _search = new TextBox { Dock = DockStyle.Top, PlaceholderText = "Search telemetry..." };
+        _search = new TextBox { Dock = DockStyle.Top, PlaceholderText = Loc.T("Search telemetry...") };
         _search.TextChanged += (_, _) => RefreshList();
         _list = new ListBox { Dock = DockStyle.Fill, DisplayMember = nameof(TelemetryChoice.Label) };
         _list.DoubleClick += (_, _) => Accept();

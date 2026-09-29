@@ -275,16 +275,16 @@ internal static class CarGridReader
 
     // Der Titel oben links. Englisch ist gemessen (Screenshot des Nutzers, 2026-09-29);
     // die uebrigen sind Vermutungen -- trifft keiner, lernt die App nur nichts dazu.
-    private static readonly string[] MeineAutosTitel =
-        { "my cars", "meine autos", "mes voitures", "mis coches", "mis autos", "le mie auto", "meus carros",
-          "moje auta", "mijn auto s" };
-
     /// <summary>
     /// Steht "My Cars" oben im Bild? Nur dann gehoert das gerahmte Auto dem Spieler -- die
     /// Autoshow zeigt dieselben Kacheln mit demselben Rahmen, auch fuer Autos, die man nicht hat.
     /// </summary>
+    /// <remarks>
+    /// In jeder Spielsprache, wie das Spiel den Titel schreibt (GameText, seit 2026-09-29).
+    /// Vorher eine Handvoll selbst geratener Uebersetzungen.
+    /// </remarks>
     internal static bool IstMeineAutos(IEnumerable<OcrLine> kopf) =>
-        kopf.Any(z => MeineAutosTitel.Any(t => TextMatch.Normalise(z.Text).Contains(t, StringComparison.Ordinal)));
+        kopf.Any(z => GameText.Enthaelt(z.Text, "my_cars", "My Cars"));
 
     /// <summary>Der obere Streifen, in dem der Schirmtitel steht (im verkleinerten Bild).</summary>
     internal static Rectangle KopfIn(Size bild) => new(0, 0, Math.Max(1, (int)(bild.Width * 0.45)), Math.Max(1, (int)(bild.Height * 0.2)));

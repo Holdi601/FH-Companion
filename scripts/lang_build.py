@@ -141,6 +141,9 @@ def main(argv: list[str] | None = None) -> int:
             geschrieben += 1
 
     print(f"{geschrieben} Sprachdatei(en) geschrieben.")
+    # Reiter und Menues des Spiels in allen Saetzen gleich benennen (lang_names.py).
+    from lang_names import main as namen_angleichen
+    namen_angleichen()
     return 0
 
 

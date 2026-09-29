@@ -66,6 +66,49 @@ internal static class EdgeCaseTest
         CarCollectionKnowsWhatIsMissing();
         XboxAndMemoryOptions();
         HudSideFitsItsColumn();
+        EveryLanguageEverywhere();
+    }
+
+    /// <summary>
+    /// JEDE SPRACHE, UEBERALL (2026-09-29): ein Spieler mit spanischem Windows sah den
+    /// Hinweis beim Start auf Englisch. Die Windows-Sprache muss zur App-Sprache fuehren,
+    /// und in jeder App-Sprache muss der Hinweis uebersetzt und aktuell sein.
+    /// </summary>
+    private static void EveryLanguageEverywhere()
+    {
+        var vorher = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            foreach (var (kultur, erwartet) in new[]
+                     {
+                         ("es-ES", "es"), ("es-MX", "es"), ("pt-BR", "pt"), ("nb-NO", "nb"), ("nn-NO", "nb"), ("zh-TW", "zh-Hant"),
+                         ("zh-CN", "zh-Hans"), ("de-AT", "de"), ("fr-CA", "fr"), ("ja-JP", "ja"), ("tr-TR", "tr"),
+                     })
+            {
+                System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo(kultur);
+                Loc.Waehle("auto");
+                Soll(Loc.Sprache == erwartet, $"Windows auf {kultur}: die App nimmt '{Loc.Sprache}' statt '{erwartet}'");
+            }
+            var englisch = Loc.Sprache;
+            Loc.Waehle("en");
+            var hinweisEn = Disclosure.HinweisText();
+            foreach (var code in Loc.Verfuegbar())
+            {
+                Loc.Waehle(code);
+                if (Loc.Sprache == "en") { continue; }
+                var h = Disclosure.HinweisText();
+                // Chinesisch und Japanisch brauchen ein Viertel der Zeichen -- darum Absaetze zaehlen.
+                Soll(h != hinweisEn && h.Split("\n\n").Length >= hinweisEn.Split("\n\n").Length * 3 / 4,
+                     $"Hinweis beim Start in '{code}' fehlt, ist veraltet oder leer");
+                Soll(Loc.T("Continue") != "Continue" && Loc.T("What {0} does") != "What {0} does",
+                     $"Titel oder Knopf des Hinweises in '{code}' nicht uebersetzt");
+            }
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = vorher;
+            Loc.Waehle(Rivals.OverlaySettings.Load().Language);
+        }
     }
 
     /// <summary>
@@ -282,6 +325,15 @@ internal static class EdgeCaseTest
             Soll(!Rivals.Fenster.IstStromTitel(nein), "Strom erkannt, wo keiner ist: " + nein);
         }
         Soll(Rivals.Fenster.StromPlattform("x - YouTube - Google Chrome") == "YouTube", "Plattform nicht genannt");
+
+        // OHNE WAHL (2026-09-29): mit Remote Play ueber dem Fenster, sonst im Dashboard.
+        Soll(new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "window" }.HudUeberFenster,
+             "Remote Play ohne Wahl: der HUD liegt nicht ueber dem Fenster (im Vollbild unsichtbar)");
+        Soll(!new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "obs" }.HudUeberFenster,
+             "OBS ohne Wahl: der HUD liegt ueber dem Projektor statt im Dashboard");
+        var gewaehlt = System.Text.Json.JsonSerializer.Deserialize<Rivals.OverlaySettings>(
+            "{\"console_mode\": true, \"video_source\": \"window\", \"console_hud_over_window\": false}")!;
+        Soll(!gewaehlt.HudUeberFenster, "eine gespeicherte Wahl 'Dashboard' wird bei Remote Play uebergangen");
 
         // HUD ueber dem Fenster: jede Quelle, an und aus, Konsole und PC.
         foreach (var (quelle, erwartet) in new[] { ("window", true), ("obs", true), ("OBS", true), ("discord", false),

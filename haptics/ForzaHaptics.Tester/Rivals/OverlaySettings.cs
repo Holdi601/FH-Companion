@@ -383,7 +383,20 @@ internal sealed class OverlaySettings
     /// dieses Fenster. Er erscheint nur, solange es vorne ist -- sonst stuende er beim
     /// Wechsel zu einem anderen Programm ueber dem Desktop.
     /// </remarks>
-    [JsonPropertyName("console_hud_over_window")] public bool ConsoleHudOverWindow { get; set; }
+    [JsonIgnore]
+    public bool ConsoleHudOverWindow
+    {
+        get => ConsoleHudOverWindowWahl ?? IstRemotePlay;
+        set => ConsoleHudOverWindowWahl = value;
+    }
+
+    /// <summary>
+    /// Die Wahl im Xbox-Feld -- null, solange niemand gewaehlt hat. Dann gilt: mit Xbox
+    /// Remote Play ueber dem Fenster (seit 2026-09-29). Wer Remote Play spielt, schaut auf
+    /// dieses Fenster; im Vollbild lag das Dashboard unsichtbar dahinter, und ein Helfer
+    /// meldete "der HUD kommt im Vollbild nicht".
+    /// </summary>
+    [JsonPropertyName("console_hud_over_window")] public bool? ConsoleHudOverWindowWahl { get; set; }
 
     /// <summary>Liegt der HUD gerade ueber einem Fenster (statt im Dashboard)?</summary>
     /// <remarks>

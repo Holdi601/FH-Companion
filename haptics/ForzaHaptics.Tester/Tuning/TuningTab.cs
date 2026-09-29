@@ -64,12 +64,9 @@ internal sealed class TuningTab : UserControl
             BackColor = BackColor,
         };
 
-        stapel.Controls.Add(Kopf("Tuning inspector", 15));
-        stapel.Controls.Add(Notiz(
-            "Forza's telemetry names the car but says nothing about what was done to "
-            + "it. That lives in the game's own garage database -- which exists only "
-            + "in memory. This reads it out and lists every part and every tuning "
-            + "slider on the car you are driving."));
+        stapel.Controls.Add(Kopf(Loc.T("Tuning inspector"), 15));
+        stapel.Controls.Add(Notiz(Loc.T(
+            "Forza's telemetry names the car but says nothing about what was done to it. That lives in the game's own garage database -- which exists only in memory. This reads it out and lists every part and every tuning slider on the car you are driving.")));
 
         _status.AutoSize = true;
         _status.ForeColor = Dim;
@@ -105,26 +102,19 @@ internal sealed class TuningTab : UserControl
         reihe.Controls.Add(_wagen);
         stapel.Controls.Add(reihe);
 
-        stapel.Controls.Add(Kopf("Parts", 11));
-        Spalten(_teile, ("Area", 110), ("Part", 185), ("Number", 80), ("Step", 50),
-                ("What it is", 330));
+        stapel.Controls.Add(Kopf(Loc.T("Parts"), 11));
+        Spalten(_teile, (Loc.T("Area"), 110), (Loc.T("Part"), 185), (Loc.T("Number"), 80), (Loc.T("Step"), 50),
+                (Loc.T("What it is"), 330));
         _teile.Height = 300;
         _teile.Width = 760;
         stapel.Controls.Add(_teile);
-        stapel.Controls.Add(Notiz(
-            "Step 0 is the stock part. A part number carries the car it belongs to in "
-            + "its leading digits: when those are not this car's, the part comes from "
-            + "somewhere else -- either a catalogue many cars share (clutch, gearbox, "
-            + "driveline, differential) or, for the engine's internals, from another "
-            + "car entirely. That is an engine swap, and it is named."));
+        stapel.Controls.Add(Notiz(Loc.T(
+            "Step 0 is the stock part. A part number carries the car it belongs to in its leading digits: when those are not this car's, the part comes from somewhere else -- either a catalogue many cars share (clutch, gearbox, driveline, differential) or, for the engine's internals, from another car entirely. That is an engine swap, and it is named.")));
 
-        stapel.Controls.Add(Kopf("Tuning sliders", 11));
-        stapel.Controls.Add(Notiz(
-            "Slider position, 0 to 1 -- not the number the game shows you. The screen "
-            + "says 2.1 BAR where the database says 0.4; the display value simply is "
-            + "not stored. Turning it back would need every field calibrated by hand "
-            + "(slider to each end, value read off)."));
-        Spalten(_regler, ("Area", 110), ("Setting", 190), ("Slider", 90), ("", 300));
+        stapel.Controls.Add(Kopf(Loc.T("Tuning sliders"), 11));
+        stapel.Controls.Add(Notiz(Loc.T(
+            "Slider position, 0 to 1 -- not the number the game shows you. The screen says 2.1 BAR where the database says 0.4; the display value simply is not stored. Turning it back would need every field calibrated by hand (slider to each end, value read off).")));
+        Spalten(_regler, (Loc.T("Area"), 110), (Loc.T("Setting"), 190), (Loc.T("Slider"), 90), ("", 300));
         _regler.Height = 300;
         _regler.Width = 720;
         stapel.Controls.Add(_regler);
@@ -172,11 +162,11 @@ internal sealed class TuningTab : UserControl
         var paket = _telemetrie();
         var ordinal = paket is null ? null : (int?)paket.Get("CarOrdinal");
         _status.Text = laeuft
-            ? "forzahorizon6.exe is running."
-            : "forzahorizon6.exe is not running -- start the game, then read.";
+            ? Loc.T("forzahorizon6.exe is running.")
+            : Loc.T("forzahorizon6.exe is not running -- start the game, then read.");
         _auto.Text = ordinal is > 0
-            ? $"telemetry says you are in car {ordinal}"
-            : "no car in the telemetry yet";
+            ? string.Format(Loc.T("telemetry says you are in car {0}"), ordinal)
+            : Loc.T("no car in the telemetry yet");
         _lesen.Enabled = laeuft;
     }
 
@@ -221,8 +211,8 @@ internal sealed class TuningTab : UserControl
             }
             var text = garage is null
                 ? (meldungen.Count > 0 ? string.Join(" ", meldungen)
-                   : "no garage database found in the game's memory.")
-                : $"garage read: {autos.Count} car(s).";
+                   : Loc.T("no garage database found in the game's memory."))
+                : string.Format(Loc.T("garage read: {0} car(s)."), autos.Count);
             BeiUns(() => Fertig(garage, autos, text));
         });
     }
@@ -234,7 +224,7 @@ internal sealed class TuningTab : UserControl
     internal void Vorschau(string garage, int carId)
     {
         var autos = GarageReader.Cars(garage);
-        Fertig(garage, autos, $"garage read: {autos.Count} car(s).");
+        Fertig(garage, autos, string.Format(Loc.T("garage read: {0} car(s)."), autos.Count));
         var stelle = autos.IndexOf(carId);
         if (stelle >= 0) { _wagen.SelectedIndex = stelle; }
     }
@@ -268,9 +258,9 @@ internal sealed class TuningTab : UserControl
             _wagen.SelectedIndex = 0;
             if (ordinal > 0)
             {
-                _status.Text += $" Car {ordinal} from the telemetry is not in this "
-                                + "garage -- it was bought after the database was "
-                                + "last written.";
+                _status.Text += " " + string.Format(
+                    Loc.T("Car {0} from the telemetry is not in this garage -- it was bought after the database was last written."),
+                    ordinal);
             }
         }
     }
@@ -317,10 +307,17 @@ internal sealed class TuningTab : UserControl
     }
 
     /// <summary>"Audi R8 Coupe V10 plus 5.2 FSI quattro '13 (2010)" -- die Nummer allein sagt niemandem etwas.</summary>
+    /// <remarks>
+    /// AutoName liefert ohne Namen das englische "car 1234" -- es wandert in die
+    /// (englische) Erklaerung von <see cref="GarageReader"/>. Verglichen wird darum
+    /// mit dem englischen Wortlaut, angezeigt der uebersetzte.
+    /// </remarks>
     private string Bezeichnung(int carId)
     {
         var name = AutoName(carId);
-        return name is null || name == $"car {carId}" ? $"car {carId}" : $"{name} ({carId})";
+        return name is null || name == $"car {carId}"
+            ? string.Format(Loc.T("car {0}"), carId)
+            : $"{name} ({carId})";
     }
 
     private void WagenGewaehlt()
@@ -356,18 +353,24 @@ internal sealed class TuningTab : UserControl
         var paket = _telemetrie();
         var pi = paket is null ? 0 : (int)paket.Get("CarPerformanceIndex");
         var gefahren = paket is not null && (int)paket.Get("CarOrdinal") == tune.CarId;
-        _auto.Text =
-            $"{Bezeichnung(tune.CarId)}   class {tune.ClassName}   "
-            + (gefahren && pi > 0 ? $"PI {pi} (from telemetry)   " : string.Empty)
-            + $"parts bought for {tune.PartsValue:N0} CR"
-            + (string.IsNullOrWhiteSpace(tune.TuneFileName)
-                ? "   (no shared tune)"
-                : $"   tune \"{tune.TuneFileName}\"");
+        // Jedes Stueck ein eigener Satz, getrennt wie Spalten: so kann jede Sprache
+        // ihre Wortstellung innerhalb des Stuecks waehlen.
+        var stuecke = new List<string>
+        {
+            Bezeichnung(tune.CarId),
+            string.Format(Loc.T("class {0}"), tune.ClassName),
+        };
+        if (gefahren && pi > 0) { stuecke.Add(string.Format(Loc.T("PI {0} (from telemetry)"), pi)); }
+        stuecke.Add(string.Format(Loc.T("parts bought for {0} CR"), tune.PartsValue.ToString("N0")));
+        stuecke.Add(string.IsNullOrWhiteSpace(tune.TuneFileName)
+            ? Loc.T("(no shared tune)")
+            : string.Format(Loc.T("tune \"{0}\""), tune.TuneFileName));
+        _auto.Text = string.Join("   ", stuecke);
 
         foreach (var t in tune.Parts)
         {
             var hinweis = new List<string> { t.Erklaerung };
-            if (t.PricePaid is { } preis) { hinweis.Add($"bought for {preis:N0} CR"); }
+            if (t.PricePaid is { } preis) { hinweis.Add(string.Format(Loc.T("bought for {0} CR"), preis.ToString("N0"))); }
             var zeile = new ListViewItem(new[]
             {
                 t.Area, t.Label, t.Id.ToString(), t.Step.ToString(),
@@ -387,7 +390,7 @@ internal sealed class TuningTab : UserControl
             {
                 s.Area, s.Label,
                 fehlt ? "--" : s.Slider.ToString("0.000"),
-                fehlt ? "not on this car" : Balken(s.Slider),
+                fehlt ? Loc.T("not on this car") : Balken(s.Slider),
             });
             if (fehlt) { zeile.ForeColor = Dim; }
             _regler.Items.Add(zeile);

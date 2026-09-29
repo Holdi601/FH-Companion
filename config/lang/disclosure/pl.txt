@@ -1,0 +1,200 @@
+#fassung 9
+Przeczytaj to raz. Wyjaśnia, co program robi na twoim PC, co opuszcza twój
+komputer i dlaczego Windows może cię przed nim ostrzegać.
+
+
+CO ROBI NA TWOIM PC
+
+  Czyta telemetrię z gry.
+      Forza Horizon 6 może wysyłać własną telemetrię przez UDP do twojego własnego
+      komputera. Włączasz to samodzielnie w grze, w menu
+      Ustawienia > Ekran i rozgrywka. Program nasłuchuje na 127.0.0.1 -- na twoim
+      własnym komputerze, nie w sieci -- i używa jej do delty okrążenia, mapy na
+      żywo, twoich rekordów okrążeń i wibracji kontrolera. Tylko jeśli przełączysz
+      program na „Xbox / 2. PC” u góry jego okna, nasłuchuje zamiast tego w twojej
+      sieci, aby Xbox lub drugi PC mógł do niego dotrzeć. Jeśli Zapora Windows to
+      blokuje, przycisk w panelu Xbox dodaje jedną regułę dokładnie dla tego portu
+      UDP -- tylko gdy go naciśniesz, a Windows najpierw prosi cię o zgodę.
+
+  Czyta pamięć uruchomionej gry -- tylko gdy naciśniesz przycisk.
+      Listy części zamontowanych w twoim aucie ani tego, który tune jest na którym
+      aucie, nie ma w telemetrii. Znajdują się w małej bazie danych, którą gra
+      przechowuje we własnej pamięci. Aby je pokazać, program otwiera proces Forzy
+      tylko do odczytu i przeszukuje tę pamięć.
+
+      Program tylko CZYTA. Nigdy niczego nie zapisuje do gry i nigdy niczego
+      w niej nie zmienia. Robi to tylko wtedy, gdy naciśniesz odpowiedni przycisk
+      na karcie Tuning, Tunes, Notatki o autach lub Kolekcja aut. Jeśli nigdy żadnego
+      nie naciśniesz, pamięć gry nigdy nie zostaje dotknięta. Aby całkowicie to
+      wykluczyć, odznacz „Czytaj pamięć gry” u góry okna: program pozna wtedy
+      twoje auta i ich tune'y zamiast tego z ekranu (patrz niżej).
+
+  Czyta to, co gra pokazuje na ekranie.
+      Aby wiedzieć, jakie trasy oferuje ekran Zapisy do zawodów, które auto jest
+      podświetlone w menu aut, jakie auta są na oglądanych przez ciebie stronach
+      „Moje samochody” i który tune jest na aucie na jego liście tune'ów, program
+      robi zrzuty okna gry i odczytuje tekst za pomocą rozpoznawania tekstu
+      wbudowanego w Windows. Dzieje się to na twoim PC; zrzuty nie są nigdzie
+      wysyłane. W trybie „Xbox / 2. PC” program pobiera te zrzuty zamiast tego
+      z wybranego przez ciebie źródła: karty przechwytującej, OBS, okna
+      Xbox Remote Play, Discorda, streamu w przeglądarce lub adresu streamu.
+      Windows rysuje wtedy żółtą ramkę wokół przechwytywanego okna.
+
+  Czyta pobrane tune'y z folderu zapisów gry -- tylko do odczytu.
+      Karta Tunes liczy je i pokazuje, których nie używa żadne auto. Folder
+      zapisów nigdy nie jest przy tym zmieniany.
+
+  Usuwa tune'y w grze -- tylko gdy to uruchomisz.
+      Na karcie Tunes możesz pozwolić programowi usunąć nieużywane tune'y za
+      pomocą własnych menu gry. Program przełącza się wtedy do gry i sam naciska
+      klawisze. Najpierw pyta, oferuje próbę, która nic nie usuwa, nigdy nie usuwa
+      tune'a, który jest na aucie, i zatrzymuje się po Alt+Tab lub klawiszu Pause.
+
+      To także zdecydowanie największy powód, dla którego oprogramowanie
+      antywirusowe nie ufa programowi: czytanie pamięci innego procesu to coś, co
+      robi cheat albo złodziej haseł. Tutaj program czyta listę części twojego
+      własnego auta w grze wyścigowej dla jednego gracza.
+
+  Sprawia, że kontroler wibruje -- a to szybciej rozładowuje jego baterię.
+      Gdy Forza działa i wysyła telemetrię, program steruje wibracjami twojego
+      kontrolera: przyczepność opon staje się dudnieniem, blokujące się koło
+      krótkim brzęczeniem. Jest to włączone od początku. Kontroler bezprzewodowy
+      wyczerpie baterię zauważalnie szybciej, gdy wibruje, a im mocniejsze
+      i szybsze (wyższa częstotliwość) wibracje ustawisz w Edytor Blueprint, tym
+      więcej energii kontroler pobiera. Odznacz „Wyjście grafu włączone”
+      w Edytor Blueprint, aby to wyłączyć; program to zapamięta.
+
+  Obserwuje naciśnięcia klawiszy.
+      Tylko po to, by wychwycić skróty klawiszowe -- F10 ustawia linię startu/mety
+      w swobodnej jeździe. Sprawdza, czy te konkretne klawisze są wciśnięte. Nie
+      zapisuje tego, co piszesz, i nigdzie nie ma żadnego dziennika naciśnięć
+      klawiszy.
+
+  Rysuje nakładkę na grze.
+      Delta okrążenia, mapy, notatki o autach i panele rywali to osobne okna
+      rysowane nad Forzą. Gdy okrążenie pobije czas ze strony internetowej, na
+      około pięć sekund pojawia się krótkie świętowanie z konfetti i dźwiękiem;
+      możesz je wyłączyć na karcie HUD delty okrążenia.
+
+  Zapisuje twoje okrążenia -- na twoim dysku.
+      Czasy, pozycje i prędkości są zapisywane we własnym folderze programu, aby
+      mógł pokazać ci deltę względem twojego najlepszego wyniku. Tylko okrążenie,
+      które pobije ranking, jest gdziekolwiek wysyłane -- patrz niżej.
+
+
+CO OPUSZCZA TWÓJ KOMPUTER
+
+  Program łączy się z serwerem dokładnie w pięciu celach:
+
+      1. Aby zapytać, czy oceny aut są nowsze od tych, które masz, i pobrać je,
+         jeśli tak jest.
+      2. Aby zapytać, czy istnieje nowsza wersja tego programu.
+      3. Aby pobrać tę nową wersję, gdy naciśniesz przycisk aktualizacji.
+      4. Aby wysłać okrążenie, które POBIJA ranking -- WŁĄCZONE, chyba że to
+         wyłączysz.
+      5. Aby pobrać listę wszystkich aut i sposobów ich zdobycia, dla karty
+         Kolekcja aut -- najwyżej raz na dwanaście godzin i tylko wtedy, gdy ta
+         karta jest otwarta. Niczego nie wysyła; to, które auta posiadasz, zostaje
+         na tym komputerze.
+
+  Co do punktu 4: okrążenie jest wysyłane tylko wtedy, gdy jest szybsze od
+  najlepszego czasu w rankingu dla tego samego auta na tej trasie i w tej klasie
+  oraz szybsze od każdego twojego okrążenia wysłanego wcześniej dla tej
+  kombinacji. Wysyłane są: auto, trasa, klasa, czas i PEŁNA telemetria okrążenia
+  -- każdy pakiet, który gra wysłała podczas tego okrążenia: pozycja i orientacja,
+  prędkość, twój gaz, hamulec, sprzęgło i kierownica, bieg, silnik oraz dla
+  każdego koła temperatura opony, poślizg i zawieszenie -- aby serwer mógł
+  sprawdzić, czy czas jest prawdziwy, a człowiek mógł obejrzeć okrążenie, które
+  wydaje się nieprawidłowe. Do tego zahashowany identyfikator tego PC, aby można
+  było blokować nadużycia -- oraz twój gamertag, jeśli ustawisz go na karcie
+  Rivals. Gamertag nie jest wymagany: bez niego okrążenie i tak zostanie wysłane
+  i pojawi się na stronie pod tymczasową nazwą gracza. Gamertag ustawiony później
+  zastąpi ją we wszystkich twoich okrążeniach, także wcześniejszych, a późniejsze
+  wyczyszczenie pola zachowuje ostatnią nazwę. Serwer sprawdza okrążenie ponownie,
+  zanim je pokaże. Wyłącz to na karcie Rivals („Wysyłaj moje okrążenia ...”) lub
+  ustaw "submit_laps": false w config/overlay.json.
+
+  Okrążenie, które pobija ranking, ale nie może zostać wysłane od razu --
+  wysyłanie wyłączone, brak połączenia lub serwer nie odpowiada -- jest
+  przechowywane na tym komputerze i wysyłane później, gdy wszystko to znów będzie
+  w porządku, nawet po tygodniach. Zanim zostanie wysłane, jest jeszcze raz
+  porównywane z rankingiem z danego dnia i odrzucane, jeśli nie jest już szybsze.
+  Ponowne włączenie wysyłania wysyła więc także twoje najlepsze okrążenia z czasu,
+  gdy było wyłączone. „Odrzuć oczekujące okrążenia” na karcie Rivals zamiast tego
+  je usuwa.
+
+  Nic innego nie jest wysyłane. Twoje zwykłe okrążenia nie są przesyłane. Twój
+  tune nie jest przesyłany. Nie ma konta ani niczego, do czego trzeba się logować.
+
+  Ponieważ twój komputer zadaje te pytania, serwer widzi, że jakaś instalacja
+  zapytała -- to nieuniknione w każdym programie, który sprawdza aktualizacje.
+  Jest to liczone, abyśmy mniej więcej wiedzieli, ile osób z tego korzysta,
+  a identyfikator jest hashowany z sekretem, który pozostaje na serwerze i jest
+  usuwany po 40 dniach. Jeśli ci to przeszkadza, ustaw "offline": true
+  w config/overlay.json, a program już nigdy nie połączy się z serwerem -- działa
+  wtedy wyłącznie na danych, które przyszły w pobranym pakiecie, i wszystko poza
+  aktualizacją nadal działa.
+
+
+JAK SIĘ AKTUALIZUJE
+
+  Gdy naciśniesz przycisk aktualizacji, program pobiera plik ZIP, weryfikuje
+  podpis jego wydawcy, rozpakowuje go i zastępuje własne pliki. Pakiet, który nie
+  jest podpisany przez wydawcę, jest odrzucany. W trakcie pojawia się małe okno
+  konsoli -- to okno ma być widoczne, żeby było widać, co jest zastępowane. Twój
+  folder ustawień zostaje zachowany.
+
+  Nic nie jest instalowane. Nic nie jest zapisywane w rejestrze Windows. Usuń
+  folder, a programu już nie ma.
+
+
+DLACZEGO WINDOWS MOŻE NAZWAĆ GO TROJANEM
+
+  Windows Defender może zgłosić ten program jako Trojan:Win32/Bearfoos.A!ml i go
+  zablokować. Przyrostek „!ml” oznacza, że nie jest to dopasowanie do żadnego
+  znanego złośliwego oprogramowania -- to przypuszczenie modelu uczenia
+  maszynowego na temat pliku, którego nigdy nie widział.
+
+  Zgaduje w ten sposób, ponieważ program nie ma podpisu kodu, prawie nikt go
+  jeszcze nie ma i robi on trzy rzeczy wymienione wyżej: czyta pamięć innego
+  procesu, zastępuje własne pliki i pobiera dane z internetu. To dokładnie te
+  zachowania, którym model nauczono nie ufać.
+
+  Każde wydanie jest skanowane przed publikacją, a strona pobierania pokazuje sumę
+  kontrolną, dzięki której możesz sprawdzić, czy plik, który masz, to ten sam
+  plik, który został zbudowany. Jeśli wolisz nie przyjmować tego na wiarę, nie
+  uruchamiaj go -- to uprawniony wybór, a ten program nie będzie cię o to nękał.
+
+
+SKRÓTY, JEŚLI ICH CHCESZ
+
+  Pod tym tekstem możesz poprosić o skrót na pulpicie, wpis w menu Start oraz
+  o to, by program uruchamiał się z Forzą. Wszystkie trzy są wyłączone, dopóki ich
+  nie zaznaczysz, wszystkie trzy to tylko plik .lnk w folderze i każdy z nich
+  możesz później usunąć bez ruszania programu.
+
+  „Uruchamiaj z Forzą” umieszcza program w twoim folderze autostartu Windows. Od
+  zalogowania czeka niewidocznie w obszarze powiadomień i otwiera się
+  (zminimalizowany), gdy uruchamia się Forza; po grze wraca tam. Bez uprawnień
+  administratora Windows nie pozwala programowi uruchomić się wtedy, gdy uruchamia
+  się inny program -- czekanie w obszarze powiadomień ich nie wymaga i praktycznie
+  nic nie kosztuje. Po zamknięciu okna program dalej czeka; aby go zakończyć,
+  kliknij ikonę prawym przyciskiem. Przycisk „Uruchamiaj z Forzą” w prawym górnym
+  rogu głównego okna włącza i wyłącza tę funkcję.
+
+  Windows nie pozwala programowi samemu przypiąć się do paska zadań -- od
+  Windows 10 w wersji 1607 jest to zarezerwowane dla ciebie, a obejście tego
+  oznacza sfałszowanie sumy kontrolnej w rejestrze. Ten program tego nie robi.
+  Zaznacz wpis w menu Start, a potem kliknij go prawym przyciskiem i wybierz
+  „Przypnij do paska zadań”.
+
+
+BRAK GWARANCJI
+
+  To hobbystyczny projekt, udostępniony za darmo, bez jakiejkolwiek gwarancji. Nie
+  jest stowarzyszony z Microsoft, Turn 10, Playground Games ani serią
+  Forza Horizon, nie jest przez nie popierany ani z nimi powiązany.
+
+
+Możesz przeczytać to ponownie w dowolnej chwili: link „Co robi ten program” u góry
+głównego okna.

@@ -143,6 +143,13 @@ internal static class Loc
             // Ohne Kultur bleibt es bei Englisch.
         }
 
+        // NORWEGISCH (seit 2026-09-29): es gibt nur nb.json. nn-NO endet bei "nn",
+        // no-NO bei "no" -- keine der Ketten erreicht "nb", und Nynorsk bekaeme Englisch.
+        if (namen.Any(n => n.Split('-')[0] is "no" or "nn") && !namen.Contains("nb"))
+        {
+            namen.Add("nb");
+        }
+
         // ERST ALLE VOLLEN KENNUNGEN, DANN DIE KURZFORMEN.
         //
         // Nicht je Eintrag "voll, dann kurz": fuer zh-TW waere die Reihenfolge dann

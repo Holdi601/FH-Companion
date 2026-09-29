@@ -118,6 +118,9 @@ def _kandidaten() -> list[str]:
                 erweitert.append("zh-Hant")
             else:
                 erweitert.append("zh-Hans")
+        # Norwegisch: es gibt nur nb.json -- Nynorsk (nn) und "no" fuehren dorthin.
+        if klein.split("-")[0] in ("nn", "no") and "nb" not in erweitert:
+            erweitert.append("nb")
     kurz = [k.split("-")[0] for k in voll if "-" in k]
     return erweitert + kurz
 

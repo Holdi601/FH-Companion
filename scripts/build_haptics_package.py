@@ -488,8 +488,27 @@ def copy_config(root: Path, server: str) -> None:
             shutil.copy2(datei, lang_ziel / datei.name)
             gezaehlt += 1
         say(f"  Sprachen: {gezaehlt} Datei(en)")
+        # Der Hinweis beim ersten Start, uebersetzt (Disclosure.HinweisText, seit 2026-09-29).
+        hinweise = lang_quelle / "disclosure"
+        if hinweise.is_dir():
+            (lang_ziel / "disclosure").mkdir(parents=True, exist_ok=True)
+            n = 0
+            for datei in sorted(hinweise.glob("*.txt")):
+                shutil.copy2(datei, lang_ziel / "disclosure" / datei.name)
+                n += 1
+            say(f"  Hinweis beim Start: {n} Sprache(n)")
     else:
         say("  HINWEIS: config/lang/ fehlt -- die App laeuft dann nur auf Englisch.")
+
+    # DIE TEXTE DES SPIELS IN ALLEN SPIELSPRACHEN (seit 2026-09-29). Ohne sie liest die
+    # App Strecken, Horizon Play, My Cars und die Tune-Liste nur auf Englisch -- ein
+    # Spieler mit spanischem Spiel sah weder Streckenvorschau noch Autowahl.
+    spieltext = WORKSPACE / "config" / "game_text.json"
+    if spieltext.exists():
+        shutil.copy2(spieltext, root / "config" / spieltext.name)
+    else:
+        raise Failed("config/game_text.json fehlt -- erst `python scripts/extract_game_text.py` "
+                     "(braucht das installierte Spiel).")
 
 
 # --------------------------------------------------------------------------- #

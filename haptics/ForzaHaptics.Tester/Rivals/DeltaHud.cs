@@ -23,7 +23,8 @@ internal sealed record HudPlacement(float X, float Y, string Align, float Scale)
 /// seinen eigenen Streifen fotografiert und die Klasse nicht mehr findet. Genau das
 /// ist am 2026-09-09 mit dem rechten Panel passiert.
 ///
-/// Die Texte sind ENGLISCH, wie alles, was im Spiel steht.
+/// Die Texte kommen ueber Loc.T in der Sprache der App -- die Beschriftungen, die der
+/// Controller hereinreicht, ebenso wie die eigenen (Geist, Spuren).
 /// </remarks>
 internal sealed class DeltaHud : Form, IAufnahmeQuelle
 {
@@ -712,10 +713,12 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         var jetztFarbe = Parse(_settings.HudColorNow, ColorTranslator.FromHtml("#7ee787"));
         var beschriftung = Parse(_settings.HudColorLabel, Color.FromArgb(147, 162, 181));
 
+        // Beim Zeichnen uebersetzt, nicht in einem festen Feld: die Sprache kann
+        // wechseln, waehrend der Streifen offen ist.
         var spuren = new (string Name, bool Mittig)[]
         {
-            ("THR", false), ("BRK", false), ("CLU", false), ("STR", true),
-            ("GEAR", false),
+            (Loc.T("THR"), false), (Loc.T("BRK"), false), (Loc.T("CLU"), false),
+            (Loc.T("STR"), true), (Loc.T("GEAR"), false),
         };
         using var klein = new Font("Segoe UI", Math.Max(5f, _unit * 0.46f * place.Scale));
         var strich = (float)Math.Clamp(_settings.HudInputsLineWidth, 0.2, 6.0);
@@ -901,22 +904,22 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         if (_ghostLeft > warnAb)
         {
             // Ruhig: niemand kann dich anfassen.
-            Draw(g, ghostPlace, $"GHOST {_ghostLeft:0.0}", schrift, string.Empty,
-                 ghostFont, labelFont,
+            Draw(g, ghostPlace, string.Format(Loc.T("GHOST {0}"), _ghostLeft.ToString("0.0")),
+                 schrift, string.Empty, ghostFont, labelFont,
                  Parse(_settings.HudColorGhost, ColorTranslator.FromHtml("#22b8e6")));
         }
         else if (_ghostLeft > 0)
         {
             // Warnung: gleich ist es vorbei.
-            Draw(g, ghostPlace, $"GHOST {_ghostLeft:0.0}", schrift, string.Empty,
-                 ghostFont, labelFont,
+            Draw(g, ghostPlace, string.Format(Loc.T("GHOST {0}"), _ghostLeft.ToString("0.0")),
+                 schrift, string.Empty, ghostFont, labelFont,
                  Parse(_settings.HudColorGhostWarn, ColorTranslator.FromHtml("#ffd21e")));
         }
         else if (_ghostLeft > -(float)_settings.PopInSeconds)
         {
             // Und jetzt tauchen sie wieder auf, einer nach dem anderen.
-            Draw(g, ghostPlace, $"POP-IN {-_ghostLeft:0.0}", schrift, string.Empty,
-                 ghostFont, labelFont,
+            Draw(g, ghostPlace, string.Format(Loc.T("POP-IN {0}"), (-_ghostLeft).ToString("0.0")),
+                 schrift, string.Empty, ghostFont, labelFont,
                  Parse(_settings.HudColorPopIn, ColorTranslator.FromHtml("#ff8c1a")));
         }
 

@@ -1952,6 +1952,97 @@ internal static class SelfTest
         Pruefe("Bamboo Forest Scramble", 15.0, 3);
 
         CheckHorizonPlayScreen(leser);
+        CheckGameLanguages(leser);
+    }
+
+    /// <summary>
+    /// JEDE SPIELSPRACHE (2026-09-29): ein Spieler mit spanischem Spiel sah weder
+    /// Streckenvorschau noch Autowahl. Geprueft wird alles aus config/game_text.json --
+    /// den Tabellen des Spiels, nicht selbst uebersetzt: jeder Streckenname fuehrt zu
+    /// seiner englischen Strecke, jedes Statuswort wird erkannt, jede Kopfzeile einer
+    /// Reihe gibt Rennen und Anzahl her. Dazu ein ganzer spanischer Schirm, wie er in
+    /// der Aufnahme eines Spielers stand.
+    /// </summary>
+    private static void CheckGameLanguages(Rivals.RivalsScreenReader leser)
+    {
+        if (Rivals.GameText.SprachenAnzahl < 20)
+        {
+            throw new InvalidOperationException(
+                $"config/game_text.json fehlt oder ist unvollstaendig ({Rivals.GameText.SprachenAnzahl} Sprachen) -- "
+                + "python scripts/extract_game_text.py");
+        }
+        var pfad = Rivals.RivalsDataset.FindDefaultPath();
+        if (pfad is null) { return; }
+        var datensatz = Rivals.RivalsDataset.Load(pfad);
+        var rat = new Rivals.RivalsAdvisor(datensatz);
+        var falsch = new List<string>();
+        var geprueft = 0;
+        foreach (var strecke in datensatz.Tracks)
+        {
+            foreach (var name in Rivals.GameText.Streckennamen(strecke))
+            {
+                geprueft++;
+                var treffer = rat.MatchTrack(name);
+                if (treffer?.Track != strecke) { falsch.Add($"'{name}' -> {treffer?.Track ?? "nichts"} statt {strecke}"); }
+            }
+        }
+        if (falsch.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"{falsch.Count} von {geprueft} Streckennamen anderer Spielsprachen landen falsch: "
+                + string.Join("; ", falsch.Take(8)));
+        }
+
+        foreach (var (schluessel, englisch, erwartet) in new[]
+                 {
+                     ("in_progress", "In Progress", Rivals.RouteStatus.InProgress),
+                     ("up_next", "Up Next", Rivals.RouteStatus.UpNext),
+                 })
+        {
+            foreach (var wort in Rivals.GameText.Roh(schluessel, englisch))
+            {
+                var gelesen = Rivals.RivalsScreenReader.StatusIn(wort);
+                if (gelesen != erwartet) { falsch.Add($"'{wort}' -> {gelesen}"); }
+            }
+        }
+        foreach (var kopf in Rivals.GameText.Roh("joining", "Joining {0} {1}/{2}"))
+        {
+            var zeile = string.Format(kopf, "Horizon Play Racing", 2, 3) + " - 20,6 KM";
+            var z = leser.Interpret(new List<Rivals.OcrLine> { new(zeile, 100, 40) }, null, Point.Empty);
+            if (z.SeriesIndex != 2 || z.SeriesCount != 3 || !z.IsHorizonPlay) { falsch.Add($"'{zeile}' -> {z.Series} {z.SeriesIndex}/{z.SeriesCount}"); }
+        }
+        if (falsch.Count > 0)
+        {
+            throw new InvalidOperationException("Worte anderer Spielsprachen nicht erkannt: " + string.Join("; ", falsch.Take(8)));
+        }
+
+        // Der spanische Schirm aus der Aufnahme (Y wie im 1440p-Ausschnitt).
+        var spanisch = new List<Rivals.OcrLine>
+        {
+            new("Accediendo a Carreras de Horizon Play 2/3 - 20,6 KM", 100, 40),
+            new("Descenso del puente Rainbow", 180, 100),
+            new("En curso", 900, 100),
+            new("8,5 KM", 180, 140),
+            new("Descenso del Norikura", 180, 275),
+            new("Siguiente", 900, 275),
+            new("5,8 KM", 180, 315),
+            new("Carrera de Nachi", 180, 450),
+            new("6,3 KM", 180, 490),
+        };
+        var es = leser.Interpret(spanisch, new List<Rivals.OcrLine> { new("B", 0, 0) }, Point.Empty);
+        if (es.Tracks.Count == 3)
+        {
+            if (!es.Tracks.SequenceEqual(new[] { "Rainbow Bridge Descent", "Norikura Descent", "Nachi Run" })
+                || !es.IsOffer || es.Klass != "B" || !es.IsHorizonPlay || es.SeriesIndex != 2 || es.FirstOwnIndex != 1
+                || Math.Abs(es.TrackLengths.GetValueOrDefault("Norikura Descent").TotalKm - 5.8) > 0.01)
+            {
+                throw new InvalidOperationException(
+                    $"Spanischer Horizon-Play-Schirm falsch gelesen: {string.Join(" | ", es.Tracks)}, Klasse {es.Klass}, "
+                    + $"Reihe {es.Series} {es.SeriesIndex}/{es.SeriesCount}, Einstieg {es.FirstOwnIndex}, "
+                    + $"Norikura {es.TrackLengths.GetValueOrDefault("Norikura Descent").TotalKm}");
+            }
+        }
+        Console.WriteLine($"  Spielsprachen: {Rivals.GameText.SprachenAnzahl}, {geprueft} Streckennamen, Statusworte und Kopfzeilen erkannt");
     }
 
     /// <summary>

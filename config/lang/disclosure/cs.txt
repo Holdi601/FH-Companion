@@ -1,0 +1,191 @@
+#fassung 9
+Přečti si to jednou. Vysvětluje, co program dělá na tvém PC, co opouští tvůj
+počítač a proč tě před ním Windows může varovat.
+
+
+CO DĚLÁ NA TVÉM PC
+
+  Čte telemetrii ze hry.
+      Forza Horizon 6 může posílat vlastní telemetrii přes UDP na tvůj vlastní
+      počítač. Zapínáš to ve hře ty, v nabídce
+      Nastavení > Průhledový displej a hraní. Program naslouchá na 127.0.0.1 -- na
+      tvém vlastním počítači, ne v síti -- a používá ji pro deltu kola, živou
+      mapu, tvé rekordy kol a vibrace ovladače. Jen pokud program nahoře v jeho
+      okně přepneš na „Xbox / 2. PC“, naslouchá místo toho ve tvé síti, aby se
+      k němu Xbox nebo druhé PC mohly dostat. Pokud to Windows Firewall blokuje,
+      tlačítko v panelu Xbox přidá jedno pravidlo přesně pro tento UDP port -- jen
+      když ho stiskneš, a Windows tě nejdřív požádá o svolení.
+
+  Čte paměť běžící hry -- jen když stiskneš tlačítko.
+      Seznam dílů namontovaných na tvém autě a to, který tuning je na kterém autě,
+      v telemetrii nejsou. Jsou v malé databázi, kterou si hra drží ve vlastní
+      paměti. Aby je mohl zobrazit, otevře program proces Forzy jen pro čtení
+      a prohledá tuto paměť.
+
+      Program jen ČTE. Nikdy do hry nezapisuje a nikdy v ní nic nemění. Dělá to
+      jen tehdy, když stiskneš příslušné tlačítko na kartě Tuning, Tunes,
+      Poznámky k autům nebo Sbírka aut. Pokud žádné z nich nikdy nestiskneš, paměti
+      hry se nikdy nedotkne. Chceš-li to úplně vyloučit, zruš nahoře v okně
+      zaškrtnutí „Číst paměť hry“: program pak tvá auta a jejich tuningy zjistí
+      místo toho z obrazovky (viz níže).
+
+  Čte, co hra ukazuje na obrazovce.
+      Aby věděl, které tratě nabízí obrazovka Registrace události, které auto je
+      zvýrazněné v nabídce aut, která auta jsou na stránkách „Moje auta“, na které
+      se díváš, a který tuning je na autě v jeho seznamu tuningů, pořizuje program
+      snímky okna hry a čte text pomocí rozpoznávání textu zabudovaného ve
+      Windows. Děje se to na tvém PC; snímky se nikam neposílají. V režimu
+      „Xbox / 2. PC“ pořizuje tyto snímky místo toho ze zdroje, který si zvolíš:
+      ze záznamové karty, z OBS, z okna Xbox Remote Play, z Discordu, ze streamu
+      v prohlížeči nebo z adresy streamu. Windows pak kolem zachytávaného okna
+      vykreslí žlutý rámeček.
+
+  Čte tvé stažené tuningy ze složky s uloženou hrou -- jen pro čtení.
+      Karta Tunes je spočítá a ukáže, které z nich nepoužívá žádné auto. Složka
+      s uloženou hrou se tím nikdy nemění.
+
+  Maže tuningy ve hře -- jen když to spustíš.
+      Na kartě Tunes můžeš nechat program smazat nepoužívané tuningy přes vlastní
+      nabídky hry. Program se pak přepne do hry a sám mačká klávesy. Nejdřív se
+      zeptá, nabídne zkušební průchod, který nic nesmaže, nikdy nesmaže tuning,
+      který je na autě, a zastaví se při Alt+Tab nebo klávese Pause.
+
+      To je také zdaleka největší důvod, proč antivirový software programu
+      nedůvěřuje: čtení paměti jiného procesu je to, co dělá cheat nebo zloděj
+      hesel. Tady program čte seznam dílů tvého vlastního auta v závodní hře pro
+      jednoho hráče.
+
+  Rozvibruje tvůj ovladač -- a to rychleji vybíjí jeho baterii.
+      Když Forza běží a posílá telemetrii, program řídí vibrace tvého ovladače:
+      přilnavost pneumatik se mění v dunění, blokující kolo v krátké bzučení. To
+      je zapnuté od začátku. Bezdrátovému ovladači dojde baterie znatelně dříve,
+      když vibruje, a čím silnější a rychlejší (vyšší frekvence) vibrace nastavíš
+      v Editor schémat, tím víc energie ovladač spotřebuje. Chceš-li to vypnout,
+      zruš v Editor schémat zaškrtnutí „Výstup grafu zapnut“; program si to
+      zapamatuje.
+
+  Sleduje stisky kláves.
+      Jen aby zachytil klávesové zkratky -- F10 nastaví ve volné jízdě čáru
+      startu/cíle. Kontroluje, zda jsou tyto konkrétní klávesy stisknuté.
+      Nezaznamenává, co píšeš, a nikde neexistuje žádný záznam stisků kláves.
+
+  Kreslí overlay přes hru.
+      Delta kola, mapy, poznámky k autům a panely rivalů jsou samostatná okna
+      vykreslovaná přes Forzu. Když kolo překoná čas z webu, objeví se asi na pět
+      sekund krátká oslava s konfetami a zvukem; můžeš ji vypnout na kartě
+      HUD delta kola.
+
+  Zaznamenává tvá kola -- na tvůj disk.
+      Časy, pozice a rychlosti se zapisují do vlastní složky programu, aby ti mohl
+      ukázat deltu vůči tvému vlastnímu nejlepšímu času. Někam se odesílá jen
+      kolo, které překoná žebříček -- viz níže.
+
+
+CO OPOUŠTÍ TVŮJ POČÍTAČ
+
+  Program kontaktuje server přesně kvůli pěti věcem:
+
+      1. Aby se zeptal, zda jsou hodnocení aut novější než ta, která máš, a aby je
+         stáhl, pokud ano.
+      2. Aby se zeptal, zda existuje novější verze tohoto programu.
+      3. Aby tuto novou verzi stáhl, když stiskneš tlačítko aktualizace.
+      4. Aby odeslal kolo, které PŘEKONÁ žebříček -- ZAPNUTO, pokud to nevypneš.
+      5. Aby stáhl seznam všech aut a toho, jak je získat, pro kartu
+         Sbírka aut -- nejvýše jednou za dvanáct hodin a jen dokud je tato
+         karta otevřená. Nic neposílá; to, která auta vlastníš, zůstává na tomto
+         počítači.
+
+  K bodu 4: kolo se odešle jen tehdy, když je rychlejší než nejlepší čas
+  v žebříčku pro totéž auto na téže trati a v téže třídě a zároveň rychlejší než
+  všechna tvá kola, která už pro tuto kombinaci byla odeslána. Odesílají se: auto,
+  trať, třída, čas a KOMPLETNÍ telemetrie kola -- každý paket, který hra během
+  toho kola poslala: poloha a orientace, rychlost, tvůj plyn, brzda, spojka
+  a řízení, rychlostní stupeň, motor a pro každé kolo vozu teplota pneumatiky,
+  prokluz a odpružení -- aby server mohl ověřit, že je čas skutečný, a aby se
+  člověk mohl podívat na kolo, které vypadá špatně. Navíc hashovaný identifikátor
+  tohoto PC, aby bylo možné blokovat zneužití -- a tvůj gamertag, pokud si ho
+  nastavíš na kartě Rivals. Gamertag není povinný: bez něj se kolo i tak odešle
+  a na webu se objeví pod dočasným jménem hráče. Gamertag, který nastavíš později,
+  ho nahradí u všech tvých kol, i těch dřívějších, a pozdější vyprázdnění pole
+  ponechá poslední jméno. Server kolo před zobrazením znovu zkontroluje. Vypneš to
+  na kartě Rivals („Odesílat moje kola ...“) nebo nastavením "submit_laps": false
+  v config/overlay.json.
+
+  Kolo, které překoná žebříček, ale které nejde hned odeslat -- odesílání vypnuté,
+  bez připojení nebo server neodpovídá -- se uchová na tomto počítači a odešle se
+  později, až bude zase všechno v pořádku, klidně i po týdnech. Než odejde, ještě
+  jednou se porovná se žebříčkem toho dne a zahodí se, pokud už není rychlejší.
+  Opětovné zapnutí odesílání tedy odešle i tvá nejlepší kola z doby, kdy bylo
+  vypnuté. „Zahodit čekající kola“ na kartě Rivals je místo toho smaže.
+
+  Nic jiného se neodesílá. Tvá běžná kola se nenahrávají. Tvůj tuning se
+  nenahrává. Neexistuje žádný účet a nikam se nepřihlašuješ.
+
+  Protože se tvůj počítač na tyto věci ptá, server vidí, že se ptala nějaká
+  instalace -- to je nevyhnutelné u každého programu, který kontroluje
+  aktualizace. Počítá se to, abychom zhruba věděli, kolik lidí to používá,
+  a identifikátor je hashován s tajnou hodnotou, která zůstává na serveru a po 40
+  dnech se maže. Pokud ti to vadí, nastav "offline": true v config/overlay.json
+  a program už server nikdy nekontaktuje -- pak běží výhradně na datech, která
+  přišla se stažením, a vše kromě aktualizací dál funguje.
+
+
+JAK SE AKTUALIZUJE
+
+  Když stiskneš tlačítko aktualizace, program stáhne ZIP, ověří podpis jeho
+  vydavatele, rozbalí ho a nahradí své vlastní soubory. Balíček, který vydavatel
+  nepodepsal, se odmítne. Během toho se objeví malé okno konzole -- to okno má být
+  viditelné záměrně, aby bylo vidět, co se nahrazuje. Tvoje složka s nastavením
+  zůstane zachována.
+
+  Nic se neinstaluje. Nic se nezapisuje do registru Windows. Smaž složku a program
+  je pryč.
+
+
+PROČ HO WINDOWS MŮŽE OZNAČIT ZA TROJSKÉHO KONĚ
+
+  Windows Defender může tento program hlásit jako Trojan:Win32/Bearfoos.A!ml
+  a zablokovat ho. Přípona „!ml“ znamená, že nejde o shodu s žádným známým
+  malwarem -- je to odhad modelu strojového učení o souboru, který nikdy neviděl.
+
+  Odhaduje to tak, protože program nemá podpis kódu, skoro nikdo ho zatím nemá
+  a dělá tři věci uvedené výše: čte paměť jiného procesu, nahrazuje své vlastní
+  soubory a stahuje z internetu. To je přesně to chování, kterému byl model
+  natrénován nedůvěřovat.
+
+  Každé vydání se před zveřejněním skenuje a stránka ke stažení ukazuje kontrolní
+  součet, díky kterému můžeš ověřit, že soubor, který máš, je ten soubor, který
+  byl sestaven. Pokud to nechceš brát na důvěru, nespouštěj ho -- je to legitimní
+  volba a tento program tě kvůli tomu nebude otravovat.
+
+
+ZÁSTUPCI, POKUD O NĚ STOJÍŠ
+
+  Pod tímto textem si můžeš vyžádat zástupce na ploše, položku v nabídce Start
+  a spouštění programu s Forzou. Všechny tři možnosti jsou vypnuté, dokud je
+  nezaškrtneš, všechny tři jsou jen souborem .lnk ve složce a kteroukoli z nich
+  můžeš později smazat bez zásahu do programu.
+
+  „Spouštět s Forzou“ umístí program do tvé složky Po spuštění ve Windows. Od
+  přihlášení čeká neviditelně v oznamovací oblasti a otevře se (minimalizovaný),
+  když se spustí Forza; po hře se tam vrátí. Bez oprávnění správce Windows
+  nedovolí, aby se program spustil ve chvíli, kdy se spustí jiný program -- čekání
+  v oznamovací oblasti žádná oprávnění nepotřebuje a nestojí prakticky nic. Po
+  zavření okna program čeká dál; ukončíš ho kliknutím pravým tlačítkem na ikonu.
+  Tlačítko „Spouštět s Forzou“ vpravo nahoře v hlavním okně to zapíná a vypíná.
+
+  Windows nedovolí, aby se program sám připnul na hlavní panel -- od Windows 10
+  verze 1607 je to vyhrazeno tobě a obejít to znamená zfalšovat kontrolní součet
+  v registru. Tento program to nedělá. Zaškrtni položku v nabídce Start, pak na ni
+  klikni pravým tlačítkem a zvol „Připnout na hlavní panel“.
+
+
+BEZ ZÁRUKY
+
+  Je to hobby projekt, rozdávaný zdarma, bez jakékoli záruky. Není přidružen ke
+  společnostem Microsoft, Turn 10 a Playground Games ani k sérii Forza Horizon,
+  není jimi schválen ani s nimi nijak spojen.
+
+
+Kdykoli si to můžeš přečíst znovu: odkaz „Co tento program dělá“ nahoře v hlavním
+okně.

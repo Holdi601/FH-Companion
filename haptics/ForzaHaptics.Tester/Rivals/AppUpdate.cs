@@ -346,19 +346,34 @@ internal static class AppUpdate
     /// <c>config\</c> wird mit <c>/XC /XN /XO</c> kopiert: nur was es noch gar nicht
     /// gibt. Dort liegt overlay.json mit allen Einstellungen des Nutzers.
     /// </remarks>
+    /// <summary>Eine Zeile fuer "echo": was cmd sonst als Befehl liest, entschaerft.</summary>
+    internal static string Echo(string text)
+    {
+        var sicher = new StringBuilder();
+        foreach (var c in text.Replace("\r", " ").Replace("\n", " "))
+        {
+            if (c is '&' or '|' or '<' or '>' or '^') { sicher.Append('^'); }
+            if (c == '%') { sicher.Append('%'); }
+            sicher.Append(c);
+        }
+        return sicher.Length == 0 ? "echo." : "echo " + sicher;
+    }
+
     private static string HelferText(int pid, string quelle, string ziel, string exe)
     {
         var sb = new StringBuilder();
         sb.AppendLine("@echo off");
+        // UTF-8, damit die uebersetzten Zeilen richtig erscheinen (seit 2026-09-29).
+        sb.AppendLine("chcp 65001 >nul");
         sb.AppendLine($"title {AppInfo.Name} -- update");
         sb.AppendLine("rem Dieses Fenster ist mit Absicht sichtbar, siehe StageAndRestart.");
         sb.AppendLine("rem Wird von der App geschrieben und gestartet. Sie beendet sich danach.");
         sb.AppendLine("setlocal");
-        sb.AppendLine($"echo {AppInfo.Name} is updating itself.");
-        sb.AppendLine("echo This window closes by itself. Nothing else is being installed.");
+        sb.AppendLine(Echo(string.Format(Loc.T("{0} is updating itself."), AppInfo.Name)));
+        sb.AppendLine(Echo(Loc.T("This window closes by itself. Nothing else is being installed.")));
         sb.AppendLine("echo.");
         sb.AppendLine();
-        sb.AppendLine("echo Waiting for the program to close ...");
+        sb.AppendLine(Echo(Loc.T("Waiting for the program to close ...")));
         sb.AppendLine("rem 1. Warten, bis die App wirklich weg ist -- hoechstens 60 Sekunden.");
         sb.AppendLine("set /a versuche=0");
         sb.AppendLine(":warte");
@@ -370,7 +385,7 @@ internal static class AppUpdate
         sb.AppendLine("goto warte");
         sb.AppendLine();
         sb.AppendLine(":weg");
-        sb.AppendLine("echo Replacing the program files ...");
+        sb.AppendLine(Echo(Loc.T("Replacing the program files ...")));
         sb.AppendLine("rem 2. Alles ausser config\\ ersetzen.");
         sb.AppendLine($"robocopy \"{quelle}\" \"{ziel}\" /E /XD \"{Path.Combine(quelle, "config")}\" /NFL /NDL /NJH /NJS /R:3 /W:2 >nul");
         sb.AppendLine("if errorlevel 8 goto fehler");
@@ -378,7 +393,7 @@ internal static class AppUpdate
         sb.AppendLine("rem 3. config\\ nur ergaenzen -- die Einstellungen des Nutzers bleiben.");
         sb.AppendLine($"robocopy \"{Path.Combine(quelle, "config")}\" \"{Path.Combine(ziel, "config")}\" /E /XC /XN /XO /NFL /NDL /NJH /NJS /R:3 /W:2 >nul");
         sb.AppendLine();
-        sb.AppendLine("echo Done. Starting the new version.");
+        sb.AppendLine(Echo(Loc.T("Done. Starting the new version.")));
         sb.AppendLine("rem 4. Wieder starten.");
         sb.AppendLine($"start \"\" \"{exe}\"");
         sb.AppendLine("goto ende");

@@ -163,7 +163,8 @@ internal sealed class TyreHud : LayeredHud
         return stufen[^1].F;
     }
 
-    /// <summary>Was ueber dem Reifen steht, wenn etwas los ist.</summary>
+    /// <summary>Was ueber dem Reifen steht, wenn etwas los ist -- als englische Kennung; die
+    /// Anzeige uebersetzt MaleRad.</summary>
     internal static (string Text, Color Farbe)? Schild(Rad r)
     {
         if (r.Lock > 0.5f || r.SlipRatio < -1f) { return ("LOCK", Color.FromArgb(240, 80, 70)); }
@@ -297,11 +298,22 @@ internal sealed class TyreHud : LayeredHud
         }
         g.Restore(zustand);
 
-        // SCHILD ueber dem Reifen.
+        // SCHILD ueber dem Reifen. Schild() liefert die englische Kennung (der Grenzfalltest
+        // vergleicht sie); uebersetzt wird erst hier, beim Zeichnen.
         if (Schild(r) is { } schild)
         {
             using var schrift = new Font("Segoe UI", 10f, FontStyle.Bold, GraphicsUnit.Pixel);
-            var pille = new RectangleF(x + RadB / 2f - 22f, y - 13f, 44f, 15f);
+            var wort = schild.Text switch
+            {
+                "LOCK" => Loc.T("LOCK"),
+                "SPIN" => Loc.T("SPIN"),
+                _ => Loc.T("SLIDE"),
+            };
+            // SO BREIT WIE DAS WORT (seit 2026-09-29), mindestens die alten 44 und hoechstens
+            // 110 -- mittig ueber dem Reifen bleibt das auf der Platte. Vorher fest 44: ein
+            // uebersetztes Wort lief ueber die Pille hinaus.
+            var breite = Math.Clamp(g.MeasureString(wort, schrift).Width + 10f, 44f, 110f);
+            var pille = new RectangleF(x + RadB / 2f - breite / 2f, y - 13f, breite, 15f);
             using (var form = Rund(pille, 7.5f))
             using (var fuellung = new SolidBrush(schild.Farbe))
             {
@@ -309,7 +321,7 @@ internal sealed class TyreHud : LayeredHud
             }
             using var dunkel = new SolidBrush(Color.FromArgb(20, 22, 28));
             using var mitte = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            g.DrawString(schild.Text, schrift, dunkel, pille, mitte);
+            g.DrawString(wort, schrift, dunkel, pille, mitte);
         }
 
         // LAENGSSCHLUPF als Balken unter dem Reifen: links rot (Bremsen), rechts orange.

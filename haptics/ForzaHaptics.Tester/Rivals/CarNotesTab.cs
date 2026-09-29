@@ -75,7 +75,7 @@ internal sealed class CarNotesTab : UserControl
         _liste.ForeColor = Color.WhiteSmoke;
         _liste.Columns.Add(Loc.T("Car"), 215);
         _liste.Columns.Add("PI", 45);
-        _liste.Columns.Add("hp", 50);
+        _liste.Columns.Add(Loc.T("hp"), 50);
         _liste.Columns.Add(Loc.T("From"), 75);
         _liste.Columns.Add(Loc.T("Note"), 40);
         _liste.SelectedIndexChanged += (_, _) => Auswahl();
@@ -202,7 +202,7 @@ internal sealed class CarNotesTab : UserControl
 
     private static string Anzeige(CarNotes.Entry e)
     {
-        var name = string.IsNullOrEmpty(e.Name) ? $"car {e.Ordinal}" : e.Name;
+        var name = string.IsNullOrEmpty(e.Name) ? string.Format(Loc.T("car {0}"), e.Ordinal) : e.Name;
         return e.IsModel || e.Pi <= 0 ? name : $"{name}  ·  PI {e.Pi}";
     }
 
@@ -293,7 +293,8 @@ internal sealed class CarNotesTab : UserControl
             ? Loc.T("Pick a car on the left")
             : e.IsModel
                 ? $"{Anzeige(e)}   ·   {Loc.T("every build of this car")}"
-                : $"{Anzeige(e)}   {e.HorsePower} hp   ·   {Loc.T("only this build")}";
+                : Anzeige(e) + "   " + string.Format(Loc.T("{0} hp"), e.HorsePower)
+                  + "   ·   " + Loc.T("only this build");
         _still = true;
         _text.Text = e?.Comment ?? string.Empty;
         _still = false;

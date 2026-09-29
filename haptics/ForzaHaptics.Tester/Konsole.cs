@@ -93,10 +93,12 @@ internal static class Konsole
                 Font = new Font("Segoe UI Semibold", 10.5f),
             });
         }
-        // Die Namen, wie sie im Spiel stehen -- englisch, so zeigt sie auch ein englisches Spiel.
-        Zeile("Data Out", "On");
-        Zeile("Data Out IP Address", adressen.Count == 0 ? Loc.T("this PC's network address") : adressen[0]);
-        Zeile("Data Out IP Port", port.ToString());
+        // Die Namen, wie sie im Spiel stehen -- in der Uebersetzung mit dem Wortlaut, den
+        // das Spiel in dieser Sprache zeigt (Datenausgabe, Salida de datos ...), sonst sucht
+        // man im Menue nach einem Wort, das dort nicht steht.
+        Zeile(Loc.T("Data Out"), Loc.T("On"));
+        Zeile(Loc.T("Data Out IP Address"), adressen.Count == 0 ? Loc.T("this PC's network address") : adressen[0]);
+        Zeile(Loc.T("Data Out IP Port"), port.ToString());
         stapel.Controls.Add(tabelle);
         if (adressen.Count > 1)
         {

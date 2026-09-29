@@ -38,6 +38,9 @@ internal sealed class OwnTimesTab : UserControl
     private readonly FlowLayoutPanel _klassen = new();
     private readonly FlowLayoutPanel _tunes = new();
     private readonly Dictionary<string, Button> _mehr = new();
+    // Die Beschriftung je Mengen-Filter, gemerkt statt aus dem Knopftext
+    // zurueckgelesen: eine Uebersetzung mit Doppelpunkt zerlegte sonst den Namen.
+    private readonly Dictionary<string, string> _titel = new();
     private IReadOnlyList<OwnTimes.Lap> _laps = Array.Empty<OwnTimes.Lap>();
     private List<OwnTimes.Row> _zeilen = new();
     private int _sortSpalte = 0;
@@ -107,6 +110,7 @@ internal sealed class OwnTimesTab : UserControl
             var knopf = Knopf(text + ": " + Loc.T("all"));
             knopf.Click += (_, _) => Auswaehlen(key, knopf);
             _mehr[key] = knopf;
+            _titel[key] = text;
             oben.Controls.Add(knopf);
         }
 
@@ -438,7 +442,7 @@ internal sealed class OwnTimesTab : UserControl
 
         using var dlg = new Form
         {
-            Text = knopf.Text.Split(':')[0],
+            Text = _titel[key],
             Size = new Size(340, 460),
             StartPosition = FormStartPosition.CenterParent,
             BackColor = Grund,
@@ -471,7 +475,7 @@ internal sealed class OwnTimesTab : UserControl
         if (dlg.ShowDialog(this) != DialogResult.OK) { return; }
         menge.Clear();
         foreach (var e in cl.CheckedItems.Cast<Eintrag>()) { menge.Add(e.Wert); }
-        knopf.Text = knopf.Text.Split(':')[0] + ": "
+        knopf.Text = _titel[key] + ": "
                      + (menge.Count == 0 ? Loc.T("all") : menge.Count.ToString());
         Anwenden();
     }
@@ -502,7 +506,7 @@ internal sealed class OwnTimesTab : UserControl
         _f.Countries.Clear(); _f.Types.Clear(); _f.Tunes.Clear(); _f.Modes.Clear();
         foreach (Control c in _klassen.Controls) { if (c is CheckBox cb) cb.Checked = false; }
         foreach (Control c in _tunes.Controls) { if (c is CheckBox cb) cb.Checked = false; }
-        foreach (var (_, k) in _mehr) { k.Text = k.Text.Split(':')[0] + ": " + Loc.T("all"); }
+        foreach (var (key, k) in _mehr) { k.Text = _titel[key] + ": " + Loc.T("all"); }
         _vonJahr.Text = string.Empty; _bisJahr.Text = string.Empty;
         _start.SelectedIndex = 0; _art.SelectedIndex = 0;
         _suche.Text = string.Empty;

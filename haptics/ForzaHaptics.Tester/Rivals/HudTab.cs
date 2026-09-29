@@ -265,7 +265,7 @@ internal sealed class HudLayoutCanvas : Control
     private void SetPlace(HudPart part, float x, float y) => _settings.SetPosition(part, x, y);
 
     /// <summary>Die Kopfzeile der Beispielnotiz -- im Aufbau wie die echte (OverlayController).</summary>
-    private const string NotizKopf = "Porsche 911 GT3 RS '19  ·  PI 900  ·  513 hp";
+    private static string NotizKopf => "Porsche 911 GT3 RS '19  ·  PI 900  ·  " + string.Format(Loc.T("{0} hp"), 513);
 
     /// <summary>
     /// Die echte Spielflaeche und der Faktor, mit dem sie auf die Vorschau passt.
@@ -280,20 +280,22 @@ internal sealed class HudLayoutCanvas : Control
         return (echt, schirm.Width / echt.Width);
     }
 
+    // DIESELBEN SCHLUESSEL WIE IM OVERLAY (OverlayController, DeltaHud): die Vorschau
+    // zeigt genau die Worte, die im Rennen stehen -- in jeder Sprache.
     private static string BigText(HudPart part) => part switch
     {
-        HudPart.Ghost => "GHOST 12.4",
-        HudPart.Note => "lap stored: 83.706 s, 5949 m",
-        // Der Umriss-Block wird eigens gezeichnet; der Text ist nur da, falls die
-        // Zeichnung einmal nichts hergibt.
+        HudPart.Ghost => string.Format(Loc.T("GHOST {0}"), 12.4.ToString("0.0")),
+        HudPart.Note => string.Format(Loc.T("lap stored: {0} s, {1} m"), 83.706.ToString("0.000"), "5949"),
+        // Der Umriss-Block wird eigens gezeichnet (BoxOf und Draw kehren vorher um);
+        // dieser Text erscheint nie und bleibt darum unuebersetzt.
         HudPart.Course => "course shapes",
-        HudPart.CarNote => "understeers from turn 3, tyres go off after 4 laps",
+        HudPart.CarNote => Loc.T("understeers from turn 3, tyres go off after 4 laps"),
         _ => "-0.734",
     };
 
     private static string SmallText(HudPart part) => part switch
     {
-        HudPart.Delta => "same car, this course",
+        HudPart.Delta => Loc.T("same car, this course"),
         _ => string.Empty,
     };
 
@@ -418,8 +420,11 @@ internal sealed class HudLayoutCanvas : Control
         {
             g.FillRectangle(grau, spiel);
             g.DrawRectangle(strich, spiel.X, spiel.Y, spiel.Width, spiel.Height);
-            g.DrawString("the game writes\r\nlap time and\r\nprogress here",
-                         schrift, Brushes.White, spiel.X + 6, spiel.Y + 5);
+            // EIN SATZ, im Kasten umbrochen (seit 2026-09-29): die festen Zeilenwechsel
+            // passten nur zum Englischen, und uebersetzen liess sich der Text so nicht.
+            g.DrawString(Loc.T("the game writes lap time and progress here"), schrift, Brushes.White,
+                         new RectangleF(spiel.X + 6, spiel.Y + 5, Math.Max(1f, spiel.Width - 12),
+                                        Math.Max(1f, spiel.Height - 8)));
         }
 
         _boxes.Clear();
@@ -567,16 +572,14 @@ internal sealed class HudLayoutCanvas : Control
     /// </remarks>
     private string Marke(HudPart part)
     {
+        // Uebersetzt (seit 2026-09-29). Wo kein Zeitpunkt dazugehoert, heisst der Rahmen wie
+        // der Abschnitt rechts (Titel) -- vorher kleingeschrieben und ohne Uebersetzung.
         var name = part switch
         {
-            HudPart.Course => "Event Sign Up maps (before the race)",
-            HudPart.LiveMap => "live map (during the race)",
-            HudPart.Tyres => "tyre overview (while driving)",
-            HudPart.CarNote => "car note",
-            HudPart.Inputs => "input traces",
-            HudPart.Note => "note line",
-            HudPart.Ghost => "ghost",
-            _ => "delta",
+            HudPart.Course => Loc.T("Event Sign Up maps (before the race)"),
+            HudPart.LiveMap => Loc.T("Live map (during the race)"),
+            HudPart.Tyres => Loc.T("Tyre overview (while driving)"),
+            _ => HudPartPanel.Titel(part),
         };
         var aus = part switch
         {
@@ -587,7 +590,7 @@ internal sealed class HudLayoutCanvas : Control
             HudPart.Inputs => !_settings.HudInputs,
             _ => false,
         };
-        return aus ? name + " -- switched off" : name;
+        return aus ? string.Format(Loc.T("{0} -- switched off"), name) : name;
     }
 
     private void Rahmen(Graphics g, RectangleF kasten, HudPart part)
@@ -597,7 +600,7 @@ internal sealed class HudLayoutCanvas : Control
                         kasten.Width + 4, kasten.Height + 4);
         using var marke = new Font("Segoe UI", 7.5f);
         // Die Beschriftung bleibt im Bild: an einem Block am rechten Rand lief
-        // "live map (during the race) -- switched off" sonst ueber die Kante.
+        // "Live map (during the race) -- switched off" sonst ueber die Kante.
         var text = Marke(part);
         var breite = g.MeasureString(text, marke).Width;
         var x = Math.Min(kasten.X - 2, Width - breite - 4);
@@ -630,7 +633,8 @@ internal sealed class HudLayoutCanvas : Control
                     var u = CourseShape.For(kurs, _settings.ShapeSourceChoice, wurzel);
                     if (u is null || u.IsEmpty) { continue; }
                     var name = CourseShape.KursName(wurzel, kurs);
-                    raus.Add((string.IsNullOrEmpty(name) ? "course" : name, u));
+                    // Der Platzhalter steht als Name ueber der Kachel (CourseShapeHud.Male).
+                    raus.Add((string.IsNullOrEmpty(name) ? Loc.T("Course") : name, u));
                     if (raus.Count >= 3) { break; }
                 }
             }
@@ -640,7 +644,7 @@ internal sealed class HudLayoutCanvas : Control
             // Ohne Bestand bleibt die Vorschau leer; gestrichelte Kaesten genuegen.
         }
         // Immer drei, wie das Overlay sie anbietet: fehlende als leere Kacheln.
-        while (raus.Count < 3) { raus.Add(("course", null)); }
+        while (raus.Count < 3) { raus.Add((Loc.T("Course"), null)); }
         _vorschau = raus;
         return raus;
     }
@@ -663,7 +667,8 @@ internal sealed class HudLayoutCanvas : Control
         var fremde = OverlaySettings.ParseColour(_settings.HudColorTheirs, Color.Orange);
         var beschriftung = OverlaySettings.ParseColour(_settings.HudColorLabel, Color.Gray);
 
-        var namen = new[] { "THR", "BRK", "CLU", "STR", "GEAR" };
+        // Dieselben Schluessel wie die Spuren im Rennen (DeltaHud).
+        var namen = new[] { Loc.T("THR"), Loc.T("BRK"), Loc.T("CLU"), Loc.T("STR"), Loc.T("GEAR") };
         var spur = einheit * 1.05f * lage.Scale;
         var luft = einheit * 0.30f * lage.Scale;
         using var klein = new Font("Segoe UI", Math.Max(4f, einheit * 0.46f * lage.Scale));
@@ -952,9 +957,10 @@ internal sealed class HudPartPanel : Panel
         // ANKER UND GROESSE, je Stueck eigene Knoepfe (siehe oben).
         void Lage(HudPart teil)
         {
-            Rein(Note("Anchor"));
+            Rein(Note(Loc.T("Anchor")));
             var anker = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
-            anker.Items.AddRange(new object[] { "Left edge", "Centre", "Right edge" });
+            // Nach Stelle zugeordnet (0 links, 1 Mitte, 2 rechts) -- die Anzeige darf uebersetzt sein.
+            anker.Items.AddRange(new object[] { Loc.T("Left edge"), Loc.T("Centre"), Loc.T("Right edge") });
             anker.SelectedIndexChanged += (_, _) =>
             {
                 if (_quiet) { return; }
@@ -963,7 +969,7 @@ internal sealed class HudPartPanel : Panel
                 Changed?.Invoke();
             };
             Rein(anker);
-            Rein(Note("Size (mouse wheel works too)"));
+            Rein(Note(Loc.T("Size (mouse wheel works too)")));
             var groesse = new TrackBar
             {
                 Width = 232, Minimum = 35, Maximum = 300, TickFrequency = 25,
@@ -982,7 +988,7 @@ internal sealed class HudPartPanel : Panel
         }
         FlowLayoutPanel Farben(HudPart? teil)
         {
-            Rein(Note("Colours"));
+            Rein(Note(Loc.T("Colours")));
             var f = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.TopDown, WrapContents = false,
@@ -999,45 +1005,49 @@ internal sealed class HudPartPanel : Panel
         _layouts = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDown };
         RefreshLayouts();
         Rein(_layouts);
+        // UMBRECHEND (seit 2026-09-29): jeder Knopf ist so breit wie sein Wort (Small), und
+        // drei lange Woerter ("Enregistrer", "Αποθήκευση") passen nicht nebeneinander in die
+        // Spalte -- dann rutscht der letzte in eine zweite Reihe, statt ueber den Rand.
         var knoepfe = new FlowLayoutPanel
         {
-            FlowDirection = FlowDirection.LeftToRight, WrapContents = false,
-            AutoSize = true, Margin = new Padding(0, 4, 0, 0),
+            FlowDirection = FlowDirection.LeftToRight, WrapContents = true,
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            MaximumSize = new Size(236, 0), Margin = new Padding(0, 4, 0, 0),
         };
-        knoepfe.Controls.Add(Small("Save", () =>
+        knoepfe.Controls.Add(Small(Loc.T("Save"), () =>
         {
             var name = _layouts.Text.Trim();
             if (name.Length == 0)
             {
-                MessageBox.Show(this, "Type a name for the layout first.",
-                                "Save layout");
+                MessageBox.Show(this, Loc.T("Type a name for the layout first."),
+                                Loc.T("Save layout"));
                 return;
             }
             if (!_settings.SaveLayout(name))
             {
-                MessageBox.Show(this, "The layout could not be written.", "Save layout");
+                MessageBox.Show(this, Loc.T("The layout could not be written."), Loc.T("Save layout"));
                 return;
             }
             RefreshLayouts();
             _layouts.Text = name;
         }));
-        knoepfe.Controls.Add(Small("Load", () =>
+        knoepfe.Controls.Add(Small(Loc.T("Load"), () =>
         {
             var name = _layouts.Text.Trim();
             if (name.Length == 0) { return; }
             if (!_settings.LoadLayout(name))
             {
-                MessageBox.Show(this, $"No layout called \"{name}\".", "Load layout");
+                MessageBox.Show(this, string.Format(Loc.T("No layout called \"{0}\"."), name), Loc.T("Load layout"));
                 return;
             }
             Select(_part);
             Changed?.Invoke();
         }));
-        knoepfe.Controls.Add(Small("Delete", () =>
+        knoepfe.Controls.Add(Small(Loc.T("Delete"), () =>
         {
             var name = _layouts.Text.Trim();
             if (name.Length == 0) { return; }
-            if (MessageBox.Show(this, $"Delete the layout \"{name}\"?", "Delete layout",
+            if (MessageBox.Show(this, string.Format(Loc.T("Delete the layout \"{0}\"?"), name), Loc.T("Delete layout"),
                                 MessageBoxButtons.YesNo) != DialogResult.Yes)
             {
                 return;
@@ -1045,20 +1055,20 @@ internal sealed class HudPartPanel : Panel
             _settings.DeleteLayout(name);
             RefreshLayouts();
         }));
+        // Luft unter jedem Knopf, falls die Reihe umbricht.
+        foreach (Control k in knoepfe.Controls) { k.Margin = new Padding(0, 0, 3, 3); }
         Rein(knoepfe);
-        Rein(Note("Position, size and colours are stored under a name. "
-                  + "Hotkeys and screen regions are not part of it. "
-                  + "Click a block in the picture to jump to its settings; "
-                  + "drag the divider on the left to widen this side."));
+        Rein(Note(Loc.T(
+            "Position, size and colours are stored under a name. Hotkeys and screen regions are not part of it. Click a block in the picture to jump to its settings; drag the divider on the left to widen this side.")));
 
         // ---- DELTA --------------------------------------------------------------------
         Abschnitt(Titel(HudPart.Delta), HudPart.Delta);
         Schalter(Loc.T("Show the strip while racing"), settings.DeltaHud, v => _settings.DeltaHud = v);
         Lage(HudPart.Delta);
-        Rein(Note("What it compares against"));
+        Rein(Note(Loc.T("What it compares against")));
         var referenz = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
         _reference = referenz;
-        foreach (var (_, text) in References) { referenz.Items.Add(text); }
+        foreach (var (_, text) in References) { referenz.Items.Add(text()); }
         referenz.SelectedIndex = Math.Max(0, Array.FindIndex(
             References, r => string.Equals(r.Key, settings.DeltaReferenceMode,
                                            StringComparison.OrdinalIgnoreCase)));
@@ -1069,7 +1079,7 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(referenz);
-        Rein(Note("Switch this while racing"));
+        Rein(Note(Loc.T("Switch this while racing")));
         var taste = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var (_, name) in Keys) { taste.Items.Add(name); }
         taste.SelectedIndex = Math.Max(0, Array.FindIndex(Keys, k => k.Vk == settings.HotkeyDeltaMode));
@@ -1080,31 +1090,29 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(taste);
-        Rein(Note("Each press takes the next step, from the narrowest "
-                  + "to the widest, and says so on screen. The key only "
-                  + "does this while Forza is running."));
+        Rein(Note(Loc.T(
+            "Each press takes the next step, from the narrowest to the widest, and says so on screen. The key only does this while Forza is running.")));
         Schalter(Loc.T("Show the time to beat for the website's leaderboard"), settings.HudTarget,
                  v => _settings.HudTarget = v);
-        Rein(Note("A line under the delta: your car's best time on the website for this route "
-                  + "and class. Beat it and the lap goes onto the leaderboard."));
+        Rein(Note(Loc.T(
+            "A line under the delta: your car's best time on the website for this route and class. Beat it and the lap goes onto the leaderboard.")));
         Farben(HudPart.Delta);
 
         // ---- GEISTER-COUNTDOWN ------------------------------------------------------
         Abschnitt(Titel(HudPart.Ghost), HudPart.Ghost);
         Lage(HudPart.Ghost);
-        Rein(Note("No-contact start: seconds the ghost lasts after GO"));
+        Rein(Note(Loc.T("No-contact start: seconds the ghost lasts after GO")));
         Zahl(settings.GhostSeconds, 0, 120, 1, 0.5m, v => _settings.GhostSeconds = v);
-        Rein(Note("Counted down in blue. Telemetry does not carry it, so correct it "
-                  + "here if the countdown ends at the wrong moment."));
-        Rein(Note("Pop-in phase (seconds)"));
+        Rein(Note(Loc.T(
+            "Counted down in blue. Telemetry does not carry it, so correct it here if the countdown ends at the wrong moment.")));
+        Rein(Note(Loc.T("Pop-in phase (seconds)")));
         Zahl(settings.PopInSeconds, 0, 60, 1, 0.5m, v => _settings.PopInSeconds = v);
-        Rein(Note("Counts UP once the ghost ends -- the seconds the "
-                  + "others take to pop back in, one after another."));
-        Rein(Note("Warn this many seconds before the ghost ends"));
+        Rein(Note(Loc.T(
+            "Counts UP once the ghost ends -- the seconds the others take to pop back in, one after another.")));
+        Rein(Note(Loc.T("Warn this many seconds before the ghost ends")));
         Zahl(settings.GhostWarnSeconds, 0, 60, 1, 0.5m, v => _settings.GhostWarnSeconds = v);
-        Rein(Note("The countdown colours its BACKGROUND, not its "
-                  + "digits: calm, then warning, then pop-in. The text "
-                  + "colour is yours to pick."));
+        Rein(Note(Loc.T(
+            "The countdown colours its BACKGROUND, not its digits: calm, then warning, then pop-in. The text colour is yours to pick.")));
         Farben(HudPart.Ghost);
 
         // ---- EINGABESPUREN ------------------------------------------------------------
@@ -1127,15 +1135,13 @@ internal sealed class HudPartPanel : Panel
         };
         Rein(spuren);
         Lage(HudPart.Inputs);
-        Rein(Note("Seconds of history behind the now line"));
+        Rein(Note(Loc.T("Seconds of history behind the now line")));
         Zahl(settings.HudInputsSeconds, 1, 60, 0, 1m, v => _settings.HudInputsSeconds = v);
-        Rein(Note("Seconds of the reference lap shown ahead"));
+        Rein(Note(Loc.T("Seconds of the reference lap shown ahead")));
         Zahl(settings.HudInputsLookahead, 0, 10, 1, 0.5m, v => _settings.HudInputsLookahead = v);
-        Rein(Note("Shown AHEAD of the now line, on the shaded side -- what the reference "
-                  + "is about to do, so you can copy it. Your own line stops at now: "
-                  + "it has no future to show. The reference is read at "
-                  + "the place you are, not at the same clock time."));
-        Rein(Note("Line thickness"));
+        Rein(Note(Loc.T(
+            "Shown AHEAD of the now line, on the shaded side -- what the reference is about to do, so you can copy it. Your own line stops at now: it has no future to show. The reference is read at the place you are, not at the same clock time.")));
+        Rein(Note(Loc.T("Line thickness")));
         var dicke = new TrackBar
         {
             Width = 232, Minimum = 20, Maximum = 600, TickFrequency = 50,
@@ -1154,17 +1160,15 @@ internal sealed class HudPartPanel : Panel
         // ---- NOTIZZEILE ---------------------------------------------------------------
         Abschnitt(Titel(HudPart.Note), HudPart.Note);
         Lage(HudPart.Note);
-        Rein(Note("Short messages under the strip, for example when a lap was stored. "
-                  + "It uses the delta colours."));
+        Rein(Note(Loc.T(
+            "Short messages under the strip, for example when a lap was stored. It uses the delta colours.")));
 
         // ---- REIFENUEBERSICHT (seit 2026-09-28, ab Werk aus) ------------------------
         Abschnitt(Titel(HudPart.Tyres), HudPart.Tyres);
         Schalter(Loc.T("Tyre overview while driving"), settings.HudTyres, v => _settings.HudTyres = v);
         Lage(HudPart.Tyres);
-        Rein(Note("All four tyres at a glance: colour is temperature, the outline turns "
-                  + "yellow at the limit and red when the tyre slides, and the tyre tilts "
-                  + "with its slip angle. The bars show wheelspin or locking and the "
-                  + "suspension travel; icons show puddles, kerbs and bumpy ground."));
+        Rein(Note(Loc.T(
+            "All four tyres at a glance: colour is temperature, the outline turns yellow at the limit and red when the tyre slides, and the tyre tilts with its slip angle. The bars show wheelspin or locking and the suspension travel; icons show puddles, kerbs and bumpy ground.")));
         Schalter(Loc.T("Tyre temperature in Fahrenheit"), settings.TyresFahrenheit,
                  v => _settings.TyresFahrenheit = v);
 
@@ -1172,9 +1176,8 @@ internal sealed class HudPartPanel : Panel
         Abschnitt(Titel(HudPart.LiveMap), HudPart.LiveMap);
         Schalter(Loc.T("Live map during the race"), settings.LiveMap, v => _settings.LiveMap = v);
         Lage(HudPart.LiveMap);
-        Rein(Note("One map of the course you are driving, with your car on it. It is drawn "
-                  + "from your own laps -- only they know where on the map the car is. "
-                  + "On a course you have not driven yet it grows as you drive."));
+        Rein(Note(Loc.T(
+            "One map of the course you are driving, with your car on it. It is drawn from your own laps -- only they know where on the map the car is. On a course you have not driven yet it grows as you drive.")));
         Regler(Loc.T("Live map: line thickness"), 5, 100, (int)Math.Round(settings.LiveMapWidth * 10),
                v => _settings.LiveMapWidth = v / 10.0);
         Regler(Loc.T("Live map: smoothing"), 0, 100, settings.LiveMapSmooth,
@@ -1186,8 +1189,8 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Course maps on the Event Sign Up screen"), settings.CourseShapes,
                  v => _settings.CourseShapes = v);
         Lage(HudPart.Course);
-        Rein(Note("Before the race: one map per offered route, until you pick a car."));
-        Rein(Note("Where the sign-up maps come from"));
+        Rein(Note(Loc.T("Before the race: one map per offered route, until you pick a car.")));
+        Rein(Note(Loc.T("Where the sign-up maps come from")));
         var quelle = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
         var quellen = new[] { ("auto", Loc.T("Automatic: your laps, else Rivals")),
                               ("telemetry", Loc.T("Your laps only (telemetry)")),
@@ -1203,8 +1206,8 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(quelle);
-        Rein(Note("Your laps are drawn from where you actually drove; the Rivals maps "
-                  + "are the game's own drawings, for routes you have never driven."));
+        Rein(Note(Loc.T(
+            "Your laps are drawn from where you actually drove; the Rivals maps are the game's own drawings, for routes you have never driven.")));
         // WIE LANGE DIE ANMELDEKARTEN STEHEN -- wie beim Autovorschlag (Nutzerwunsch
         // vom 2026-09-26). 0 heisst: bis das Rennen beginnt.
         Rein(Note(Loc.T("Sign-up maps disappear after (seconds, 0 = when the race starts)")));
@@ -1238,25 +1241,23 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Celebrate when a lap beats the website's time"), settings.CelebrateRecord,
                  v => _settings.CelebrateRecord = v);
         Schalter(Loc.T("Play a sound with it"), settings.CelebrateSound, v => _settings.CelebrateSound = v);
-        var probe = Small(Loc.T("Try it"), () => FeierProbe?.Invoke());
-        probe.Width = 110;
+        var probe = Small(Loc.T("Try it"), () => FeierProbe?.Invoke(), mindestens: 110);
         probe.Margin = new Padding(0, 2, 0, 4);
         Rein(probe);
-        Rein(Note("A card with your time, confetti and a short sound, near the top of the "
-                  + "screen for about five seconds."));
+        Rein(Note(Loc.T(
+            "A card with your time, confetti and a short sound, near the top of the screen for about five seconds.")));
         Schalter(Loc.T("Say thanks when your lap adds a new car to the leaderboard"), settings.CelebrateNewCar,
                  v => _settings.CelebrateNewCar = v);
-        var probeNeu = Small(Loc.T("Try it"), () => NeuesAutoProbe?.Invoke());
-        probeNeu.Width = 110;
+        var probeNeu = Small(Loc.T("Try it"), () => NeuesAutoProbe?.Invoke(), mindestens: 110);
         probeNeu.Margin = new Padding(0, 2, 0, 4);
         Rein(probeNeu);
-        Rein(Note("Calmer, in teal: when the server accepts a lap of a car that was not on "
-                  + "that route and class board yet."));
+        Rein(Note(Loc.T(
+            "Calmer, in teal: when the server accepts a lap of a car that was not on that route and class board yet.")));
 
         // ---- EIGENE REKORDE (seit 2026-09-28): die eigene Bestenliste, klein gefeiert.
         Abschnitt(Loc.T("Personal records"));
-        Rein(Note("Your own laps decide, not the website. Smaller and shorter than the website "
-                  + "celebration: green for a personal best, blue for a new car on your list."));
+        Rein(Note(Loc.T(
+            "Your own laps decide, not the website. Smaller and shorter than the website celebration: green for a personal best, blue for a new car on your list.")));
         Schalter(Loc.T("Personal best in a class on a course"), settings.PbClassRecord, v => _settings.PbClassRecord = v);
         Schalter(Loc.T("Personal best with a car (every car, class and course)"), settings.PbCarRecord,
                  v => _settings.PbCarRecord = v);
@@ -1265,23 +1266,20 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Your first lap in a class on a course"), settings.PbFirstInClass,
                  v => _settings.PbFirstInClass = v);
         Schalter(Loc.T("Separate records per mode"), settings.PbPerMode, v => _settings.PbPerMode = v);
-        Rein(Note("Rivals, Horizon Play, races and free roam each keep their own records, so a "
-                  + "wall-riding lap never beats a Rivals best. Laps from before the mode was "
-                  + "recorded count for every mode."));
+        Rein(Note(Loc.T(
+            "Rivals, Horizon Play, races and free roam each keep their own records, so a wall-riding lap never beats a Rivals best. Laps from before the mode was recorded count for every mode.")));
         Schalter(Loc.T("Play a short sound with them"), settings.PbSound, v => _settings.PbSound = v);
-        var probePb = Small(Loc.T("Try it"), () => PersoenlichProbe?.Invoke());
-        probePb.Width = 110;
+        var probePb = Small(Loc.T("Try it"), () => PersoenlichProbe?.Invoke(), mindestens: 110);
         probePb.Margin = new Padding(0, 2, 0, 4);
         Rein(probePb);
-        Rein(Note("Compared are laps on the same course, in the same class and with the same "
-                  + "start (standing or flying). Each lap shows at most one: a class best before "
-                  + "a new car before a car best."));
+        Rein(Note(Loc.T(
+            "Compared are laps on the same course, in the same class and with the same start (standing or flying). Each lap shows at most one: a class best before a new car before a car best.")));
 
         // ---- FARBEN FUER ALLE --------------------------------------------------------
         Abschnitt(Loc.T("Shared colours"));
         _allgemeineFarben = Farben(null);
-        Rein(Note("The small labels and the backing plate behind the strip, the note line, "
-                  + "the input traces and the tyre overview."));
+        Rein(Note(Loc.T(
+            "The small labels and the backing plate behind the strip, the note line, the input traces and the tyre overview.")));
 
         // ---- AUFNAHME UND STREAM (seit 2026-09-28): die Overlays halten sich aus
         // Aufnahmen heraus; das Aufnahmefenster zeigt sie fuer OBS. Und wer ganz sicher
@@ -1292,18 +1290,16 @@ internal sealed class HudPartPanel : Panel
             _settings.OverlayInGame = v;
             OverlayAusgabe.SetzeImSpiel(v);
         });
-        Rein(Note("Off: nothing is drawn over Forza, so the overlays cannot affect its frames. "
-                  + "The recording window still shows them -- for example on a second screen."));
-        var fenster = Small(Loc.T("Open the recording window"), () => AufnahmeFensterWunsch?.Invoke());
-        fenster.Width = 232;
+        Rein(Note(Loc.T(
+            "Off: nothing is drawn over Forza, so the overlays cannot affect its frames. The recording window still shows them -- for example on a second screen.")));
+        var fenster = Small(Loc.T("Open the recording window"), () => AufnahmeFensterWunsch?.Invoke(), mindestens: 232);
         fenster.Margin = new Padding(0, 4, 0, 4);
         Rein(fenster);
         Wahl(Loc.T("Key colour for OBS"),
              new[] { ("green", Loc.T("Green")), ("magenta", Loc.T("Magenta")), ("black", Loc.T("Black")) },
              settings.RecordingKey, v => _settings.RecordingKey = v);
-        Rein(Note("OBS: add a Window Capture of this window above the game capture, then a "
-                  + "Color Key filter in the same colour. Keep the window open -- on another "
-                  + "screen or behind the game, not minimised."));
+        Rein(Note(Loc.T(
+            "OBS: add a Window Capture of this window above the game capture, then a Color Key filter in the same colour. Keep the window open -- on another screen or behind the game, not minimised.")));
 
         // ---- AUFZEICHNUNG -------------------------------------------------------------
         Abschnitt(Loc.T("Recording"));
@@ -1330,10 +1326,8 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(zettel);
-        Rein(Note("Tag written with every recorded lap -- it becomes a "
-                  + "folder, so \"wet\" or \"tune-b\" keeps those laps "
-                  + "apart. Laps are split by course, PI class, car and "
-                  + "tune on their own."));
+        Rein(Note(Loc.T(
+            "Tag written with every recorded lap -- it becomes a folder, so \"wet\" or \"tune-b\" keeps those laps apart. Laps are split by course, PI class, car and tune on their own.")));
         // DER MODUS. Zum Filtern spaeter, nicht zum Vergleichen -- eine
         // Rivals-Runde gegen eine Koop-Runde zu stellen waere so falsch wie
         // stehend gegen fliegend.
@@ -1355,20 +1349,14 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(modus);
-        Rein(Note("Which mode you are playing, written with every lap. \"auto\" works it "
-                  + "out from the menu you came from: the Rivals screen, a Horizon Play sign-up, "
-                  + "or an ordinary sign-up (a solo or co-op race). Free-roam runs prove themselves "
-                  + "by their own clock. Only Rivals and Horizon Play laps count on the website; "
-                  + "a lap whose mode is unknown is not sent."));
+        // "automatic" wie der Eintrag in der Liste (OwnTimes.ModeText) -- nicht die Kennung "auto".
+        Rein(Note(Loc.T(
+            "Which mode you are playing, written with every lap. \"automatic\" works it out from the menu you came from: the Rivals screen, a Horizon Play sign-up, or an ordinary sign-up (a solo or co-op race). Free-roam runs prove themselves by their own clock. Only Rivals and Horizon Play laps count on the website; a lap whose mode is unknown is not sent.")));
 
         // ---- ZEITFAHREN IN DER OFFENEN WELT ------------------------------------------
         Abschnitt(Loc.T("Time attack in the free world"));
-        Rein(Note(
-            "Forza does not run a clock outside a race -- this app does. Every route "
-            + "you have driven already has a start line, so you can practise one in "
-            + "free roam and the strip works as it does in a race. Custom routes from "
-            + "EventLab count too: a course is recognised by where its line is, never "
-            + "by a name."));
+        Rein(Note(Loc.T(
+            "Forza does not run a clock outside a race -- this app does. Every route you have driven already has a start line, so you can practise one in free roam and the strip works as it does in a race. Custom routes from EventLab count too: a course is recognised by where its line is, never by a name.")));
         var linie = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var (_, name) in Keys) { linie.Items.Add(name); }
         linie.SelectedIndex = Math.Max(0, Array.FindIndex(
@@ -1380,11 +1368,8 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(linie);
-        Rein(Note("Press this where you want a start line of your own -- "
-                  + "a back road, a pass, a circuit nobody built. Drive "
-                  + "over it again and you have a time. Free-roam times "
-                  + "are kept apart from race times: out here there are "
-                  + "no track limits."));
+        Rein(Note(Loc.T(
+            "Press this where you want a start line of your own -- a back road, a pass, a circuit nobody built. Drive over it again and you have a time. Free-roam times are kept apart from race times: out here there are no track limits.")));
 
         BuildColours();
         Controls.Add(_spalten);
@@ -1403,14 +1388,19 @@ internal sealed class HudPartPanel : Panel
         (118, "F7"), (119, "F8"), (120, "F9"), (121, "F10"), (122, "F11"), (123, "F12"),
     };
 
-    internal static readonly (string Key, string Text)[] References =
+    /// <summary>Die Stufen des Vergleichs: Kennung (gespeichert, von der Taste geschaltet) und Anzeige.</summary>
+    /// <remarks>
+    /// Die Anzeige als Funktion: uebersetzt wird beim Fuellen der Liste, nicht einmal beim
+    /// ersten Zugriff auf die Klasse -- die Sprache kann danach noch wechseln.
+    /// </remarks>
+    internal static readonly (string Key, Func<string> Text)[] References =
     {
-        ("tune", "Same car, same tune"),
-        ("car", "Same car, any tune"),
-        ("class", "Same PI class, any car"),
-        ("carclass", "Same car in this PI class"),
-        ("any", "My best here with anything"),
-        ("dual", "Two figures: same car, and same PI class"),
+        ("tune", () => Loc.T("Same car, same tune")),
+        ("car", () => Loc.T("Same car, any tune")),
+        ("class", () => Loc.T("Same PI class, any car")),
+        ("carclass", () => Loc.T("Same car in this PI class")),
+        ("any", () => Loc.T("My best here with anything")),
+        ("dual", () => Loc.T("Two figures: same car, and same PI class")),
     };
 
     /// <summary>
@@ -1480,60 +1470,60 @@ internal sealed class HudPartPanel : Panel
         _allgemeineFarben.Controls.Clear();
 
         var delta = _farben[HudPart.Delta];
-        Add(delta, "Ahead of the reference", () => _settings.HudColorAhead,
+        Add(delta, Loc.T("Ahead of the reference"), () => _settings.HudColorAhead,
             v => _settings.HudColorAhead = v);
-        Add(delta, "Behind the reference", () => _settings.HudColorBehind,
+        Add(delta, Loc.T("Behind the reference"), () => _settings.HudColorBehind,
             v => _settings.HudColorBehind = v);
-        Add(delta, "No reference yet", () => _settings.HudColorNeutral,
+        Add(delta, Loc.T("No reference yet"), () => _settings.HudColorNeutral,
             v => _settings.HudColorNeutral = v);
 
         var geist = _farben[HudPart.Ghost];
-        Add(geist, "Ghost, calm phase", () => _settings.HudColorGhost,
+        Add(geist, Loc.T("Ghost, calm phase"), () => _settings.HudColorGhost,
             v => _settings.HudColorGhost = v);
-        Add(geist, "Ghost, warning phase", () => _settings.HudColorGhostWarn,
+        Add(geist, Loc.T("Ghost, warning phase"), () => _settings.HudColorGhostWarn,
             v => _settings.HudColorGhostWarn = v);
-        Add(geist, "Pop-in phase", () => _settings.HudColorPopIn,
+        Add(geist, Loc.T("Pop-in phase"), () => _settings.HudColorPopIn,
             v => _settings.HudColorPopIn = v);
-        Add(geist, "Ghost text", () => _settings.HudColorGhostText,
+        Add(geist, Loc.T("Ghost text"), () => _settings.HudColorGhostText,
             v => _settings.HudColorGhostText = v);
 
         var spuren = _farben[HudPart.Inputs];
-        Add(spuren, "My inputs", () => _settings.HudColorMine,
+        Add(spuren, Loc.T("My inputs"), () => _settings.HudColorMine,
             v => _settings.HudColorMine = v);
-        Add(spuren, "Reference inputs", () => _settings.HudColorTheirs,
+        Add(spuren, Loc.T("Reference inputs"), () => _settings.HudColorTheirs,
             v => _settings.HudColorTheirs = v);
-        Add(spuren, "Now line", () => _settings.HudColorNow,
+        Add(spuren, Loc.T("Now line"), () => _settings.HudColorNow,
             v => _settings.HudColorNow = v);
 
-        Add(_allgemeineFarben, "Small label", () => _settings.HudColorLabel,
+        Add(_allgemeineFarben, Loc.T("Small label"), () => _settings.HudColorLabel,
             v => _settings.HudColorLabel = v);
-        Add(_allgemeineFarben, "Backing plate", () => _settings.HudBackground,
+        Add(_allgemeineFarben, Loc.T("Backing plate"), () => _settings.HudBackground,
             v => _settings.HudBackground = v, alpha: true);
 
         // Der Umriss-Block hat eigene Farben: er liegt auf dem MENUE, nicht auf
         // der Strasse, und was dort lesbar ist, ist hier oft zu blass.
         var kurs = _farben[HudPart.Course];
-        Add(kurs, "Course outline", () => _settings.CourseShapeLine,
+        Add(kurs, Loc.T("Course outline"), () => _settings.CourseShapeLine,
             v => _settings.CourseShapeLine = v);
-        Add(kurs, "Course start point", () => _settings.CourseShapeStart,
+        Add(kurs, Loc.T("Course start point"), () => _settings.CourseShapeStart,
             v => _settings.CourseShapeStart = v);
-        Add(kurs, "Course plate", () => _settings.CourseShapeBack,
+        Add(kurs, Loc.T("Course plate"), () => _settings.CourseShapeBack,
             v => _settings.CourseShapeBack = v, alpha: true);
 
         var notiz = _farben[HudPart.CarNote];
-        Add(notiz, "Car note text", () => _settings.CarNoteInk,
+        Add(notiz, Loc.T("Car note text"), () => _settings.CarNoteInk,
             v => _settings.CarNoteInk = v);
-        Add(notiz, "Car note heading", () => _settings.CarNoteTitle,
+        Add(notiz, Loc.T("Car note heading"), () => _settings.CarNoteTitle,
             v => _settings.CarNoteTitle = v);
-        Add(notiz, "Car note plate", () => _settings.CarNoteBack,
+        Add(notiz, Loc.T("Car note plate"), () => _settings.CarNoteBack,
             v => _settings.CarNoteBack = v, alpha: true);
 
         // Die Live-Karte teilt Linie, Start und Platte mit den Umrissen (dieselbe Art
         // Bild); eigen sind nur das Auto und der schon gefahrene Teil.
         var karte = _farben[HudPart.LiveMap];
-        Add(karte, "Live map: your car", () => _settings.LiveMapCar,
+        Add(karte, Loc.T("Live map: your car"), () => _settings.LiveMapCar,
             v => _settings.LiveMapCar = v);
-        Add(karte, "Live map: driven part", () => _settings.LiveMapTrail,
+        Add(karte, Loc.T("Live map: driven part"), () => _settings.LiveMapTrail,
             v => _settings.LiveMapTrail = v);
     }
 
@@ -1553,9 +1543,13 @@ internal sealed class HudPartPanel : Panel
             Text = string.Empty,
         };
         knopf.FlatAppearance.BorderColor = Color.FromArgb(90, 100, 112);
+        // UMBRECHEND (seit 2026-09-29): Knopf 3 + 34 + 3, Abstand 6, Name hoechstens 186 --
+        // zusammen 232 wie jede Notiz. Ohne Grenze lief ein langer uebersetzter Name ueber
+        // die Spalte hinaus.
         var name = new Label
         {
             Text = text, ForeColor = Color.Gainsboro, AutoSize = true,
+            MaximumSize = new Size(186, 0),
             Margin = new Padding(6, 5, 0, 0),
         };
         knopf.Click += (_, _) =>
@@ -1593,7 +1587,8 @@ internal sealed class HudPartPanel : Panel
                 Changed?.Invoke();
             };
             ziel.Controls.Add(zeile);
-            ziel.Controls.Add(Note(text + " opacity"));
+            // Mit Doppelpunkt statt angehaengtem Wort: so muss keine Sprache den Namen beugen.
+            ziel.Controls.Add(Note(string.Format(Loc.T("{0}: opacity"), text)));
             ziel.Controls.Add(deckung);
             return;
         }
@@ -1608,16 +1603,27 @@ internal sealed class HudPartPanel : Panel
         _layouts.Text = stand;
     }
 
-    private static Button Small(string text, Action tun)
+    /// <summary>Ein kleiner Knopf: mindestens <paramref name="mindestens"/> breit, sonst so breit wie sein Text.</summary>
+    /// <remarks>
+    /// SO BREIT WIE SEIN TEXT (seit 2026-09-29): fest 74 passte nur zum Englischen --
+    /// "Enregistrer" oder "Αποθήκευση" wurden abgeschnitten. Hoechstens 232, die Breite der
+    /// Spalte. Neu gemessen, sobald die Schrift des Fensters ankommt (10 pt statt 9 pt).
+    /// </remarks>
+    private static Button Small(string text, Action tun, int mindestens = 74)
     {
         var knopf = new Button
         {
-            Text = text, Width = 74, Height = 26, FlatStyle = FlatStyle.Flat,
+            Text = text, Width = mindestens, Height = 26, FlatStyle = FlatStyle.Flat,
             BackColor = Color.FromArgb(38, 44, 52), ForeColor = Color.WhiteSmoke,
             Margin = new Padding(0, 0, 3, 0),
         };
         knopf.FlatAppearance.BorderColor = Color.FromArgb(70, 80, 92);
         knopf.Click += (_, _) => tun();
+        void Breite() => knopf.Width = Math.Max(mindestens,
+            Math.Min(232, TextRenderer.MeasureText(knopf.Text, knopf.Font).Width + 16));
+        Breite();
+        knopf.FontChanged += (_, _) => Breite();
+        knopf.TextChanged += (_, _) => Breite();
         return knopf;
     }
 
@@ -1654,6 +1660,8 @@ internal sealed class HudPartPanel : Panel
         ForeColor = Color.White,
         Font = new Font("Segoe UI Semibold", 9.5f),
         AutoSize = true,
+        // Ein langer uebersetzter Titel bricht um, statt ueber die Spalte zu laufen.
+        MaximumSize = new Size(232, 0),
         Margin = new Padding(0, 12, 0, 4),
     };
 

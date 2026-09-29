@@ -24,13 +24,15 @@ internal sealed class RivalsTab : UserControl
     // gerade ein Board fertig gemacht hat.
     private RivalsAdvisor? _advisor;
     private string? _datasetPath;
-    private readonly Label _dataSource = Caption("", 9.5f, Dim);
-    private readonly Label _updateState = Caption("", 9.5f, Dim);
+    // Alle Zustandszeilen umbrechend: in anderen Sprachen sind sie bis zu doppelt so
+    // lang und liefen sonst rechts aus dem Fenster.
+    private readonly Label _dataSource = Caption("", 9.5f, Dim, wrap: 520);
+    private readonly Label _updateState = Caption("", 9.5f, Dim, wrap: 520);
     private FileSystemWatcher? _watcher;
     private DateTime _lastReload = DateTime.MinValue;
-    private readonly Label _status = Caption("", 10, Dim);
-    private readonly Label _lastRead = Caption("", 9.5f, Dim);
-    private readonly Label _telemetry = Caption("", 9.5f, Dim);
+    private readonly Label _status = Caption("", 10, Dim, wrap: 520);
+    private readonly Label _lastRead = Caption("", 9.5f, Dim, wrap: 720);
+    private readonly Label _telemetry = Caption("", 9.5f, Dim, wrap: 720);
     private readonly Button _toggle;
     // Reicht Runden nach, die warten mussten (LapQueue) -- unabhaengig vom
     // Controller, den es erst gibt, wenn das Overlay einmal lief.
@@ -89,13 +91,12 @@ internal sealed class RivalsTab : UserControl
             Padding = new Padding(18),
         };
 
-        layout.Controls.Add(Caption("Rivals overlay", 17, Ink, "Segoe UI Semibold"));
+        layout.Controls.Add(Caption(Loc.T("Rivals overlay"), 17, Ink, "Segoe UI Semibold"));
         layout.Controls.Add(Caption(
-            "Two panels over the game, from the same records as the website. They "
-            + "answer different questions, so they are never up together: each has "
-            + "its own button, and neither stays.", 9.5f, Dim, wrap: 720));
+            Loc.T("Two panels over the game, from the same records as the website. They answer different questions, so they are never up together: each has its own button, and neither stays."),
+            9.5f, Dim, wrap: 720));
 
-        _toggle = Button("Start overlay", 190);
+        _toggle = Button(Loc.T("Start overlay"), 190);
         _toggle.Click += (_, _) => Toggle();
         layout.Controls.Add(Row(_toggle, _status));
         layout.Controls.Add(_telemetry);
@@ -104,9 +105,9 @@ internal sealed class RivalsTab : UserControl
         // stale copy and a fresh download look exactly the same -- and the panel
         // would answer "where does my car place" from last week's boards without
         // ever saying so.
-        var refresh = Button("Refresh data", 130);
+        var refresh = Button(Loc.T("Refresh data"), 130);
         refresh.Click += (_, _) => SyncFromServer(announce: true);
-        var update = Button("Check for app updates", 190);
+        var update = Button(Loc.T("Check for app updates"), 190);
         update.Click += (_, _) => CheckForUpdate(announce: true);
         layout.Controls.Add(Row(refresh, _dataSource));
         layout.Controls.Add(Row(update, _updateState));
@@ -213,10 +214,10 @@ internal sealed class RivalsTab : UserControl
         Disposed += (_, _) => poll.Dispose();
 
         layout.Controls.Add(Gap());
-        layout.Controls.Add(Caption("What it shows", 11, Ink, "Segoe UI Semibold"));
+        layout.Controls.Add(Caption(Loc.T("What it shows"), 11, Ink, "Segoe UI Semibold"));
 
-        var points = Radio("Points — beating the field on every route", true);
-        var times = Radio("Time sum — raw total pace", false);
+        var points = Radio(Loc.T("Points — beating the field on every route"), true);
+        var times = Radio(Loc.T("Time sum — raw total pace"), false);
         points.Checked = _settings.ShowsPoints;
         times.Checked = !_settings.ShowsPoints;
         points.CheckedChanged += (_, _) =>
@@ -238,7 +239,7 @@ internal sealed class RivalsTab : UserControl
         layout.Controls.Add(points);
         layout.Controls.Add(times);
         layout.Controls.Add(Caption(
-            "One list, never both: a glance mid-menu can only hold one order.",
+            Loc.T("One list, never both: a glance mid-menu can only hold one order."),
             9f, Dim, wrap: 720));
 
         var seconds = Spin(_settings.ShowSeconds, 3, 600);
@@ -247,10 +248,10 @@ internal sealed class RivalsTab : UserControl
             _settings.ShowSeconds = (double)seconds.Value;
             _settings.Save();
         };
-        layout.Controls.Add(Row(Caption("Seconds on screen per press", 10, Ink, width: 260),
+        layout.Controls.Add(Row(Caption(Loc.T("Seconds on screen per press"), 10, Ink, width: 260),
                                 seconds));
 
-        var auto = Check("Show the route panel by itself when it recognises the screen",
+        var auto = Check(Loc.T("Show the route panel by itself when it recognises the screen"),
                          _settings.AutoShow);
         auto.CheckedChanged += (_, _) =>
         {
@@ -260,47 +261,39 @@ internal sealed class RivalsTab : UserControl
         layout.Controls.Add(auto);
 
         layout.Controls.Add(Gap());
-        layout.Controls.Add(Caption("Buttons", 11, Ink, "Segoe UI Semibold"));
-        layout.Controls.Add(KeyRow("What to drive", _settings.HotkeyRight,
+        layout.Controls.Add(Caption(Loc.T("Buttons"), 11, Ink, "Segoe UI Semibold"));
+        layout.Controls.Add(KeyRow(Loc.T("What to drive"), _settings.HotkeyRight,
                                    v => _settings.HotkeyRight = v,
                                    _settings.GamepadRight,
                                    v => _settings.GamepadRight = new List<string> { v }));
-        layout.Controls.Add(KeyRow("Your car", _settings.HotkeyLeft,
+        layout.Controls.Add(KeyRow(Loc.T("Your car"), _settings.HotkeyLeft,
                                    v => _settings.HotkeyLeft = v,
                                    _settings.GamepadLeft,
                                    v => _settings.GamepadLeft = new List<string> { v }));
-        layout.Controls.Add(KeyRow("Switch points / time", _settings.HotkeyScore,
+        layout.Controls.Add(KeyRow(Loc.T("Switch points / time"), _settings.HotkeyScore,
                                    v => _settings.HotkeyScore = v, null, null));
-        layout.Controls.Add(KeyRow("Pin the panel that is up", _settings.HotkeyPin,
+        layout.Controls.Add(KeyRow(Loc.T("Pin the panel that is up"), _settings.HotkeyPin,
                                    v => _settings.HotkeyPin = v, null, null));
 
         layout.Controls.Add(Gap());
-        layout.Controls.Add(Caption("Reading the screen", 11, Ink, "Segoe UI Semibold"));
+        layout.Controls.Add(Caption(Loc.T("Reading the screen"), 11, Ink, "Segoe UI Semibold"));
         layout.Controls.Add(Caption(
-            "Only two masked regions are read: the 01/02/03 route list on the left, "
-            + "and the lone class badge in the card's top-right corner. The card's "
-            + "lower half prints the featured car's own class and PI, which on a Spec "
-            + "Racing event is the spec car and not the restriction — reading it "
-            + "would answer the wrong question. The masks are fractions of the "
-            + "screen, so they hold at any resolution.", 9.5f, Dim, wrap: 720));
+            Loc.T("Only two masked regions are read: the 01/02/03 route list on the left, and the lone class badge in the card's top-right corner. The card's lower half prints the featured car's own class and PI, which on a Spec Racing event is the spec car and not the restriction — reading it would answer the wrong question. The masks are fractions of the screen, so they hold at any resolution."),
+            9.5f, Dim, wrap: 720));
 
-        var readNow = Button("Read the screen now", 190);
+        var readNow = Button(Loc.T("Read the screen now"), 190);
         readNow.Click += (_, _) => ReadNow(false);
-        var readFull = Button("Read the whole screen", 190);
+        var readFull = Button(Loc.T("Read the whole screen"), 190);
         readFull.Click += (_, _) => ReadNow(true);
-        var preview = Button("Save mask preview", 190);
+        var preview = Button(Loc.T("Save mask preview"), 190);
         preview.Click += (_, _) => SavePreview();
         layout.Controls.Add(Row(readNow, readFull, preview));
         layout.Controls.Add(_lastRead);
 
         layout.Controls.Add(Gap());
         layout.Controls.Add(Caption(
-            "One socket, one port: the overlay reads the very same telemetry the "
-            + "haptics use, so nothing has to be started twice and there is no "
-            + "second port to keep in step.  "
-            + "The game must run BORDERLESS windowed: an exclusive-fullscreen swap "
-            + "chain draws over every other window, so no overlay of any kind can "
-            + "appear on top of it.", 9f, Dim, wrap: 720));
+            Loc.T("One socket, one port: the overlay reads the very same telemetry the haptics use, so nothing has to be started twice and there is no second port to keep in step. The game must run BORDERLESS windowed: an exclusive-fullscreen swap chain draws over every other window, so no overlay of any kind can appear on top of it."),
+            9f, Dim, wrap: 720));
 
         Controls.Add(layout);
         UpdateStatus();
@@ -350,9 +343,9 @@ internal sealed class RivalsTab : UserControl
         if (_advisor is null)
         {
             _status.Text = _datasetPath is null
-                ? "no records to answer from — check the server address, or unzip the "
-                  + "package again: it ships data/analytics/laps.json"
-                : $"could not load {_datasetPath}";
+                ? string.Format(Loc.T("no records to answer from — check the server address, or unzip the package again: it ships {0}"),
+                                "data/analytics/laps.json")
+                : string.Format(Loc.T("could not load {0}"), _datasetPath);
             return;
         }
         Controller ??= Create();
@@ -372,8 +365,11 @@ internal sealed class RivalsTab : UserControl
         if (path is null || !File.Exists(path))
         {
             _advisor = null;
-            _dataSource.Text = Loc.T("no dataset — set dataset_url, or restore the shipped ")
-                               + "data/analytics/laps.json";
+            // EIN Satz mit Platzhalter: das Bruchstueck "restore the shipped " + Pfad
+            // stellte im Deutschen das Verb vor den Dateinamen.
+            _dataSource.Text = string.Format(
+                Loc.T("no dataset — set dataset_url, or restore the shipped {0}"),
+                "data/analytics/laps.json");
             return;
         }
         try
@@ -381,7 +377,7 @@ internal sealed class RivalsTab : UserControl
             _advisor = new RivalsAdvisor(RivalsDataset.Load(path));
             _datasetPath = path;
             _dataSource.Text =
-                $"{_advisor.BoardCount} boards · {origin} · "
+                string.Format(Loc.T("{0} boards"), _advisor.BoardCount) + $" · {origin} · "
                 + File.GetLastWriteTime(path).ToString("yyyy-MM-dd HH:mm");
         }
         catch (Exception exception)
@@ -390,9 +386,9 @@ internal sealed class RivalsTab : UserControl
             // rebuild is the common case for the watcher below, and dropping the
             // working one for it would make the panel worse, not more current.
             _dataSource.Text = _advisor is null
-                ? $"dataset failed to load: {exception.Message}"
-                : $"{_advisor.BoardCount} boards · kept the previous one "
-                  + $"({exception.Message})";
+                ? string.Format(Loc.T("dataset failed to load: {0}"), exception.Message)
+                : string.Format(Loc.T("{0} boards"), _advisor.BoardCount) + " · "
+                  + string.Format(Loc.T("kept the previous one ({0})"), exception.Message);
         }
     }
 
@@ -462,7 +458,8 @@ internal sealed class RivalsTab : UserControl
         if (result.Source == DatasetSync.Origin.Cache && result.Path == _datasetPath
             && _advisor is not null)
         {
-            _dataSource.Text = $"{_advisor.BoardCount} boards · {result.Detail}";
+            _dataSource.Text = string.Format(Loc.T("{0} boards"), _advisor.BoardCount)
+                               + " · " + result.Detail;
         }
         else
         {
@@ -520,7 +517,7 @@ internal sealed class RivalsTab : UserControl
         {
             _updateState.Text = announce
                 ? befund.Text
-                : (befund.EigeneKennung is null ? "" : "App: " + befund.Text);
+                : (befund.EigeneKennung is null ? "" : string.Format(Loc.T("App: {0}"), befund.Text));
             return;
         }
 
@@ -614,7 +611,7 @@ internal sealed class RivalsTab : UserControl
                     BeginInvoke(new Action(async () =>
                     {
                         await Task.Delay(3000).ConfigureAwait(true);
-                        ApplyDataset(local, "rebuilt on this machine");
+                        ApplyDataset(local, Loc.T("rebuilt on this machine"));
                     }));
                 }
                 catch (InvalidOperationException)
@@ -732,10 +729,10 @@ internal sealed class RivalsTab : UserControl
             return;
         }
         _telemetry.Text = _host.TelemetryRunning
-            ? $"telemetry: the app is listening on UDP {_host.TelemetryPort} — "
-              + "this panel reads that same stream, there is no second port"
-            : $"telemetry: the listener is stopped (port {_host.TelemetryPort}) — "
-              + "starting the overlay starts it";
+            ? string.Format(Loc.T("telemetry: the app is listening on UDP {0} — this panel reads that same stream, there is no second port"),
+                            _host.TelemetryPort)
+            : string.Format(Loc.T("telemetry: the listener is stopped (port {0}) — starting the overlay starts it"),
+                            _host.TelemetryPort);
         _telemetry.ForeColor = _host.TelemetryRunning
             ? Color.FromArgb(126, 231, 135) : Dim;
     }
@@ -743,9 +740,9 @@ internal sealed class RivalsTab : UserControl
     private void UpdateStatus()
     {
         var boards = _advisor?.BoardCount ?? 0;
-        var state = Controller is { Running: true } ? Controller.Status : "stopped";
-        var ocr = Controller?.OcrAvailable == false ? " · NO OCR LANGUAGE" : string.Empty;
-        _status.Text = $"{state} · {boards} boards{ocr}";
+        var state = Controller is { Running: true } ? Controller.Status : Loc.T("stopped");
+        var ocr = Controller?.OcrAvailable == false ? " · " + Loc.T("NO OCR LANGUAGE") : string.Empty;
+        _status.Text = state + " · " + string.Format(Loc.T("{0} boards"), boards) + ocr;
         _status.ForeColor = Controller is { Running: true } ? Color.FromArgb(126, 231, 135) : Dim;
     }
 
@@ -759,14 +756,18 @@ internal sealed class RivalsTab : UserControl
         try
         {
             var state = Controller.ReadOnce(full);
+            // Ganze Saetze je Fall ("routes: none matched", "usable: yes"), keine
+            // zusammengesetzten Bruchstuecke -- andere Sprachen stellen um.
             var routes = state.Tracks.Count > 0
-                ? string.Join(", ", state.Tracks)
-                : "none matched";
-            _lastRead.Text = $"{state.ReadMilliseconds:0} ms · routes: {routes} · "
-                             + $"class: {state.Klass ?? "none"}"
+                ? string.Format(Loc.T("routes: {0}"), string.Join(", ", state.Tracks))
+                : Loc.T("routes: none matched");
+            var klasse = state.Klass is { } k
+                ? string.Format(Loc.T("class: {0}"), k)
+                : Loc.T("class: none");
+            _lastRead.Text = $"{state.ReadMilliseconds:0} ms · {routes} · {klasse}"
                              + (state.KlassSource.Length > 0 ? $" ({state.KlassSource})" : "")
-                             + (state.Spec ? " · one-make event" : "")
-                             + $" · usable: {(state.IsOffer ? "yes" : "no")}";
+                             + (state.Spec ? " · " + Loc.T("one-make event") : "")
+                             + " · " + (state.IsOffer ? Loc.T("usable: yes") : Loc.T("usable: no"));
             _lastRead.ForeColor = state.IsOffer ? Color.FromArgb(126, 231, 135) : Dim;
             if (state.IsOffer)
             {
@@ -775,7 +776,8 @@ internal sealed class RivalsTab : UserControl
         }
         catch (Exception exception)
         {
-            _lastRead.Text = $"read failed: {exception.GetType().Name}: {exception.Message}";
+            _lastRead.Text = string.Format(Loc.T("read failed: {0}"),
+                                           $"{exception.GetType().Name}: {exception.Message}");
             _lastRead.ForeColor = Color.FromArgb(240, 162, 46);
         }
     }
@@ -790,13 +792,14 @@ internal sealed class RivalsTab : UserControl
         try
         {
             var path = Controller.SaveMaskPreview();
-            _lastRead.Text = $"wrote {path} — the routes box must hold the 01/02/03 "
-                             + "list, the class box only the badge";
+            _lastRead.Text = string.Format(
+                Loc.T("wrote {0} — the routes box must hold the 01/02/03 list, the class box only the badge"),
+                path);
             _lastRead.ForeColor = Dim;
         }
         catch (Exception exception)
         {
-            _lastRead.Text = $"preview failed: {exception.Message}";
+            _lastRead.Text = string.Format(Loc.T("preview failed: {0}"), exception.Message);
         }
     }
 
@@ -832,17 +835,24 @@ internal sealed class RivalsTab : UserControl
         }
         if (width > 0)
         {
-            label.Size = new Size(width, 26);
+            // Die Spalte bleibt so breit; eine laengere Uebersetzung bricht um und
+            // macht die Zeile hoeher, statt abgeschnitten zu werden.
+            label.AutoSize = true;
+            label.MinimumSize = new Size(width, 26);
+            label.MaximumSize = new Size(width, 0);
             label.TextAlign = ContentAlignment.MiddleLeft;
         }
         return label;
     }
 
+    // Mindestens so breit wie vorgesehen, breiter, wenn die Uebersetzung es braucht.
     private static Button Button(string text, int width) => new()
     {
         Text = text,
         Width = width,
         Height = 34,
+        MinimumSize = new Size(width, 34),
+        AutoSize = true,
         FlatStyle = FlatStyle.Flat,
         BackColor = Color.FromArgb(50, 54, 62),
         ForeColor = Ink,
@@ -934,15 +944,19 @@ internal sealed class RivalsTab : UserControl
                 ForeColor = Ink,
                 Margin = new Padding(10, 0, 0, 0),
             };
+            // Die Namen sind Kennungen, die so in overlay.json stehen; nur "(none)" wird
+            // uebersetzt ANGEZEIGT. Gelesen wird darum ueber den Index, nie ueber den Text.
             string[] names = { "BACK", "START", "LB", "RB", "LEFT_THUMB",
                                "RIGHT_THUMB", "DPAD_UP", "DPAD_DOWN", "DPAD_LEFT",
                                "DPAD_RIGHT", "(none)" };
-            pads.Items.AddRange(names);
+            pads.Items.AddRange(names.Select(n => (object)(n == "(none)" ? Loc.T("(none)") : n)).ToArray());
             var current = currentPad?.FirstOrDefault()?.ToUpperInvariant();
-            pads.SelectedIndex = Math.Max(0, Array.IndexOf(names, current ?? "(none)"));
+            // Gespeichert wird "(none)" als leerer Eintrag -- auch der ist "(none)", nicht BACK.
+            pads.SelectedIndex = Math.Max(0, Array.IndexOf(names,
+                string.IsNullOrEmpty(current) ? "(none)" : current));
             pads.SelectedIndexChanged += (_, _) =>
             {
-                var chosen = (string)pads.Items[pads.SelectedIndex]!;
+                var chosen = names[pads.SelectedIndex];
                 setPad(chosen == "(none)" ? string.Empty : chosen);
                 _settings.Save();
             };

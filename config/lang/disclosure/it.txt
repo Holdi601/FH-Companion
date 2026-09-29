@@ -1,0 +1,209 @@
+#fassung 9
+Per favore, leggi questo testo una volta. Spiega che cosa fa il programma sul tuo
+PC, che cosa esce dal tuo computer e perché Windows potrebbe avvisarti al
+riguardo.
+
+
+CHE COSA FA SUL TUO PC
+
+  Legge la telemetria dal gioco.
+      Forza Horizon 6 può inviare la propria telemetria alla tua stessa macchina
+      tramite UDP. La attivi tu stesso nel gioco, in Impostazioni > HUD e gioco.
+      Il programma ascolta su 127.0.0.1 -- il tuo stesso computer, non la rete --
+      e la usa per il delta sul giro, la mappa dal vivo, la registrazione dei tuoi
+      giri e la vibrazione del controller. Solo se imposti il programma su
+      "Xbox / 2° PC" in alto nella sua finestra ascolta invece sulla tua rete,
+      così che la Xbox o l'altro PC possano raggiungerlo. Se il firewall di
+      Windows lo blocca, un pulsante nel pannello Xbox aggiunge una regola
+      esattamente per quella porta UDP -- solo quando lo premi, e Windows ti
+      chiede prima il permesso.
+
+  Legge la memoria del gioco in esecuzione -- solo quando premi un pulsante.
+      L'elenco dei componenti montati sulla tua auto, e quale assetto si trova su
+      quale auto, non sono nella telemetria. Si trovano in un piccolo database che
+      il gioco tiene nella propria memoria. Per mostrarli, il programma apre il
+      processo di Forza in sola lettura e cerca in quella memoria.
+
+      LEGGE soltanto. Non scrive mai nel gioco e non vi cambia mai nulla. Lo fa
+      solo quando premi l'apposito pulsante nella scheda Tuning, Tunes, Note sulle auto
+      o Collezione auto. Se non ne premi mai uno, la memoria del gioco non viene
+      mai toccata. Per escluderlo del tutto, togli la spunta a
+      "Leggi la memoria del gioco" in alto nella finestra: il programma ricava
+      allora le tue auto e i loro assetti invece dallo schermo (vedi sotto).
+
+  Legge ciò che il gioco mostra sullo schermo.
+      Per sapere quali percorsi offre la schermata "Iscrizione evento", quale auto
+      è evidenziata nel menu delle auto, quali auto ci sono nelle pagine
+      "Le mie auto" che guardi e quale assetto si trova su un'auto nel suo elenco
+      degli assetti, il programma cattura immagini della finestra del gioco e
+      legge il testo con il riconoscimento del testo integrato in Windows. Ciò
+      avviene sul tuo PC; le immagini non vengono inviate da nessuna parte. In
+      modalità "Xbox / 2° PC" prende invece quelle immagini dalla sorgente che
+      scegli: una scheda di acquisizione, OBS, la finestra di Xbox Remote Play,
+      Discord, uno stream nel tuo browser o un indirizzo di stream. Windows
+      disegna allora una cornice gialla attorno a una finestra catturata.
+
+  Legge i tuoi assetti scaricati dalla cartella di salvataggio -- sola lettura.
+      La scheda Tunes li conta e mostra quali non sono usati da nessuna auto. La
+      cartella di salvataggio del gioco non viene mai modificata da questo.
+
+  Elimina assetti nel gioco -- solo quando lo avvii tu.
+      Nella scheda Tunes puoi lasciare che il programma elimini gli assetti
+      inutilizzati attraverso i menu del gioco stesso. Passa quindi al gioco e
+      preme i tasti da solo. Prima chiede, offre una prova che non elimina nulla,
+      non elimina mai un assetto che si trova su un'auto e si ferma con Alt+Tab o
+      il tasto Pausa.
+
+      Questo è anche, da solo, il motivo principale per cui gli antivirus
+      diffidano del programma: leggere la memoria di un altro processo è ciò che
+      fa un cheat o un ladro di password. Qui legge l'elenco dei componenti della
+      tua stessa auto in un gioco di corse per giocatore singolo.
+
+  Fa vibrare il tuo controller -- e questo ne scarica la batteria più in fretta.
+      Mentre Forza è in esecuzione e invia telemetria, il programma pilota la
+      vibrazione del tuo controller: l'aderenza degli pneumatici diventa un rombo,
+      una ruota che si blocca un breve ronzio. È attiva fin dall'inizio. Un
+      controller wireless esaurirà la batteria sensibilmente prima mentre vibra, e
+      più forte e più rapida (frequenza più alta) imposti la vibrazione nel
+      Editor Blueprint, più energia consuma. Togli la spunta a
+      "Uscita del grafo attiva" nel Editor Blueprint per disattivarla; il
+      programma se lo ricorda.
+
+  Controlla la pressione dei tasti.
+      Solo per intercettare i tasti di scelta rapida -- F10 imposta una linea di
+      partenza/arrivo in esplorazione libera. Verifica se quei tasti specifici
+      sono premuti. Non registra ciò che digiti e non esiste da nessuna parte un
+      registro dei tasti premuti.
+
+  Disegna un overlay sopra il gioco.
+      Il delta sul giro, le mappe, le note sulle auto e i pannelli Rivali sono
+      finestre separate disegnate sopra Forza. Quando un giro batte il tempo del
+      sito, compare per circa cinque secondi una breve celebrazione con coriandoli
+      e un suono; puoi disattivarla nella scheda HUD delta sul giro.
+
+  Registra i tuoi giri -- sul tuo disco.
+      Tempi, posizioni e velocità vengono scritti nella cartella del programma
+      stesso, così che possa mostrarti un delta rispetto al tuo miglior tempo.
+      Solo un giro che batte la classifica viene inviato da qualche parte -- vedi
+      sotto.
+
+
+CHE COSA ESCE DAL TUO COMPUTER
+
+  Il programma contatta il server per esattamente cinque cose:
+
+      1. Per chiedere se le valutazioni delle auto sono più recenti di quelle che
+         hai, e per scaricarle se lo sono.
+      2. Per chiedere se esiste una versione più recente di questo programma.
+      3. Per scaricare quella nuova versione, quando premi il pulsante di
+         aggiornamento.
+      4. Per inviare un giro che BATTE la classifica -- ATTIVO a meno che tu non
+         lo disattivi.
+      5. Per scaricare l'elenco di tutte le auto e di come ottenerle, per la
+         scheda Collezione auto -- al massimo ogni dodici ore, e solo mentre quella
+         scheda è aperta. Non invia nulla; quali auto possiedi resta su questo
+         computer.
+
+  Riguardo al 4: un giro viene inviato solo se è più veloce del miglior tempo in
+  classifica di quella stessa auto su quel percorso e in quella classe, e più
+  veloce di qualsiasi cosa tu abbia già inviato per essa. Vengono inviati: l'auto,
+  il percorso, la classe, il tempo e la telemetria COMPLETA del giro -- ogni
+  pacchetto che il gioco ha inviato durante quel giro: posizione e orientamento,
+  velocità, il tuo acceleratore, freno, frizione e sterzo, marcia, motore e, per
+  ogni ruota, la temperatura dello pneumatico, lo slittamento e le sospensioni --
+  così che il server possa verificare che il tempo sia reale e una persona possa
+  esaminare un giro che sembra sbagliato. In più un identificativo di questo PC
+  sottoposto a hash, per poter bloccare gli abusi -- e il tuo gamertag, se ne hai
+  impostato uno nella scheda Rivals. Il gamertag non è obbligatorio: senza, il
+  giro viene inviato comunque e appare sul sito con un nome giocatore provvisorio.
+  Un gamertag che imposti in seguito lo sostituisce su tutti i tuoi giri, anche
+  quelli precedenti, e svuotare il campo in seguito mantiene l'ultimo nome. Il
+  server controlla di nuovo il giro prima di mostrarlo. Disattivalo nella scheda
+  Rivals ("Invia i miei giri ...") o imposta "submit_laps": false in
+  config/overlay.json.
+
+  Un giro che batte la classifica ma non può essere inviato subito -- invio
+  disattivato, offline o server che non risponde -- viene conservato su questo
+  computer e inviato più tardi, quando tutto è di nuovo a posto, anche settimane
+  dopo. Prima di partire viene confrontato ancora una volta con la classifica di
+  quel giorno e scartato se ha smesso di essere più veloce. Quindi riattivare
+  l'invio invia anche i giri migliori che hai fatto mentre era disattivato.
+  "Scarta i giri in attesa" nella scheda Rivals invece li elimina.
+
+  Non viene inviato nient'altro. I tuoi giri normali non vengono caricati. Il tuo
+  assetto non viene caricato. Non c'è nessun account e nulla a cui accedere.
+
+  Poiché il tuo computer pone queste domande, il server vede che una qualche
+  installazione ha chiesto -- è inevitabile per qualsiasi programma che controlla
+  gli aggiornamenti. Viene conteggiato, così sappiamo all'incirca quante persone
+  lo usano, e l'identificativo è sottoposto a hash con un segreto che resta sul
+  server e viene eliminato dopo 40 giorni. Se ti dà fastidio, imposta
+  "offline": true in config/overlay.json e il programma non contatterà mai più il
+  server -- funzionerà allora interamente con i dati arrivati con il download, e
+  tutto tranne l'aggiornamento continua a funzionare.
+
+
+COME SI AGGIORNA
+
+  Quando premi il pulsante di aggiornamento, il programma scarica uno ZIP,
+  verifica la firma del suo editore, lo decomprime e sostituisce i propri file. Un
+  pacchetto non firmato dall'editore viene rifiutato. Durante l'operazione compare
+  una piccola finestra di console -- quella finestra deve essere visibile, così
+  puoi vedere che cosa viene sostituito. La tua cartella delle impostazioni viene
+  conservata.
+
+  Non viene installato nulla. Non viene scritto nulla nel registro di Windows.
+  Elimina la cartella e il programma non c'è più.
+
+
+PERCHÉ WINDOWS POTREBBE DEFINIRLO UN TROJAN
+
+  Windows Defender potrebbe segnalare questo programma come
+  Trojan:Win32/Bearfoos.A!ml e bloccarlo. Il suffisso "!ml" significa che non si
+  tratta di una corrispondenza con un malware noto -- è un'ipotesi di un modello
+  di machine learning su un file che non ha mai visto.
+
+  Fa questa ipotesi perché il programma non ha una firma del codice, quasi nessuno
+  lo ha ancora e fa le tre cose elencate sopra: legge la memoria di un altro
+  processo, sostituisce i propri file e scarica da internet. Sono esattamente i
+  comportamenti di cui il modello è stato addestrato a diffidare.
+
+  Ogni versione viene analizzata prima di essere pubblicata, e la pagina di
+  download mostra un checksum, così puoi verificare che il file che hai ricevuto
+  sia il file che è stato compilato. Se preferisci non fidarti sulla parola, non
+  eseguirlo -- è una scelta legittima e questo programma non ti assillerà al
+  riguardo.
+
+
+COLLEGAMENTI, SE LI VUOI
+
+  Sotto questo testo puoi chiedere un collegamento sul desktop, una voce nel menu
+  Start e che il programma si avvii con Forza. Tutti e tre sono disattivati finché
+  non li spunti, tutti e tre sono solo un file .lnk in una cartella, e puoi
+  eliminarne uno qualsiasi in seguito senza toccare il programma.
+
+  "Avvia con Forza" mette il programma nella tua cartella Esecuzione automatica di
+  Windows. Dall'accesso attende invisibile nell'area di notifica e si apre
+  (ridotto a icona) quando Forza si avvia; dopo il gioco torna lì. Windows non
+  permette a un programma di avviarsi quando si avvia un altro programma senza
+  diritti di amministratore -- attendere nell'area di notifica non ne richiede e
+  non costa praticamente nulla. Chiudere la finestra lo lascia in attesa; fai clic
+  con il tasto destro sull'icona per uscire. Il pulsante "Avvia con Forza" in alto
+  a destra della finestra principale lo attiva e lo disattiva.
+
+  Windows non consente a un programma di aggiungersi da solo alla barra delle
+  applicazioni -- dalla versione 1607 di Windows 10 questo è riservato a te, e
+  aggirarlo significherebbe falsificare un checksum nel registro. Questo programma
+  non lo fa. Spunta la voce del menu Start, poi fai clic con il tasto destro su di
+  essa e scegli "Aggiungi alla barra delle applicazioni".
+
+
+NESSUNA GARANZIA
+
+  Questo è un progetto amatoriale, regalato gratuitamente, senza alcuna garanzia
+  di alcun tipo. Non è affiliato né collegato a Microsoft, Turn 10,
+  Playground Games o alla serie Forza Horizon, né approvato da essi.
+
+
+Puoi rileggere questo testo in qualsiasi momento: il link
+"Che cosa fa questo programma" in alto nella finestra principale.

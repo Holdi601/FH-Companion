@@ -17,7 +17,7 @@ internal sealed class TelemetryInspector : UserControl
         var header = new Panel { Dock = DockStyle.Top, Height = 52, Padding = new Padding(10) };
         _search = new TextBox
         {
-            PlaceholderText = "Filter telemetry by field or category...",
+            PlaceholderText = Loc.T("Filter telemetry by field or category..."),
             Location = new Point(10, 11),
             Width = 420
         };
@@ -40,11 +40,11 @@ internal sealed class TelemetryInspector : UserControl
         };
 
         _telemetryGrid = CreateGrid();
-        _telemetryGrid.Columns.Add("Category", "Category");
-        _telemetryGrid.Columns.Add("Field", "Field");
-        _telemetryGrid.Columns.Add("Key", "Key");
-        _telemetryGrid.Columns.Add("Value", "Current value");
-        _telemetryGrid.Columns.Add("Unit", "Unit");
+        _telemetryGrid.Columns.Add("Category", Loc.T("Category"));
+        _telemetryGrid.Columns.Add("Field", Loc.T("Field"));
+        _telemetryGrid.Columns.Add("Key", Loc.T("Key"));
+        _telemetryGrid.Columns.Add("Value", Loc.T("Current value"));
+        _telemetryGrid.Columns.Add("Unit", Loc.T("Unit"));
         _telemetryGrid.Columns[0].Width = 125;
         _telemetryGrid.Columns[1].Width = 190;
         _telemetryGrid.Columns[2].Width = 225;
@@ -76,10 +76,10 @@ internal sealed class TelemetryInspector : UserControl
         _outputGrid = CreateGrid();
         _outputGrid.Dock = DockStyle.Top;
         _outputGrid.Height = 230;
-        _outputGrid.Columns.Add("Channel", "Channel");
-        _outputGrid.Columns.Add("Strength", "Strength");
-        _outputGrid.Columns.Add("Frequency", "Frequency");
-        _outputGrid.Columns.Add("State", "State");
+        _outputGrid.Columns.Add("Channel", Loc.T("Channel"));
+        _outputGrid.Columns.Add("Strength", Loc.T("Strength"));
+        _outputGrid.Columns.Add("Frequency", Loc.T("Frequency"));
+        _outputGrid.Columns.Add("State", Loc.T("State"));
         _outputGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
         var explanation = new Label
@@ -116,9 +116,15 @@ internal sealed class TelemetryInspector : UserControl
             row.Cells[3].Value = FormatValue(packet.Get(descriptor.Key), descriptor);
         }
 
-        _summary.Text =
-            $"{packetRate:F1} packets/s  ·  Race {(packet.IsRaceOn ? "active" : "inactive")}  ·  " +
-            $"{ForzaPacket.Descriptors.Count} packet fields + {ForzaPacket.DerivedDescriptors.Count} derived";
+        // Zwei ganze Saetze statt "Race " + "active": die Wortstellung ist nicht
+        // in jeder Sprache dieselbe.
+        _summary.Text = string.Format(
+            packet.IsRaceOn
+                ? Loc.T("{0} packets/s  ·  Race active  ·  {1} packet fields + {2} derived")
+                : Loc.T("{0} packets/s  ·  Race inactive  ·  {1} packet fields + {2} derived"),
+            packetRate.ToString("F1"),
+            ForzaPacket.Descriptors.Count,
+            ForzaPacket.DerivedDescriptors.Count);
 
         _outputGrid.Rows.Clear();
         foreach (var output in hapticOutputs)
@@ -129,9 +135,9 @@ internal sealed class TelemetryInspector : UserControl
                 output.Active
                     ? output.FrequencyHz > 0
                         ? $"{output.FrequencyHz:F0} Hz"
-                        : "motor intensity"
+                        : Loc.T("motor intensity")
                     : "--",
-                output.Active ? "Active" : "Off");
+                output.Active ? Loc.T("Active") : Loc.T("Off"));
         }
 
         if (graphResult is not null)
@@ -139,10 +145,10 @@ internal sealed class TelemetryInspector : UserControl
             foreach (var output in graphResult.Outputs.Where(output => output.Strength > 0))
             {
                 _outputGrid.Rows.Add(
-                    $"Graph: {output.NodeTitle}",
+                    string.Format(Loc.T("Graph: {0}"), output.NodeTitle),
                     output.Strength.ToString("P1"),
                     $"{output.FrequencyHz:F0} Hz",
-                    output.EffectMode.ToString());
+                    output.EffectMode == HapticEffectMode.Beep ? Loc.T("Pulsed") : Loc.T("Continuous"));
             }
         }
     }

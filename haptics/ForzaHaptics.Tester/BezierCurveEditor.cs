@@ -17,10 +17,10 @@ internal sealed class BezierCurveEditor : Control
     public int SelectedNodeIndex { get; private set; } = -1;
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public string HorizontalCaption { get; set; } = "Grip";
+    public string HorizontalCaption { get; set; } = Loc.T("Grip");
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public string VerticalCaption { get; set; } = "Output";
+    public string VerticalCaption { get; set; } = Loc.T("Output");
 
     public event EventHandler? CurveChanged;
 

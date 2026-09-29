@@ -183,20 +183,29 @@ internal sealed class TuneDeleter
     }
 
     /// <summary>Welcher Schirm ist das -- an den Texten, die nur er hat.</summary>
+    /// <remarks>
+    /// In jeder Spielsprache (GameText, seit 2026-09-29) -- die Texte stammen aus den
+    /// Tabellen des Spiels. "Jump to Manufacturer" gibt es dort nicht mehr; "Toggle
+    /// Stats" allein erkennt My Cars.
+    /// </remarks>
     internal static Schirm Einordnen(IReadOnlyList<OcrLine> z)
     {
-        bool Hat(string s) => z.Any(l => l.Text.Contains(s, StringComparison.OrdinalIgnoreCase));
-        if (Hat("Delete File") && Hat("Are you sure")) { return Schirm.DeleteConfirm; }
-        if (Hat("File Options")) { return Schirm.FileOptions; }
-        if (Hat("Please Wait")) { return Schirm.Warten; }
-        if (Hat("Select an Action")) { return Schirm.ActionMenu; }
-        if (Hat("Date Created") && Hat("Tuner Rank"))
+        bool Hat(string schluessel, string englisch) => z.Any(l => GameText.Enthaelt(l.Text, schluessel, englisch));
+        if (Hat("delete_file", "Delete File")
+            && z.Any(l => GameText.BeginntWie(l.Text, "are_you_sure_delete", "Are you sure you want to delete this file?")))
         {
-            return Hat("TRENDING") || Hat("ALL TIME GREATS") ? Schirm.TuneBrowser : Schirm.TunesList;
+            return Schirm.DeleteConfirm;
         }
-        if (Hat("My Tuning Setups") && Hat("Custom Tuning")) { return Schirm.Upgrades; }
-        if (Hat("Upgrades & Tuning") && Hat("Designs & Paints")) { return Schirm.CarsMenu; }
-        if (Hat("Jump to Manufacturer") || Hat("Toggle Stats")) { return Schirm.MyCars; }
+        if (Hat("file_options", "File Options")) { return Schirm.FileOptions; }
+        if (Hat("please_wait", "Please Wait")) { return Schirm.Warten; }
+        if (Hat("select_an_action", "Select an Action")) { return Schirm.ActionMenu; }
+        if (Hat("date_created", "Date Created") && Hat("tuner_rank", "Tuner Rank"))
+        {
+            return Hat("trending", "TRENDING") || Hat("all_time_greats", "ALL TIME GREATS") ? Schirm.TuneBrowser : Schirm.TunesList;
+        }
+        if (Hat("my_tuning_setups", "My Tuning Setups") && Hat("custom_tuning", "Custom Tuning")) { return Schirm.Upgrades; }
+        if (Hat("upgrades_tuning", "Upgrades & Tuning") && Hat("designs_paints", "Designs & Paints")) { return Schirm.CarsMenu; }
+        if (Hat("toggle_stats", "Toggle Stats")) { return Schirm.MyCars; }
         return Schirm.Unbekannt;
     }
 
@@ -263,25 +272,27 @@ internal sealed class TuneDeleter
         return Band((int)zeile.Y - 22) && Band((int)zeile.Y + 34);
     }
 
-    private static OcrLine? Zeile(IReadOnlyList<OcrLine> z, string text)
+    private static OcrLine? Zeile(IReadOnlyList<OcrLine> z, string schluessel, string englisch)
     {
-        foreach (var l in z) { if (l.Text.Trim().Equals(text, StringComparison.OrdinalIgnoreCase)) { return l; } }
-        foreach (var l in z) { if (l.Text.Contains(text, StringComparison.OrdinalIgnoreCase)) { return l; } }
+        foreach (var l in z) { if (GameText.Gleich(l.Text, schluessel, englisch)) { return l; } }
+        foreach (var l in z) { if (GameText.Enthaelt(l.Text, schluessel, englisch)) { return l; } }
         return null;
     }
 
     /// <summary>In einem Menue den Eintrag anwaehlen: hoch oder runter, bis sein Rahmen steht.</summary>
-    private Blick Waehle(Blick blick, string eintrag, Schirm schirm)
+    /// <param name="schluessel">Das Wort in GameText -- der Eintrag heisst in jeder Spielsprache anders.</param>
+    private Blick Waehle(Blick blick, string schluessel, string eintrag, Schirm schirm)
     {
         for (var versuch = 0; versuch < 16; versuch++)
         {
-            var gefunden = Zeile(blick.Zeilen, eintrag)
+            var gefunden = Zeile(blick.Zeilen, schluessel, eintrag)
                            ?? throw new Abbruch($"menu entry '{eintrag}' not found on {blick.Schirm}");
             var ziel = gefunden;
             if (Markiert(blick.Bild, ziel)) { return blick; }
             // Welcher Eintrag ist markiert? Dann in die richtige Richtung.
             var markiert = blick.Zeilen.Where(l => Math.Abs(l.X - ziel.X) < 250 && Math.Abs(l.Y - ziel.Y) < 400
-                                                   && !l.Text.Contains("File Options") && !l.Text.Contains("Delete File")
+                                                   && !GameText.Enthaelt(l.Text, "file_options", "File Options")
+                                                   && !GameText.Enthaelt(l.Text, "delete_file", "Delete File")
                                                    && Markiert(blick.Bild, l))
                                        .OrderBy(l => Math.Abs(l.Y - ziel.Y)).Select(l => (OcrLine?)l).FirstOrDefault();
             blick.Dispose();
@@ -320,7 +331,7 @@ internal sealed class TuneDeleter
             z.Where(l => l.Y >= y0 && l.Y <= y1 && l.X < xMax).OrderBy(l => l.X).Select(l => l.Text.Trim()));
         var name = In(180, 215, 575);
         var creator = In(545, 590, 560);
-        var datumZeile = z.FirstOrDefault(l => l.Text.Contains("Date Created", StringComparison.OrdinalIgnoreCase));
+        var datumZeile = z.FirstOrDefault(l => GameText.Enthaelt(l.Text, "date_created", "Date Created"));
         var datum = datumZeile.Text is null ? string.Empty
             : string.Join(" ", z.Where(l => Math.Abs(l.Y - datumZeile.Y) < 12 && l.X > datumZeile.X + 100 && l.X < 560)
                                .Select(l => l.Text.Trim()));
@@ -429,7 +440,7 @@ internal sealed class TuneDeleter
         using var bild = Aufnahme();
         var zeilen = _ocr.Read(bild);
         if (Einordnen(zeilen) != Schirm.DeleteConfirm) { return false; }
-        var ja = zeilen.FirstOrDefault(l => l.Text.Trim().Equals("Yes", StringComparison.OrdinalIgnoreCase));
+        var ja = zeilen.FirstOrDefault(l => GameText.Gleich(l.Text, "yes", "Yes"));
         if (ja.Text is null) { return false; }
         return !Dunkel(bild, (int)ja.Y + 12) && Dunkel(bild, (int)ja.Y + 12 + 54);
     }
@@ -473,10 +484,10 @@ internal sealed class TuneDeleter
     /// <summary>Name und Tuner im Dialog "File Options".</summary>
     internal static (string Name, string Creator, string Auto) LiesDialog(IReadOnlyList<OcrLine> z)
     {
-        var titel = z.FirstOrDefault(l => l.Text.Contains("File Options", StringComparison.OrdinalIgnoreCase));
+        var titel = z.FirstOrDefault(l => GameText.Enthaelt(l.Text, "file_options", "File Options"));
         var name = titel.Text is null ? string.Empty
             : z.Where(l => l.Y > titel.Y + 40 && l.Y < titel.Y + 110).OrderBy(l => l.Y).Select(l => l.Text.Trim()).FirstOrDefault() ?? "";
-        var creatorKopf = z.FirstOrDefault(l => l.Text.Trim().Equals("Creator", StringComparison.OrdinalIgnoreCase));
+        var creatorKopf = z.FirstOrDefault(l => GameText.Gleich(l.Text, "creator", "Creator"));
         var creator = creatorKopf.Text is null ? string.Empty
             : z.Where(l => l.Y > creatorKopf.Y + 10 && l.Y < creatorKopf.Y + 45 && Math.Abs(l.X - creatorKopf.X) < 60)
                .Select(l => l.Text.Trim()).FirstOrDefault() ?? "";
@@ -953,7 +964,7 @@ internal sealed class TuneDeleter
     {
         var blick = Warte("back to the Cars menu", 8000, Schirm.CarsMenu, Schirm.MyCars);
         if (blick.Schirm == Schirm.MyCars) { blick.Dispose(); return; }
-        blick = Waehle(blick, "My Cars", Schirm.CarsMenu);
+        blick = Waehle(blick, "my_cars", "My Cars", Schirm.CarsMenu);
         blick.Dispose();
         Taste(Enter, 800);
         Warte("opening My Cars", 8000, Schirm.MyCars).Dispose();
@@ -968,16 +979,16 @@ internal sealed class TuneDeleter
         if (einsteigen)
         {
             var aktion = Warte("action menu", 4000, Schirm.ActionMenu);
-            aktion = Waehle(aktion, "Get In Car", Schirm.ActionMenu);
+            aktion = Waehle(aktion, "get_in_car", "Get In Car", Schirm.ActionMenu);
             aktion.Dispose();
             Taste(Enter, 1500);
         }
         var menue = Warte("Cars menu after getting in", 30000, Schirm.CarsMenu);
-        menue = Waehle(menue, "Upgrades & Tuning", Schirm.CarsMenu);
+        menue = Waehle(menue, "upgrades_tuning", "Upgrades & Tuning", Schirm.CarsMenu);
         menue.Dispose();
         Taste(Enter, 900);
         var upgrades = Warte("Upgrades menu", 8000, Schirm.Upgrades);
-        upgrades = Waehle(upgrades, "My Tuning Setups", Schirm.Upgrades);
+        upgrades = Waehle(upgrades, "my_tuning_setups", "My Tuning Setups", Schirm.Upgrades);
         upgrades.Dispose();
         Taste(Enter, 1200);
         var liste = Warte("tune list", 10000, Schirm.TunesList);
@@ -1087,7 +1098,7 @@ internal sealed class TuneDeleter
                 Taste(Rechts, 350);
                 continue;
             }
-            dialog = Waehle(dialog, "Delete", Schirm.FileOptions);
+            dialog = Waehle(dialog, "delete", "Delete", Schirm.FileOptions);
             dialog.Dispose();
             Taste(Enter, 700);
             var frage = Warte("Delete File", 6000, Schirm.DeleteConfirm);
@@ -1118,7 +1129,7 @@ internal sealed class TuneDeleter
                 Taste(Rechts, 350);
                 continue;
             }
-            frage = Waehle(frage, "Yes", Schirm.DeleteConfirm);
+            frage = Waehle(frage, "yes", "Yes", Schirm.DeleteConfirm);
             frage.Dispose();
             Taste(Enter, 900);
             Warte("after deleting", 15000, Schirm.TunesList).Dispose();

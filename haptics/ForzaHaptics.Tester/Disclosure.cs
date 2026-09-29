@@ -78,7 +78,43 @@ internal static class Disclosure
     // Knopfdruck im Modus "Xbox / 2nd PC"; Vibrationen dort mit Xbox Remote Play.
     public const int Fassung = 9;
 
-    private const string Titel = "What " + AppInfo.Name + " does";
+    /// <summary>Der Fenstertitel, in der Sprache der App.</summary>
+    private static string Titel => string.Format(Loc.T("What {0} does"), AppInfo.Name);
+
+    /// <summary>
+    /// Der Hinweis in der Sprache der App (seit 2026-09-29) -- ein Spanier bekam ihn bis
+    /// dahin auf Englisch. Die Uebersetzungen liegen in config/lang/disclosure/&lt;code&gt;.txt,
+    /// erste Zeile "#fassung N". Gilt nur, wenn N die aktuelle <see cref="Fassung"/> ist:
+    /// ein veralteter Hinweis versprache, was die App nicht mehr tut -- dann lieber Englisch.
+    /// </summary>
+    internal static string HinweisText()
+    {
+        var code = Loc.Sprache;
+        if (string.IsNullOrEmpty(code) || code == "en") { return Text; }
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var datei = Path.Combine(dir.FullName, "config", "lang", "disclosure", code + ".txt");
+            try
+            {
+                if (File.Exists(datei))
+                {
+                    var teile = File.ReadAllText(datei).Replace("\r\n", "\n").Split('\n', 2);
+                    if (teile.Length == 2 && teile[0].Trim() == "#fassung " + Fassung)
+                    {
+                        return teile[1].Trim('\n');
+                    }
+                    return Text;
+                }
+            }
+            catch (Exception)
+            {
+                return Text;
+            }
+            dir = dir.Parent;
+        }
+        return Text;
+    }
 
     private const string Text = """
 Please read this once. It explains what the program does on your PC, what leaves
@@ -357,7 +393,7 @@ top of the main window.
             DetectUrls = false,
             ScrollBars = RichTextBoxScrollBars.Vertical,
             Dock = DockStyle.Fill,
-            Text = Text.Replace("\n", Environment.NewLine),
+            Text = HinweisText().Replace("\n", Environment.NewLine),
             Font = new Font(FontFamily.GenericMonospace, 9.25f),
             BackColor = SystemColors.Window,
             WordWrap = true,
@@ -430,7 +466,7 @@ top of the main window.
 
         var weiter = new Button
         {
-            Text = erstesMal ? "Continue" : "Close",
+            Text = erstesMal ? Loc.T("Continue") : Loc.T("Close"),
             DialogResult = DialogResult.OK,
             Enabled = !erstesMal,
             AutoSize = true,

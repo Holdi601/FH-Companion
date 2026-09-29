@@ -284,7 +284,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             Width = 190,
             Margin = new Padding(0, 1, 10, 0),
         };
-        sprachWahl.Items.Add(new SprachEintrag("auto", "Language: system default"));
+        sprachWahl.Items.Add(new SprachEintrag("auto", Loc.T("Language: system default")));
         foreach (var code in Loc.Verfuegbar())
         {
             sprachWahl.Items.Add(new SprachEintrag(code, SprachName(code)));
@@ -399,14 +399,14 @@ internal sealed class MainForm : Form, ITelemetryHost
             Dock = DockStyle.Fill
         };
 
-        var testTab = new TabPage("Vibration test")
+        var testTab = new TabPage(Loc.T("Vibration test"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(18)
         };
 
-        var telemetryTab = new TabPage("Live grip telemetry")
+        var telemetryTab = new TabPage(Loc.T("Live grip telemetry"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
@@ -430,63 +430,63 @@ internal sealed class MainForm : Form, ITelemetryHost
             Padding = new Padding(12)
         };
 
-        var inspectorTab = new TabPage("All telemetry + outputs")
+        var inspectorTab = new TabPage(Loc.T("All telemetry + outputs"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(4)
         };
 
-        var blueprintTab = new TabPage("Blueprint editor")
+        var blueprintTab = new TabPage(Loc.T("Blueprint editor"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var rivalsTab = new TabPage("Rivals overlay")
+        var rivalsTab = new TabPage(Loc.T("Rivals overlay"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var hudTab = new TabPage("Lap delta HUD")
+        var hudTab = new TabPage(Loc.T("Lap delta HUD"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var tuningTab = new TabPage("Tuning inspector")
+        var tuningTab = new TabPage(Loc.T("Tuning inspector"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var tunesTab = new TabPage("Tunes")
+        var tunesTab = new TabPage(Loc.T("Tunes"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var carNotesTab = new TabPage("Car notes")
+        var carNotesTab = new TabPage(Loc.T("Car notes"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var carCollectionTab = new TabPage("Car collection")
+        var carCollectionTab = new TabPage(Loc.T("Car collection"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
             Padding = new Padding(0)
         };
 
-        var myTimesTab = new TabPage("My times")
+        var myTimesTab = new TabPage(Loc.T("My times"))
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
@@ -695,7 +695,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             Location = new Point(139, 226),
             Size = new Size(165, 32)
         };
-        _outputSelector.Items.AddRange(["Both sides", "Left side", "Right side"]);
+        _outputSelector.Items.AddRange([Loc.T("Both sides"), Loc.T("Left side"), Loc.T("Right side")]);
         _outputSelector.SelectedIndex = 0;
 
         _testButton = CreateButton(Loc.T("Vibrate for 10 seconds"), new Point(25, 285), new Size(260, 52));
@@ -705,7 +705,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         _stopVibrationButton = CreateButton(Loc.T("Stop now"), new Point(300, 285), new Size(145, 52));
         _stopVibrationButton.BackColor = Color.FromArgb(116, 42, 48);
         _stopVibrationButton.Enabled = false;
-        _stopVibrationButton.Click += (_, _) => StopVibration("Stopped.");
+        _stopVibrationButton.Click += (_, _) => StopVibration(Loc.T("Stopped."));
 
         _countdownLabel = new Label
         {
@@ -782,7 +782,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         _stopTelemetryButton = CreateButton(Loc.T("Stop"), new Point(371, 91), new Size(95, 42));
         _stopTelemetryButton.BackColor = Color.FromArgb(116, 42, 48);
         _stopTelemetryButton.Enabled = false;
-        _stopTelemetryButton.Click += (_, _) => StopTelemetry("Listener stopped.");
+        _stopTelemetryButton.Click += (_, _) => StopTelemetry(Loc.T("Listener stopped."));
 
         _telemetryStatus = new Label
         {
@@ -809,13 +809,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             Location = new Point(25, 218)
         };
 
-        _frontLeftSlip = CreateValueLabel("Front left: --", new Point(26, 248));
-        _frontRightSlip = CreateValueLabel("Front right: --", new Point(340, 248));
-        _rearLeftSlip = CreateValueLabel("Rear left: --", new Point(26, 275));
-        _rearRightSlip = CreateValueLabel("Rear right: --", new Point(340, 275));
+        _frontLeftSlip = CreateValueLabel(string.Format(Loc.T("Front left: {0}"), "--"), new Point(26, 248));
+        _frontRightSlip = CreateValueLabel(string.Format(Loc.T("Front right: {0}"), "--"), new Point(340, 248));
+        _rearLeftSlip = CreateValueLabel(string.Format(Loc.T("Rear left: {0}"), "--"), new Point(26, 275));
+        _rearRightSlip = CreateValueLabel(string.Format(Loc.T("Rear right: {0}"), "--"), new Point(340, 275));
 
-        _leftGripLabel = CreateGripLabel("Left grip: --", new Point(25, 307));
-        _rightGripLabel = CreateGripLabel("Right grip: --", new Point(340, 307));
+        _leftGripLabel = CreateGripLabel(string.Format(Loc.T("Left grip: {0}"), "--"), new Point(25, 307));
+        _rightGripLabel = CreateGripLabel(string.Format(Loc.T("Right grip: {0}"), "--"), new Point(340, 307));
 
         _leftGripBar = CreateGripBar(new Point(26, 340));
         _rightGripBar = CreateGripBar(new Point(341, 340));
@@ -828,13 +828,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             Location = new Point(25, 382)
         };
 
-        _frontLeftRatio = CreateValueLabel("Front left ratio: --", new Point(26, 414));
-        _frontRightRatio = CreateValueLabel("Front right ratio: --", new Point(340, 414));
-        _rearLeftRatio = CreateValueLabel("Rear left ratio: --", new Point(26, 441));
-        _rearRightRatio = CreateValueLabel("Rear right ratio: --", new Point(340, 441));
+        _frontLeftRatio = CreateValueLabel(string.Format(Loc.T("Front left ratio: {0}"), "--"), new Point(26, 414));
+        _frontRightRatio = CreateValueLabel(string.Format(Loc.T("Front right ratio: {0}"), "--"), new Point(340, 414));
+        _rearLeftRatio = CreateValueLabel(string.Format(Loc.T("Rear left ratio: {0}"), "--"), new Point(26, 441));
+        _rearRightRatio = CreateValueLabel(string.Format(Loc.T("Rear right ratio: {0}"), "--"), new Point(340, 441));
 
-        _leftLockLabel = CreateGripLabel("Left lock: --", new Point(25, 473));
-        _rightLockLabel = CreateGripLabel("Right lock: --", new Point(340, 473));
+        _leftLockLabel = CreateGripLabel(string.Format(Loc.T("Left lock: {0}"), "--"), new Point(25, 473));
+        _rightLockLabel = CreateGripLabel(string.Format(Loc.T("Right lock: {0}"), "--"), new Point(340, 473));
         _leftLockBar = CreateGripBar(new Point(26, 506));
         _rightLockBar = CreateGripBar(new Point(341, 506));
 
@@ -1680,7 +1680,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         var text = string.Join("  |  ", new[]
         {
             _connectedDevices,
-            $"Selected: {SelectedControllerName()}",
+            string.Format(Loc.T("Selected: {0}"), SelectedControllerName()),
             FirewallLine(),
         });
         // Nur bei echter Aenderung schreiben: sonst flackert die Zeile und die
@@ -1699,22 +1699,22 @@ internal sealed class MainForm : Form, ITelemetryHost
         var settings = _rivals?.Settings;
         if (settings is null)
         {
-            return "Haptic/trigger firewall active";
+            return Loc.T("Haptic/trigger firewall active");
         }
         if (settings.HapticsRequireForza)
         {
             _game ??= new GameWatch(settings.ForzaProcess);
             if (!_game.Running)
             {
-                return $"idle - waiting for {_game.ProcessName}.exe; tests still work";
+                return string.Format(Loc.T("idle - waiting for {0}; tests still work"), _game.ProcessName + ".exe");
             }
         }
         if (settings.HapticsRequireTelemetry && !TelemetryFlowing)
         {
             // Kurz halten: die Zeile hat die Breite des Fensters und nicht mehr.
-            return $"idle - no telemetry on UDP {TelemetryPort}; set FH6 Data Out On";
+            return string.Format(Loc.T("idle - no telemetry on UDP {0}; set FH6 Data Out On"), TelemetryPort);
         }
-        return "Haptic/trigger firewall active";
+        return Loc.T("Haptic/trigger firewall active");
     }
 
     private void ApplyControllerConnection(
@@ -1728,17 +1728,17 @@ internal sealed class MainForm : Form, ITelemetryHost
             var parts = new List<string>();
             if (steamConnected)
             {
-                parts.Add($"Steam Controller: {_haptics.DevicePathCount} native channels");
+                parts.Add(string.Format(Loc.T("Steam Controller: {0} native channels"), _haptics.DevicePathCount));
             }
 
             if (genericConnected)
             {
-                parts.Add($"{_gamepads.DeviceCount} Xbox/PlayStation/8BitDo-compatible gamepad(s)");
+                parts.Add(string.Format(Loc.T("{0} Xbox/PlayStation/8BitDo-compatible gamepad(s)"), _gamepads.DeviceCount));
             }
 
             if (dualSenseConnected)
             {
-                parts.Add($"{_dualSense.DeviceCount} native DualSense controller(s)");
+                parts.Add(string.Format(Loc.T("{0} native DualSense controller(s)"), _dualSense.DeviceCount));
             }
 
             // Warum es still ist, muss dranstehen. Eine absichtlich stille Ausgabe
@@ -1752,7 +1752,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         }
 
         _controllerStatus.Text =
-            $"No writable controller found. Steam: {_haptics.LastError}  |  DualSense: {_dualSense.LastError}  |  Standard: {_gamepads.LastError}";
+            string.Format(Loc.T("No writable controller found. Steam: {0}  |  DualSense: {1}  |  Standard: {2}"),
+                          _haptics.LastError, _dualSense.LastError, _gamepads.LastError);
         _controllerStatus.ForeColor = WarningColor;
         SetTestControlsEnabled(false);
     }
@@ -1772,7 +1773,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         if (completed != hardwareTask)
         {
             _controllerStatus.Text =
-                "Controller discovery timed out. The window remains usable; reconnect or power-cycle the controller.";
+                Loc.T("Controller discovery timed out. The window remains usable; reconnect or power-cycle the controller.");
             _controllerStatus.ForeColor = WarningColor;
             _reconnectButton.Enabled = true;
             return;
@@ -1791,7 +1792,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             !Sdl.IsGamepadInitialized)
         {
             _controllerStatus.Text =
-                "No XInput controller found; checking direct PlayStation/SDL devices...";
+                Loc.T("No XInput controller found; checking direct PlayStation/SDL devices...");
             if (await Sdl.WaitForGamepadInitializationAsync(TimeSpan.FromSeconds(2)))
             {
                 var directGamepads = await Task.Run(() => _gamepads.Connect());
@@ -1809,7 +1810,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         {
             targets.Add(new ControllerOutputTarget(
                 OutputSignalNode.SteamNativeTargetId,
-                "Steam Controller · native four-channel haptics",
+                Loc.T("Steam Controller · native four-channel haptics"),
                 true,
                 false,
                 true,
@@ -1868,7 +1869,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         SetTestControlsEnabled(true);
 
         _controllerStatus.Text =
-            $"Selected: {target.Name}  |  Haptic/trigger firewall applies only to this controller";
+            string.Format(Loc.T("Selected: {0}"), target.Name) + "  |  "
+            + Loc.T("Haptic/trigger firewall applies only to this controller");
         _controllerStatus.ForeColor = SuccessColor;
     }
 
@@ -1878,7 +1880,7 @@ internal sealed class MainForm : Form, ITelemetryHost
     private string SelectedControllerName() =>
         GetControllerTargets()
             .FirstOrDefault(target => target.Id == _selectedControllerId)?.Name ??
-        "none";
+        Loc.T("none");
 
     private bool IsSelectedDualSense() =>
         GetControllerTargets().Any(target =>
@@ -1890,8 +1892,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         var selectedIndex = Math.Max(0, _outputSelector.SelectedIndex);
         _outputSelector.Items.Clear();
         _outputSelector.Items.AddRange(target.IsSteamNative
-            ? ["Both grips", "Left grip", "Right grip"]
-            : ["Both body motors", "Low-frequency motor", "High-frequency motor"]);
+            ? [Loc.T("Both grips"), Loc.T("Left grip"), Loc.T("Right grip")]
+            : [Loc.T("Both body motors"), Loc.T("Low-frequency motor"), Loc.T("High-frequency motor")]);
         _outputSelector.SelectedIndex = Math.Min(selectedIndex, 2);
     }
 
@@ -1963,7 +1965,7 @@ internal sealed class MainForm : Form, ITelemetryHost
                 : IsSelectedDualSense()
                     ? _dualSense.LastError
                     : _gamepads.LastError;
-            _testStatus.Text = $"Haptic command failed: {error}";
+            _testStatus.Text = string.Format(Loc.T("Haptic command failed: {0}"), error);
             _testStatus.ForeColor = ErrorColor;
             return;
         }
@@ -1972,7 +1974,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         _vibrationEndsAt = DateTime.UtcNow.AddSeconds(10);
         SetTestControlsEnabled(false);
         _stopVibrationButton.Enabled = true;
-        _countdownLabel.Text = $"Vibrating at {_forceSlider.Value}%  |  10.0 seconds left";
+        _countdownLabel.Text = string.Format(Loc.T("Vibrating at {0}%  |  {1} seconds left"),
+                                             _forceSlider.Value, 10.0.ToString("F1"));
         _testStatus.Text = Loc.T("Test running. Press Stop now at any time.");
         _testStatus.ForeColor = SuccessColor;
     }
@@ -1980,7 +1983,7 @@ internal sealed class MainForm : Form, ITelemetryHost
     private GraphHapticOutput CreateTestOutput(int channel, double strength) =>
         new(
             Guid.NewGuid(),
-            "Vibration test",
+            Loc.T("Vibration test"),
             _selectedControllerId,
             channel,
             HapticEffectMode.Rumble,
@@ -2002,12 +2005,13 @@ internal sealed class MainForm : Form, ITelemetryHost
         var remaining = _vibrationEndsAt - DateTime.UtcNow;
         if (remaining <= TimeSpan.Zero)
         {
-            StopVibration("Finished 10-second vibration test.");
+            StopVibration(Loc.T("Finished 10-second vibration test."));
             return;
         }
 
         _countdownLabel.Text =
-            $"Vibrating at {_forceSlider.Value}%  |  {remaining.TotalSeconds:F1} seconds left";
+            string.Format(Loc.T("Vibrating at {0}%  |  {1} seconds left"),
+                          _forceSlider.Value, remaining.TotalSeconds.ToString("F1"));
     }
 
     private void StopVibration(string? message = null)
@@ -2019,7 +2023,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         _vibrating = false;
         SetTestControlsEnabled(HasSelectedController());
         _stopVibrationButton.Enabled = false;
-        _countdownLabel.Text = message ?? "Ready";
+        _countdownLabel.Text = message ?? Loc.T("Ready");
     }
 
     private void SetTestControlsEnabled(bool enabled)
@@ -2048,7 +2052,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         }
         catch (Exception exception)
         {
-            _telemetryStatus.Text = $"Could not listen on UDP port {port}: {exception.Message}";
+            _telemetryStatus.Text = string.Format(Loc.T("Could not listen on UDP port {0}: {1}"), port, exception.Message);
             _telemetryStatus.ForeColor = ErrorColor;
             return;
         }
@@ -2057,8 +2061,9 @@ internal sealed class MainForm : Form, ITelemetryHost
         _startTelemetryButton.Enabled = false;
         _stopTelemetryButton.Enabled = true;
         _telemetryStatus.Text = _rivals?.Settings.ConsoleMode == true
-            ? $"Listening on UDP port {port} on {Konsole.AdressenText()}. Set Data Out on the Xbox/PC to one of these."
-            : $"Listening on UDP port {port}. Drive in FH6 to produce packets...";
+            ? string.Format(Loc.T("Listening on UDP port {0} on {1}. Set Data Out on the Xbox/PC to one of these."),
+                            port, Konsole.AdressenText())
+            : string.Format(Loc.T("Listening on UDP port {0}. Drive in FH6 to produce packets..."), port);
         if (_rivals?.Settings.ConsoleMode == true)
         {
             Rivals.OverlayAusgabe.Hinweis = string.Format(Loc.T("Waiting for telemetry on {0}, port {1}"),
@@ -2084,7 +2089,8 @@ internal sealed class MainForm : Form, ITelemetryHost
                 if (!ForzaPacket.TryParse(result.Buffer, out var telemetry))
                 {
                     _telemetryStatus.Text =
-                        $"UDP received, but packet length {result.Buffer.Length} is not a supported Forza packet.";
+                        string.Format(Loc.T("UDP received, but packet length {0} is not a supported Forza packet."),
+                                      result.Buffer.Length);
                     _telemetryStatus.ForeColor = ErrorColor;
                     continue;
                 }
@@ -2117,7 +2123,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         }
         catch (Exception exception)
         {
-            _telemetryStatus.Text = $"Telemetry listener failed: {exception.Message}";
+            _telemetryStatus.Text = string.Format(Loc.T("Telemetry listener failed: {0}"), exception.Message);
             _telemetryStatus.ForeColor = ErrorColor;
             StopTelemetryControls();
         }
@@ -2172,29 +2178,32 @@ internal sealed class MainForm : Form, ITelemetryHost
         _telemetryStatus.Text = Loc.T("Live FH6 telemetry connected.");
         _telemetryStatus.ForeColor = SuccessColor;
         _packetStatus.Text =
-            $"Packets: {totalPackets:N0}   Rate: {packetRate:F1}/s   Size: {packetLength} bytes   Race: {(telemetry.IsRaceOn ? "On" : "Off")}";
+            string.Format(Loc.T("Packets: {0}   Rate: {1}/s   Size: {2} bytes   Race: {3}"),
+                          totalPackets.ToString("N0"), packetRate.ToString("F1"), packetLength,
+                          telemetry.IsRaceOn ? Loc.T("On") : Loc.T("Off"));
 
-        _frontLeftSlip.Text = $"Front left: {telemetry.CombinedSlipFrontLeft:F3}";
-        _frontRightSlip.Text = $"Front right: {telemetry.CombinedSlipFrontRight:F3}";
-        _rearLeftSlip.Text = $"Rear left: {telemetry.CombinedSlipRearLeft:F3}";
-        _rearRightSlip.Text = $"Rear right: {telemetry.CombinedSlipRearRight:F3}";
+        _frontLeftSlip.Text = string.Format(Loc.T("Front left: {0}"), telemetry.CombinedSlipFrontLeft.ToString("F3"));
+        _frontRightSlip.Text = string.Format(Loc.T("Front right: {0}"), telemetry.CombinedSlipFrontRight.ToString("F3"));
+        _rearLeftSlip.Text = string.Format(Loc.T("Rear left: {0}"), telemetry.CombinedSlipRearLeft.ToString("F3"));
+        _rearRightSlip.Text = string.Format(Loc.T("Rear right: {0}"), telemetry.CombinedSlipRearRight.ToString("F3"));
 
         var leftGrip = (int)Math.Round(telemetry.LeftGrip * 100);
         var rightGrip = (int)Math.Round(telemetry.RightGrip * 100);
-        _leftGripLabel.Text = $"Left grip: {leftGrip}%";
-        _rightGripLabel.Text = $"Right grip: {rightGrip}%";
+        _leftGripLabel.Text = string.Format(Loc.T("Left grip: {0}"), leftGrip + "%");
+        _rightGripLabel.Text = string.Format(Loc.T("Right grip: {0}"), rightGrip + "%");
         _leftGripBar.Value = Math.Clamp(leftGrip, 0, 100);
         _rightGripBar.Value = Math.Clamp(rightGrip, 0, 100);
 
-        _frontLeftRatio.Text = $"Front left ratio: {telemetry.SlipRatioFrontLeft:F3}";
-        _frontRightRatio.Text = $"Front right ratio: {telemetry.SlipRatioFrontRight:F3}";
-        _rearLeftRatio.Text = $"Rear left ratio: {telemetry.SlipRatioRearLeft:F3}";
-        _rearRightRatio.Text = $"Rear right ratio: {telemetry.SlipRatioRearRight:F3}";
+        _frontLeftRatio.Text = string.Format(Loc.T("Front left ratio: {0}"), telemetry.SlipRatioFrontLeft.ToString("F3"));
+        _frontRightRatio.Text = string.Format(Loc.T("Front right ratio: {0}"), telemetry.SlipRatioFrontRight.ToString("F3"));
+        _rearLeftRatio.Text = string.Format(Loc.T("Rear left ratio: {0}"), telemetry.SlipRatioRearLeft.ToString("F3"));
+        _rearRightRatio.Text = string.Format(Loc.T("Rear right ratio: {0}"), telemetry.SlipRatioRearRight.ToString("F3"));
 
         var leftLock = (int)Math.Round(telemetry.LeftLock * 100);
         var rightLock = (int)Math.Round(telemetry.RightLock * 100);
-        _leftLockLabel.Text = $"Left lock: {leftLock}%";
-        _rightLockLabel.Text = $"Right lock: {rightLock}%  |  Brake: {telemetry.Brake:P0}";
+        _leftLockLabel.Text = string.Format(Loc.T("Left lock: {0}"), leftLock + "%");
+        _rightLockLabel.Text = string.Format(Loc.T("Right lock: {0}"), rightLock + "%") + "  |  "
+                              + string.Format(Loc.T("Brake: {0}"), telemetry.Brake.ToString("P0"));
         _leftLockBar.Value = Math.Clamp(leftLock, 0, 100);
         _rightLockBar.Value = Math.Clamp(rightLock, 0, 100);
     }

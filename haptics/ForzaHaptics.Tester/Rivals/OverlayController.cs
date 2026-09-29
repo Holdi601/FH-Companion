@@ -226,12 +226,19 @@ internal sealed class OverlayController : IDisposable
                   + $"car {lap.CarOrdinal}, PI {lap.PerformanceIndex}, "
                   + $"wet {lap.WetFraction:0%}"
                 : $"lap {lap.LapSeconds:0.000} s -- slower than your own best, kept the best";
+            // Ins Protokoll englisch, auf den Streifen in der Sprache der App.
+            var anzeige = behalten
+                ? string.Format(Loc.T("lap stored: {0} s, {1} m, car {2}, PI {3}, wet {4}"),
+                                lap.LapSeconds.ToString("0.000"), lap.LengthMetres.ToString("0"),
+                                lap.CarOrdinal, lap.PerformanceIndex, lap.WetFraction.ToString("0%"))
+                : string.Format(Loc.T("lap {0} s -- slower than your own best, kept the best"),
+                                lap.LapSeconds.ToString("0.000"));
             if (abgelegt is not null)
             {
                 LogLap($"archived: {abgelegt}");
             }
             LogLap(text);
-            try { _hud?.Note(text); } catch (Exception) { }
+            try { _hud?.Note(anzeige); } catch (Exception) { }
         };
     }
 
@@ -569,7 +576,7 @@ internal sealed class OverlayController : IDisposable
     public string OcrLanguage => _reader.OcrLanguage;
     public bool OcrAvailable => _reader.OcrAvailable;
     public int LearnedOrdinals => _ordinals.Count;
-    public string Status { get; private set; } = "stopped";
+    public string Status { get; private set; } = Loc.T("stopped");
 
     public event EventHandler? StatusChanged;
 
@@ -583,8 +590,8 @@ internal sealed class OverlayController : IDisposable
         _tick.Start();
         _triggerTick.Start();
         SetStatus(_reader.OcrAvailable
-            ? $"watching — OCR {_reader.OcrLanguage}"
-            : "watching — no OCR language installed, the route panel cannot read");
+            ? string.Format(Loc.T("watching — OCR {0}"), _reader.OcrLanguage)
+            : Loc.T("watching — no OCR language installed, the route panel cannot read"));
     }
 
     public void Stop()
@@ -595,7 +602,7 @@ internal sealed class OverlayController : IDisposable
         Hide(_right);
         HideShapes();
         Hide(_left);
-        SetStatus("stopped");
+        SetStatus(Loc.T("stopped"));
     }
 
     private void SetStatus(string status)
@@ -808,12 +815,17 @@ internal sealed class OverlayController : IDisposable
         try
         {
             var eigene = _recorder.Lines.Anchors.Count(a => a.Source == "manual");
+            // Der Name bleibt englisch: er wird in freeroam_lines.json gespeichert und dort umbenannt.
             var gesetzt = _recorder.DropLineHere($"my line {eigene + 1}");
             var text = gesetzt is null
                 ? "no position yet -- drive a moment, then press again"
                 : $"start line \"{gesetzt.Name}\" set here; cross it again to stop the clock";
+            var anzeige = gesetzt is null
+                ? Loc.T("no position yet -- drive a moment, then press again")
+                : string.Format(Loc.T("start line \"{0}\" set here; cross it again to stop the clock"),
+                                gesetzt.Name);
             LogLap(text);
-            try { _hud?.Note(text); } catch (Exception) { }
+            try { _hud?.Note(anzeige); } catch (Exception) { }
         }
         catch (Exception)
         {
@@ -835,10 +847,11 @@ internal sealed class OverlayController : IDisposable
         _hintZwei = 0;
 
         var text = naechste == "dual"
-            ? "compare: two figures -- same car, and same PI class"
-            : $"compare: {DeltaModeLabel(DeltaMode)}";
+            ? Loc.T("compare: two figures -- same car, and same PI class")
+            : string.Format(Loc.T("compare: {0}"), DeltaModeLabel(DeltaMode));
         SetStatus(text);
-        LogLap(text);
+        // Ins Protokoll die Stufe selbst, englisch -- der Text oben ist uebersetzt.
+        LogLap($"compare: {naechste}");
         // Auf dem Schirm, nicht nur in der App: gedrueckt wird im Rennen.
         try { EnsureHud(); _hud?.Note(text, 4); } catch (Exception) { }
         DeltaModeChanged?.Invoke(this, EventArgs.Empty);
@@ -865,14 +878,16 @@ internal sealed class OverlayController : IDisposable
     /// </summary>
     /// <remarks>
     /// ", this course" faellt dafuer weg -- die Zeile ist klein, und dass es um diese
-    /// Strecke geht, versteht sich.
+    /// Strecke geht, versteht sich. Gewaehlt wird dafuer ein eigener, ganzer Satz je
+    /// Stufe (DeltaModeKurz) und nicht im Text ersetzt: uebersetzt gibt es kein
+    /// ", this course" mehr, das sich wegschneiden liesse.
     /// </remarks>
-    private string MitReferenzAuto(string beschriftung, RecordedLap referenz, ForzaPacket packet)
+    private string MitReferenzAuto(DeltaReference modus, RecordedLap referenz, ForzaPacket packet)
     {
         var ordinal = referenz.CarOrdinal;
-        if (ordinal <= 0) { return beschriftung; }
+        if (ordinal <= 0) { return DeltaModeLabel(modus); }
         var eigenes = (int)packet.Get("CarOrdinal");
-        var name = ordinal == eigenes ? "this car" : AutoName(ordinal);
+        var name = ordinal == eigenes ? Loc.T("this car") : AutoName(ordinal);
         // EINE ANDERE KLASSE WIRD GENANNT: "any car" darf eine R-Klasse-Zeit gegen ein
         // A-Klasse-Auto stellen -- aber nicht, ohne es zu sagen.
         var klasse = (int)packet.Get("CarClass");
@@ -880,8 +895,19 @@ internal sealed class OverlayController : IDisposable
         {
             name += $" ({fremd})";
         }
-        return beschriftung.Replace(", this course", string.Empty) + " · " + name;
+        return DeltaModeKurz(modus) + " · " + name;
     }
+
+    /// <summary>Die Stufe ohne ", this course" -- fuer die Zeile mit dem Auto der Referenz.</summary>
+    /// <remarks>
+    /// Gerufen wird MitReferenzAuto nur fuer "same PI class" und "any car"; die uebrigen
+    /// Stufen behalten ihre volle Beschriftung.
+    /// </remarks>
+    private static string DeltaModeKurz(DeltaReference mode) => mode switch
+    {
+        DeltaReference.SameClass => Loc.T("same PI class"),
+        _ => DeltaModeLabel(mode),
+    };
 
     private static readonly string[] Klassen = { "D", "C", "B", "A", "S1", "S2", "R" };
 
@@ -920,13 +946,15 @@ internal sealed class OverlayController : IDisposable
         return _zielZeile;
     }
 
-    /// <summary>Der Text der Zeile -- English, wie alles, was im Spiel steht.</summary>
+    /// <summary>Der Text der Zeile -- in der Sprache der App.</summary>
     internal static string ZielText(LapAutoSubmit.Ziel? ziel) => ziel switch
     {
         null => string.Empty,
-        { Ms: null } => "to beat: nothing -- this car is not on the website's board yet",
-        { Eigene: true } z => $"to beat: {RivalsAdvisor.LapText(z.Ms)} -- your submitted time",
-        { } z => $"to beat: {RivalsAdvisor.LapText(z.Ms)} -- website best, this car",
+        { Ms: null } => Loc.T("to beat: nothing -- this car is not on the website's board yet"),
+        { Eigene: true } z => string.Format(Loc.T("to beat: {0} -- your submitted time"),
+                                            RivalsAdvisor.LapText(z.Ms)),
+        { } z => string.Format(Loc.T("to beat: {0} -- website best, this car"),
+                               RivalsAdvisor.LapText(z.Ms)),
     };
 
     /// <summary>
@@ -970,22 +998,31 @@ internal sealed class OverlayController : IDisposable
     }
 
     /// <summary>Der Name eines Autos nach seiner Kennung -- gelernt, sonst Datensatz, sonst die Kennung.</summary>
-    private string AutoName(int ordinal)
+    /// <param name="uebersetzt">False fuers Protokoll: dort bleibt "car 1234" englisch.</param>
+    private string AutoName(int ordinal, bool uebersetzt = true)
     {
         var gelernt = _ordinals.Lookup(ordinal);
         if (RivalsAdvisor.IsRealCarName(gelernt?.Name)) { return gelernt!.Name; }
         var index = gelernt?.CarIndex ?? _advisor.CarIndexForId(ordinal);
-        return (index is { } ix ? _advisor.RealCarName(ix) : null) ?? $"car {ordinal}";
+        return (index is { } ix ? _advisor.RealCarName(ix) : null)
+               ?? (uebersetzt ? AutoKennung(ordinal) : $"car {ordinal}");
     }
 
-    /// <summary>English, wie alles, was im Spiel steht.</summary>
+    /// <summary>Ein Auto ohne Namen, auf dem Schirm: "car 1234" in der Sprache der App.</summary>
+    private static string AutoKennung(int ordinal) => string.Format(Loc.T("car {0}"), ordinal);
+
+    /// <summary>Die Beschriftung der Stufe -- in der Sprache der App.</summary>
+    /// <remarks>
+    /// Dieselben Saetze zeigt die Vorschau im HUD-Reiter; die Schluessel muessen darum
+    /// genau so bleiben.
+    /// </remarks>
     private static string DeltaModeLabel(DeltaReference mode) => mode switch
     {
-        DeltaReference.SameCar => "same car, this course",
-        DeltaReference.SameClass => "same PI class, this course",
-        DeltaReference.SameCarSameClass => "same car in this PI class",
-        DeltaReference.Anything => "personal best, any car",
-        _ => "same car, same tune",
+        DeltaReference.SameCar => Loc.T("same car, this course"),
+        DeltaReference.SameClass => Loc.T("same PI class, this course"),
+        DeltaReference.SameCarSameClass => Loc.T("same car in this PI class"),
+        DeltaReference.Anything => Loc.T("personal best, any car"),
+        _ => Loc.T("same car, same tune"),
     };
 
     /// <summary>
@@ -1048,9 +1085,9 @@ internal sealed class OverlayController : IDisposable
         // Speicher und war nach jedem Neustart leer.
         Notes.NoteModel(ordinal, name, "driven");
 
-        var kopf = name ?? $"car {ordinal}";
+        var kopf = name ?? AutoKennung(ordinal);
         if (pi > 0) { kopf += $"  ·  PI {pi}"; }
-        if (eintrag.Kilowatts > 0) { kopf += $"  ·  {eintrag.HorsePower} hp"; }
+        if (eintrag.Kilowatts > 0) { kopf += "  ·  " + string.Format(Loc.T("{0} hp"), eintrag.HorsePower); }
 
         // GERADE IM AUTOMENUE GEWAEHLT: dort stand die Notiz schon. Bis 2026-09-27 kam
         // sie nach dem Verlassen des Menues sofort wieder -- fuer das eben gewaehlte
@@ -1058,10 +1095,10 @@ internal sealed class OverlayController : IDisposable
         // Der Reiter "Car notes" folgt dem gefahrenen Auto trotzdem.
         if (_nachAuswahl)
         {
-            SetzeAktuell(ordinal, name ?? $"car {ordinal}", "driven");
+            SetzeAktuell(ordinal, name ?? AutoKennung(ordinal), "driven");
             return;
         }
-        ZeigeNotiz(ordinal, name ?? $"car {ordinal}", key, "driven", kopf);
+        ZeigeNotiz(ordinal, name ?? AutoKennung(ordinal), key, "driven", kopf);
     }
 
     /// <summary>Nach der Autowahl im Menue: keine Notiz fuer das gefahrene Auto zeigen.</summary>
@@ -1136,13 +1173,14 @@ internal sealed class OverlayController : IDisposable
         var a = _settings.ConsoleMode ? null : Tuning.TuneStorage.AppliedFor(ordinal);
         if ((a is null || !a.Value.Sicher) && SeenTunes.Fuer(ordinal) is { } g)
         {
-            var zeile = "Tune: " + g.Name.Trim();
+            var zeile = string.Format(Loc.T("Tune: {0}"), g.Name.Trim());
             return string.IsNullOrWhiteSpace(g.Creator) ? zeile : zeile + "  ·  " + g.Creator.Trim();
         }
         if (a is null) { return null; }
         var t = a.Value.Tune;
         if (string.IsNullOrWhiteSpace(t.Name) && string.IsNullOrWhiteSpace(t.Description)) { return null; }
-        var kopf = (a.Value.Sicher ? "Tune: " : "Tune (probably): ") + t.Name.Trim();
+        var kopf = string.Format(a.Value.Sicher ? Loc.T("Tune: {0}") : Loc.T("Tune (probably): {0}"),
+                                 t.Name.Trim());
         if (!string.IsNullOrWhiteSpace(t.Creator)) { kopf += "  ·  " + t.Creator.Trim(); }
         return string.IsNullOrWhiteSpace(t.Description) ? kopf : kopf + "\n" + t.Description.Trim();
     }
@@ -1626,37 +1664,44 @@ internal sealed class OverlayController : IDisposable
             if (_reference is { } referenz
                 && DeltaMode is DeltaReference.SameClass or DeltaReference.Anything)
             {
-                beschriftung = MitReferenzAuto(beschriftung, referenz, packet);
+                beschriftung = MitReferenzAuto(DeltaMode, referenz, packet);
             }
             // DIE GEWAEHLTE STUFE STEHT IMMER VORN (Nutzerwunsch 2026-09-27). Bis dahin
             // ersetzten die Zustaende unten die Beschriftung ganz -- "off the reference
             // line · Nissan Skyline" liess nicht erkennen, dass "personal best, any car"
             // gewaehlt war, und eine R-Klasse-Zeit gegen ein A-Klasse-Auto sah aus wie
             // ein Fehler.
+            //
+            // Die Zustaende sind ganze Saetze mit Platzhalter ("{0} -- final") und
+            // nicht angehaengte Stuecke: uebersetzt steht der Zustand nicht in jeder
+            // Sprache hinter der Stufe.
             if (_reference is null)
             {
                 // Keine Referenz heisst KEINE ZAHL. Vorher lief hier eine Zahl mit,
                 // die aus einer fremden Strecke stammte und einfach hochzaehlte --
                 // das ist schlimmer als eine leere Anzeige, weil es wie eine Auskunft
                 // aussieht.
-                beschriftung += (_recorder.StandingStart
-                    ? " -- no standing-start lap here yet, recording"
-                    : " -- no flying lap here yet, recording")
-                    + $" ({_recorder.CurrentMetres:0} m)";
+                beschriftung = string.Format(_recorder.StandingStart
+                        ? Loc.T("{0} -- no standing-start lap here yet, recording ({1} m)")
+                        : Loc.T("{0} -- no flying lap here yet, recording ({1} m)"),
+                    beschriftung, _recorder.CurrentMetres.ToString("0"));
             }
             else if (hinterDemEnde)
             {
-                beschriftung += _letztesDelta is null ? " -- reference lap ended here" : " -- final";
+                beschriftung = string.Format(_letztesDelta is null
+                        ? Loc.T("{0} -- reference lap ended here")
+                        : Loc.T("{0} -- final"),
+                    beschriftung);
             }
             else if (_abseits)
             {
                 // Abseits der Linie gibt es keine ehrliche Zahl: der naechste Punkt
                 // der Bestzeit liegt dann irgendwo, und "irgendwo" ist kein Vergleich.
-                beschriftung += " -- off the reference line";
+                beschriftung = string.Format(Loc.T("{0} -- off the reference line"), beschriftung);
             }
             else if (_recorder.StandingStart)
             {
-                beschriftung += " (standing start)";
+                beschriftung = string.Format(Loc.T("{0} (standing start)"), beschriftung);
             }
             ziel = ZielZeile(packet);
 
@@ -1672,9 +1717,9 @@ internal sealed class OverlayController : IDisposable
                 {
                     zweites = _recorder.CurrentSeconds - klassenZeit.Value;
                 }
-                zweiteBeschriftung = DeltaModeLabel(DeltaReference.SameClass);
-                if (klassenBeste is null) { zweiteBeschriftung += " -- none yet"; }
-                else { zweiteBeschriftung = MitReferenzAuto(zweiteBeschriftung, klassenBeste, packet); }
+                zweiteBeschriftung = klassenBeste is null
+                    ? string.Format(Loc.T("{0} -- none yet"), DeltaModeLabel(DeltaReference.SameClass))
+                    : MitReferenzAuto(DeltaReference.SameClass, klassenBeste, packet);
             }
         }
         else if (_recorder.InFreeRoam)
@@ -1687,8 +1732,9 @@ internal sealed class OverlayController : IDisposable
             // gibt, ist die Antwort kurz -- ueber eine Startlinie fahren.
             var linien = _recorder.Lines.Anchors.Count;
             beschriftung = linien == 0
-                ? "free roam -- no start lines known yet; drive a route once, or set one"
-                : $"free roam -- cross one of your {linien} start lines to start the clock";
+                ? Loc.T("free roam -- no start lines known yet; drive a route once, or set one")
+                : string.Format(Loc.T("free roam -- cross one of your {0} start lines to start the clock"),
+                                linien);
             _letztesDelta = null;
         }
         else if (_recorder.HasLapUnderway)
@@ -1696,7 +1742,7 @@ internal sealed class OverlayController : IDisposable
             // Die Uhr des Spiels steht, und es ist keine freie Fahrt -- also etwas,
             // das noch niemand gesehen hat. Keine Zahl, und ausdruecklich gesagt,
             // warum: eine leere Anzeige ohne Grund sieht aus wie ein Fehler.
-            beschriftung = "no running clock -- nothing is being timed";
+            beschriftung = Loc.T("no running clock -- nothing is being timed");
             _letztesDelta = null;
         }
 
@@ -2028,7 +2074,8 @@ internal sealed class OverlayController : IDisposable
             _hud = null;
             if (sichtbar) { EnsureHud(); }
         }
-        SetStatus($"game area {jetzt.Width}x{jetzt.Height} at {jetzt.X},{jetzt.Y}");
+        SetStatus(string.Format(Loc.T("game area {0}x{1} at {2},{3}"),
+                                jetzt.Width, jetzt.Height, jetzt.X, jetzt.Y));
     }
 
     private void EnsureHud()
@@ -2057,10 +2104,16 @@ internal sealed class OverlayController : IDisposable
         {
             _hudPreview = true;
             EnsureHud();
-            _hud?.Update(-0.734f, "preview -- same car, this course", 12.4f,
-                         0.286f, "preview -- same PI class",
-                         _settings.HudTarget ? "preview -- to beat: 1:24.012 -- website best, this car" : string.Empty);
-            _hud?.Note("preview: lap stored: 83.706 s, 5949 m", 20);
+            // Dieselben Saetze wie im Rennen und in der Vorschau des HUD-Reiters.
+            _hud?.Update(-0.734f, string.Format(Loc.T("preview -- {0}"), Loc.T("same car, this course")), 12.4f,
+                         0.286f, string.Format(Loc.T("preview -- {0}"), Loc.T("same PI class")),
+                         _settings.HudTarget
+                             ? string.Format(Loc.T("preview -- {0}"),
+                                             string.Format(Loc.T("to beat: {0} -- website best, this car"), "1:24.012"))
+                             : string.Empty);
+            _hud?.Note(string.Format(Loc.T("preview: {0}"),
+                                     string.Format(Loc.T("lap stored: {0} s, {1} m"), 83.706.ToString("0.000"), "5949")),
+                       20);
 
             // Umriss und Notiz gehoeren dazu: genau die richtet man in diesem Reiter
             // ein, und bis zum 2026-09-25 zeigte die Vorschau sie gar nicht.
@@ -2084,8 +2137,9 @@ internal sealed class OverlayController : IDisposable
                 if (!_reifen.Visible) { _reifen.Show(); }
                 _reifen.TopMost = true;
             }
-            _carNote.SetNote("Porsche 911 GT3 RS '19  \u00b7  PI 900  \u00b7  513 hp",
-                             "preview: understeers from turn 3, tyres go off after 4 laps");
+            _carNote.SetNote("Porsche 911 GT3 RS '19  \u00b7  PI 900  \u00b7  " + string.Format(Loc.T("{0} hp"), 513),
+                             string.Format(Loc.T("preview: {0}"),
+                                           Loc.T("understeers from turn 3, tyres go off after 4 laps")));
             if (!_carNote.Visible) { _carNote.Show(); }
             _carNote.TopMost = true;
         }
@@ -2336,7 +2390,9 @@ internal sealed class OverlayController : IDisposable
                     }
                     Show(_right, null);
                 }
-                SetStatus($"showing the {_settings.ScoreMode} order");
+                SetStatus(_settings.ShowsPoints
+                    ? Loc.T("showing the points order")
+                    : Loc.T("showing the time order"));
                 break;
             case "delta_mode":
                 CycleDeltaMode();
@@ -2474,8 +2530,10 @@ internal sealed class OverlayController : IDisposable
                 {
                     _idleForGame = false;
                     SetStatus(_settings.HasVideoSource
-                        ? "console mode -- telemetry over the network, " + (Bildquellen.Aktiv?.Beschreibung ?? "window: " + _settings.VideoWindow)
-                        : "console mode -- telemetry over the network, no video source (screen reading off)");
+                        ? string.Format(Loc.T("console mode -- telemetry over the network, {0}"),
+                                        Bildquellen.Aktiv?.Beschreibung
+                                        ?? string.Format(Loc.T("window: {0}"), _settings.VideoWindow))
+                        : Loc.T("console mode -- telemetry over the network, no video source (screen reading off)"));
                 }
                 return true;
             }
@@ -2488,7 +2546,7 @@ internal sealed class OverlayController : IDisposable
                 Hide(_left);
                 HideHud();
                 if (_reifen.Visible) { _reifen.Hide(); }
-                SetStatus("console mode -- waiting for telemetry from the network");
+                SetStatus(Loc.T("console mode -- waiting for telemetry from the network"));
             }
             return false;
         }
@@ -2509,8 +2567,8 @@ internal sealed class OverlayController : IDisposable
             {
                 _idleForGame = false;
                 SetStatus(_reader.OcrAvailable
-                    ? $"watching — OCR {_reader.OcrLanguage}"
-                    : "watching — no OCR language installed, the route panel cannot read");
+                    ? string.Format(Loc.T("watching — OCR {0}"), _reader.OcrLanguage)
+                    : Loc.T("watching — no OCR language installed, the route panel cannot read"));
             }
             return true;
         }
@@ -2526,8 +2584,8 @@ internal sealed class OverlayController : IDisposable
             HideHud();
             if (_reifen.Visible) { _reifen.Hide(); }
             SetStatus(_game.Running
-                ? $"idle — {_game.ProcessName}.exe is not the active window"
-                : $"idle — waiting for {_game.ProcessName}.exe");
+                ? string.Format(Loc.T("idle — {0}.exe is not the active window"), _game.ProcessName)
+                : string.Format(Loc.T("idle — waiting for {0}.exe"), _game.ProcessName));
         }
         return false;
     }
@@ -2585,7 +2643,8 @@ internal sealed class OverlayController : IDisposable
         }
         catch (Exception exception)
         {
-            SetStatus($"tick failed: {exception.GetType().Name}: {exception.Message}");
+            SetStatus(string.Format(Loc.T("tick failed: {0}"),
+                                    $"{exception.GetType().Name}: {exception.Message}"));
         }
     }
 
@@ -2819,7 +2878,7 @@ internal sealed class OverlayController : IDisposable
         LogRead(state, failure);
         if (failure is not null)
         {
-            SetStatus($"read failed: {failure}");
+            SetStatus(string.Format(Loc.T("read failed: {0}"), failure));
             _forced = false;
             return;
         }
@@ -3071,10 +3130,15 @@ internal sealed class OverlayController : IDisposable
         // ein Auto, das nur dort glaenzt, ist die falsche Wahl. Die Kategorie kommt
         // weiter aus ALLEN Strecken -- sie beschreibt die Reihe, nicht den Rest.
         var advice = _advisor.Advise(state.RemainingTracks, klass, category);
-        var title = category is null ? $"Class {klass}" : $"Class {klass} · {category}";
-        var reihe = state.SeriesIndex > 0
-            ? $"{state.Series} {state.SeriesIndex}/{state.SeriesCount}: "
-            : state.FirstOwnIndex > 0 ? "Remaining: " : string.Empty;
+        // Ganze Saetze je Fall statt "Class " + ... + " – what to drive": in anderen
+        // Sprachen steht die Klasse nicht am selben Platz.
+        var title = category is null
+            ? string.Format(Loc.T("Class {0} – what to drive"), klass)
+            : string.Format(Loc.T("Class {0} · {1} – what to drive"), klass, category);
+        var strecken = string.Join(" · ", advice.Tracks);
+        var unterzeile = state.SeriesIndex > 0
+            ? $"{state.Series} {state.SeriesIndex}/{state.SeriesCount}: {strecken}"
+            : state.FirstOwnIndex > 0 ? string.Format(Loc.T("Remaining: {0}"), strecken) : strecken;
         var lines = new List<PanelLine>();
         var budget = _right.RowBudget;
         MerkeSchirm(state);
@@ -3085,21 +3149,20 @@ internal sealed class OverlayController : IDisposable
             // dieser Zweig vor ihnen zurueck: ohne Board in dieser Klasse keine Karten,
             // obwohl die Karten gar nichts mit den Zeiten zu tun haben.
             ZeigeUmrisse(state.Tracks.Select(n => (n, string.Empty)).ToList(), state.FirstOwnIndex);
-            lines.Add(new PanelLine("No board for these routes in this class yet.",
+            lines.Add(new PanelLine(Loc.T("No board for these routes in this class yet."),
                                     string.Empty, OverlayPanel.Warn));
-            _right.SetContent($"{title} – what to drive",
-                              reihe + string.Join(" · ", advice.Tracks),
+            _right.SetContent(title,
+                              unterzeile,
                               lines,
-                              "The sweep has not reached them. The site's Scan status "
-                              + "tab lists what exists.");
+                              Loc.T("The sweep has not reached them. The site's Scan status tab lists what exists."));
             return;
         }
 
         if (state.Spec)
         {
-            lines.Add(new PanelLine("One-make event — the car is fixed.",
+            lines.Add(new PanelLine(Loc.T("One-make event — the car is fixed."),
                                     string.Empty, OverlayPanel.Warn));
-            lines.Add(new PanelLine("The order below is for these routes in general.",
+            lines.Add(new PanelLine(Loc.T("The order below is for these routes in general."),
                                     string.Empty, OverlayPanel.InkSoft, Small: true));
         }
 
@@ -3194,7 +3257,7 @@ internal sealed class OverlayController : IDisposable
                 kopf[i] = Kurzname(meineTabelle.Courses[i].Label);
             }
             lines.Add(new PanelLine(
-                $"YOUR TIMES ON THESE ROUTES ({klass})",
+                string.Format(Loc.T("YOUR TIMES ON THESE ROUTES ({0})"), klass),
                 string.Empty, OverlayPanel.Bar, Small: true, Cells: kopf));
 
             if (meineTabelle.Rows.Count == 0)
@@ -3204,10 +3267,10 @@ internal sealed class OverlayController : IDisposable
                 var mehrdeutig = meineTabelle.Courses.Any(c => c.Ambiguous);
                 var ohneLaenge = routen.Any(r => r.LapMetres <= 0);
                 var grund = mehrdeutig
-                    ? "several of your courses share these lengths — cannot tell them apart"
+                    ? Loc.T("several of your courses share these lengths — cannot tell them apart")
                     : ohneLaenge
-                        ? "the screen did not give a distance for every route"
-                        : "you have no recorded laps on these routes";
+                        ? Loc.T("the screen did not give a distance for every route")
+                        : Loc.T("you have no recorded laps on these routes");
                 lines.Add(new PanelLine(grund, string.Empty, OverlayPanel.Muted,
                                         Small: true, Indent: 10));
             }
@@ -3261,14 +3324,16 @@ internal sealed class OverlayController : IDisposable
                 var leer = new string[meineTabelle.Courses.Count];
                 for (var i = 0; i < leer.Length; i++) { leer[i] = string.Empty; }
                 lines.Add(new PanelLine(
-                    $"+{meineTabelle.Rows.Count - Hoechstens} more of your cars",
+                    string.Format(Loc.T("+{0} more of your cars"), meineTabelle.Rows.Count - Hoechstens),
                     string.Empty, OverlayPanel.Muted, Small: true, Indent: 10,
                     Cells: leer));
             }
         }
 
-        lines.Add(new PanelLine((byPoints ? "by points" : "by time sum")
-                                + $" · {advice.Tracks.Count} route(s)",
+        lines.Add(new PanelLine(string.Format(byPoints
+                                    ? Loc.T("by points · {0} route(s)")
+                                    : Loc.T("by time sum · {0} route(s)"),
+                                    advice.Tracks.Count),
                                 string.Empty, OverlayPanel.Bar, Heading: true));
         var ohneNamen = 0;
         foreach (var row in rows)
@@ -3299,7 +3364,7 @@ internal sealed class OverlayController : IDisposable
                   + OwnCars.TimeText(meins.BestSeconds)
                 : string.Empty;
             lines.Add(new PanelLine($"{row.Place,2}. {row.Name}{mark}",
-                                    byPoints ? $"{row.Points} pts"
+                                    byPoints ? string.Format(Loc.T("{0} pts"), row.Points)
                                              : RivalsAdvisor.SumText(row.Ms),
                                     complete ? OverlayPanel.Ink : OverlayPanel.InkSoft,
                                     Mine: mein));
@@ -3307,35 +3372,37 @@ internal sealed class OverlayController : IDisposable
 
         var notes = new List<string>
         {
-            byPoints ? "F7 switches to the time sum" : "F7 switches to points",
-            "Page Down / Page Up walk the rest of the field",
+            byPoints ? Loc.T("F7 switches to the time sum") : Loc.T("F7 switches to points"),
+            Loc.T("Page Down / Page Up walk the rest of the field"),
         };
         if (advice.MissingTracks.Count > 0)
         {
-            notes.Add("no board yet for " + string.Join(", ", advice.MissingTracks));
+            notes.Add(string.Format(Loc.T("no board yet for {0}"), string.Join(", ", advice.MissingTracks)));
         }
         if (advice.ShallowTracks.Count > 0)
         {
-            notes.Add("too thin for the time sum: "
-                      + string.Join(", ", advice.ShallowTracks.Distinct()));
+            notes.Add(string.Format(Loc.T("too thin for the time sum: {0}"),
+                                    string.Join(", ", advice.ShallowTracks.Distinct())));
         }
+        // Der Vergleich gilt der Quelle aus dem Leser (englisch, "PI 723 in ..."),
+        // nicht einem uebersetzten Text.
         if (state.KlassSource.StartsWith("PI", StringComparison.Ordinal))
         {
-            notes.Add($"class guessed from the {state.KlassSource}");
+            notes.Add(string.Format(Loc.T("class guessed from the {0}"), state.KlassSource));
         }
-        notes.Add("a low place usually means few surviving laps, not a slow car");
+        notes.Add(Loc.T("a low place usually means few surviving laps, not a slow car"));
         // WAS FEHLT, WIRD GESAGT. Eine gefilterte Liste, die nicht zugibt, dass sie
         // gefiltert ist, ist eine falsche Liste.
         if (ohneNamen > 0)
         {
-            notes.Add($"{ohneNamen} car(s) hidden: the dataset has no name for them, "
-                      + "only an id");
+            notes.Add(string.Format(Loc.T("{0} car(s) hidden: the dataset has no name for them, only an id"),
+                                    ohneNamen));
         }
         if (meineTabelle.Rows.Count > 0)
         {
             // WAS DIE SPALTEN SIND. Innerhalb einer Spalte darf verglichen werden,
             // sie ist eine Strecke. Quer ueber die Spalten nicht.
-            notes.Add("your best lap on each of the three routes above");
+            notes.Add(Loc.T("your best lap on each of the three routes above"));
             var duelle = OwnCars.Duels(klass);
             if (duelle.Count > 0)
             {
@@ -3355,15 +3422,14 @@ internal sealed class OverlayController : IDisposable
                 // und umgekehrt waere es noch schlimmer.
                 if (namen.Count > 0 && namen.All(n => n is not null))
                 {
-                    notes.Add($"head to head ({OwnCars.ConditionText(d.Standing, d.Sprint)}): "
-                              + string.Join(" > ", namen));
+                    notes.Add(string.Format(Loc.T("head to head ({0}): {1}"),
+                                            Bedingung(d.Standing, d.Sprint),
+                                            string.Join(" > ", namen)));
                 }
             }
         }
 
-        _right.SetContent($"{title} – what to drive",
-                          reihe + string.Join(" · ", advice.Tracks), lines,
-                          string.Join(" — ", notes));
+        _right.SetContent(title, unterzeile, lines, string.Join(" — ", notes));
 
         // DIE UMRISSE DER ANGEBOTENEN STRECKEN.
         //
@@ -3377,6 +3443,19 @@ internal sealed class OverlayController : IDisposable
                                                          : string.Empty))
             .ToList(), state.FirstOwnIndex);
     }
+
+    /// <summary>Die Art des Starts und der Strecke, fuer das Panel uebersetzt.</summary>
+    /// <remarks>
+    /// Dieselben Woerter wie OwnCars.ConditionText -- das bleibt englisch, weil es auch
+    /// in die Konsolenausgabe geht.
+    /// </remarks>
+    private static string Bedingung(bool standing, bool sprint) => (standing, sprint) switch
+    {
+        (true, true) => Loc.T("standing sprint"),
+        (true, false) => Loc.T("standing lap"),
+        (false, true) => Loc.T("flying sprint"),
+        _ => Loc.T("flying lap"),
+    };
 
     /// <summary>Die Umrisse der angebotenen Strecken zeigen -- mit oder ohne Bestenliste.</summary>
     /// <param name="routen">Name je Strecke und, wenn bekannt, der eigene Kursordner.</param>
@@ -3483,7 +3562,7 @@ internal sealed class OverlayController : IDisposable
         var lines = new List<PanelLine>();
         if (state.Tracks.Count > 0)
         {
-            lines.Add(new PanelLine("routes recognised", string.Empty,
+            lines.Add(new PanelLine(Loc.T("routes recognised"), string.Empty,
                                     OverlayPanel.Bar, Heading: true));
             foreach (var name in state.Tracks)
             {
@@ -3494,27 +3573,28 @@ internal sealed class OverlayController : IDisposable
         }
         else
         {
-            lines.Add(new PanelLine("No route name matched.", string.Empty,
+            lines.Add(new PanelLine(Loc.T("No route name matched."), string.Empty,
                                     OverlayPanel.Warn));
         }
-        lines.Add(new PanelLine($"class: {state.Klass ?? "not found"}", string.Empty,
+        lines.Add(new PanelLine(state.Klass is null
+                                    ? Loc.T("class: not found")
+                                    : string.Format(Loc.T("class: {0}"), state.Klass),
+                                string.Empty,
                                 state.Klass is null ? OverlayPanel.Warn : OverlayPanel.InkSoft));
-        lines.Add(new PanelLine("what usually fixes it", string.Empty,
+        lines.Add(new PanelLine(Loc.T("what usually fixes it"), string.Empty,
                                 OverlayPanel.Bar, Heading: true));
         foreach (var hint in new[]
                  {
-                     "Open the Event Sign Up screen, then press again.",
-                     "The route names have to be on screen as text.",
-                     "Exclusive fullscreen hides the overlay entirely — use borderless.",
+                     Loc.T("Open the Event Sign Up screen, then press again."),
+                     Loc.T("The route names have to be on screen as text."),
+                     Loc.T("Exclusive fullscreen hides the overlay entirely — use borderless."),
                  })
         {
             lines.Add(new PanelLine(hint, string.Empty, OverlayPanel.InkSoft, Small: true));
         }
-        _right.SetContent("Could not read the routes",
-                          $"{state.Lines.Count} lines of text in the masks", lines,
-                          "The Rivals overlay tab has a \"Save mask preview\" button: "
-                          + "it draws both regions on a capture, which is how a mask "
-                          + "that has drifted is spotted.");
+        _right.SetContent(Loc.T("Could not read the routes"),
+                          string.Format(Loc.T("{0} lines of text in the masks"), state.Lines.Count), lines,
+                          Loc.T("The Rivals overlay tab has a \"Save mask preview\" button: it draws both regions on a capture, which is how a mask that has drifted is spotted."));
     }
 
     // ------------------------------------------------------------------ //
@@ -3547,14 +3627,14 @@ internal sealed class OverlayController : IDisposable
         {
             var port = _host?.TelemetryPort ?? 5300;
             var listening = _host?.TelemetryRunning ?? false;
-            lines.Add(new PanelLine("Forza: Settings → HUD and Gameplay → Data Out",
+            lines.Add(new PanelLine(Loc.T("Forza: Settings → HUD and Gameplay → Data Out"),
                                     string.Empty, OverlayPanel.InkSoft, Small: true));
-            lines.Add(new PanelLine($"On · 127.0.0.1 · port {port}",
+            lines.Add(new PanelLine(string.Format(Loc.T("On · 127.0.0.1 · port {0}"), port),
                                     string.Empty, OverlayPanel.InkSoft, Small: true));
-            _left.SetContent("Your car",
+            _left.SetContent(Loc.T("Your car"),
                              listening
-                                 ? $"listening on {port}, no packets yet"
-                                 : $"the listener is not running on {port}",
+                                 ? string.Format(Loc.T("listening on {0}, no packets yet"), port)
+                                 : string.Format(Loc.T("the listener is not running on {0}"), port),
                              lines, string.Empty);
             return;
         }
@@ -3567,7 +3647,7 @@ internal sealed class OverlayController : IDisposable
         }
         if (piClass is not null)
         {
-            head.Add($"class {piClass}");
+            head.Add(string.Format(Loc.T("class {0}"), piClass));
         }
         if (_drivetrain is not null && Drivetrain.TryGetValue(_drivetrain.Value, out var dt))
         {
@@ -3575,18 +3655,18 @@ internal sealed class OverlayController : IDisposable
         }
         if (_cylinders is > 0)
         {
-            head.Add($"{_cylinders} cyl");
+            head.Add(string.Format(Loc.T("{0} cyl"), _cylinders));
         }
         // Always shown: a wrong name beside the right ordinal is the whole diagnosis.
-        head.Add($"ordinal {_ordinal}");
+        head.Add(string.Format(Loc.T("ordinal {0}"), _ordinal));
 
         var title = known?.Name ?? (carIndex is not null
             ? _advisor.CarName(carIndex.Value)
-            : $"Car ordinal {_ordinal}");
+            : string.Format(Loc.T("Car ordinal {0}"), _ordinal));
 
         if (carIndex is null)
         {
-            lines.Add(new PanelLine("This ordinal matches no car in the records.",
+            lines.Add(new PanelLine(Loc.T("This ordinal matches no car in the records."),
                                     string.Empty, OverlayPanel.Warn));
             _left.SetContent(title, string.Join(" · ", head), lines, string.Empty);
             return;
@@ -3594,17 +3674,17 @@ internal sealed class OverlayController : IDisposable
 
         if (assumed)
         {
-            lines.Add(new PanelLine("Name assumed from the ordinal — not confirmed.",
+            lines.Add(new PanelLine(Loc.T("Name assumed from the ordinal — not confirmed."),
                                     string.Empty, OverlayPanel.Warn, Small: true));
         }
 
         var stands = _advisor.Standings(carIndex.Value);
         if (stands.Count == 0)
         {
-            lines.Add(new PanelLine("No lap by this car in the records yet.",
+            lines.Add(new PanelLine(Loc.T("No lap by this car in the records yet."),
                                     string.Empty, OverlayPanel.Warn));
             _left.SetContent(title, string.Join(" · ", head), lines,
-                             "Only cars that appear on a scanned leaderboard can be placed.");
+                             Loc.T("Only cars that appear on a scanned leaderboard can be placed."));
             return;
         }
 
@@ -3626,11 +3706,11 @@ internal sealed class OverlayController : IDisposable
                     : share <= 0.25 ? OverlayPanel.Ink : OverlayPanel.InkSoft;
                 var here = piClass == stand.Klass ? " ←" : string.Empty;
                 lines.Add(new PanelLine($"{stand.Klass,-3}{here}",
-                                        $"#{place(stand)} of {stand.Of}", tone));
+                                        string.Format(Loc.T("#{0} of {1}"), place(stand), stand.Of), tone));
                 var tune = stand.Tune is not null
                     && RivalsAdvisor.TuneLabel.TryGetValue(stand.Tune, out var label)
                     ? $" · {label}" : string.Empty;
-                lines.Add(new PanelLine($"{stand.Present}/{stand.Tracks} routes{tune}",
+                lines.Add(new PanelLine(string.Format(Loc.T("{0}/{1} routes"), stand.Present, stand.Tracks) + tune,
                                         RivalsAdvisor.SumText(stand.Ms),
                                         OverlayPanel.Muted, Small: true, Indent: 22));
             }
@@ -3640,11 +3720,12 @@ internal sealed class OverlayController : IDisposable
             .Where(c => stands.All(s => s.Category != c)).ToList();
         var note = new List<string>
         {
-            $"best fit: {best.Category} {best.Klass} (#{place(best)} of {best.Of})",
+            string.Format(Loc.T("best fit: {0} {1} (#{2} of {3})"),
+                          best.Category, best.Klass, place(best), best.Of),
         };
         if (missing.Count > 0)
         {
-            note.Add("not scanned yet: " + string.Join(", ", missing));
+            note.Add(string.Format(Loc.T("not scanned yet: {0}"), string.Join(", ", missing)));
         }
         _left.SetContent(title, string.Join(" · ", head), lines,
                          string.Join(" — ", note));
@@ -3775,7 +3856,7 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     public void NeuesAutoFeiern(LapAutoSubmit.NeuesAuto r)
     {
-        LogLap($"new car on the leaderboard: {r.CarName ?? AutoName(r.CarOrdinal)} on {r.Track} ({r.Klasse})");
+        LogLap($"new car on the leaderboard: {r.CarName ?? AutoName(r.CarOrdinal, uebersetzt: false)} on {r.Track} ({r.Klasse})");
         if (!_settings.CelebrateNewCar) { return; }
         if (r.Nachgereicht && !(_settings.ConsoleMode ? TelemetryFresh : _game.Running)) { return; }
         var auto = r.CarName ?? AutoName(r.CarOrdinal);

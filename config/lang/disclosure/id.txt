@@ -1,0 +1,212 @@
+#fassung 9
+Harap baca ini sekali. Isinya menjelaskan apa yang dilakukan program ini di
+PC-mu, apa yang keluar dari komputermu, dan mengapa Windows mungkin
+memperingatkanmu tentangnya.
+
+
+APA YANG DILAKUKANNYA DI PC-MU
+
+  Membaca telemetri dari game.
+      Forza Horizon 6 dapat mengirim telemetrinya sendiri ke mesinmu sendiri
+      lewat UDP. Kamu sendiri yang menyalakannya di game, di
+      Settings > HUD and Gameplay. Program mendengarkan di 127.0.0.1 --
+      komputermu sendiri, bukan jaringan -- dan menggunakannya untuk delta lap,
+      peta langsung, rekor lap-mu, dan getaran kontroler. Hanya jika kamu
+      mengalihkan program ke "Xbox / PC ke-2" di bagian atas jendelanya, program
+      mendengarkan di jaringanmu sebagai gantinya, agar Xbox atau PC lain dapat
+      menjangkaunya. Jika Windows Firewall memblokirnya, sebuah tombol di panel
+      Xbox menambahkan satu aturan untuk port UDP itu saja -- hanya saat kamu
+      menekannya, dan Windows meminta izinmu terlebih dahulu.
+
+  Membaca memori game yang sedang berjalan -- hanya saat kamu menekan tombol.
+      Daftar komponen yang terpasang di mobilmu, dan setelan mana yang ada di
+      mobil mana, tidak ada di telemetri. Semuanya ada di basis data kecil yang
+      disimpan game di memorinya sendiri. Untuk menampilkannya, program membuka
+      proses Forza dalam mode hanya-baca dan mencari di memori itu.
+
+      Program hanya MEMBACA. Program tidak pernah menulis ke game dan tidak
+      pernah mengubah apa pun di dalamnya. Ini hanya dilakukan saat kamu menekan
+      tombol untuk itu di tab Tuning, Tunes, Catatan mobil, atau Koleksi mobil.
+      Jika kamu tidak pernah menekannya, memori game tidak pernah disentuh.
+      Untuk menutup kemungkinan ini sepenuhnya, hapus centang "Baca memori game"
+      di bagian atas jendela: program lalu mengenali mobil-mobilmu dan
+      setelannya dari layar sebagai gantinya (lihat di bawah).
+
+  Membaca apa yang ditampilkan game di layar.
+      Untuk mengetahui lintasan mana yang ditawarkan layar Event Sign Up, mobil
+      mana yang disorot di menu mobil, mobil mana saja yang ada di halaman
+      "My Cars" yang kamu lihat, dan setelan mana yang ada di sebuah mobil dalam
+      daftar setelannya, program mengambil gambar jendela game dan membaca
+      teksnya dengan pengenalan teks bawaan Windows. Ini terjadi di PC-mu;
+      gambar-gambarnya tidak dikirim ke mana pun. Dalam mode "Xbox / PC ke-2",
+      program mengambil gambar itu dari sumber yang kamu pilih sebagai gantinya:
+      kartu capture, OBS, jendela Xbox Remote Play, Discord, stream di
+      browser-mu, atau alamat stream. Windows lalu menggambar bingkai kuning di
+      sekeliling jendela yang ditangkap.
+
+  Membaca setelan yang kamu unduh dari folder simpanan game -- hanya-baca.
+      Tab Tunes menghitungnya dan menunjukkan mana yang tidak dipakai mobil mana
+      pun. Folder simpanan tidak pernah diubah oleh hal ini.
+
+  Menghapus setelan di game -- hanya saat kamu memulainya.
+      Di tab Tunes kamu dapat membiarkan program menghapus setelan yang tidak
+      terpakai lewat menu game itu sendiri. Program lalu beralih ke game dan
+      menekan tombolnya sendiri. Program bertanya dulu, menawarkan uji coba yang
+      tidak menghapus apa pun, tidak pernah menghapus setelan yang terpasang di
+      mobil, dan berhenti saat Alt+Tab atau tombol Pause ditekan.
+
+      Ini juga satu-satunya alasan terbesar mengapa perangkat lunak antivirus
+      tidak memercayai program ini: membaca memori proses lain adalah hal yang
+      dilakukan program cheat atau pencuri kata sandi. Di sini program membaca
+      daftar komponen mobilmu sendiri dalam game balap pemain tunggal.
+
+  Membuat kontrolermu bergetar -- dan itu menguras baterainya lebih cepat.
+      Selama Forza berjalan dan mengirim telemetri, program mengendalikan
+      getaran kontrolermu: cengkeraman ban menjadi getaran, roda yang terkunci
+      menjadi dengungan singkat. Ini menyala sejak awal. Baterai kontroler
+      nirkabel akan terasa lebih cepat habis saat bergetar, dan makin kuat serta
+      makin cepat (frekuensi lebih tinggi) kamu mengatur getarannya di
+      Editor Blueprint, makin banyak daya yang dipakainya. Hapus centang
+      "Keluaran grafik menyala" di Editor Blueprint untuk mematikannya; program
+      akan mengingatnya.
+
+  Memantau penekanan tombol.
+      Hanya untuk menangkap tombol pintas -- F10 menetapkan garis start/finis di
+      jelajah bebas. Program memeriksa apakah tombol-tombol tertentu itu sedang
+      ditekan. Program tidak merekam apa yang kamu ketik dan tidak ada log
+      penekanan tombol di mana pun.
+
+  Menggambar overlay di atas game.
+      Delta lap, peta, catatan mobil, dan panel rival adalah jendela terpisah
+      yang digambar di atas Forza. Saat sebuah lap mengalahkan waktu di situs,
+      perayaan singkat dengan konfeti dan suara muncul selama sekitar lima
+      detik; kamu dapat mematikannya di tab HUD delta lap.
+
+  Merekam lap-mu -- di disk-mu.
+      Waktu, posisi, dan kecepatan ditulis ke folder milik program sendiri agar
+      program dapat menunjukkan delta terhadap waktu terbaikmu sendiri. Hanya
+      lap yang mengalahkan papan peringkat yang dikirim keluar -- lihat di
+      bawah.
+
+
+APA YANG KELUAR DARI KOMPUTERMU
+
+  Program menghubungi server untuk tepat lima hal:
+
+      1. Untuk menanyakan apakah penilaian mobil lebih baru daripada yang kamu
+         miliki, dan mengambilnya jika memang lebih baru.
+      2. Untuk menanyakan apakah ada versi program ini yang lebih baru.
+      3. Untuk mengunduh versi baru itu, saat kamu menekan tombol pembaruan.
+      4. Untuk mengirim lap yang MENGALAHKAN papan peringkat -- AKTIF kecuali
+         kamu mematikannya.
+      5. Untuk mengambil daftar semua mobil dan cara mendapatkannya, untuk tab
+         Koleksi mobil -- paling sering sekali tiap dua belas jam, dan hanya
+         selama tab itu terbuka. Tidak ada yang dikirim; mobil mana yang kamu
+         miliki tetap di komputer ini.
+
+  Tentang nomor 4: lap hanya dikirim jika lebih cepat daripada waktu terbaik di
+  papan peringkat untuk mobil yang sama di lintasan dan kelas itu, dan lebih
+  cepat daripada apa pun yang pernah kamu kirim untuk mobil, lintasan, dan kelas
+  itu sebelumnya. Yang dikirim: mobil, lintasan, kelas, waktu, dan telemetri
+  LENGKAP lap itu -- setiap paket yang dikirim game selama lap itu: posisi dan
+  orientasi, kecepatan, gas, rem, kopling, dan kemudimu, gigi, mesin, serta
+  untuk setiap roda suhu ban, selip, dan suspensi -- agar server dapat memeriksa
+  bahwa waktunya asli dan seseorang dapat melihat lap yang tampak salah.
+  Ditambah pengenal PC ini yang sudah di-hash agar penyalahgunaan dapat diblokir
+  -- dan gamertag-mu, jika kamu mengaturnya di tab Rivals. Gamertag tidak wajib:
+  tanpanya lap tetap dikirim dan muncul di situs dengan nama pemain sementara.
+  Gamertag yang kamu atur belakangan menggantikan nama itu di semua lap-mu,
+  termasuk yang sebelumnya, dan jika nanti kolomnya dikosongkan, nama terakhir
+  tetap dipertahankan. Server memeriksa lap itu lagi sebelum menampilkannya.
+  Matikan di tab Rivals ("Kirim putaranku ...") atau atur "submit_laps": false
+  di config/overlay.json.
+
+  Lap yang mengalahkan papan peringkat tetapi tidak dapat dikirim saat itu --
+  pengiriman dimatikan, sedang offline, atau server tidak menjawab -- disimpan
+  di komputer ini dan dikirim nanti, begitu semuanya kembali normal, bahkan
+  berminggu-minggu kemudian. Sebelum dikirim, lap itu diperiksa sekali lagi
+  terhadap papan peringkat hari itu dan dibuang jika tidak lagi lebih cepat.
+  Jadi, menyalakan kembali pengiriman juga mengirim lap terbaik yang kamu
+  kendarai selama pengiriman mati. "Buang lap yang menunggu" di tab Rivals
+  menghapusnya sebagai gantinya.
+
+  Tidak ada hal lain yang dikirim. Lap biasamu tidak diunggah. Setelanmu tidak
+  diunggah. Tidak ada akun dan tidak perlu masuk ke mana pun.
+
+  Karena komputermu mengajukan pertanyaan-pertanyaan itu, server melihat bahwa
+  ada suatu instalasi yang bertanya -- ini tidak terhindarkan bagi program apa
+  pun yang memeriksa pembaruan. Hal ini dihitung agar kami tahu kira-kira berapa
+  banyak orang yang memakai program ini, dan pengenalnya di-hash dengan sebuah
+  kunci rahasia yang tetap berada di server dan dihapus setelah 40 hari. Jika
+  itu mengganggumu, atur "offline": true di config/overlay.json dan program
+  tidak akan pernah menghubungi server lagi -- program lalu berjalan sepenuhnya
+  dengan data yang ikut dalam unduhan, dan semuanya kecuali pembaruan tetap
+  berfungsi.
+
+
+CARA PROGRAM MEMPERBARUI DIRINYA
+
+  Saat kamu menekan tombol pembaruan, program mengunduh sebuah ZIP,
+  memverifikasi tanda tangan penerbitnya, membongkarnya, dan mengganti
+  file-filenya sendiri. Paket yang tidak ditandatangani oleh penerbit akan
+  ditolak. Sebuah jendela konsol kecil muncul selama proses itu -- jendela itu
+  memang sengaja terlihat, agar kamu dapat melihat apa yang sedang diganti.
+  Folder pengaturanmu tetap dipertahankan.
+
+  Tidak ada yang diinstal. Tidak ada yang ditulis ke registry Windows. Hapus
+  foldernya dan program pun hilang.
+
+
+MENGAPA WINDOWS MUNGKIN MENYEBUTNYA TROJAN
+
+  Windows Defender mungkin melaporkan program ini sebagai
+  Trojan:Win32/Bearfoos.A!ml dan memblokirnya. Akhiran "!ml" berarti ini bukan
+  kecocokan dengan malware apa pun yang dikenal -- ini adalah tebakan model
+  machine learning tentang file yang belum pernah dilihatnya.
+
+  Model itu menebak begitu karena kode program ini tidak ditandatangani, hampir
+  belum ada yang memilikinya, dan program ini melakukan tiga hal yang disebutkan
+  di atas: membaca memori proses lain, mengganti file-filenya sendiri, dan
+  mengunduh dari internet. Itulah persis perilaku yang dilatih untuk dicurigai
+  oleh model tersebut.
+
+  Setiap rilis dipindai sebelum diterbitkan, dan halaman unduhan menampilkan
+  checksum agar kamu dapat memverifikasi bahwa file yang kamu terima adalah file
+  yang dihasilkan saat build. Jika kamu lebih memilih untuk tidak memercayainya
+  begitu saja, jangan jalankan program ini -- itu pilihan yang sah dan program
+  ini tidak akan terus mengganggumu soal itu.
+
+
+PINTASAN, JIKA KAMU MAU
+
+  Di bawah teks ini kamu dapat meminta pintasan desktop, entri menu Start, dan
+  agar program dimulai bersama Forza. Ketiganya mati kecuali kamu mencentangnya,
+  ketiganya hanyalah sebuah file .lnk di sebuah folder, dan kamu dapat menghapus
+  yang mana pun nanti tanpa menyentuh program.
+
+  "Mulai bersama Forza" menaruh program di folder Startup Windows-mu. Sejak kamu
+  masuk ke Windows, program menunggu tanpa terlihat di area notifikasi dan
+  terbuka (diminimalkan) saat Forza dimulai; setelah bermain, program kembali ke
+  sana. Windows tidak mengizinkan sebuah program dimulai saat program lain
+  dimulai tanpa hak administrator -- menunggu di area notifikasi tidak
+  membutuhkannya dan hampir tidak memakan apa pun. Menutup jendela tetap
+  membuatnya menunggu; klik kanan ikonnya untuk keluar. Tombol
+  "Mulai bersama Forza" di kanan atas jendela utama menyalakan dan mematikannya.
+
+  Windows tidak mengizinkan program menyematkan dirinya sendiri ke bilah tugas
+  -- itu dikhususkan untukmu sejak Windows 10 versi 1607, dan mengakalinya
+  berarti memalsukan checksum di registry. Program ini tidak melakukannya.
+  Centang entri menu Start, lalu klik kanan entri itu dan pilih
+  "Sematkan ke bilah tugas".
+
+
+TANPA JAMINAN
+
+  Ini adalah proyek hobi, dibagikan secara gratis, tanpa jaminan dalam bentuk
+  apa pun. Program ini tidak berafiliasi dengan, tidak didukung oleh, dan tidak
+  terhubung dengan Microsoft, Turn 10, Playground Games, atau seri
+  Forza Horizon.
+
+
+Kamu dapat membaca ini lagi kapan saja: tautan "Apa yang dilakukan program ini"
+di bagian atas jendela utama.
