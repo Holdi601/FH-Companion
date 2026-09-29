@@ -106,8 +106,10 @@ internal static class GameArea
         // Bild der Quelle, in dessen eigenen Koordinaten -- Capture schneidet daraus aus.
         if (Rivals.Bildquellen.Aktiv is { } quelle)
         {
-            var bild = quelle.Neuestes();
-            return bild is null ? new Rectangle(0, 0, 1920, 1080) : new Rectangle(0, 0, bild.Width, bild.Height);
+            // Nicht bild.Width: das Bild zeichnet vielleicht gerade ein Leser (siehe Bildquellen.Mit).
+            return Rivals.Bildquellen.Groesse(quelle.Neuestes()) is { } g
+                ? new Rectangle(Point.Empty, g)
+                : new Rectangle(0, 0, 1920, 1080);
         }
         var name = string.IsNullOrWhiteSpace(processName) ? GameWatch.DefaultProcessName : processName!;
         if (!string.IsNullOrWhiteSpace(FensterTitel)) { name = "title:" + FensterTitel; }

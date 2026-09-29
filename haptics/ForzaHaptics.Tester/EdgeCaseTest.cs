@@ -595,6 +595,45 @@ internal static class EdgeCaseTest
             var r = rechts.GetPixel(100, 75);
             Soll(l.R > 200 && l.B < 50 && r.B > 200 && r.R < 50 && links.Size == new Size(200, 150),
                  $"der Ausschnitt aus der Quelle stimmt nicht (links {l}, rechts {r})");
+
+            // ZWEI FAEDEN, EIN BILD (2026-09-29): ein Leser schneidet im Hintergrund aus,
+            // waehrend GameArea.Find im Takt der Oberflaeche nach der Groesse fragt.
+            // Ungesperrt warf GDI+ "Object is currently in use elsewhere" -- mit Xbox
+            // Remote Play beim Wechsel des Fensters als Absturzmeldung.
+            Exception? fehler = null;
+            var ende = DateTime.UtcNow.AddSeconds(1.5);
+            var ausgeschnitten = 0;
+            var hinten = Task.Run(() =>
+            {
+                try
+                {
+                    while (DateTime.UtcNow < ende)
+                    {
+                        using var b = GameArea.Capture(new Rectangle(0, 0, 1920, 1080), new Size(960, 540));
+                        ausgeschnitten++;
+                    }
+                }
+                catch (Exception x) { fehler ??= x; }
+            });
+            var gefragt = 0;
+            try
+            {
+                while (DateTime.UtcNow < ende) { GameArea.Find("forzahorizon6"); gefragt++; }
+            }
+            catch (Exception x) { fehler ??= x; }
+            hinten.Wait();
+            Console.WriteLine($"  zwei Faeden an einem Quellbild: {ausgeschnitten} Ausschnitte, {gefragt} Groessen");
+            Soll(fehler is null, "zwei Faeden an einem Quellbild: " + fehler?.GetType().Name + ": " + fehler?.Message);
+
+            // Ein Bild, das die Quelle unter der Hand entsorgt (Fenster gewechselt): kein
+            // Absturz, sondern "kein Bild" -- schwarz, und ohne Groesse.
+            var weg = new Bitmap(640, 360, PixelFormat.Format32bppArgb);
+            Rivals.Bildquellen.Entsorgen(weg);
+            using var schwarz = Rivals.Bildquellen.Ausschnitt(weg, new Rectangle(0, 0, 100, 100), new Size(50, 50));
+            Soll(schwarz.Size == new Size(50, 50) && schwarz.GetPixel(25, 25).ToArgb() == Color.Black.ToArgb(),
+                 "ein entsorgtes Quellbild ergibt keinen schwarzen Ausschnitt");
+            Soll(Rivals.Bildquellen.Groesse(weg) is null, "ein entsorgtes Quellbild hat eine Groesse");
+            Soll(Rivals.Bildquellen.Groesse(quelle.Bild) == new Size(1920, 1080), "die Groesse des Quellbildes stimmt nicht");
         }
         finally
         {

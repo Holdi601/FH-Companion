@@ -178,7 +178,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
                 var spiel = Bildquellen.Spielbild(roh, flaeche);
                 _spielImBild = spiel;
                 var neu = roh.Clone(spiel, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                _altesBild?.Dispose();
+                Bildquellen.Entsorgen(_altesBild);
                 _altesBild = _bild;
                 _bild = neu;
                 _bildAm = DateTime.UtcNow;
@@ -277,8 +277,8 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         {
             _zu = true;
             Schliessen();
-            _bild?.Dispose();
-            _altesBild?.Dispose();
+            Bildquellen.Entsorgen(_bild);
+            Bildquellen.Entsorgen(_altesBild);
             _bild = null;
             _altesBild = null;
             try { (_geraet as IDisposable)?.Dispose(); } catch (Exception) { }

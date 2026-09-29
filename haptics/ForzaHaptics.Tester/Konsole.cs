@@ -451,17 +451,19 @@ internal static class Konsole
             try
             {
                 var bild = quelle.Neuestes();
-                if (bild is not null)
-                {
-                    var klein = new Bitmap(320, 180);
-                    using (var g = Graphics.FromImage(klein))
+                // Unter der Sperre des Bildes: ein Leser im Hintergrund zeichnet es vielleicht gerade.
+                if (Rivals.Bildquellen.Mit(bild, b =>
                     {
+                        var k = new Bitmap(320, 180);
+                        using var g = Graphics.FromImage(k);
                         g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
-                        g.DrawImage(bild, new Rectangle(0, 0, 320, 180));
-                    }
+                        g.DrawImage(b, new Rectangle(0, 0, 320, 180));
+                        return (Bild: k, Groesse: b.Size);
+                    }, ((Bitmap Bild, Size Groesse)?)null) is { } klein)
+                {
                     vorschau.Image?.Dispose();
-                    vorschau.Image = klein;
-                    zustand.Text = $"{quelle.Beschreibung} -- {bild.Width}×{bild.Height}";
+                    vorschau.Image = klein.Bild;
+                    zustand.Text = $"{quelle.Beschreibung} -- {klein.Groesse.Width}×{klein.Groesse.Height}";
                 }
                 else
                 {

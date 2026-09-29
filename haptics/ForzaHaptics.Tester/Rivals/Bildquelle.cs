@@ -202,11 +202,58 @@ internal static class Bildquellen
         var raus = new Bitmap(Math.Max(1, ziel.Width), Math.Max(1, ziel.Height), PixelFormat.Format24bppRgb);
         using var g = Graphics.FromImage(raus);
         g.Clear(Color.Black);
-        if (bild is null) { return raus; }
         g.InterpolationMode = InterpolationMode.HighQualityBicubic;
         g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        g.DrawImage(bild, new Rectangle(0, 0, raus.Width, raus.Height), quelle, GraphicsUnit.Pixel);
+        Mit(bild, b =>
+        {
+            g.DrawImage(b, new Rectangle(0, 0, raus.Width, raus.Height), quelle, GraphicsUnit.Pixel);
+            return true;
+        }, false);
         return raus;
+    }
+
+    /// <summary>
+    /// Mit dem Bild einer Quelle arbeiten -- nie aus zwei Faeden zugleich (seit 2026-09-29).
+    /// </summary>
+    /// <remarks>
+    /// GDI+ verbietet, dasselbe Bild aus zwei Faeden anzufassen, und wirft dann "Object
+    /// is currently in use elsewhere". Neuestes() gibt aber allen dasselbe Bild: den
+    /// Lesern im Hintergrund, GameArea.Find im Takt der Oberflaeche, der Vorschau. Mit
+    /// Xbox Remote Play kam das beim Wechsel des Fensters als Absturzmeldung. Jeder
+    /// Zugriff sperrt darum das Bild selbst, und die Quellen entsorgen ein Bild nur unter
+    /// derselben Sperre (Entsorgen). Ist es dann schon entsorgt, gilt das als "kein Bild".
+    /// </remarks>
+    internal static T Mit<T>(Bitmap? bild, Func<Bitmap, T> tun, T ohne)
+    {
+        if (bild is null) { return ohne; }
+        lock (bild)
+        {
+            try { return tun(bild); }
+            catch (ArgumentException) { return ohne; }
+            catch (InvalidOperationException) { return ohne; }
+        }
+    }
+
+    /// <summary>Ein Bild einer Quelle entsorgen -- erst, wenn es gerade niemand benutzt.</summary>
+    internal static void Entsorgen(Bitmap? bild)
+    {
+        if (bild is null) { return; }
+        lock (bild) { bild.Dispose(); }
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Bitmap, object> Groessen = new();
+
+    /// <summary>
+    /// Die Groesse eines Quellbildes, einmal je Bild gemerkt: GameArea.Find fragt im Takt
+    /// der Oberflaeche und soll dafuer nicht warten, bis ein Leser mit Zeichnen fertig ist.
+    /// </summary>
+    internal static Size? Groesse(Bitmap? bild)
+    {
+        if (bild is null) { return null; }
+        if (Groessen.TryGetValue(bild, out var gemerkt)) { return (Size)gemerkt; }
+        var groesse = Mit(bild, b => (Size?)b.Size, null);
+        if (groesse is { } g) { Groessen.AddOrUpdate(bild, g); }
+        return groesse;
     }
 
     /// <summary>Ein WinRT-Bild (BGRA8) in ein GDI+-Bild, eine Zeilenkopie.</summary>
@@ -328,7 +375,7 @@ internal sealed class GeraeteQuelle : IBildquelle
                     ? SoftwareBitmap.Copy(weich)
                     : SoftwareBitmap.Convert(weich, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
                 var neu = Bildquellen.AlsBitmap(bgra);
-                _vorletztes?.Dispose();
+                Bildquellen.Entsorgen(_vorletztes);
                 _vorletztes = _letztes;
                 _letztes = neu;
                 _letztesAm = DateTime.UtcNow;
@@ -349,8 +396,8 @@ internal sealed class GeraeteQuelle : IBildquelle
             try { _leser?.StopAsync().AsTask().Wait(1000); } catch (Exception) { }
             _leser?.Dispose();
             _aufnahme?.Dispose();
-            _letztes?.Dispose();
-            _vorletztes?.Dispose();
+            Bildquellen.Entsorgen(_letztes);
+            Bildquellen.Entsorgen(_vorletztes);
             _vorletztes = null;
             _leser = null;
             _aufnahme = null;
@@ -462,7 +509,7 @@ internal sealed class StandbildQuelle : IBildquelle
 
     public Bitmap? Neuestes() => _bild;
 
-    public void Dispose() => _bild.Dispose();
+    public void Dispose() => Bildquellen.Entsorgen(_bild);
 }
 
 /// <summary>Wo ffmpeg liegt: Einstellung, PATH, winget (Gyan.FFmpeg / BtbN) -- oder null.</summary>
@@ -615,7 +662,7 @@ internal sealed class StromQuelle : IBildquelle
             {
                 neu.UnlockBits(data);
             }
-            _altesBild?.Dispose();
+            Bildquellen.Entsorgen(_altesBild);
             _altesBild = _bild;
             _bild = neu;
             _bildAktuell = true;
@@ -629,8 +676,8 @@ internal sealed class StromQuelle : IBildquelle
         lock (_schloss)
         {
             try { if (_prozess is { HasExited: false }) { _prozess.Kill(); } } catch (Exception) { }
-            _bild?.Dispose();
-            _altesBild?.Dispose();
+            Bildquellen.Entsorgen(_bild);
+            Bildquellen.Entsorgen(_altesBild);
             _bild = null;
             _altesBild = null;
         }
