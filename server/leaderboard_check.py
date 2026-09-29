@@ -92,32 +92,32 @@ def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
     try:
         sekunden = float(runde.get("lapSeconds"))
     except (TypeError, ValueError):
-        raise NichtSchneller(400, "Keine Rundenzeit.") from None
+        raise NichtSchneller(400, "No lap time.") from None
     ms = round(sekunden * 1000)
     strecke = falte(runde.get("track"))
     if not strecke:
-        raise NichtSchneller(422, "Die Runde nennt keine Strecke -- ohne Strecke ist "
-                                  "sie mit keiner Bestenliste zu vergleichen.")
+        raise NichtSchneller(422, "The lap names no track -- without one it cannot be "
+                                  "compared with any leaderboard.")
     try:
         klasse = PI_ORDER[int(runde.get("carClass"))]
     except (TypeError, ValueError, IndexError):
-        raise NichtSchneller(422, "Unbekannte Klasse %r." % runde.get("carClass")) from None
+        raise NichtSchneller(422, "Unknown class %r." % runde.get("carClass")) from None
     try:
         ordinal = int(runde.get("carOrdinal"))
     except (TypeError, ValueError):
-        raise NichtSchneller(422, "Kein Auto.") from None
+        raise NichtSchneller(422, "No car.") from None
     if not dataset_file.exists():
-        raise NichtSchneller(503, "Keine Bestenliste auf dem Server -- nichts zu vergleichen.")
+        raise NichtSchneller(503, "No leaderboard on the server -- nothing to compare with.")
 
     bretter = _index(dataset_file)
     brett = bretter.get((strecke, klasse))
     if brett is None:
-        raise NichtSchneller(422, "Fuer %s in Klasse %s gibt es keine Bestenliste."
+        raise NichtSchneller(422, "There is no leaderboard for %s in class %s."
                                   % (runde.get("track"), klasse))
 
     rivals = brett.get(ordinal)
     if rivals is not None and ms >= rivals:
-        raise NichtSchneller(409, "Nicht schneller als die Bestenliste: %.3f s gegen %.3f s."
+        raise NichtSchneller(409, "Not faster than the leaderboard: %.3f s against %.3f s."
                                   % (ms / 1000, rivals / 1000),
                              langsamer=(ms - rivals) / max(1, rivals))
 
@@ -130,7 +130,7 @@ def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
         beste_frueher = min(round(float((e.get("lap") or {}).get("lapSeconds") or 9e9) * 1000)
                             for e in frueher)
         if ms >= beste_frueher:
-            raise NichtSchneller(409, "Nicht schneller als die schon eingereichte Zeit "
+            raise NichtSchneller(409, "Not faster than the time already submitted: "
                                       "%.3f s." % (beste_frueher / 1000),
                                  langsamer=(ms - beste_frueher) / max(1, beste_frueher))
 

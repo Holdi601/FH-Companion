@@ -327,8 +327,10 @@ What works and what does not:
     the app suggests the Xbox window. It is captured through Windows Graphics
     Capture, so it may sit behind other windows, but it must be on a screen and
     not minimized. Windows draws a yellow frame around a window while an app
-    captures it. The list offers every other window on this PC too: any window
-    that shows the game works.
+    captures it. The list offers every other window on this PC too, each with
+    its program, Remote Play programs first: any window that shows the game
+    works. **Pick with a preview …** shows Windows' own picker with a live
+    picture of every window.
   - **Discord:** the Xbox's stream in a Discord voice channel, watched on this
     PC (popped out or full screen). The app finds the Discord window by itself.
     Your own stream needs a second Discord account on the PC, because your

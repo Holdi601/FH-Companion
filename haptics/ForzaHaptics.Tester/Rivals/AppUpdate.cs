@@ -75,8 +75,7 @@ internal static class AppUpdate
         if (!string.Equals(ziel.Host, basis.Host, StringComparison.OrdinalIgnoreCase)
             || ziel.Port != basis.Port || ziel.Scheme != basis.Scheme)
         {
-            throw new InvalidDataException("Der Server nennt eine Download-Adresse auf einem "
-                                           + "anderen Rechner. Nichts wurde geladen.");
+            throw new InvalidDataException(Loc.T("The server names a download address on another computer. Nothing was downloaded."));
         }
         return ziel;
     }
@@ -146,12 +145,12 @@ internal static class AppUpdate
         var eigene = OwnBuild();
         if (InstallRoot is null)
         {
-            return new Befund(false, eigene, null,
-                              "kein entpacktes Paket -- hier wird nicht aktualisiert");
+            // Nur beim Entwickeln (aus dem Bauordner) -- darum nicht uebersetzt.
+            return new Befund(false, eigene, null, "not an unpacked package -- no updates here");
         }
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            return new Befund(false, eigene, null, "kein Server eingestellt");
+            return new Befund(false, eigene, null, Loc.T("no server set"));
         }
         try
         {
@@ -162,25 +161,23 @@ internal static class AppUpdate
             var fassung = JsonSerializer.Deserialize<Fassung>(text);
             if (fassung?.Build is null || fassung.Sha256 is null)
             {
-                return new Befund(false, eigene, null,
-                                  "der Server nennt keine Fassung");
+                return new Befund(false, eigene, null, Loc.T("the server names no version"));
             }
             if (eigene is null)
             {
                 // Ohne eigene Kennung laesst sich nicht sagen, ob das dort drueben
                 // neuer ist. Dann lieber nichts behaupten als raten -- ein Update
                 // anzubieten, das dieselbe Fassung ist, verbrennt Vertrauen.
-                return new Befund(false, null, fassung,
-                                  "diese Fassung nennt ihre eigene Kennung nicht");
+                return new Befund(false, null, fassung, Loc.T("this copy does not know its own version"));
             }
             var neuer = !string.Equals(eigene, fassung.Build, StringComparison.Ordinal);
             return new Befund(neuer, eigene, fassung,
-                              neuer ? $"neue Fassung: {fassung.Name}"
-                                    : "die App ist aktuell");
+                              neuer ? string.Format(Loc.T("new version: {0}"), fassung.Name)
+                                    : Loc.T("the app is up to date"));
         }
         catch (Exception e)
         {
-            return new Befund(false, eigene, null, "Server nicht erreichbar: " + e.Message);
+            return new Befund(false, eigene, null, string.Format(Loc.T("server not reachable: {0}"), e.Message));
         }
     }
 
@@ -198,7 +195,7 @@ internal static class AppUpdate
         if (File.Exists(ziel) && Pruefsumme(ziel) == fassung.Sha256
             && UpdateSignature.Verify(ziel, fassung.Signature))
         {
-            fortschritt?.Report("schon heruntergeladen, Unterschrift stimmt");
+            fortschritt?.Report(Loc.T("already downloaded, signature valid"));
             return ziel;
         }
 
@@ -225,8 +222,8 @@ internal static class AppUpdate
                 {
                     zuletzt = DateTime.UtcNow;
                     fortschritt?.Report(gesamt > 0
-                        ? $"lade ... {gelesen / 1e6:0} von {gesamt / 1e6:0} MB"
-                        : $"lade ... {gelesen / 1e6:0} MB");
+                        ? string.Format(Loc.T("downloading ... {0} of {1} MB"), (gelesen / 1e6).ToString("0"), (gesamt / 1e6).ToString("0"))
+                        : string.Format(Loc.T("downloading ... {0} MB"), (gelesen / 1e6).ToString("0")));
                 }
             }
         }
@@ -239,10 +236,9 @@ internal static class AppUpdate
         if (!string.Equals(gemessen, fassung.Sha256, StringComparison.OrdinalIgnoreCase))
         {
             File.Delete(teil);
-            throw new InvalidDataException(
-                "Die heruntergeladene Datei stimmt nicht mit der Angabe des Servers "
-                + $"ueberein (erwartet {fassung.Sha256![..12]}..., "
-                + $"bekommen {gemessen[..12]}...). Nichts wurde ersetzt.");
+            throw new InvalidDataException(string.Format(
+                Loc.T("The downloaded file does not match what the server announced (expected {0}..., got {1}...). Nothing was replaced."),
+                fassung.Sha256![..12], gemessen[..12]));
         }
         // DIE UNTERSCHRIFT ENTSCHEIDET, nicht die Pruefsumme: die kam vom selben
         // Server wie die Datei und beweist darum nur, dass beides zusammenpasst.
@@ -250,13 +246,11 @@ internal static class AppUpdate
         {
             File.Delete(teil);
             throw new InvalidDataException(
-                "Das Paket traegt keine gueltige Unterschrift des Herausgebers. "
-                + "Nichts wurde ersetzt -- entweder ist es unterwegs veraendert worden, "
-                + "oder der Server liefert ein unsigniertes Paket.");
+                Loc.T("The package does not carry a valid signature from the publisher. Nothing was replaced: either it was changed on the way, or the server delivers an unsigned package."));
         }
         File.Delete(ziel);
         File.Move(teil, ziel);
-        fortschritt?.Report("heruntergeladen, Unterschrift stimmt");
+        fortschritt?.Report(Loc.T("downloaded, signature valid"));
         return ziel;
     }
 
@@ -286,28 +280,26 @@ internal static class AppUpdate
         // liegt Zeit, und die Datei liegt in einem Ordner, in den der Nutzer schreibt.
         if (!UpdateSignature.Verify(zipPfad, signatur))
         {
-            throw new InvalidDataException("Die Unterschrift des Pakets stimmt nicht (mehr). "
-                                           + "Nichts wurde ersetzt.");
+            throw new InvalidDataException(Loc.T("The package's signature is not valid (any more). Nothing was replaced."));
         }
         var wurzel = InstallRoot
-            ?? throw new InvalidOperationException("Kein entpacktes Paket -- kein Austausch.");
+            ?? throw new InvalidOperationException("Not an unpacked package -- nothing to replace.");
         if (!Schreibbar(wurzel))
         {
-            throw new UnauthorizedAccessException(
-                $"In {wurzel} darf nicht geschrieben werden. Die App liegt an einem "
-                + "geschuetzten Ort -- das Paket von Hand entpacken, oder die App "
-                + "an eine Stelle legen, an der du schreiben darfst.");
+            throw new UnauthorizedAccessException(string.Format(
+                Loc.T("{0} is not writable: the app sits in a protected folder. Unpack the package by hand, or move the app to a folder you can write to."),
+                wurzel));
         }
 
         var bereit = Path.Combine(WorkDirectory, "bereit");
         if (Directory.Exists(bereit)) { Directory.Delete(bereit, recursive: true); }
         Directory.CreateDirectory(bereit);
-        fortschritt?.Report("packe aus ...");
+        fortschritt?.Report(Loc.T("unpacking ..."));
         System.IO.Compression.ZipFile.ExtractToDirectory(zipPfad, bereit);
 
         // Die ZIP traegt ihren Ordnernamen als Wurzel.
         var neu = Directory.GetDirectories(bereit).FirstOrDefault()
-            ?? throw new InvalidDataException("Die ZIP enthaelt keinen Ordner.");
+            ?? throw new InvalidDataException(Loc.T("The ZIP contains no folder."));
 
         var helfer = Path.Combine(WorkDirectory, "austausch.cmd");
         var exe = AppInfo.ExePath;
@@ -392,10 +384,10 @@ internal static class AppUpdate
         sb.AppendLine("goto ende");
         sb.AppendLine();
         sb.AppendLine(":aufgeben");
-        sb.AppendLine($"echo Die App lief nach 60 Sekunden noch. Nichts wurde ersetzt.>> \"{Path.Combine(WorkDirectory, "austausch.log")}\"");
+        sb.AppendLine($"echo The app was still running after 60 seconds. Nothing was replaced.>> \"{Path.Combine(WorkDirectory, "austausch.log")}\"");
         sb.AppendLine("goto ende");
         sb.AppendLine(":fehler");
-        sb.AppendLine($"echo robocopy meldete einen Fehler. Das Paket liegt in {quelle}.>> \"{Path.Combine(WorkDirectory, "austausch.log")}\"");
+        sb.AppendLine($"echo robocopy reported an error. The package is in {quelle}.>> \"{Path.Combine(WorkDirectory, "austausch.log")}\"");
         sb.AppendLine(":ende");
         return sb.ToString();
     }

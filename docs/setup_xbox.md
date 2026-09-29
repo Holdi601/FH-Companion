@@ -97,9 +97,12 @@ window, just like playing Forza on a PC.
 3. In the Xbox app, choose your console and **Remote play on this device**.
 
 **In FH Companion:** under **Game picture**, choose **Xbox Remote Play**. The app
-suggests the Xbox window; the list next to it offers every other window on this
-PC, so any window that shows the game works the same way. Under **Where the HUD
-shows**, choose **Over the game window, like playing on the PC**.
+suggests the Xbox window. The list next to it names the program behind each window
+and puts Remote Play programs first; the Xbox app's window is simply called "XBOX".
+Not sure which one it is? **Pick with a preview …** opens Windows' own picker with a
+live picture of every window. Any window that shows the game works the same way.
+Under **Where the HUD shows**, choose **Over the game window, like playing on the
+PC**.
 
 ![Remote Play with the HUD over the game window](img/setup/xbox_remoteplay.png)
 

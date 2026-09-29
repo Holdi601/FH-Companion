@@ -67,6 +67,14 @@ internal static class EdgeCaseTest
         XboxAndMemoryOptions();
     }
 
+    /// <summary>Eine Bildquelle zum Testen mit einem vorgegebenen Bild.</summary>
+    private sealed class FesteQuelleMit(Bitmap bild) : Rivals.IBildquelle
+    {
+        public string Beschreibung => "test";
+        public Bitmap? Neuestes() => bild;
+        public void Dispose() => bild.Dispose();
+    }
+
     /// <summary>Eine Bildquelle zum Testen: ein festes Bild.</summary>
     private sealed class FesteQuelle : Rivals.IBildquelle
     {
@@ -634,6 +642,16 @@ internal static class EdgeCaseTest
                  "ein entsorgtes Quellbild ergibt keinen schwarzen Ausschnitt");
             Soll(Rivals.Bildquellen.Groesse(weg) is null, "ein entsorgtes Quellbild hat eine Groesse");
             Soll(Rivals.Bildquellen.Groesse(quelle.Bild) == new Size(1920, 1080), "die Groesse des Quellbildes stimmt nicht");
+
+            // EIN WINZIGES FENSTER IST KEIN SPIELBILD (2026-09-29): der HUD-Editor stuerzte
+            // auf einem Quellbild von wenigen Pixeln Breite ab. Die Flaeche bleibt dann 1080p.
+            using var winzig = new FesteQuelleMit(new Bitmap(3, 400, PixelFormat.Format32bppArgb));
+            typeof(Rivals.Bildquellen).GetField("_aktiv", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+                .SetValue(null, winzig);
+            Soll(GameArea.Find("forzahorizon6") == new Rectangle(0, 0, 1920, 1080),
+                 $"ein winziges Quellbild wird zur Spielflaeche ({GameArea.Find("forzahorizon6")})");
+            typeof(Rivals.Bildquellen).GetField("_aktiv", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+                .SetValue(null, quelle);
         }
         finally
         {
@@ -644,10 +662,56 @@ internal static class EdgeCaseTest
         }
 
         Soll(Konsole.Adressen().All(a => !a.StartsWith("127.")), "unter den Netzadressen steht die Loopback-Adresse");
+
+        // DIE FENSTERLISTE (2026-09-29): Remote-Play-Programme oben, der Schreibtisch und
+        // Werkzeugfenster gar nicht, und ins Feld kommt nur der Titel.
+        Soll(Rivals.Fenster.Rang("XBOX", "XboxPcApp") == 0 && Rivals.Fenster.Rang("PS Remote Play", "RemotePlay") == 0
+             && Rivals.Fenster.Rang("Forza Horizon 6", "Moonlight") == 0 && Rivals.Fenster.Rang("Game", "streaming_client") == 0,
+             "ein Remote-Play-Programm steht nicht oben");
+        Soll(Rivals.Fenster.Rang("Xbox Cloud Gaming (Beta) on Xbox.com - Personal - Microsoft Edge", "msedge") == 0,
+             "xbox.com im Browser steht nicht oben");
+        Soll(Rivals.Fenster.Rang("someone - Twitch - Google Chrome", "chrome") == 1 && Rivals.Fenster.Rang("x", "obs64") == 1,
+             "Strom oder OBS stehen nicht in der Mitte");
+        Soll(Rivals.Fenster.Rang("Spotify Premium", "Spotify") == 2 && Rivals.Fenster.Rang("Box", "explorer") == 2,
+             "ein gewoehnliches Programm steht oben");
+        var liste = Rivals.Fenster.Waehlbare();
+        Soll(liste.All(e => e.Titel != "Program Manager" && e.Programm.Length > 0), "der Schreibtisch steht in der Fensterliste");
+        Soll(liste.Select(e => e.Rang).SequenceEqual(liste.Select(e => e.Rang).OrderBy(r => r)), "die Fensterliste ist nicht nach Rang geordnet");
+        Console.WriteLine($"  Fensterliste: {liste.Count} Fenster (vorher {Rivals.Fenster.Sichtbare().Count}), "
+                          + string.Join(", ", liste.GroupBy(e => e.Rang).Select(g => $"Rang {g.Key}: {g.Count()}")));
+        var xbox = new Rivals.Fenster.Eintrag("XBOX", "Xbox app", false, 0);
+        Soll(xbox.ToString().Contains("Xbox app") && xbox.ToString().StartsWith("XBOX"), "der Eintrag nennt das Programm nicht");
+        using (var feldListe = new ComboBox())
+        {
+            feldListe.Items.Add(xbox);
+            feldListe.Text = xbox.ToString();
+            Soll(Konsole.FensterSchluessel(feldListe) == "XBOX", "aus dem Listeneintrag wird nicht der Titel: " + Konsole.FensterSchluessel(feldListe));
+            feldListe.Text = "  Projector ";
+            Soll(Konsole.FensterSchluessel(feldListe) == "Projector", "ein getippter Titel kommt nicht an");
+        }
         using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000), ShowInTaskbar = false };
         var feld = Konsole.Feld(new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "device" }, Point.Empty);
         form.Controls.Add(feld);
         Soll(feld.Controls.Count >= 8, "das Bedienfeld des Konsolenmodus ist unvollstaendig");
+
+        // DER HUD-EDITOR MIT EINEM KASTEN, BREITER ALS DIE FLAECHE (2026-09-29): genau die
+        // Zahlen aus der Absturzmeldung -- Flaeche ab x=450, Kasten 40.858 breit.
+        using (var leinwand = new Rivals.HudLayoutCanvas(new Rivals.OverlaySettings()))
+        {
+            var t = typeof(Rivals.HudLayoutCanvas);
+            var f = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            ((Dictionary<Rivals.HudPart, RectangleF>)t.GetField("_boxes", f)!.GetValue(leinwand)!)[Rivals.HudPart.Delta] =
+                new RectangleF(450, 20, 40858, 300);
+            t.GetField("_dragging", f)!.SetValue(leinwand, Rivals.HudPart.Delta);
+            t.GetField("_screen", f)!.SetValue(leinwand, new RectangleF(450, 14, 30, 472));
+            Exception? absturz = null;
+            try
+            {
+                t.GetMethod("OnMouseMove", f)!.Invoke(leinwand, new object[] { new MouseEventArgs(MouseButtons.Left, 0, 460, 100, 0) });
+            }
+            catch (System.Reflection.TargetInvocationException e) { absturz = e.InnerException; }
+            Soll(absturz is null, "der HUD-Editor stuerzt mit einem Kasten breiter als die Flaeche ab: " + absturz?.Message);
+        }
     }
 
     /// <summary>

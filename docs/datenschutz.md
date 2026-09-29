@@ -204,5 +204,5 @@ hat keine rechtliche Wirkung und keine vergleichbare erhebliche Beeinträchtigun
 und sie wird ohnehin von Hand ausgelöst, nicht automatisch.
 
 Was trotzdem gilt: Der Grund steht in der Antwort des Servers, damit niemand rätselt
-(`403 Diese Installation ist gesperrt: <Grund>`). Und sie ist zurücknehmbar — beim
+(`403 This installation is banned: <Grund>`). Und sie ist zurücknehmbar — beim
 Entsperren kommen die ausgeblendeten Runden zurück.

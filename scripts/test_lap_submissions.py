@@ -262,7 +262,7 @@ with tempfile.TemporaryDirectory() as tmp:
           "die Telemetrie passt nicht zur behaupteten Zeit")
 
     langsam = runde(sekunden=3000.0, meter=3000.0)
-    pruefe("Schnitt" in " ".join(laps.pruefe_runde(langsam)),
+    pruefe("average" in " ".join(laps.pruefe_runde(langsam)),
            "ein Schneckentempo ist auffaellig, aber nicht verboten")
 
     print("\nAblegen")

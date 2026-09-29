@@ -107,7 +107,7 @@ internal static class ForzaMemoryDb
         var spiel = Process.GetProcessesByName(ProcessName).FirstOrDefault();
         if (spiel is null)
         {
-            sagen?.Invoke("forzahorizon6.exe laeuft nicht.");
+            sagen?.Invoke(Loc.T("forzahorizon6.exe is not running."));
             return new List<Fund>();
         }
         return Sammeln(spiel.Id, ordner, sagen, genug);
@@ -132,10 +132,9 @@ internal static class ForzaMemoryDb
         var handle = OpenProcess(ProcessVmRead | ProcessQueryInformation, false, pid);
         if (handle == IntPtr.Zero)
         {
-            sagen?.Invoke("Der Prozess laesst sich nicht oeffnen (Fehler "
-                          + Marshal.GetLastWin32Error()
-                          + "). Meist hilft es, dieses Programm als Administrator zu "
-                          + "starten.");
+            sagen?.Invoke(string.Format(
+                Loc.T("The game's process cannot be opened (error {0}). Starting this program as administrator usually helps."),
+                Marshal.GetLastWin32Error()));
             return ergebnis;
         }
 
@@ -191,7 +190,7 @@ internal static class ForzaMemoryDb
                         && Kopfstellen(handle, puffer, gelesen, basis + offset,
                                        ordner, ergebnis, gesehen, genug))
                     {
-                        sagen?.Invoke($"gefunden nach {durchsucht / (1024.0 * 1024 * 1024):F1} GB.");
+                        sagen?.Invoke(string.Format(Loc.T("found after {0} GB."), (durchsucht / (1024.0 * 1024 * 1024)).ToString("F1")));
                         return;
                     }
                     offset += (ulong)stueck;
@@ -201,15 +200,15 @@ internal static class ForzaMemoryDb
                     if (durchsucht - gemeldet >= (2L << 30))
                     {
                         gemeldet = durchsucht;
-                        sagen?.Invoke($"{durchsucht / (1024.0 * 1024 * 1024):F1} GB "
-                                      + $"durchsucht, {ergebnis.Count} Abbild(er) bisher ...");
+                        sagen?.Invoke(string.Format(Loc.T("{0} GB searched, {1} database(s) so far ..."),
+                                                    (durchsucht / (1024.0 * 1024 * 1024)).ToString("F1"), ergebnis.Count));
                     }
                 }
             }
             adresse = basis + laenge;
         }
-        sagen?.Invoke($"{durchsucht / (1024.0 * 1024 * 1024):F1} GB durchsucht, "
-                      + $"{ergebnis.Count} Abbild(er).");
+        sagen?.Invoke(string.Format(Loc.T("{0} GB searched, {1} database(s)."),
+                                    (durchsucht / (1024.0 * 1024 * 1024)).ToString("F1"), ergebnis.Count));
     }
 
     /// <summary>

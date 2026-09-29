@@ -67,8 +67,8 @@ def import_archive(data, *, keys: dict, root: Path = CONTRIB_ROOT,
     existing = [run_id for run_id in runs if (target_root / run_id).exists()]
     if existing and not force:
         raise ContribError(
-            f"{len(existing)} Lauf/Laeufe liegen schon hier ({existing[0]} ...). "
-            "Mit --force ersetzen.")
+            f"{len(existing)} run(s) already exist here ({existing[0]} ...). "
+            "Use --force to replace them.")
 
     report = {"contributor": who, "runs": [], "rows": 0,
               "created_at": manifest.get("created_at"),

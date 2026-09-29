@@ -168,7 +168,7 @@ internal static class LapSubmit
             throw new Rejected((int)antwort.StatusCode, Fehlertext(antwort.StatusCode, text));
         }
         var d = JsonSerializer.Deserialize<Identity>(text)
-                ?? throw new InvalidOperationException("Der Server antwortete unbrauchbar.");
+                ?? throw new InvalidOperationException("the server's answer could not be read");
         d.Gamertag = gamertag;
         d.Server = baseUrl;
         Save(d);
@@ -209,7 +209,7 @@ internal static class LapSubmit
         if (string.IsNullOrWhiteSpace(wer.Server) || string.IsNullOrWhiteSpace(wer.Secret)
             || string.IsNullOrWhiteSpace(wer.InstallId))
         {
-            throw new InvalidOperationException("Diese Installation ist nicht angemeldet.");
+            throw new InvalidOperationException("this installation is not registered with the server");
         }
 
         var rumpf = Rumpf(lap, course, gamertag, volleSpur ?? VolleSpur(lap));
@@ -302,6 +302,6 @@ internal static class LapSubmit
         }
         var kurz = (text ?? string.Empty).Trim();
         if (kurz.Length > 200) { kurz = kurz[..200] + " ..."; }
-        return $"Der Server antwortete mit {(int)status}: {kurz}";
+        return $"the server answered {(int)status}: {kurz}";
     }
 }

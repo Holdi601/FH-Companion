@@ -534,16 +534,17 @@ internal sealed class RivalsTab : UserControl
 
         _updateState.Text = befund.Text;
         var groesse = befund.Server.Bytes / 1e6;
+        // IN DER SPRACHE DER APP (seit 2026-09-29) -- bis dahin stand diese Frage fuer
+        // jeden Nutzer auf Deutsch da.
         var antwort = MessageBox.Show(
-            $"Es gibt eine neuere Fassung der App.\n\n"
-            + $"    neu:    {befund.Server.Name}  ({groesse:0} MB)\n"
-            + $"    gebaut: {befund.Server.BuiltAt}\n"
-            + $"    deine:  {befund.EigeneKennung}\n\n"
-            + "Jetzt herunterladen und ersetzen? Die App beendet sich dabei und "
-            + "startet neu. Deine Einstellungen bleiben erhalten.\n\n"
-            + "Ja = jetzt\nNein = beim naechsten Start wieder fragen\n"
-            + "Abbrechen = diese Fassung ueberspringen",
-            "Neue Fassung verfuegbar", MessageBoxButtons.YesNoCancel,
+            Loc.T("A newer version of the app is available.") + "\n\n"
+            + "    " + string.Format(Loc.T("new: {0} ({1} MB)"), befund.Server.Name, groesse.ToString("0")) + "\n"
+            + "    " + string.Format(Loc.T("built: {0}"), befund.Server.BuiltAt) + "\n"
+            + "    " + string.Format(Loc.T("yours: {0}"), befund.EigeneKennung) + "\n\n"
+            + Loc.T("Download and replace it now? The app closes and starts again; your settings stay.") + "\n\n"
+            + Loc.T("Yes = now") + "\n" + Loc.T("No = ask again at the next start") + "\n"
+            + Loc.T("Cancel = skip this version"),
+            Loc.T("New version available"), MessageBoxButtons.YesNoCancel,
             MessageBoxIcon.Question);
 
         if (antwort == DialogResult.Cancel)
@@ -577,9 +578,9 @@ internal sealed class RivalsTab : UserControl
         {
             _updateState.Text = Loc.T("Update failed");
             MessageBox.Show(
-                "Das Update ist nicht durchgelaufen. Es wurde NICHTS ersetzt -- "
-                + "die App laeuft unveraendert weiter.\n\n" + e.Message,
-                "Update fehlgeschlagen", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                Loc.T("The update did not go through. Nothing was replaced; the app keeps running as before.")
+                + "\n\n" + e.Message,
+                Loc.T("Update failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 

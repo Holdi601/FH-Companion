@@ -272,11 +272,12 @@ def anmeldebremse(client: str, now: float | None = None,
 
     letzte_stunde = sum(1 for z in zeiten if jetzt - z < 3600)
     if letzte_stunde >= ANMELDUNGEN_JE_IP_STUNDE:
-        raise SubmitError(429, "Von dieser Adresse kamen in der letzten Stunde "
-                               "schon %d Anmeldungen. Versuch es spaeter wieder."
+        raise SubmitError(429, "This address has already registered %d times in the "
+                               "last hour. Try again later."
                                % letzte_stunde)
     if len(zeiten) >= ANMELDUNGEN_JE_IP_TAG:
-        raise SubmitError(429, "Von dieser Adresse kamen heute schon %d Anmeldungen."
+        raise SubmitError(429, "This address has already registered %d times in the "
+                               "last 24 hours. Try again tomorrow."
                                % len(zeiten))
 
     zeiten.append(jetzt)
@@ -306,10 +307,10 @@ def _register(hardware: str, gamertag: str, path: Path | None = None,
     hardware = (hardware or "").strip().lower()
     gamertag = (gamertag or "").strip()
     if not HARDWARE_RE.match(hardware):
-        raise SubmitError(400, "'hardware' muss ein Hex-Hash aus 32 bis 128 Zeichen sein.")
+        raise SubmitError(400, "'hardware' must be a hex hash of 32 to 128 characters.")
     # OHNE GAMERTAG GEHT ES AUCH -- siehe oben. Nur ein unbrauchbarer wird abgewiesen.
     if gamertag and not GAMERTAG_RE.match(gamertag):
-        raise SubmitError(400, "'gamertag' enthaelt unerlaubte Zeichen.")
+        raise SubmitError(400, "'gamertag' contains characters that are not allowed.")
 
     gepfeffert = hardware_id(hardware, path)
     data = load_keys(path)
@@ -325,8 +326,8 @@ def _register(hardware: str, gamertag: str, path: Path | None = None,
             continue
         gleiche += 1
         if eintrag.get("banned"):
-            raise SubmitError(403, "Diese Maschine ist gesperrt: "
-                                   + (eintrag.get("ban_reason") or "ohne Angabe"))
+            raise SubmitError(403, "This machine is banned: "
+                                   + (eintrag.get("ban_reason") or "no reason given"))
 
     # EINE MASCHINE BRAUCHT KEINE ZWANZIG KENNUNGEN.
     #
@@ -337,8 +338,8 @@ def _register(hardware: str, gamertag: str, path: Path | None = None,
     # auszusperren: Neuinstallation, zweites Windows, ein zurueckgesetztes Profil --
     # fuenf davon sind reichlich.
     if gleiche >= MAX_INSTALLS_JE_MASCHINE:
-        raise SubmitError(429, "Diese Maschine hat schon %d Kennungen. Wenn das "
-                               "wirklich noetig ist, melde dich beim Betreiber."
+        raise SubmitError(429, "This machine already has %d installation IDs. If "
+                               "you really need more, contact the operator."
                                % gleiche)
 
     install_id = secrets.token_urlsafe(24)[:32]
@@ -484,32 +485,32 @@ def _verify(headers, method: str, path_: str, body: bytes,
     unterschrift = kopf("X-Forza-Signature")
 
     if not INSTALL_RE.match(install_id):
-        raise SubmitError(401, "X-Forza-Install fehlt oder ist unbrauchbar.")
+        raise SubmitError(401, "X-Forza-Install is missing or invalid.")
     if not (stamp and nonce and unterschrift):
-        raise SubmitError(401, "X-Forza-Timestamp, -Nonce oder -Signature fehlt.")
+        raise SubmitError(401, "X-Forza-Timestamp, -Nonce or -Signature is missing.")
     if not re.match(r"^[A-Za-z0-9_-]{8,64}$", nonce):
-        raise SubmitError(401, "X-Forza-Nonce ist unbrauchbar.")
+        raise SubmitError(401, "X-Forza-Nonce is invalid.")
 
     data = load_keys(path)
     eintrag = data["installs"].get(install_id)
     if not eintrag:
-        raise SubmitError(401, "Diese Installation ist nicht angemeldet. "
-                               "Neu anmelden: POST /api/lap/register")
+        raise SubmitError(401, "This installation is not registered. "
+                               "Register again: POST /api/lap/register")
     if eintrag.get("banned"):
-        raise SubmitError(403, "Diese Installation ist gesperrt: "
-                               + (eintrag.get("ban_reason") or "ohne Angabe"))
+        raise SubmitError(403, "This installation is banned: "
+                               + (eintrag.get("ban_reason") or "no reason given"))
 
     try:
         drift = abs((now or time.time()) - float(stamp))
     except ValueError:
-        raise SubmitError(401, "X-Forza-Timestamp ist keine Zahl.") from None
+        raise SubmitError(401, "X-Forza-Timestamp is not a number.") from None
     if drift > CLOCK_SKEW:
-        raise SubmitError(401, "Der Zeitstempel weicht um %.0f s ab, erlaubt sind "
-                               "%d s. Stelle die Uhr." % (drift, CLOCK_SKEW))
+        raise SubmitError(401, "The timestamp is off by %.0f s; %d s are allowed. "
+                               "Check this PC's clock." % (drift, CLOCK_SKEW))
 
     erwartet = signature(eintrag["secret"], method, path_, stamp, nonce, body)
     if not hmac.compare_digest(erwartet, unterschrift):
-        raise SubmitError(401, "Die Unterschrift stimmt nicht.")
+        raise SubmitError(401, "The signature does not match.")
 
     # WIEDERHOLUNG AUSSCHLIESSEN.
     #
@@ -522,7 +523,7 @@ def _verify(headers, method: str, path_: str, body: bytes,
     for alt in [n for n, t in benutzt.items() if jetzt - t > CLOCK_SKEW * 2]:
         benutzt.pop(alt, None)
     if nonce in benutzt:
-        raise SubmitError(409, "Diese Nonce wurde schon benutzt.")
+        raise SubmitError(409, "This nonce was already used.")
     benutzt[nonce] = jetzt
     save_keys(data, path)
     return install_id, eintrag
@@ -536,11 +537,11 @@ def _zahl(wert, name: str, klein: float, gross: float) -> float:
     try:
         z = float(wert)
     except (TypeError, ValueError):
-        raise SubmitError(400, "'%s' ist keine Zahl." % name) from None
+        raise SubmitError(400, "'%s' is not a number." % name) from None
     if math.isnan(z) or math.isinf(z):
-        raise SubmitError(400, "'%s' ist keine endliche Zahl." % name)
+        raise SubmitError(400, "'%s' is not a finite number." % name)
     if not (klein <= z <= gross):
-        raise SubmitError(400, "'%s' liegt ausserhalb des Moeglichen (%s)." % (name, z))
+        raise SubmitError(400, "'%s' is outside the possible range (%s)." % (name, z))
     return z
 
 
@@ -559,17 +560,17 @@ def pruefe_runde(runde: dict) -> list:
     auffaellig = []
     schnitt = meter / sekunden
     if schnitt > MAX_SPEED_MS:
-        raise SubmitError(422, "Der Schnitt waere %.0f km/h -- das ist nicht "
-                               "fahrbar." % (schnitt * 3.6))
+        raise SubmitError(422, "The average speed would be %.0f km/h -- that is "
+                               "not possible." % (schnitt * 3.6))
     if schnitt < MIN_SCHNITT_MS:
-        auffaellig.append("Schnitt nur %.0f km/h" % (schnitt * 3.6))
+        auffaellig.append("average only %.0f km/h" % (schnitt * 3.6))
 
     proben = runde.get("samples")
     if not isinstance(proben, list) or len(proben) < 10:
-        raise SubmitError(422, "Ohne Telemetrie wird nichts angenommen -- "
-                               "mindestens 10 Messpunkte.")
+        raise SubmitError(422, "Laps without telemetry are not accepted -- "
+                               "at least 10 samples are needed.")
     if len(proben) > MAX_PROBEN:
-        raise SubmitError(413, "Mehr als %d Messpunkte." % MAX_PROBEN)
+        raise SubmitError(413, "More than %d samples." % MAX_PROBEN)
 
     # Die Messpunkte muessen eine FAHRT beschreiben: Zeit und Weg laufen vorwaerts,
     # der Abstand zwischen zwei Punkten ist fahrbar, und kein Punkt liegt weiter weg
@@ -579,24 +580,24 @@ def pruefe_runde(runde: dict) -> list:
     letzte_pos = None
     for i, p in enumerate(proben):
         if not isinstance(p, dict):
-            raise SubmitError(400, "Messpunkt %d ist kein Objekt." % i)
+            raise SubmitError(400, "Sample %d is not an object." % i)
         t = _zahl(p.get("Seconds", p.get("seconds")), "Seconds", 0.0, 7200.0)
         m = _zahl(p.get("Metres", p.get("metres")), "Metres", 0.0, 200000.0)
         if t < letzte_zeit:
-            raise SubmitError(422, "Die Uhr laeuft bei Messpunkt %d rueckwaerts." % i)
+            raise SubmitError(422, "The clock runs backwards at sample %d." % i)
         if m < letzter_weg:
-            raise SubmitError(422, "Der Weg wird bei Messpunkt %d kuerzer." % i)
+            raise SubmitError(422, "The distance gets shorter at sample %d." % i)
         x = _zahl(p.get("X", p.get("x", 0)), "X", -1e6, 1e6)
         z = _zahl(p.get("Z", p.get("z", 0)), "Z", -1e6, 1e6)
         if letzte_pos is not None:
             sprung = math.dist((x, z), letzte_pos)
             if sprung > MAX_SPRUNG_M:
-                raise SubmitError(422, "Zwischen Messpunkt %d und %d liegen %.0f m "
-                                       "-- das ist kein Fahren." % (i - 1, i, sprung))
+                raise SubmitError(422, "Samples %d and %d are %.0f m apart "
+                                       "-- that is not driving." % (i - 1, i, sprung))
             dt = t - letzte_zeit
             if dt > 0 and sprung / dt > MAX_SPEED_MS:
-                raise SubmitError(422, "Zwischen Messpunkt %d und %d waeren "
-                                       "%.0f km/h noetig." % (i - 1, i,
+                raise SubmitError(422, "Between samples %d and %d the car would "
+                                       "need %.0f km/h." % (i - 1, i,
                                                               sprung / dt * 3.6))
         letzte_zeit, letzter_weg, letzte_pos = t, m, (x, z)
 
@@ -604,15 +605,15 @@ def pruefe_runde(runde: dict) -> list:
     # Telemetrie einer langsamen Runde unter einer schnellen Zeit -- die einfachste
     # denkbare Faelschung, und ohne diese Zeile die wirksamste.
     if abs(letzte_zeit - sekunden) > max(2.0, 0.05 * sekunden):
-        raise SubmitError(422, "Die Telemetrie endet bei %.1f s, angegeben sind "
-                               "%.1f s." % (letzte_zeit, sekunden))
+        raise SubmitError(422, "The telemetry ends at %.1f s, but the lap time "
+                               "given is %.1f s." % (letzte_zeit, sekunden))
     if abs(letzter_weg - meter) > max(100.0, 0.10 * meter):
-        auffaellig.append("Telemetrie endet bei %.0f m, angegeben %.0f m"
+        auffaellig.append("telemetry ends at %.0f m, %.0f m given"
                           % (letzter_weg, meter))
 
     pi = int(_zahl(runde.get("performanceIndex", 0), "performanceIndex", 0, 999))
     if pi <= 0:
-        auffaellig.append("kein Leistungsindex")
+        auffaellig.append("no performance index")
     return auffaellig
 
 
@@ -745,10 +746,10 @@ def install_von_runde(kennung: str, root: Path | None = None) -> str:
     """Wem gehoert diese eingereichte Runde? Fuer "Spieler sperren" in der Verwaltung."""
     root = root or LAPS_DIR
     if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
-        raise SubmitError(400, "Keine gueltige Kennung.")
+        raise SubmitError(400, "Not a valid ID.")
     p = root / (kennung + ".json")
     if not p.exists():
-        raise SubmitError(404, "Keine Runde mit der Kennung %r." % kennung)
+        raise SubmitError(404, "No lap with the ID %r." % kennung)
     return str(json.loads(p.read_text(encoding="utf-8-sig")).get("install_id") or "")
 
 
@@ -764,7 +765,7 @@ def tageskontingent(install_id: str, now: float | None = None,
         if e.get("day") != tag:
             e["day"], e["day_count"] = tag, 0
         if int(e.get("day_count", 0)) >= RUNDEN_JE_INSTALL_TAG:
-            raise SubmitError(429, "Heute schon %d Runden eingereicht -- morgen wieder."
+            raise SubmitError(429, "Already %d laps submitted today -- try again tomorrow."
                                    % RUNDEN_JE_INSTALL_TAG)
         e["day_count"] = int(e.get("day_count", 0)) + 1
         save_keys(data, keys_path)
@@ -779,7 +780,7 @@ def _entpacken(gepackt: bytes) -> bytes:
         stueck = d.decompress(rest, 1 << 20)
         summe += len(stueck)
         if summe > MAX_TELE_ENTPACKT:
-            raise SubmitError(413, "Die Telemetrie waere entpackt groesser als %d MB."
+            raise SubmitError(413, "The telemetry would be larger than %d MB unpacked."
                                    % (MAX_TELE_ENTPACKT // (1024 * 1024)))
         teile.append(stueck)
         rest = d.unconsumed_tail
@@ -800,38 +801,38 @@ def pruefe_telemetrie(tele, runde: dict):
         return None, None, ["no full telemetry"]
     if not isinstance(tele, dict) or tele.get("encoding") != "gzip+base64" \
             or not isinstance(tele.get("data"), str):
-        raise SubmitError(400, "'telemetry' muss {encoding: gzip+base64, data} sein.")
+        raise SubmitError(400, "'telemetry' must be {encoding: gzip+base64, data}.")
     if len(tele["data"]) > MAX_TELE_GEPACKT * 4 // 3 + 4:
-        raise SubmitError(413, "Die Telemetrie ist gepackt groesser als %d MB."
+        raise SubmitError(413, "The packed telemetry is larger than %d MB."
                                % (MAX_TELE_GEPACKT // (1024 * 1024)))
     try:
         gepackt = base64.b64decode(tele["data"], validate=True)
     except (binascii.Error, ValueError):
-        raise SubmitError(400, "Die Telemetrie ist kein gueltiges Base64.") from None
+        raise SubmitError(400, "The telemetry is not valid Base64.") from None
     try:
         roh = _entpacken(gepackt)
         spur = json.loads(roh.decode("utf-8"))
     except SubmitError:
         raise
     except Exception:
-        raise SubmitError(400, "Die Telemetrie ist kein gepacktes JSON.") from None
+        raise SubmitError(400, "The telemetry is not gzipped JSON.") from None
     if not isinstance(spur, dict):
-        raise SubmitError(400, "Die Telemetrie muss ein Objekt sein.")
+        raise SubmitError(400, "The telemetry must be an object.")
     spalten, daten = spur.get("columns"), spur.get("data")
     if not isinstance(spalten, list) or not 1 <= len(spalten) <= MAX_TELE_SPALTEN \
             or not all(isinstance(c, str) and _FELDNAME.match(c) for c in spalten):
-        raise SubmitError(400, "Die Spalten der Telemetrie sind unbrauchbar.")
+        raise SubmitError(400, "The telemetry columns are invalid.")
     if not isinstance(daten, list) or not 10 <= len(daten) <= MAX_TELE_ZEILEN:
-        raise SubmitError(422, "Die Telemetrie hat %s Zeilen -- erwartet 10 bis %d."
-                               % (len(daten) if isinstance(daten, list) else "keine",
+        raise SubmitError(422, "The telemetry has %s rows -- expected 10 to %d."
+                               % (len(daten) if isinstance(daten, list) else "no",
                                   MAX_TELE_ZEILEN))
     breite = len(spalten)
     for i, zeile in enumerate(daten):
         if not isinstance(zeile, list) or len(zeile) != breite:
-            raise SubmitError(400, "Zeile %d der Telemetrie hat nicht %d Werte." % (i, breite))
+            raise SubmitError(400, "Telemetry row %d does not have %d values." % (i, breite))
         if not all(isinstance(v, (int, float)) and not isinstance(v, bool)
                    and math.isfinite(v) for v in zeile):
-            raise SubmitError(400, "Zeile %d der Telemetrie enthaelt keine Zahl." % i)
+            raise SubmitError(400, "Telemetry row %d contains a value that is not a number." % i)
     # Sie muss zu DIESER Runde gehoeren: ihre Uhr laeuft vorwaerts und endet bei der
     # Rundenzeit -- sonst laege die Telemetrie einer anderen Fahrt unter der Zeit.
     if "t" in spalten:
@@ -839,11 +840,11 @@ def pruefe_telemetrie(tele, runde: dict):
         letzte = -1.0
         for i, zeile in enumerate(daten):
             if zeile[k] < letzte - 1e-6:
-                raise SubmitError(422, "Die Uhr der Telemetrie laeuft bei Zeile %d rueckwaerts." % i)
+                raise SubmitError(422, "The telemetry clock runs backwards at row %d." % i)
             letzte = zeile[k]
         sekunden = float(runde.get("lapSeconds") or 0)
         if sekunden > 0 and abs(letzte - sekunden) > max(2.0, 0.05 * sekunden):
-            raise SubmitError(422, "Die Telemetrie endet bei %.1f s, die Runde bei %.1f s."
+            raise SubmitError(422, "The telemetry ends at %.1f s, the lap at %.1f s."
                                    % (letzte, sekunden))
     info = {"rows": len(daten), "columns": breite, "bytes": len(gepackt),
             "format": str(tele.get("format") or "")[:40]}
@@ -944,10 +945,10 @@ def get_lap(kennung: str, root: Path | None = None) -> dict:
     root = root or LAPS_DIR
     # Die Kennung wird zum Dateinamen -- nur, was lap_id() selbst erzeugt.
     if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
-        raise SubmitError(400, "Keine gueltige Kennung.")
+        raise SubmitError(400, "Not a valid ID.")
     p = root / (kennung + ".json")
     if not p.exists():
-        raise SubmitError(404, "Keine Runde mit der Kennung %r." % kennung)
+        raise SubmitError(404, "No lap with the ID %r." % kennung)
     d = json.loads(p.read_text(encoding="utf-8-sig"))
     return {k: v for k, v in d.items() if k != "install_id"}
 
@@ -1008,10 +1009,10 @@ def get_full_telemetry(kennung: str, root: Path | None = None) -> dict:
     """Die volle Telemetrie einer Runde, entpackt -- fuer die Verwaltung."""
     root = root or LAPS_DIR
     if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
-        raise SubmitError(400, "Keine gueltige Kennung.")
+        raise SubmitError(400, "Not a valid ID.")
     p = root / (kennung + ".tele.gz")
     if not p.exists():
-        raise SubmitError(404, "Zu dieser Runde liegt keine volle Telemetrie vor.")
+        raise SubmitError(404, "There is no full telemetry for this lap.")
     return json.loads(gzip.decompress(p.read_bytes()).decode("utf-8"))
 
 
@@ -1031,10 +1032,10 @@ def set_hidden(kennung: str, hidden: bool, grund: str = "",
     root = root or LAPS_DIR
     # Die Kennung wird zum Dateinamen -- nur, was lap_id() selbst erzeugt.
     if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
-        raise SubmitError(400, "Keine gueltige Kennung.")
+        raise SubmitError(400, "Not a valid ID.")
     p = root / (kennung + ".json")
     if not p.exists():
-        raise SubmitError(404, "Keine Runde mit der Kennung %r." % kennung)
+        raise SubmitError(404, "No lap with the ID %r." % kennung)
     d = json.loads(p.read_text(encoding="utf-8-sig"))
     d["hidden"] = bool(hidden)
     d["hidden_reason"] = _saubere_zeichen(grund, 300)
@@ -1057,7 +1058,7 @@ def set_banned(install_id: str, banned: bool, grund: str = "",
         data = load_keys(keys_path)
         eintrag = data["installs"].get(install_id)
         if not eintrag:
-            raise SubmitError(404, "Keine Installation mit der Kennung %r." % install_id)
+            raise SubmitError(404, "No installation with the ID %r." % install_id)
         eintrag["banned"] = bool(banned)
         eintrag["ban_reason"] = _saubere_zeichen(grund, 300)
         eintrag["ban_changed"] = datetime.now(timezone.utc).isoformat(timespec="seconds")

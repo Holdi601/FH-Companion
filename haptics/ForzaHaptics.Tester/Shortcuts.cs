@@ -248,9 +248,9 @@ internal static class Shortcuts
     private static T? MitShell<T>(Func<Type, object, T?> tun)
     {
         var typ = Type.GetTypeFromProgID("WScript.Shell")
-                  ?? throw new InvalidOperationException("WScript.Shell ist auf diesem Windows nicht verfuegbar");
+                  ?? throw new InvalidOperationException(Loc.T("WScript.Shell is not available on this Windows"));
         var shell = Activator.CreateInstance(typ)
-                    ?? throw new InvalidOperationException("WScript.Shell liess sich nicht erzeugen");
+                    ?? throw new InvalidOperationException(Loc.T("WScript.Shell could not be created"));
         try { return tun(typ, shell); }
         finally { Freigeben(shell); }
     }
@@ -319,21 +319,21 @@ internal static class Shortcuts
 
             if (zielExe is null && !File.Exists(exe))
             {
-                fehler = "die Programmdatei liegt nicht, wo sie erwartet wird";
+                fehler = Loc.T("the program file is not where it is expected");
                 return false;
             }
 
             var typ = Type.GetTypeFromProgID("WScript.Shell");
             if (typ is null)
             {
-                fehler = "WScript.Shell ist auf diesem Windows nicht verfuegbar";
+                fehler = Loc.T("WScript.Shell is not available on this Windows");
                 return false;
             }
 
             var shell = Activator.CreateInstance(typ);
             if (shell is null)
             {
-                fehler = "WScript.Shell liess sich nicht erzeugen";
+                fehler = Loc.T("WScript.Shell could not be created");
                 return false;
             }
 
@@ -344,7 +344,7 @@ internal static class Shortcuts
                     null, shell, new object[] { wohin });
                 if (lnk is null)
                 {
-                    fehler = "die Verknuepfung liess sich nicht anlegen";
+                    fehler = Loc.T("the shortcut could not be created");
                     return false;
                 }
 

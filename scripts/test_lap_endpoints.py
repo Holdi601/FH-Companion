@@ -277,7 +277,7 @@ with tempfile.TemporaryDirectory() as tmp:
                               unterschrieben(secret, install_id, "/api/lap/submit",
                                              rumpf3, "nonce-0004"))
         pruefe(status == 403, "eine gesperrte Installation bekommt 403 (war %d)" % status)
-        pruefe("gesperrt" in str(antwort.get("error", "")),
+        pruefe("banned" in str(antwort.get("error", "")),
                "und erfaehrt den Grund, statt zu raten")
 
         print("\nAdmin: die Installationen ansehen")

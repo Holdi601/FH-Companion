@@ -243,7 +243,7 @@ def haptics_info(dist: Path | None = None) -> dict:
     """
     paket = haptics_package(dist)
     if paket is None:
-        raise ApiError(503, "Es wurde noch keine App gebaut.")
+        raise ApiError(503, "No app has been built yet.")
     st = paket.stat()
 
     # DER ZETTEL DES PAKETBAUERS HAT VORRANG.
@@ -554,14 +554,14 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
 
     def rumpf() -> dict:
         if len(body or b"") > laps.MAX_BODY:
-            raise ApiError(413, "%.1f MB, die Grenze liegt bei %.0f MB"
+            raise ApiError(413, "%.1f MB, the limit is %.0f MB"
                                 % (len(body) / 1e6, laps.MAX_BODY / 1e6))
         try:
             d = json.loads((body or b"{}").decode("utf-8"))
         except Exception:
-            raise ApiError(400, "Der Rumpf ist kein JSON.") from None
+            raise ApiError(400, "The request body is not JSON.") from None
         if not isinstance(d, dict):
-            raise ApiError(400, "Der Rumpf muss ein Objekt sein.")
+            raise ApiError(400, "The request body must be a JSON object.")
         return d
 
     try:
@@ -583,7 +583,7 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             runde = anfrage.get("lap")
             if not isinstance(runde, dict):
                 laps.strafpunkt(install_id, "no lap object", now)
-                raise ApiError(400, "'lap' fehlt im Rumpf.")
+                raise ApiError(400, "'lap' is missing from the request body.")
             # DER SERVER PRUEFT SELBST -- auf Moeglichkeit UND darauf, ob die Runde
             # die Bestenliste wirklich schlaegt. Nichts davon wird der App geglaubt.
             try:
@@ -616,15 +616,15 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             if abgelegt["id"] in entfernt:
                 return as_json(200, {"ok": True, "id": abgelegt["id"], "kept": False,
                                      "flags": auffaellig,
-                                     "note": ("Angenommen, aber nicht aufgehoben: von dir "
-                                              "liegt hier schon eine schnellere Runde, oder "
-                                              "sie ist nicht unter den zehn schnellsten.")})
+                                     "note": ("Accepted, but not kept: you already have a "
+                                              "faster lap here, or it is not among the ten "
+                                              "fastest.")})
             return as_json(200, {"ok": True, "id": abgelegt["id"],
                                  "flags": auffaellig,
                                  # Ehrlich sagen, was noch aussteht: die Runde ist
                                  # angekommen, sie ist damit noch nicht geprueft.
-                                 "note": ("Angenommen. Sie erscheint hinter dem "
-                                          "Filter fuer eingereichte Zeiten.")})
+                                 "note": ("Accepted. It appears behind the filter "
+                                          "for submitted times.")})
 
         if method == "GET" and path == "/api/lap/list":
             return as_json(200, {"laps": [
@@ -697,7 +697,7 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
                         laps.save_keys(k)
             return as_json(200, ergebnis)
 
-        raise ApiError(404, "%s %s gibt es hier nicht" % (method, path))
+        raise ApiError(404, "%s %s does not exist here" % (method, path))
     except laps.SubmitError as e:
         raise ApiError(e.status, e.message) from None
 
@@ -779,7 +779,7 @@ def handle(method: str, path: str, headers, body: bytes, *,
                 # 404 und nicht 403: eine abgeschaltete Schnittstelle soll aussehen,
                 # als gaebe es sie nicht. Ein 403 verraet, dass hier etwas liegt,
                 # und lockt jemanden dazu, es spaeter nochmal zu versuchen.
-                raise ApiError(404, "%s %s gibt es hier nicht" % (method, path))
+                raise ApiError(404, "%s %s does not exist here" % (method, path))
             return lap_endpunkt(method, path, headers, body, now, client, keys)
 
         if method == "GET" and path == "/api/admin/usage":
@@ -802,7 +802,7 @@ def handle(method: str, path: str, headers, body: bytes, *,
 
         if method == "GET" and path == "/api/admin/installs":
             if not feature_an("lap_submissions"):
-                raise ApiError(404, "%s %s gibt es hier nicht" % (method, path))
+                raise ApiError(404, "%s %s does not exist here" % (method, path))
             require_admin(keys, method, path, headers, body, now)
             return as_json(200, {"installs": laps.installs()})
 
@@ -875,8 +875,8 @@ def handle(method: str, path: str, headers, body: bytes, *,
                 # wird -- und das ist bei jedem Lauf von deploy_gnas.py.
                 archive = DIST_DIR / "forza-contrib-tool.zip"
                 if not archive.exists():
-                    raise ApiError(503, "Das Werkzeug wurde noch nicht hierher "
-                                        "ausgeliefert. Auf der Scan-Maschine: "
+                    raise ApiError(503, "The scan tool has not been deployed here "
+                                        "yet. On the scan machine: "
                                         "python scripts/deploy_gnas.py --apply")
             return (200, "application/zip", archive.read_bytes())
 
@@ -897,10 +897,10 @@ def handle(method: str, path: str, headers, body: bytes, *,
             packer = paketbauer()
             if packer is None:
                 raise ApiError(503,
-                               "Ein persoenliches Paket laesst sich nur dort bauen, "
-                               "wo der Scanner liegt -- auf der Maschine mit dem "
-                               "Spiel: python scripts/build_contrib_package.py <name>. "
-                               "Danach geht es mit deploy_gnas.py hierher.")
+                               "A personal package can only be built where the "
+                               "scanner is -- on the machine with the game: "
+                               "python scripts/build_contrib_package.py <name>. "
+                               "Then bring it here with deploy_gnas.py.")
             import tempfile
             with tempfile.TemporaryDirectory() as folder:
                 archive = packer.build(
@@ -926,8 +926,8 @@ def handle(method: str, path: str, headers, body: bytes, *,
                 "ok": True,
                 "upload_password": stored["upload_password"],
                 "length": len(stored["upload_password"]),
-                "warning": ("Jedes bisher ausgegebene Paket ist ab sofort ungueltig. "
-                            "Neue Pakete bauen und verteilen."),
+                "warning": ("Every package handed out so far is now invalid. "
+                            "Build and hand out new packages."),
             })
 
         if method == "POST" and path == "/api/admin/visibility":
@@ -966,4 +966,4 @@ def handle(method: str, path: str, headers, body: bytes, *,
                          f"{type(error).__name__}: {error}\n")
         sys.stderr.flush()
         return as_json(500, {"ok": False,
-                             "error": "unerwarteter Fehler -- siehe Serverprotokoll"})
+                             "error": "unexpected error -- see the server log"})

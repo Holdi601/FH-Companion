@@ -252,7 +252,7 @@ def security_checks() -> None:
         refuses("ein zweites Mal einlassen wird ohne --force abgelehnt",
                 lambda: import_contrib.import_archive(good.read_bytes(), keys=keys,
                                                       root=root),
-                "schon hier")
+                "already exist here")
 
         own = tmp / "full_sweep"
         make_run(own, "ocr_RoadRacing_idx00_A_20260827_120000", "Soni Circuit", "A")

@@ -205,6 +205,11 @@ internal static class Konsole
         };
     }
 
+    /// <summary>Was ins Feld "Fenster" gehoert: der Titel -- auch wenn dort gerade "Titel — Programm" steht.</summary>
+    internal static string FensterSchluessel(ComboBox feld) =>
+        feld.Items.OfType<Rivals.Fenster.Eintrag>().FirstOrDefault(e => e.ToString() == feld.Text)?.Titel
+        ?? feld.Text.Trim();
+
     /// <summary>Das Bedienfeld. Im PC-Modus nur der Hinweis auf den Schalter oben.</summary>
     internal static Control Feld(Rivals.OverlaySettings s, Point ort, Func<int>? port = null,
                                  Action? dashboardOeffnen = null)
@@ -247,7 +252,7 @@ internal static class Konsole
             ["device"] = Loc.T("Connect the Xbox to the capture card and pick the card here."),
             ["obs"] = Loc.T("In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized."),
             ["window"] = Loc.T("Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.")
-                         + " " + Loc.T("Any other window that shows the game works too: pick it from the list."),
+                         + " " + Loc.T("Any other window that shows the game works too: pick it from the list, or with a preview of every window."),
             ["discord"] = Loc.T("Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox."),
             ["browser"] = Loc.T("Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard."),
             ["url"] = string.Empty,
@@ -270,8 +275,24 @@ internal static class Konsole
                                     PlaceholderText = "srt://… / rtmp://… / https://….m3u8", Margin = new Padding(22, 0, 0, 2) };
         var ffmpeg = Notiz(string.Empty);
         ffmpeg.Margin = new Padding(22, 0, 0, 2);
+        // Neben der Liste das Auswahlfenster von Windows, mit einem Vorschaubild je Fenster
+        // (seit 2026-09-29): da erkennt man sein Remote-Play-Fenster, wie immer es heisst.
+        var waehlen = new Button
+        {
+            Text = Loc.T("Pick with a preview …"), AutoSize = true, FlatStyle = FlatStyle.Flat,
+            ForeColor = Color.Gainsboro, Margin = new Padding(22, 2, 0, 4), Visible = Rivals.FensterQuelle.Unterstuetzt,
+        };
+        // Untereinander: nebeneinander passt es in langen Sprachen nicht, und umgebrochen
+        // stand der Knopf schief unter der Liste.
+        var fensterZeile = new FlowLayoutPanel
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false,
+            FlowDirection = FlowDirection.TopDown, Margin = new Padding(0),
+        };
+        fensterZeile.Controls.Add(fenster);
+        fensterZeile.Controls.Add(waehlen);
         felder["device"] = geraet;
-        felder["window"] = fenster;
+        felder["window"] = fensterZeile;
         felder["url"] = adresse;
 
         var vorschau = new PictureBox
@@ -291,7 +312,7 @@ internal static class Konsole
         {
             var art = Quellen[Math.Max(0, knoepfe.FindIndex(k => k.Checked))];
             geraet.Visible = art == "device";
-            fenster.Visible = art == "window";
+            fensterZeile.Visible = art == "window";
             adresse.Visible = art == "url";
             ffmpeg.Visible = art == "url";
             foreach (var (schluessel, hilfe) in hilfen)
@@ -325,7 +346,7 @@ internal static class Konsole
                 {
                     fenster.Text = Rivals.Fenster.XboxVorschlag() ?? "Xbox";
                 }
-                if (art == "window") { s.VideoWindow = fenster.Text.Trim(); }
+                if (art == "window") { s.VideoWindow = FensterSchluessel(fenster); }
                 ZeigeFelder();
                 Anwenden();
             };
@@ -351,8 +372,31 @@ internal static class Konsole
         fenster.TextChanged += (_, _) =>
         {
             if (!string.Equals(s.VideoSource, "window", StringComparison.OrdinalIgnoreCase)) { return; }
-            s.VideoWindow = fenster.Text.Trim();
+            s.VideoWindow = FensterSchluessel(fenster);
             Spaeter();
+        };
+        // In der Liste steht "Titel — Programm"; ins Feld gehoert nur der Titel, nach dem gesucht wird.
+        fenster.SelectionChangeCommitted += (_, _) =>
+        {
+            if (fenster.SelectedItem is Rivals.Fenster.Eintrag e)
+            {
+                fenster.BeginInvoke(() => { fenster.Text = e.Titel; fenster.SelectionLength = 0; });
+            }
+        };
+        waehlen.Click += async (_, _) =>
+        {
+            string? titel;
+            try { titel = await Rivals.Fenster.MitWindowsWaehlenAsync(stapel.FindForm()?.Handle ?? IntPtr.Zero); }
+            catch (Exception) { titel = null; }
+            if (string.IsNullOrWhiteSpace(titel)) { return; }
+            if (Rivals.Fenster.Finden(titel) == IntPtr.Zero)
+            {
+                // Das Auswahlfenster bietet auch ganze Bildschirme an -- die haben keinen Fenstertitel.
+                MessageBox.Show(stapel.FindForm(), Loc.T("That is a whole screen, not a window. Pick the window that shows the game."),
+                                AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            fenster.Text = titel;
         };
         adresse.TextChanged += (_, _) => { s.VideoUrl = adresse.Text.Trim(); Spaeter(); };
 
@@ -372,7 +416,15 @@ internal static class Konsole
         {
             var text = fenster.Text;
             fenster.Items.Clear();
-            foreach (var (_, t) in Rivals.Fenster.Sichtbare().OrderBy(f => f.Titel)) { fenster.Items.Add(t); }
+            foreach (var e in Rivals.Fenster.Waehlbare()) { fenster.Items.Add(e); }
+            // Die Liste so breit wie ihr laengster Eintrag, das Feld bleibt, wie es ist.
+            using (var g = fenster.CreateGraphics())
+            {
+                var breit = fenster.Items.Cast<object>()
+                                   .Select(i => (int)g.MeasureString(i.ToString(), fenster.Font).Width + 24)
+                                   .DefaultIfEmpty(fenster.Width).Max();
+                fenster.DropDownWidth = Math.Clamp(breit, fenster.Width, 700);
+            }
             fenster.Text = text;
         };
         // Ein Geraet vorschlagen, wenn noch keines gewaehlt ist -- meist gibt es genau eines.

@@ -380,6 +380,15 @@ internal static class Fenster
     [DllImport("user32.dll")] internal static extern bool ClientToScreen(IntPtr h, ref POINT p);
     [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr h, int attr, out RECT r, int size);
     [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr h, int attr, out int wert, int size);
+    [DllImport("user32.dll")] private static extern int GetWindowLongW(IntPtr h, int index);
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassNameW(IntPtr h, StringBuilder s, int n);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string? klasse, string? titel);
+    [DllImport("kernel32.dll")] private static extern IntPtr OpenProcess(uint zugriff, bool erben, uint pid);
+    [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr h);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageNameW(IntPtr prozess, int flags, StringBuilder pfad, ref int laenge);
 
     internal static string Titel(IntPtr h)
     {
@@ -535,6 +544,142 @@ internal static class Fenster
         return titel.FirstOrDefault(t => t.Trim().Equals("Xbox", StringComparison.OrdinalIgnoreCase))
                ?? titel.FirstOrDefault(t => t.Contains("Xbox Cloud Gaming", StringComparison.OrdinalIgnoreCase)
                                             || t.Contains("xbox.com", StringComparison.OrdinalIgnoreCase))
-               ?? titel.FirstOrDefault(t => t.StartsWith("Xbox", StringComparison.OrdinalIgnoreCase));
+               ?? titel.FirstOrDefault(t => t.StartsWith("Xbox", StringComparison.OrdinalIgnoreCase))
+               // Sonst ein bekanntes Remote-Play-Programm, auch unter anderem Titel.
+               ?? Waehlbare().FirstOrDefault(e => e.Rang == 0 && !e.Minimiert)?.Titel;
+    }
+
+    /// <summary>Ein Fenster in der Auswahlliste: gesucht wird nach dem Titel, angezeigt auch das Programm.</summary>
+    internal sealed record Eintrag(string Titel, string Programm, bool Minimiert, int Rang)
+    {
+        public override string ToString() =>
+            Titel + "   \u2014   " + Programm + (Minimiert ? "   (" + Loc.T("minimized") + ")" : string.Empty);
+    }
+
+    /// <summary>Programme, die ein Konsolenbild zeigen: Dateiname (ohne .exe) und wie es in der Liste heisst.</summary>
+    private static readonly (string Datei, string Name)[] Spielbildprogramme =
+    {
+        ("XboxPcApp", "Xbox app"), ("XboxApp", "Xbox app"), ("GamingApp", "Xbox app"),
+        ("RemotePlay", "PS Remote Play"), ("chiaki", "chiaki (PlayStation)"), ("Greenlight", "Greenlight (Xbox)"),
+        ("Moonlight", "Moonlight"), ("parsecd", "Parsec"), ("streaming_client", "Steam Remote Play"),
+    };
+
+    /// <summary>
+    /// Wie weit oben ein Fenster in der Liste steht: 0 ein Remote-Play-Programm oder ein
+    /// Titel, der danach klingt; 1 was einen Strom zeigen kann (OBS, Discord, ein Browser
+    /// mit Strom); 2 alles andere.
+    /// </summary>
+    internal static int Rang(string titel, string datei)
+    {
+        if (Spielbildprogramme.Any(p => datei.StartsWith(p.Datei, StringComparison.OrdinalIgnoreCase))
+            || titel.Contains("Xbox", StringComparison.OrdinalIgnoreCase)
+            || titel.Contains("Remote Play", StringComparison.OrdinalIgnoreCase)
+            || titel.Contains("Cloud Gaming", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+        if (datei.StartsWith("obs", StringComparison.OrdinalIgnoreCase)
+            || datei.StartsWith("Discord", StringComparison.OrdinalIgnoreCase)
+            || IstStromTitel(titel))
+        {
+            return 1;
+        }
+        return 2;
+    }
+
+    /// <summary>
+    /// Die Fenster fuer die Auswahlliste (seit 2026-09-29): nur, was ein Spielbild sein
+    /// kann, mit dem Programm dahinter, und die wahrscheinlichen zuerst.
+    /// </summary>
+    /// <remarks>
+    /// Vorher stand dort jedes sichtbare Fenster mit Titel, nach dem Alphabet -- auch der
+    /// Schreibtisch ("Program Manager"), das NVIDIA-Overlay und Leisten. Ein Nutzer mit
+    /// Remote Play fand sein Fenster darin nicht; alles, was er sah, war falsch. Jetzt
+    /// fallen Werkzeugfenster und winzige Fenster weg, das Programm steht daneben (die
+    /// Xbox-App heisst im Titel nur "XBOX"), und Remote-Play-Programme stehen oben. Ein
+    /// minimiertes Fenster bleibt drin, aber als solches markiert: minimiert liefert es
+    /// kein Bild, und wer es nicht findet, sucht sonst am falschen Ende.
+    /// </remarks>
+    internal static List<Eintrag> Waehlbare()
+    {
+        var raus = new List<Eintrag>();
+        foreach (var (h, titel) in Sichtbare())
+        {
+            // WS_EX_TOOLWINDOW: Overlays (NVIDIA, Game Bar), Leisten, Hilfsfenster.
+            if ((GetWindowLongW(h, -20) & 0x80) != 0) { continue; }
+            var klasse = Klasse(h);
+            if (klasse is "Progman" or "WorkerW" or "Shell_TrayWnd" or "Shell_SecondaryTrayWnd") { continue; }
+            var minimiert = IsIconic(h);
+            if (!minimiert && GetWindowRect(h, out var r) && (r.Right - r.Left < 320 || r.Bottom - r.Top < 180)) { continue; }
+            var (datei, name) = Programm(h, klasse);
+            raus.Add(new Eintrag(titel, name, minimiert, Rang(titel, datei)));
+        }
+        return raus.OrderBy(e => e.Rang).ThenBy(e => e.Minimiert)
+                   .ThenBy(e => e.Titel, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    private static string Klasse(IntPtr h)
+    {
+        var s = new StringBuilder(128);
+        GetClassNameW(h, s, s.Capacity);
+        return s.ToString();
+    }
+
+    /// <summary>Das Programm hinter einem Fenster: Dateiname und ein lesbarer Name.</summary>
+    /// <remarks>
+    /// Store-Apps haengen in einem Rahmen von ApplicationFrameHost; das eigentliche
+    /// Programm gehoert dem Kindfenster darin. Gefragt wird mit dem geringsten
+    /// Zugriffsrecht -- das geht auch bei Programmen, die als Administrator laufen.
+    /// </remarks>
+    private static (string Datei, string Name) Programm(IntPtr h, string klasse)
+    {
+        var fenster = h;
+        if (klasse == "ApplicationFrameWindow"
+            && FindWindowExW(h, IntPtr.Zero, "Windows.UI.Core.CoreWindow", null) is var kind && kind != IntPtr.Zero)
+        {
+            fenster = kind;
+        }
+        GetWindowThreadProcessId(fenster, out var pid);
+        var pfad = string.Empty;
+        var p = OpenProcess(0x1000, false, pid);
+        if (p != IntPtr.Zero)
+        {
+            try
+            {
+                var s = new StringBuilder(1024);
+                var n = s.Capacity;
+                if (QueryFullProcessImageNameW(p, 0, s, ref n)) { pfad = s.ToString(); }
+            }
+            finally
+            {
+                CloseHandle(p);
+            }
+        }
+        var datei = Path.GetFileNameWithoutExtension(pfad);
+        if (datei.Length == 0) { return ("?", "?"); }
+        var bekannt = Spielbildprogramme.FirstOrDefault(b => datei.StartsWith(b.Datei, StringComparison.OrdinalIgnoreCase));
+        if (bekannt.Name is not null) { return (datei, bekannt.Name); }
+        try
+        {
+            var beschreibung = System.Diagnostics.FileVersionInfo.GetVersionInfo(pfad).FileDescription?.Trim();
+            if (!string.IsNullOrEmpty(beschreibung) && beschreibung.Length <= 40) { return (datei, beschreibung); }
+        }
+        catch (Exception)
+        {
+        }
+        return (datei, datei);
+    }
+
+    /// <summary>
+    /// Das Fenster mit dem Auswahlfenster von Windows waehlen -- dem, das auch Teams und
+    /// der Browser beim Bildschirmteilen zeigen, mit einem Vorschaubild je Fenster.
+    /// </summary>
+    /// <returns>Der Titel des gewaehlten Fensters; null bei Abbruch.</returns>
+    internal static async Task<string?> MitWindowsWaehlenAsync(IntPtr besitzer)
+    {
+        var waehler = new GraphicsCapturePicker();
+        WinRT.Interop.InitializeWithWindow.Initialize(waehler, besitzer);
+        var item = await waehler.PickSingleItemAsync();
+        return item?.DisplayName;
     }
 }

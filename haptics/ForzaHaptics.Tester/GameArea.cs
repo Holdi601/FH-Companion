@@ -107,7 +107,12 @@ internal static class GameArea
         if (Rivals.Bildquellen.Aktiv is { } quelle)
         {
             // Nicht bild.Width: das Bild zeichnet vielleicht gerade ein Leser (siehe Bildquellen.Mit).
-            return Rivals.Bildquellen.Groesse(quelle.Neuestes()) is { } g
+            // UND NUR EIN BILD, DAS EIN SPIELBILD SEIN KANN (seit 2026-09-29): ein falsch
+            // gewaehltes, winziges Fenster lieferte ein Bild von wenigen Pixeln Breite. Darauf
+            // gerechnet wurde jede HUD-Anzeige zigtausend Pixel breit, und der HUD-Editor
+            // stuerzte beim Ziehen ab ("'450' cannot be greater than -40378"). Am PC gilt
+            // dieselbe Grenze schon lange (Compute: unter 640x360 der ganze Schirm).
+            return Rivals.Bildquellen.Groesse(quelle.Neuestes()) is { Width: >= 320, Height: >= 180 } g
                 ? new Rectangle(Point.Empty, g)
                 : new Rectangle(0, 0, 1920, 1080);
         }

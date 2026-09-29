@@ -738,8 +738,10 @@ internal sealed class HudLayoutCanvas : Control
         // Am Rand ist Schluss. Ein Kasten, der halb ueber die Kante gezogen wurde,
         // ist im Rennen abgeschnitten -- und das faellt erst im Rennen auf, wo es
         // niemand mehr richten kann.
-        links = Math.Clamp(links, _screen.X, _screen.Right - kasten.Width);
-        oben = Math.Clamp(oben, _screen.Y, _screen.Bottom - kasten.Height);
+        // Ist ein Kasten breiter als die Flaeche, bleibt er links oben stehen -- statt
+        // dass Math.Clamp an einer Grenze unter der Untergrenze abstuerzt.
+        links = Math.Clamp(links, _screen.X, Math.Max(_screen.X, _screen.Right - kasten.Width));
+        oben = Math.Clamp(oben, _screen.Y, Math.Max(_screen.Y, _screen.Bottom - kasten.Height));
 
         var lage = Place(_dragging.Value);
 
