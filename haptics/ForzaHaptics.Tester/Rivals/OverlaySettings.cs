@@ -352,13 +352,22 @@ internal sealed class OverlaySettings
     [JsonPropertyName("console_controller_here")] public bool ConsoleControllerHere { get; set; }
 
     /// <summary>Haengt der Controller an diesem Rechner? Am PC immer, auf der Xbox nur mit Remote Play.</summary>
-    [JsonIgnore] public bool ControllerHier => !ConsoleMode || ConsoleControllerHere;
+    /// <remarks>
+    /// MIT DER QUELLE "XBOX REMOTE PLAY" VON SELBST (seit 2026-09-29): wer Remote Play auf
+    /// diesem Rechner spielt, hat den Controller hier. Vorher musste man dafuer einen
+    /// Haken weit unten im Xbox-Feld finden -- ein Helfer fand den Blueprint editor nicht.
+    /// </remarks>
+    [JsonIgnore] public bool ControllerHier => !ConsoleMode || ConsoleControllerHere || IstRemotePlay;
+
+    /// <summary>Konsolenmodus mit dem Bild aus einem Fenster -- im Bedienfeld "Xbox Remote Play".</summary>
+    [JsonIgnore] public bool IstRemotePlay =>
+        ConsoleMode && string.Equals(VideoSource, "window", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Mit Remote Play reicht die Xbox-App die Vibration der Konsole an denselben
     /// Controller weiter: dann jeden Takt ueberschreiben statt nur bei Aenderung.
     /// </summary>
-    [JsonIgnore] public bool VibrationJedenTakt => ConsoleMode && ConsoleControllerHere;
+    [JsonIgnore] public bool VibrationJedenTakt => ConsoleMode && ControllerHier;
 
     /// <summary>Wird der Spielspeicher gelesen? Nie im Konsolenmodus (das Spiel laeuft nicht hier).</summary>
     [JsonIgnore] public bool SpeicherLesen => !ConsoleMode && ReadGameMemory;

@@ -18,7 +18,7 @@
   "Tuning/TunesTab.cs:361"
  ],
  "A car's first time on your list for a course and class": [
-  "Rivals/HudTab.cs:1251"
+  "Rivals/HudTab.cs:1265"
  ],
  "A newer version of the app is available.": [
   "Rivals/RivalsTab.cs:540"
@@ -51,17 +51,17 @@
   "Konsole.cs:116"
  ],
  "Also enable the haptic tone": [
-  "MainForm.cs:953"
+  "MainForm.cs:960"
  ],
  "Always on Top": [
   "Loc.cs:12",
-  "MainForm.cs:245"
+  "MainForm.cs:248"
  ],
  "Any class": [
   "Rivals/CarCollectionTab.cs:138"
  ],
  "Any other window that shows the game works too: pick it from the list, or with a preview of every window.": [
-  "Konsole.cs:255"
+  "Konsole.cs:324"
  ],
  "Any way": [
   "Rivals/CarCollectionTab.cs:134"
@@ -70,13 +70,13 @@
   "Rivals/OwnTimesTab.cs:461"
  ],
  "Archive every lap for heatmaps": [
-  "Rivals/HudTab.cs:1300"
+  "Rivals/HudTab.cs:1314"
  ],
  "Auction House": [
   "Rivals/CarCollectionTab.cs:512"
  ],
  "Automatic: your laps, else Rivals": [
-  "Rivals/HudTab.cs:1180"
+  "Rivals/HudTab.cs:1194"
  ],
  "Autoshow": [
   "Rivals/CarCollectionTab.cs:500"
@@ -94,7 +94,7 @@
   "Rivals/CarCollectionTab.cs:558"
  ],
  "Black": [
-  "Rivals/HudTab.cs:1290"
+  "Rivals/HudTab.cs:1304"
  ],
  "CURRENT CONTROLLER OUTPUT": [
   "TelemetryInspector.cs:70"
@@ -109,7 +109,7 @@
   "Rivals/RivalsTab.cs:546"
  ],
  "Capture card": [
-  "Konsole.cs:242"
+  "Konsole.cs:311"
  ],
  "Car": [
   "Rivals/CarCollectionTab.cs:162",
@@ -130,8 +130,8 @@
   "Rivals/CarCollectionTab.cs:268"
  ],
  "Car note": [
-  "Rivals/HudTab.cs:841",
-  "Rivals/HudTab.cs:1217"
+  "Rivals/HudTab.cs:850",
+  "Rivals/HudTab.cs:1231"
  ],
  "Cars": [
   "Tuning/TunesTab.cs:539",
@@ -144,10 +144,10 @@
   "Rivals/OwnTimesTab.cs:102"
  ],
  "Celebrate when a lap beats the website's time": [
-  "Rivals/HudTab.cs:1226"
+  "Rivals/HudTab.cs:1240"
  ],
  "Celebrations": [
-  "Rivals/HudTab.cs:1225"
+  "Rivals/HudTab.cs:1239"
  ],
  "Check for a newer list": [
   "Rivals/CarCollectionTab.cs:95"
@@ -177,7 +177,7 @@
   "Rivals/CarCollectionTab.cs:504"
  ],
  "Connect the Xbox to the capture card and pick the card here.": [
-  "Konsole.cs:252"
+  "Konsole.cs:321"
  ],
  "Connect this directly to an output node to verify one controller actuator at an exact force.": [
   "BlueprintEditor.cs:663"
@@ -199,7 +199,7 @@
   "Rivals/OwnTimesTab.cs:256"
  ],
  "Course maps on the Event Sign Up screen": [
-  "Rivals/HudTab.cs:1174"
+  "Rivals/HudTab.cs:1188"
  ],
  "Courses": [
   "Rivals/OwnTimesTab.cs:249"
@@ -228,17 +228,17 @@
   "Tuning/TunesTab.cs:107"
  ],
  "Delta": [
-  "Rivals/HudTab.cs:844"
+  "Rivals/HudTab.cs:853"
  ],
  "Desktop shortcut": [
-  "MainForm.cs:317",
-  "MainForm.cs:1467",
-  "MainForm.cs:1518",
-  "MainForm.cs:1555"
+  "MainForm.cs:320",
+  "MainForm.cs:1474",
+  "MainForm.cs:1525",
+  "MainForm.cs:1562"
  ],
  "Desktop shortcut ✓": [
-  "MainForm.cs:1467",
-  "MainForm.cs:1518"
+  "MainForm.cs:1474",
+  "MainForm.cs:1525"
  ],
  "Details: {0}": [
   "Tuning/TunesTab.cs:397"
@@ -250,7 +250,7 @@
   "Rivals/RivalsTab.cs:155"
  ],
  "Discovering controllers...": [
-  "MainForm.cs:1757"
+  "MainForm.cs:1764"
  ],
  "Done": [
   "BlueprintEditor.cs:1150"
@@ -259,7 +259,7 @@
   "scripts/contrib_scan.py:368"
  ],
  "Double-click: add a point  |  Right-click an inner point: remove it": [
-  "MainForm.cs:1081"
+  "MainForm.cs:1088"
  ],
  "Download and replace it now? The app closes and starts again; your settings stay.": [
   "Rivals/RivalsTab.cs:544"
@@ -267,65 +267,65 @@
  "Drag from a node's right port to another node's left port.\n\nDrag headers to move nodes. Right-click a node to delete it.": [
   "BlueprintEditor.cs:121"
  ],
- "Drag the blocks where you want them. Mouse wheel over a block ": [
-  "Rivals/HudTab.cs:80"
+ "Drag the blocks where you want them. Mouse wheel over a block resizes it. Everything saves itself.": [
+  "Rivals/HudTab.cs:82"
  ],
  "Drag the yellow end points vertically and the grey Bézier handles anywhere. Left is 0% grip, right is 100%.": [
-  "MainForm.cs:883"
+  "MainForm.cs:890"
  ],
  "Draw the grip → haptics curve": [
-  "MainForm.cs:875"
+  "MainForm.cs:882"
  ],
  "Driven with the app": [
   "Rivals/CarCollectionTab.cs:379"
  ],
  "Enable live mapping": [
-  "MainForm.cs:946"
+  "MainForm.cs:953"
  ],
  "Enable lock mapping": [
-  "MainForm.cs:1089"
+  "MainForm.cs:1096"
  ],
  "Enter this in Forza on the Xbox or the other PC, under Settings › HUD and Gameplay:": [
   "Konsole.cs:80"
  ],
  "Event Sign Up maps": [
-  "Rivals/HudTab.cs:840"
+  "Rivals/HudTab.cs:849"
  ],
  "Every tune": [
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how a personal record looks.": [
-  "Rivals/OverlayController.cs:3872"
+  "Rivals/OverlayController.cs:3905"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:3889"
+  "Rivals/OverlayController.cs:3922"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:3879"
+  "Rivals/OverlayController.cs:3912"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
  ],
  "FH Companion restarts in PC mode: the game runs on this PC.": [
-  "MainForm.cs:2130"
+  "MainForm.cs:2137"
  ],
  "FH Companion restarts in Xbox / 2nd PC mode: the telemetry comes over the network and the HUD shows in a dashboard window.": [
-  "MainForm.cs:2129"
+  "MainForm.cs:2136"
  ],
  "FH6 on the Xbox / other PC: Data Out On  |  IP {0}  |  Port must match below": [
-  "MainForm.cs:747"
+  "MainForm.cs:754"
  ],
  "FH6 reports a slip ratio for each tyre. Negative slip under braking is normalised here to a lock level of 0-100%.": [
-  "MainForm.cs:1053"
+  "MainForm.cs:1060"
  ],
  "FH6: Data Out On  |  IP 127.0.0.1  |  Format Sled  |  Port must match below": [
-  "MainForm.cs:749"
+  "MainForm.cs:756"
  ],
  "FIRST": [
-  "Rivals/OverlayController.cs:3864"
+  "Rivals/OverlayController.cs:3897"
  ],
  "Feel wheel lock separately": [
-  "MainForm.cs:1045"
+  "MainForm.cs:1052"
  ],
  "Festival Playlist": [
   "Rivals/CarCollectionTab.cs:501",
@@ -336,10 +336,10 @@
   "Rivals/CarNotesTab.cs:64"
  ],
  "First lap in class {0} here": [
-  "Rivals/OverlayController.cs:3862"
+  "Rivals/OverlayController.cs:3895"
  ],
  "Forza is running": [
-  "MainForm.cs:1342"
+  "MainForm.cs:1349"
  ],
  "Free roam": [
   "Rivals/OwnTimes.cs:425"
@@ -351,13 +351,13 @@
   "scripts/contrib_scan.py:149"
  ],
  "Game picture (optional)": [
-  "Konsole.cs:235"
+  "Konsole.cs:304"
  ],
  "Gap": [
   "Rivals/OwnTimesTab.cs:260"
  ],
  "Ghost countdown": [
-  "Rivals/HudTab.cs:837"
+  "Rivals/HudTab.cs:846"
  ],
  "Gift": [
   "Rivals/CarCollectionTab.cs:509"
@@ -366,16 +366,19 @@
   "BlueprintEditor.cs:72"
  ],
  "Green": [
-  "Rivals/HudTab.cs:1290"
+  "Rivals/HudTab.cs:1304"
  ],
  "Grip L/R: -- / --   Vibration: -- / --   Tone: -- / --": [
-  "MainForm.cs:983"
+  "MainForm.cs:990"
  ],
  "Haptic output": [
-  "MainForm.cs:680"
+  "MainForm.cs:687"
  ],
  "Haptic tone on the trackpads": [
-  "MainForm.cs:899"
+  "MainForm.cs:906"
+ ],
+ "Hide it from the real screen": [
+  "Rivals/HudTab.cs:109"
  ],
  "Highlight a car in My Cars, drive one, or add your whole garage below.": [
   "Rivals/CarNotesTab.cs:259"
@@ -393,10 +396,10 @@
   "scripts/contrib_scan.py:329"
  ],
  "In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized.": [
-  "Konsole.cs:253"
+  "Konsole.cs:322"
  ],
  "In the dashboard window": [
-  "Konsole.cs:475"
+  "Konsole.cs:535"
  ],
  "In the game now:": [
   "Rivals/CarNotesTab.cs:190"
@@ -405,64 +408,64 @@
   "Rivals/CarCollectionTab.cs:378"
  ],
  "Input traces": [
-  "Rivals/HudTab.cs:839"
+  "Rivals/HudTab.cs:848"
  ],
  "It holds the details you were given:": [
   "scripts/contrib_scan.py:70"
  ],
  "It shows while that window is in front. Move and size the HUD in the Lap delta HUD tab, as on the PC.": [
-  "Konsole.cs:483"
+  "Konsole.cs:543"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:3753",
-  "Rivals/OverlayController.cs:3878"
+  "Rivals/OverlayController.cs:3786",
+  "Rivals/OverlayController.cs:3911"
  ],
  "Key colour for OBS": [
-  "Rivals/HudTab.cs:1289"
+  "Rivals/HudTab.cs:1303"
  ],
  "Language": [
-  "MainForm.cs:309"
+  "MainForm.cs:312"
  ],
  "Last checked {0:yyyy-MM-dd HH:mm}: {1} tunes are on a car. Tunes saved after that show \"?\".": [
   "Tuning/TunesTab.cs:186"
  ],
  "Layout": [
-  "Rivals/HudTab.cs:990"
+  "Rivals/HudTab.cs:999"
  ],
  "Limit": [
   "Tuning/TunesTab.cs:55"
  ],
  "Live FH6 telemetry connected.": [
-  "MainForm.cs:2165"
+  "MainForm.cs:2172"
  ],
  "Live map": [
-  "Rivals/HudTab.cs:842"
+  "Rivals/HudTab.cs:851"
  ],
  "Live map during the race": [
-  "Rivals/HudTab.cs:1161"
+  "Rivals/HudTab.cs:1175"
  ],
  "Live map: line thickness": [
-  "Rivals/HudTab.cs:1166"
+  "Rivals/HudTab.cs:1180"
  ],
  "Live map: smoothing": [
-  "Rivals/HudTab.cs:1168"
+  "Rivals/HudTab.cs:1182"
  ],
  "Live mapping is sending through the four native haptic channels.": [
-  "MainForm.cs:2477"
+  "MainForm.cs:2484"
  ],
  "Live mapping off.": [
-  "MainForm.cs:992",
-  "MainForm.cs:1103"
+  "MainForm.cs:999",
+  "MainForm.cs:1110"
  ],
  "Lock L/R: -- / --   Output: -- / --": [
-  "MainForm.cs:1127"
+  "MainForm.cs:1134"
  ],
  "Lock mapping off.": [
-  "MainForm.cs:1136",
-  "MainForm.cs:1152"
+  "MainForm.cs:1143",
+  "MainForm.cs:1159"
  ],
  "Looking for a Steam Controller...": [
-  "MainForm.cs:195"
+  "MainForm.cs:198"
  ],
  "Loyalty reward": [
   "Rivals/CarCollectionTab.cs:510"
@@ -471,7 +474,7 @@
   "Rivals/CarCollectionTab.cs:575"
  ],
  "Magenta": [
-  "Rivals/HudTab.cs:1290"
+  "Rivals/HudTab.cs:1304"
  ],
  "Make": [
   "Rivals/OwnTimesTab.cs:103"
@@ -494,25 +497,25 @@
   "Rivals/CarNotesTab.cs:198"
  ],
  "My controller is connected to this PC (Xbox Remote Play)": [
-  "Konsole.cs:191"
+  "Konsole.cs:192"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:3754",
-  "Rivals/OverlayController.cs:3860",
-  "Rivals/OverlayController.cs:3880"
+  "Rivals/OverlayController.cs:3787",
+  "Rivals/OverlayController.cs:3893",
+  "Rivals/OverlayController.cs:3913"
  ],
  "NODE PALETTE": [
   "BlueprintEditor.cs:63"
  ],
  "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.": [
-  "Konsole.cs:351"
+  "Konsole.cs:410"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:3751",
-  "Rivals/OverlayController.cs:3877"
+  "Rivals/OverlayController.cs:3784",
+  "Rivals/OverlayController.cs:3910"
  ],
  "New car on your list": [
-  "Rivals/OverlayController.cs:3859"
+  "Rivals/OverlayController.cs:3892"
  ],
  "New version available": [
   "Rivals/RivalsTab.cs:547"
@@ -540,14 +543,14 @@
   "Tuning/TunesTab.cs:619"
  ],
  "No native haptic channel is open.": [
-  "MainForm.cs:2403"
+  "MainForm.cs:2410"
  ],
  "No newer list on the server.": [
   "Rivals/CarCollectionTab.cs:451"
  ],
  "No picture yet": [
-  "Konsole.cs:326",
-  "Konsole.cs:523"
+  "Konsole.cs:385",
+  "Konsole.cs:583"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
@@ -556,10 +559,10 @@
   "Rivals/Bildquelle.cs:82"
  ],
  "None -- telemetry only": [
-  "Konsole.cs:241"
+  "Konsole.cs:310"
  ],
  "Normalized combined tire slip": [
-  "MainForm.cs:799"
+  "MainForm.cs:806"
  ],
  "Not checked yet -- reads the game's memory while it runs, takes up to a minute.": [
   "Tuning/TunesTab.cs:185"
@@ -568,7 +571,7 @@
   "Tuning/TunesTab.cs:311"
  ],
  "Not listening.": [
-  "MainForm.cs:782"
+  "MainForm.cs:789"
  ],
  "Not obtainable": [
   "Rivals/CarCollectionTab.cs:513"
@@ -581,7 +584,7 @@
   "Rivals/CarNotesTab.cs:80"
  ],
  "Note line": [
-  "Rivals/HudTab.cs:838"
+  "Rivals/HudTab.cs:847"
  ],
  "Note: the game area is {0}x{1}, not 16:9. The scan uses its centred 16:9 part; menu positions at this aspect ratio are an assumption.": [
   "scripts/contrib_scan.py:145"
@@ -594,7 +597,7 @@
   "scripts/contrib_scan.py:362"
  ],
  "Now it is the time to beat": [
-  "Rivals/OverlayController.cs:3863"
+  "Rivals/OverlayController.cs:3896"
  ],
  "OCR readers at once. More is faster, but the reader pool has already crashed at twelve on the main machine.": [
   "scripts/contrib_scan.py:296"
@@ -612,19 +615,19 @@
   "Tuning/TunesTab.cs:91"
  ],
  "Open FH Companion": [
-  "MainForm.cs:1329"
+  "MainForm.cs:1336"
  ],
  "Open on the wiki": [
   "Rivals/CarCollectionTab.cs:192"
  ],
  "Open the recording window": [
-  "Rivals/HudTab.cs:1285"
+  "Rivals/HudTab.cs:1299"
  ],
  "Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard.": [
-  "Konsole.cs:257"
+  "Konsole.cs:326"
  ],
  "Over the game window, like playing on the PC": [
-  "Konsole.cs:480"
+  "Konsole.cs:540"
  ],
  "Owned": [
   "Rivals/CarCollectionTab.cs:131"
@@ -636,60 +639,60 @@
   "Rivals/CarCollectionTab.cs:258"
  ],
  "Packets: --   Rate: --   Race: --": [
-  "MainForm.cs:791"
+  "MainForm.cs:798"
  ],
  "Personal best in a class on a course": [
-  "Rivals/HudTab.cs:1248"
+  "Rivals/HudTab.cs:1262"
  ],
  "Personal best in class {0}!": [
-  "Rivals/OverlayController.cs:3851",
-  "Rivals/OverlayController.cs:3870"
+  "Rivals/OverlayController.cs:3884",
+  "Rivals/OverlayController.cs:3903"
  ],
  "Personal best with a car (every car, class and course)": [
-  "Rivals/HudTab.cs:1249"
+  "Rivals/HudTab.cs:1263"
  ],
  "Personal best with this car": [
-  "Rivals/OverlayController.cs:3855"
+  "Rivals/OverlayController.cs:3888"
  ],
  "Personal records": [
-  "Rivals/HudTab.cs:1245"
+  "Rivals/HudTab.cs:1259"
  ],
  "Pick a car on the left": [
   "Rivals/CarNotesTab.cs:108",
   "Rivals/CarNotesTab.cs:293"
  ],
  "Pick with a preview …": [
-  "Konsole.cs:282"
+  "Konsole.cs:353"
  ],
  "Pin to taskbar": [
-  "MainForm.cs:320",
-  "MainForm.cs:1468",
-  "MainForm.cs:1519",
-  "MainForm.cs:1573",
-  "MainForm.cs:1581"
+  "MainForm.cs:323",
+  "MainForm.cs:1475",
+  "MainForm.cs:1526",
+  "MainForm.cs:1580",
+  "MainForm.cs:1588"
  ],
  "Pinned to taskbar ✓": [
-  "MainForm.cs:1468",
-  "MainForm.cs:1519"
+  "MainForm.cs:1475",
+  "MainForm.cs:1526"
  ],
  "Play a short sound with them": [
-  "Rivals/HudTab.cs:1259"
+  "Rivals/HudTab.cs:1273"
  ],
  "Play a sound with it": [
-  "Rivals/HudTab.cs:1228"
+  "Rivals/HudTab.cs:1242"
  ],
  "Playing on an Xbox or another PC?": [
-  "Konsole.cs:225"
+  "Konsole.cs:294"
  ],
  "Point +": [
-  "MainForm.cs:924",
-  "MainForm.cs:936",
-  "MainForm.cs:1071"
+  "MainForm.cs:931",
+  "MainForm.cs:943",
+  "MainForm.cs:1078"
  ],
  "Point -": [
-  "MainForm.cs:928",
-  "MainForm.cs:940",
-  "MainForm.cs:1075"
+  "MainForm.cs:935",
+  "MainForm.cs:947",
+  "MainForm.cs:1082"
  ],
  "Points": [
   "Rivals/OwnTimesTab.cs:248"
@@ -698,7 +701,7 @@
   "Tuning/TunesTab.cs:422"
  ],
  "Previous best with it: {0}": [
-  "Rivals/OverlayController.cs:3856"
+  "Rivals/OverlayController.cs:3889"
  ],
  "Price": [
   "Rivals/CarCollectionTab.cs:165"
@@ -707,17 +710,17 @@
   "Disclosure.cs:386"
  ],
  "Puts a shortcut to this copy of the program on your desktop. One that points to a moved or deleted copy is replaced.": [
-  "MainForm.cs:319"
+  "MainForm.cs:322"
  ],
  "P{0} of {1} on your list": [
-  "Rivals/OverlayController.cs:3844"
+  "Rivals/OverlayController.cs:3877"
  ],
  "Quit": [
   "Disclosure.cs:442",
-  "MainForm.cs:1331"
+  "MainForm.cs:1338"
  ],
  "Read game memory": [
-  "MainForm.cs:356"
+  "MainForm.cs:359"
  ],
  "Read my garage": [
   "Rivals/CarCollectionTab.cs:90"
@@ -736,19 +739,19 @@
   "Rivals/CarNotesTab.cs:94"
  ],
  "Ready": [
-  "MainForm.cs:705"
+  "MainForm.cs:712"
  ],
  "Receiving telemetry. The HUD appears as soon as you drive.": [
   "Rivals/AufnahmeFenster.cs:92"
  ],
  "Reconnect controllers": [
-  "MainForm.cs:251"
+  "MainForm.cs:254"
  ],
  "Recording": [
-  "Rivals/HudTab.cs:1297"
+  "Rivals/HudTab.cs:1311"
  ],
  "Recording and streaming": [
-  "Rivals/HudTab.cs:1277"
+  "Rivals/HudTab.cs:1291"
  ],
  "Remove selected": [
   "BlueprintEditor.cs:1148"
@@ -757,25 +760,25 @@
   "Rivals/OwnTimesTab.cs:178"
  ],
  "Reset curve": [
-  "MainForm.cs:1067"
+  "MainForm.cs:1074"
  ],
  "Reset tone": [
-  "MainForm.cs:932"
+  "MainForm.cs:939"
  ],
  "Reset vibration": [
-  "MainForm.cs:920"
+  "MainForm.cs:927"
  ],
  "Restart the app now to apply this?": [
-  "Konsole.cs:202"
+  "Konsole.cs:213"
  ],
  "Rivals": [
   "Rivals/OwnTimes.cs:417"
  ],
  "Rivals maps are shown as": [
-  "Rivals/HudTab.cs:1200"
+  "Rivals/HudTab.cs:1214"
  ],
  "Rivals maps only": [
-  "Rivals/HudTab.cs:1182"
+  "Rivals/HudTab.cs:1196"
  ],
  "Saved": [
   "Tuning/TunesTab.cs:250",
@@ -785,7 +788,7 @@
   "Tuning/TunesTab.cs:95"
  ],
  "Say thanks when your lap adds a new car to the leaderboard": [
-  "Rivals/HudTab.cs:1235"
+  "Rivals/HudTab.cs:1249"
  ],
  "Scan leaderboards on THIS PC and hand in the result.": [
   "scripts/contrib_scan.py:277"
@@ -801,13 +804,13 @@
   "Rivals/CarCollectionTab.cs:367"
  ],
  "Select a force and start the test.": [
-  "MainForm.cs:713"
+  "MainForm.cs:720"
  ],
  "Select a node to edit it.": [
   "BlueprintEditor.cs:620"
  ],
  "Separate records per mode": [
-  "Rivals/HudTab.cs:1255"
+  "Rivals/HudTab.cs:1269"
  ],
  "Series milestone, {0} points": [
   "Rivals/CarCollectionTab.cs:603"
@@ -817,55 +820,59 @@
   "Rivals/CarCollectionTab.cs:539"
  ],
  "Shared colours": [
-  "Rivals/HudTab.cs:1269"
+  "Rivals/HudTab.cs:1283"
  ],
  "Show it on the real screen while I set it up": [
-  "Rivals/HudTab.cs:90"
+  "Rivals/HudTab.cs:99",
+  "Rivals/HudTab.cs:110"
  ],
  "Show my laps": [
   "Rivals/OwnTimesTab.cs:71"
  ],
  "Show overlays over the game": [
-  "Rivals/HudTab.cs:1278"
+  "Rivals/HudTab.cs:1292"
  ],
  "Show the applied tune's name and description in the car note": [
-  "Rivals/HudTab.cs:1219"
+  "Rivals/HudTab.cs:1233"
  ],
  "Show the strip while racing": [
-  "Rivals/HudTab.cs:1048"
+  "Rivals/HudTab.cs:1057"
  ],
  "Show the time to beat for the website's leaderboard": [
-  "Rivals/HudTab.cs:1078"
+  "Rivals/HudTab.cs:1087"
  ],
  "Show throttle, brake, clutch, steering, gear": [
-  "Rivals/HudTab.cs:1106"
+  "Rivals/HudTab.cs:1117"
  ],
  "Side by side": [
-  "Rivals/HudTab.cs:1205"
+  "Rivals/HudTab.cs:1219"
  ],
  "Sign-up maps arranged": [
-  "Rivals/HudTab.cs:1204"
+  "Rivals/HudTab.cs:1218"
  ],
  "Sign-up maps disappear after (seconds, 0 = when the race starts)": [
-  "Rivals/HudTab.cs:1198"
+  "Rivals/HudTab.cs:1212"
  ],
  "Sign-up maps: line thickness": [
-  "Rivals/HudTab.cs:1208"
+  "Rivals/HudTab.cs:1222"
  ],
  "Sign-up maps: smoothing": [
-  "Rivals/HudTab.cs:1210"
+  "Rivals/HudTab.cs:1224"
  ],
  "Smooth traced line": [
-  "Rivals/HudTab.cs:1201"
+  "Rivals/HudTab.cs:1215"
  ],
  "Smoothing takes out the pixel steps of the line. Turned up high, tight hairpins get rounder too.": [
-  "Rivals/HudTab.cs:1212"
+  "Rivals/HudTab.cs:1226"
  ],
  "Solo": [
   "Rivals/OwnTimes.cs:418"
  ],
  "Solo / co-op race": [
   "Rivals/OwnTimes.cs:422"
+ ],
+ "Something not working? Copy a report for whoever helps you": [
+  "Konsole.cs:634"
  ],
  "Soon the game will refuse new downloads.": [
   "Rivals/OverlayController.cs:556"
@@ -874,7 +881,7 @@
   "Rivals/CarCollectionTab.cs:590"
  ],
  "Stacked": [
-  "Rivals/HudTab.cs:1205"
+  "Rivals/HudTab.cs:1219"
  ],
  "Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers.": [
   "BlueprintEditor.cs:820"
@@ -889,10 +896,10 @@
   "Rivals/OwnTimesTab.cs:263"
  ],
  "Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.": [
-  "Konsole.cs:254"
+  "Konsole.cs:323"
  ],
  "Start listening": [
-  "MainForm.cs:771"
+  "MainForm.cs:778"
  ],
  "Start overlay": [
   "Rivals/RivalsTab.cs:343"
@@ -904,38 +911,38 @@
   "Tuning/TunesTab.cs:583"
  ],
  "Start with Forza": [
-  "MainForm.cs:325",
-  "MainForm.cs:1469",
-  "MainForm.cs:1541"
+  "MainForm.cs:328",
+  "MainForm.cs:1476",
+  "MainForm.cs:1548"
  ],
  "Start with Forza (waits in the notification area from sign-in)": [
   "Disclosure.cs:407"
  ],
  "Start with Forza ✓": [
-  "MainForm.cs:1469"
+  "MainForm.cs:1476"
  ],
  "Starts with Windows, waits invisibly in the notification area and opens when Forza starts. Click again to switch it off.": [
-  "MainForm.cs:327"
+  "MainForm.cs:330"
  ],
  "Still waiting for Forza in the notification area. Right-click the icon to quit.": [
-  "MainForm.cs:1404"
+  "MainForm.cs:1411"
  ],
  "Stop": [
-  "MainForm.cs:775",
+  "MainForm.cs:782",
   "Tuning/TunesTab.cs:370"
  ],
  "Stop now": [
   "Loc.cs:20",
-  "MainForm.cs:698"
+  "MainForm.cs:705"
  ],
  "Stop overlay": [
   "Rivals/RivalsTab.cs:363"
  ],
  "Stream address": [
-  "Konsole.cs:247"
+  "Konsole.cs:316"
  ],
  "Stream in the browser (Twitch, YouTube, Kick …)": [
-  "Konsole.cs:246"
+  "Konsole.cs:315"
  ],
  "Submit my laps when they beat the leaderboard": [
   "Rivals/RivalsTab.cs:116"
@@ -944,10 +951,10 @@
   "Rivals/CarCollectionTab.cs:587"
  ],
  "Switch mode": [
-  "MainForm.cs:2131"
+  "MainForm.cs:2138"
  ],
  "Switch to “Xbox / 2nd PC” at the top of the window.": [
-  "Konsole.cs:226"
+  "Konsole.cs:295"
  ],
  "Tesseract OCR is not installed. The leaderboard rows are read with it, and it is a separate program -- not a Python package. Install it from https://github.com/UB-Mannheim/tesseract/wiki or with: winget install -e --id UB-Mannheim.TesseractOCR": [
   "scripts/contrib_scan.py:165"
@@ -960,19 +967,19 @@
   "Tuning/TunesTab.cs:357"
  ],
  "Test running. Press Stop now at any time.": [
-  "MainForm.cs:1969"
+  "MainForm.cs:1976"
  ],
  "Test the exact vibration force": [
-  "MainForm.cs:625"
+  "MainForm.cs:632"
  ],
  "Test tone": [
-  "MainForm.cs:977"
+  "MainForm.cs:984"
  ],
  "That is a whole screen, not a window. Pick the window that shows the game.": [
-  "Konsole.cs:418"
+  "Konsole.cs:478"
  ],
  "The Start menu entry could not be created.": [
-  "MainForm.cs:1571"
+  "MainForm.cs:1578"
  ],
  "The Trial “{0}”": [
   "Rivals/CarCollectionTab.cs:604"
@@ -990,14 +997,14 @@
   "Rivals/OverlayController.cs:557"
  ],
  "The autostart entry could not be created.": [
-  "MainForm.cs:1539"
+  "MainForm.cs:1546"
  ],
  "The car list is not loaded yet -- wait a moment and try again.": [
   "Tuning/TunesTab.cs:348"
  ],
  "The desktop shortcut could not be created.": [
   "Disclosure.cs:303",
-  "MainForm.cs:1553"
+  "MainForm.cs:1560"
  ],
  "The downloaded file does not match what the server announced (expected {0}..., got {1}...). Nothing was replaced.": [
   "Rivals/AppUpdate.cs:240"
@@ -1012,13 +1019,13 @@
   "Tuning/TunesTab.cs:554"
  ],
  "The game runs on:": [
-  "Konsole.cs:629"
+  "Konsole.cs:710"
  ],
  "The game will refuse new downloads.": [
   "Rivals/OverlayController.cs:555"
  ],
  "The game's map picture": [
-  "Rivals/HudTab.cs:1202"
+  "Rivals/HudTab.cs:1216"
  ],
  "The game's process cannot be opened (error {0}). Starting this program as administrator usually helps.": [
   "Tuning/ForzaMemoryDb.cs:136"
@@ -1026,14 +1033,14 @@
  "The game's save folder was not found.": [
   "Tuning/TunesTab.cs:174"
  ],
- "The language changes when the program next starts.": [
-  "MainForm.cs:308"
+ "The grey box is the game's own lap time and progress -- it sits top left and cannot be moved, so keep clear of it.": [
+  "Rivals/HudTab.cs:84"
  ],
- "The list of all windows is on the clipboard. Paste it into a message to whoever helps you.": [
-  "Konsole.cs:307"
+ "The language changes when the program next starts.": [
+  "MainForm.cs:311"
  ],
  "The next tab will map these live grip values through your Bézier curve to the haptics.": [
-  "MainForm.cs:836"
+  "MainForm.cs:843"
  ],
  "The note shows over the game while this car is highlighted in My Cars or driven.": [
   "Rivals/CarNotesTab.cs:128",
@@ -1044,6 +1051,9 @@
  ],
  "The package's signature is not valid (any more). Nothing was replaced.": [
   "Rivals/AppUpdate.cs:283"
+ ],
+ "The report is on the clipboard. Paste it into a message to whoever helps you.": [
+  "Konsole.cs:269"
  ],
  "The scanner ended with code {code}. Whatever finished is packed anyway.": [
   "scripts/contrib_scan.py:357"
@@ -1064,16 +1074,16 @@
   "TelemetryInspector.cs:87"
  ],
  "The window is minimized. Restore it; it may stay behind other windows.": [
-  "Rivals/FensterQuelle.cs:103"
+  "Rivals/FensterQuelle.cs:106"
  ],
  "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.": [
-  "Konsole.cs:195"
+  "Konsole.cs:197"
  ],
  "There is no speaker: audible sound comes straight out of the haptic motors, so it sounds more like a synth than a recording.": [
-  "MainForm.cs:1001"
+  "MainForm.cs:1008"
  ],
  "This PC": [
-  "Konsole.cs:611"
+  "Konsole.cs:692"
  ],
  "This PC now belongs to the scanner. Do not click, do not type,": [
   "scripts/contrib_scan.py:332"
@@ -1082,13 +1092,13 @@
   "scripts/contrib_scan.py:326"
  ],
  "This stays inside the final tool so you can calibrate the controller at any time.": [
-  "MainForm.cs:633"
+  "MainForm.cs:640"
  ],
  "Time": [
   "Rivals/OwnTimesTab.cs:259"
  ],
  "Time attack in the free world": [
-  "Rivals/HudTab.cs:1351"
+  "Rivals/HudTab.cs:1368"
  ],
  "To upload: --upload, or just send the file.": [
   "scripts/contrib_scan.py:386"
@@ -1103,9 +1113,9 @@
   "Rivals/CarCollectionTab.cs:560"
  ],
  "Try it": [
-  "Rivals/HudTab.cs:1229",
-  "Rivals/HudTab.cs:1237",
-  "Rivals/HudTab.cs:1260"
+  "Rivals/HudTab.cs:1243",
+  "Rivals/HudTab.cs:1251",
+  "Rivals/HudTab.cs:1274"
  ],
  "Tune": [
   "Rivals/OwnTimesTab.cs:114",
@@ -1137,26 +1147,26 @@
   "Tuning/TunesTab.cs:559"
  ],
  "Tuning inspector, garage and which tune is on which car read the game's memory, only when you press their button. Switched off, the app reads My Cars and the tune list from the screen instead.": [
-  "MainForm.cs:363"
+  "MainForm.cs:366"
  ],
  "Type": [
   "Rivals/CarCollectionTab.cs:164",
   "Rivals/OwnTimesTab.cs:104"
  ],
  "Tyre overview": [
-  "Rivals/HudTab.cs:843"
+  "Rivals/HudTab.cs:852"
  ],
  "Tyre overview while driving": [
-  "Rivals/HudTab.cs:1150"
+  "Rivals/HudTab.cs:1164"
  ],
  "Tyre temperature in Fahrenheit": [
-  "Rivals/HudTab.cs:1156"
+  "Rivals/HudTab.cs:1170"
  ],
  "Tyres": [
   "Rivals/TyreHud.cs:193"
  ],
  "UDP port": [
-  "MainForm.cs:757"
+  "MainForm.cs:764"
  ],
  "Unnamed course": [
   "Rivals/OwnTimes.cs:459"
@@ -1172,13 +1182,13 @@
   "scripts/contrib_scan.py:383"
  ],
  "Verify FH6 grip data": [
-  "MainForm.cs:737"
+  "MainForm.cs:744"
  ],
  "Vibrate for 10 seconds": [
-  "MainForm.cs:694"
+  "MainForm.cs:701"
  ],
  "Vibration in the grips": [
-  "MainForm.cs:891"
+  "MainForm.cs:898"
  ],
  "WScript.Shell could not be created": [
   "Shortcuts.cs:253",
@@ -1189,10 +1199,10 @@
   "Shortcuts.cs:329"
  ],
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": [
-  "MainForm.cs:2411"
+  "MainForm.cs:2418"
  ],
  "Waiting for telemetry on {0}, port {1}": [
-  "MainForm.cs:2057"
+  "MainForm.cs:2064"
  ],
  "Waiting for telemetry...": [
   "TelemetryInspector.cs:27"
@@ -1201,32 +1211,32 @@
   "Tuning/TunesTab.cs:378"
  ],
  "Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox.": [
-  "Konsole.cs:256"
+  "Konsole.cs:325"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:3729",
-  "Rivals/OverlayController.cs:3888"
+  "Rivals/OverlayController.cs:3762",
+  "Rivals/OverlayController.cs:3921"
  ],
  "What this program does, and what leaves your computer": [
-  "MainForm.cs:259"
+  "MainForm.cs:262"
  ],
  "Wheel-lock detection from braking slip ratio": [
-  "MainForm.cs:818"
+  "MainForm.cs:825"
  ],
  "Wheelspin": [
   "Rivals/CarCollectionTab.cs:502"
  ],
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": [
-  "MainForm.cs:1118"
+  "MainForm.cs:1125"
  ],
  "Where the HUD shows": [
-  "Konsole.cs:472"
+  "Konsole.cs:532"
  ],
  "Which mode you are playing": [
-  "Konsole.cs:561"
+  "Konsole.cs:621"
  ],
  "Window not found: “{0}”": [
-  "Rivals/FensterQuelle.cs:111"
+  "Rivals/FensterQuelle.cs:114"
  ],
  "Windows Firewall blocks this program, so nothing from the Xbox arrives. Allow it once:": [
   "Konsole.cs:131"
@@ -1244,10 +1254,10 @@
   "Konsole.cs:169"
  ],
  "Windows leaves pinning to you. This prepares everything and shows the one click it takes.": [
-  "MainForm.cs:322"
+  "MainForm.cs:325"
  ],
  "Windows only lets you pin programs yourself, so this takes one click from you: right-click this program's icon in the taskbar and choose “Pin to taskbar”. The Start menu entry it needs is in place, and this button shows a tick once the pin is there.": [
-  "MainForm.cs:1580"
+  "MainForm.cs:1587"
  ],
  "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.": [
   "Disclosure.cs:423"
@@ -1259,23 +1269,23 @@
   "Rivals/CarCollectionTab.cs:589"
  ],
  "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.": [
-  "Konsole.cs:236"
+  "Konsole.cs:305"
  ],
  "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.": [
-  "Konsole.cs:568"
+  "Konsole.cs:628"
  ],
  "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.": [
   "Rivals/RivalsTab.cs:177"
  ],
  "Xbox / 2nd PC": [
-  "Konsole.cs:230",
-  "Konsole.cs:612"
+  "Konsole.cs:299",
+  "Konsole.cs:693"
  ],
  "Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.": [
-  "MainForm.cs:384"
+  "MainForm.cs:387"
  ],
  "Xbox Remote Play": [
-  "Konsole.cs:244"
+  "Konsole.cs:313"
  ],
  "Year": [
   "Rivals/OwnTimesTab.cs:127"
@@ -1284,27 +1294,27 @@
   "Rivals/RivalsTab.cs:545"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:3726",
-  "Rivals/OverlayController.cs:3887"
+  "Rivals/OverlayController.cs:3759",
+  "Rivals/OverlayController.cs:3920"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
  ],
  "Your first lap in a class on a course": [
-  "Rivals/HudTab.cs:1253"
+  "Rivals/HudTab.cs:1267"
  ],
  "Your laps only (telemetry)": [
-  "Rivals/HudTab.cs:1181"
+  "Rivals/HudTab.cs:1195"
  ],
  "Your network is set to Public; the rule then covers that too.": [
   "Konsole.cs:127"
  ],
  "Your previous best here: {0}": [
-  "Rivals/OverlayController.cs:3852",
-  "Rivals/OverlayController.cs:3871"
+  "Rivals/OverlayController.cs:3885",
+  "Rivals/OverlayController.cs:3904"
  ],
  "Your window is not in the list? Copy the list of all windows": [
-  "Konsole.cs:297"
+  "Konsole.cs:368"
  ],
  "a newer version is ready (skipped)": [
   "Rivals/RivalsTab.cs:531"
@@ -1387,7 +1397,7 @@
   "Rivals/CarNotesTab.cs:295"
  ],
  "ffmpeg found.": [
-  "Konsole.cs:352"
+  "Konsole.cs:411"
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:142",
@@ -1421,7 +1431,7 @@
   "Rivals/RivalsTab.cs:559"
  ],
  "minimized": [
-  "Rivals/FensterQuelle.cs:596"
+  "Rivals/FensterQuelle.cs:622"
  ],
  "new version: {0}": [
   "Rivals/AppUpdate.cs:175"
@@ -1445,7 +1455,7 @@
   "Rivals/AppUpdate.cs:153"
  ],
  "no title": [
-  "Rivals/FensterQuelle.cs:595"
+  "Rivals/FensterQuelle.cs:621"
  ],
  "not driven yet": [
   "Rivals/CourseShapeHud.cs:189"
@@ -1541,7 +1551,7 @@
   "Rivals/AppUpdate.cs:171"
  ],
  "this course": [
-  "Rivals/OverlayController.cs:3841"
+  "Rivals/OverlayController.cs:3874"
  ],
  "this version stays skipped": [
   "Rivals/RivalsTab.cs:554"
@@ -1563,7 +1573,7 @@
   "Rivals/OwnTimesTab.cs:118"
  ],
  "waiting for Forza": [
-  "MainForm.cs:1342"
+  "MainForm.cs:1349"
  ],
  "week {0}": [
   "Rivals/CarCollectionTab.cs:593"

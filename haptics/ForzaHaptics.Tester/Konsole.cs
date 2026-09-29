@@ -183,26 +183,95 @@ internal static class Konsole
     /// Vibrationen der App wie am PC (seit 2026-09-29) -- nach einem Neustart, weil die
     /// Reiter beim Start entstehen.
     /// </summary>
-    private static void ControllerHier(FlowLayoutPanel stapel, Rivals.OverlaySettings s)
+    private static CheckBox ControllerHier(FlowLayoutPanel stapel, Rivals.OverlaySettings s)
     {
         stapel.Controls.Add(Kopf(Loc.T("Controller")));
+        // Mit der Quelle "Xbox Remote Play" gilt der Haken von selbst (OverlaySettings.ControllerHier).
         var haken = new CheckBox
         {
             Text = Loc.T("My controller is connected to this PC (Xbox Remote Play)"), AutoSize = true,
-            ForeColor = Color.Gainsboro, Checked = s.ConsoleControllerHere, Margin = new Padding(0, 3, 0, 0),
+            ForeColor = Color.Gainsboro, Checked = s.ControllerHier, Enabled = !s.IstRemotePlay,
+            Margin = new Padding(0, 3, 0, 0),
         };
         stapel.Controls.Add(haken);
         stapel.Controls.Add(Notiz(Loc.T(
             "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.")));
         haken.CheckedChanged += (_, _) =>
         {
+            if (!haken.Enabled) { return; }
             s.ConsoleControllerHere = haken.Checked;
             s.Save();
-            if (MainForm.NurVorschau) { return; }
-            var frage = MessageBox.Show(Loc.T("Restart the app now to apply this?"), AppInfo.Name,
-                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (frage == DialogResult.Yes) { Application.Restart(); }
+            NeustartFragen();
         };
+        return haken;
+    }
+
+    /// <summary>Die Reiter entstehen beim Start: Neustart anbieten.</summary>
+    private static void NeustartFragen()
+    {
+        if (MainForm.NurVorschau) { return; }
+        var frage = MessageBox.Show(Loc.T("Restart the app now to apply this?"), AppInfo.Name,
+                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (frage == DialogResult.Yes) { Application.Restart(); }
+    }
+
+    /// <summary>
+    /// Ein Bericht fuer den, der hilft (seit 2026-09-29): Fassung, Einstellungen, Quelle,
+    /// alle Fenster und die letzten Zeilen der Protokolle. Nur auf Klick, in die
+    /// Zwischenablage -- nichts verlaesst den Rechner von selbst.
+    /// </summary>
+    internal static string Bericht(Rivals.OverlaySettings s)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"console mode {s.ConsoleMode}, source {s.VideoSource} \"{s.VideoWindow}\", hud over window {s.HudUeberFenster}, "
+                      + $"controller here {s.ControllerHier}, language {s.Language}, lap mode {s.LapMode}");
+        var q = Rivals.Bildquellen.Aktiv;
+        sb.AppendLine("source: " + (q is null ? "none" : q.Beschreibung)
+                      + (q is Rivals.FensterQuelle fq ? ", captured " + fq.Aufgenommen : string.Empty)
+                      + (q is Rivals.IFensterBild fb ? $", in front {fb.IstVorne}, area {fb.Schirmflaeche?.ToString() ?? "none"}" : string.Empty));
+        sb.AppendLine("overlays over the game: " + Rivals.OverlayAusgabe.ImSpiel);
+        sb.AppendLine();
+        sb.Append(Rivals.Fenster.Bericht(s.VideoWindow));
+        foreach (var (datei, zeilen) in new[] { ("reads.log", 80), ("cars.log", 40) })
+        {
+            sb.AppendLine();
+            sb.AppendLine("---- last lines of " + datei);
+            foreach (var z in LetzteZeilen(Path.Combine(Path.GetTempPath(), "forza-overlay", datei), zeilen)) { sb.AppendLine(z); }
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>Die letzten Zeilen einer Datei, ohne sie ganz zu lesen (reads.log wird gross).</summary>
+    internal static List<string> LetzteZeilen(string pfad, int anzahl)
+    {
+        try
+        {
+            using var f = new FileStream(pfad, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var ab = Math.Max(0, f.Length - (anzahl * 400L));
+            f.Seek(ab, SeekOrigin.Begin);
+            using var leser = new StreamReader(f);
+            var alle = leser.ReadToEnd().Split('\n').Select(z => z.TrimEnd('\r')).Where(z => z.Length > 0).ToList();
+            if (ab > 0 && alle.Count > 0) { alle.RemoveAt(0); }
+            return alle.Skip(Math.Max(0, alle.Count - anzahl)).ToList();
+        }
+        catch (Exception)
+        {
+            return new List<string> { "(not found)" };
+        }
+    }
+
+    private static void BerichtKopieren(Control wo, Rivals.OverlaySettings s)
+    {
+        try
+        {
+            Clipboard.SetText(Bericht(s));
+            MessageBox.Show(wo.FindForm(),
+                            Loc.T("The report is on the clipboard. Paste it into a message to whoever helps you."),
+                            AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception)
+        {
+        }
     }
 
     /// <summary>Was ins Feld "Fenster" gehoert: der Titel -- auch wenn dort gerade "Titel — Programm" steht.</summary>
@@ -258,6 +327,8 @@ internal static class Konsole
             ["url"] = string.Empty,
         };
 
+        CheckBox? controllerHaken = null;
+        var controllerBeimStart = MainForm.ControllerReiterDa ?? s.ControllerHier;
         var jetzt = Array.IndexOf(Quellen, (s.VideoSource ?? "none").ToLowerInvariant());
         if (jetzt < 0) { jetzt = 0; }
         var knoepfe = new List<RadioButton>();
@@ -298,19 +369,7 @@ internal static class Konsole
             LinkColor = Color.FromArgb(120, 170, 255), ActiveLinkColor = Color.White,
             Margin = new Padding(22, 0, 0, 4), MaximumSize = new Size(450, 0),
         };
-        bericht.LinkClicked += (_, _) =>
-        {
-            try
-            {
-                Clipboard.SetText(Rivals.Fenster.Bericht(s.VideoWindow));
-                MessageBox.Show(stapel.FindForm(),
-                                Loc.T("The list of all windows is on the clipboard. Paste it into a message to whoever helps you."),
-                                AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception)
-            {
-            }
-        };
+        bericht.LinkClicked += (_, _) => BerichtKopieren(stapel, s);
         fensterZeile.Controls.Add(fenster);
         fensterZeile.Controls.Add(waehlen);
         fensterZeile.Controls.Add(bericht);
@@ -372,6 +431,7 @@ internal static class Konsole
                 if (art == "window") { s.VideoWindow = FensterSchluessel(fenster); }
                 ZeigeFelder();
                 Anwenden();
+                ControllerAbgleichen();
             };
             knoepfe.Add(knopf);
             stapel.Controls.Add(knopf);
@@ -555,7 +615,7 @@ internal static class Konsole
         ZeigeFelder();
 
         // Der Controller unter den Bildquellen: wichtiger ist, dass ueberhaupt etwas ankommt.
-        ControllerHier(stapel, s);
+        controllerHaken = ControllerHier(stapel, s);
 
         // ---- DER MODUS -----------------------------------------------------------------
         stapel.Controls.Add(Kopf(Loc.T("Which mode you are playing")));
@@ -567,7 +627,28 @@ internal static class Konsole
         stapel.Controls.Add(modus);
         stapel.Controls.Add(Notiz(Loc.T(
             "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.")));
+
+        // FUER DIE FEHLERSUCHE: ganz unten, wo man nach allem anderen landet.
+        var hilfe = new LinkLabel
+        {
+            Text = Loc.T("Something not working? Copy a report for whoever helps you"), AutoSize = true,
+            LinkColor = Color.FromArgb(120, 170, 255), ActiveLinkColor = Color.White,
+            Margin = new Padding(0, 10, 0, 4), MaximumSize = new Size(470, 0),
+        };
+        hilfe.LinkClicked += (_, _) => BerichtKopieren(stapel, s);
+        stapel.Controls.Add(hilfe);
         return stapel;
+
+        // Die Quelle entscheidet mit, ob der Controller hier haengt (Remote Play). Die
+        // Reiter dafuer entstehen beim Start -- aendert sich das, Neustart anbieten.
+        void ControllerAbgleichen()
+        {
+            if (controllerHaken is null) { return; }
+            controllerHaken.Enabled = false;
+            controllerHaken.Checked = s.ControllerHier;
+            controllerHaken.Enabled = !s.IstRemotePlay;
+            if (s.ControllerHier != controllerBeimStart) { NeustartFragen(); }
+        }
     }
 
     private static Label Kopf(string text) => new()

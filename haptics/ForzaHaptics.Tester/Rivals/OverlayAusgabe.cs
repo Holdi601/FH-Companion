@@ -84,6 +84,29 @@ internal static class OverlayAusgabe
         return alle.OrderBy(q => q.Ebene).ToList();
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr h, IntPtr nach, int x, int y, int b, int hoehe, uint flags);
+
+    /// <summary>
+    /// Die sichtbaren Overlays wieder zuoberst legen, ohne sie zu aktivieren.
+    /// </summary>
+    /// <remarks>
+    /// Mit Remote Play im Vollbild (seit 2026-09-29): liegt das Fenster der App selbst
+    /// "immer oben", gewinnt unter zwei solchen Fenstern das zuletzt aktivierte -- nach
+    /// jedem Klick ins Spiel waere der HUD darunter verschwunden.
+    /// </remarks>
+    public static void NachOben()
+    {
+        foreach (var q in Alle())
+        {
+            if (q is System.Windows.Forms.Form { Visible: true, IsHandleCreated: true } f)
+            {
+                // HWND_TOPMOST; SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+                try { SetWindowPos(f.Handle, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010 | 0x0200); } catch (Exception) { }
+            }
+        }
+    }
+
     public static void SetzeImSpiel(bool an)
     {
         if (ImSpiel == an) { return; }

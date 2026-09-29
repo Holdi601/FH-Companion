@@ -56,6 +56,9 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
     // HUD ueber dem Fenster (Schirmflaeche).
     private Rectangle? _spielImBild;
     private bool _zu;
+    // Das Programm hinter dem Fenster (bei Store-Apps das der App, nicht ApplicationFrameHost):
+    // im Vollbild ist vorne ein ANDERES Fenster derselben App.
+    private string _programm = string.Empty;
 
     public string Beschreibung { get; private set; }
 
@@ -137,7 +140,11 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         try { _sitzung.IsCursorCaptureEnabled = false; } catch (Exception) { }
         _sitzung.StartCapture();
         _fenster = fenster;
+        _programm = Fenster.ProgrammDatei(fenster);
     }
+
+    /// <summary>Das aufgenommene Fenster, fuer den Bericht: Programm, Klasse, versteckt.</summary>
+    public string Aufgenommen => _fenster == IntPtr.Zero ? "none" : Fenster.Beschreibe(_fenster);
 
     /// <summary>
     /// Nur das neueste Bild behalten -- umgewandelt wird erst, wenn ein Leser fragt.
@@ -211,8 +218,16 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
             {
                 var h = _fenster;
                 if (h == IntPtr.Zero || !Fenster.IsWindow(h) || Fenster.IsIconic(h)) { return null; }
-                if (Fenster.DwmGetWindowAttribute(h, 9, out var aussen, sizeof(Fenster.RECT)) != 0) { return null; }
                 var imBild = _spielImBild;
+                // VERSTECKT (Store-App im Vollbild): die Lage des sichtbaren Fensters derselben
+                // App -- das Bild darin ist dann das ganze Fenster, mittig 16:9.
+                if (Fenster.Versteckt(h) && _programm.Length > 0
+                    && Fenster.BestesFensterVon(_programm) is var sichtbar && sichtbar != IntPtr.Zero && sichtbar != h)
+                {
+                    h = sichtbar;
+                    imBild = null;
+                }
+                if (Fenster.DwmGetWindowAttribute(h, 9, out var aussen, sizeof(Fenster.RECT)) != 0) { return null; }
                 if (imBild is null)
                 {
                     var ganz = new Rectangle(0, 0, aussen.Right - aussen.Left, aussen.Bottom - aussen.Top);
@@ -228,12 +243,23 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
     }
 
     /// <summary>Ist das aufgenommene Fenster das aktive? (Der Controller spielt nur dann hinein.)</summary>
+    /// <remarks>
+    /// NICHT NUR DASSELBE FENSTER, AUCH DIESELBE APP (seit 2026-09-29). Die Xbox-App ist
+    /// eine Store-App: im Fenster steckt ihr Bild in einem Rahmen von ApplicationFrameHost,
+    /// im Vollbild ist vorne ein anderes Fenster der App. Verglichen wurde nur das Fenster
+    /// -- im Vollbild galt Remote Play darum nie als vorne, und HUD, Streckenvorschau und
+    /// Autonotiz blieben versteckt.
+    /// </remarks>
     public bool IstVorne
     {
         get
         {
             var h = _fenster;
-            return h != IntPtr.Zero && !Fenster.IsIconic(h) && Fenster.GetAncestor(Fenster.GetForegroundWindow(), 2) == h;
+            if (h == IntPtr.Zero) { return false; }
+            var vorne = Fenster.GetAncestor(Fenster.GetForegroundWindow(), 2);
+            if (vorne == IntPtr.Zero) { return false; }
+            if (vorne == h) { return !Fenster.IsIconic(h); }
+            return _programm.Length > 0 && Fenster.ProgrammDatei(vorne).Equals(_programm, StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -712,6 +738,26 @@ internal static class Fenster
             .OrderBy(f => f.Minimiert).ThenByDescending(f => (long)f.Breite * f.Hoehe).ToList();
         return passend.Count > 0 ? passend[0].Handle : IntPtr.Zero;
     }
+
+    private static IntPtr _letztesFenster;
+    private static string _letzteDatei = string.Empty;
+
+    /// <summary>Die Programmdatei hinter einem Fenster (ohne .exe) -- das letzte gemerkt, es wird oft gefragt.</summary>
+    internal static string ProgrammDatei(IntPtr h)
+    {
+        if (h == IntPtr.Zero) { return string.Empty; }
+        if (h == _letztesFenster) { return _letzteDatei; }
+        GetWindowThreadProcessId(h, out var pid);
+        var datei = ProgrammVon(ProzessVon(h, Klasse(h), pid)).Datei;
+        _letztesFenster = h;
+        _letzteDatei = datei;
+        return datei;
+    }
+
+    /// <summary>Ein Fenster in einer Zeile, fuer Protokoll und Bericht (ohne Titel).</summary>
+    internal static string Beschreibe(IntPtr h) =>
+        h == IntPtr.Zero ? "none"
+            : $"{ProgrammDatei(h)}/{Klasse(h)}{(Versteckt(h) ? " cloaked" : string.Empty)}{(IsIconic(h) ? " minimized" : string.Empty)}";
 
     /// <summary>Ist das Fenster versteckt ("cloaked": Store-App im Hintergrund, anderer Desktop)?</summary>
     internal static bool Versteckt(IntPtr h) => DwmGetWindowAttribute(h, 14, out int v, sizeof(int)) == 0 && v != 0;

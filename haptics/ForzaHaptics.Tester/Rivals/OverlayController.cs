@@ -1981,10 +1981,29 @@ internal sealed class OverlayController : IDisposable
     private void UeberFensterAnwenden()
     {
         if (!_settings.ConsoleMode) { return; }
-        var an = _settings.HudUeberFenster && Bildquellen.Aktiv is IFensterBild f && f.IstVorne
-                 && f.Schirmflaeche is not null;
+        var f = Bildquellen.Aktiv as IFensterBild;
+        var vorne = f?.IstVorne == true;
+        var flaeche = f?.Schirmflaeche;
+        var an = _settings.HudUeberFenster && vorne && flaeche is not null;
+        // JEDER WECHSEL INS PROTOKOLL (seit 2026-09-29), mit dem Grund: "der HUD fehlt"
+        // war sonst nicht von "das Fenster galt nicht als vorne" zu unterscheiden.
+        if (_settings.HudUeberFenster && an != _ueberFensterZuletzt)
+        {
+            _ueberFensterZuletzt = an;
+            ProtokollZeile($"hud over window {(an ? "on" : "off")}: in front={vorne}, area={(flaeche is { } r ? $"{r.Width}x{r.Height} at {r.X},{r.Y}" : "none")}, "
+                    + $"captured={(Bildquellen.Aktiv as FensterQuelle)?.Aufgenommen ?? Bildquellen.Aktiv?.GetType().Name ?? "none"}, "
+                    + $"foreground={Fenster.Beschreibe(Fenster.GetAncestor(Fenster.GetForegroundWindow(), 2))}");
+        }
         OverlayAusgabe.SetzeImSpiel(an);
+        if (an && DateTime.UtcNow - _nachObenAm > TimeSpan.FromSeconds(1.5))
+        {
+            _nachObenAm = DateTime.UtcNow;
+            OverlayAusgabe.NachOben();
+        }
     }
+
+    private bool? _ueberFensterZuletzt;
+    private DateTime _nachObenAm = DateTime.MinValue;
 
     private void FollowGameArea()
     {
@@ -2724,6 +2743,20 @@ internal sealed class OverlayController : IDisposable
     /// what makes the read correct -- and also means a screenshot cannot show what the
     /// panel said. Without this line a bad read is only ever a report from memory.
     /// </remarks>
+    /// <summary>Eine freie Zeile in reads.log (dort, wo auch die Leser stehen).</summary>
+    private static void ProtokollZeile(string text)
+    {
+        try
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "forza-overlay");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "reads.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {text}" + Environment.NewLine);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
     private static void LogRead(ScreenState? state, string? failure)
     {
         try

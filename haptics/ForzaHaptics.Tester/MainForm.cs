@@ -15,6 +15,9 @@ internal sealed class MainForm : Form, ITelemetryHost
     /// </summary>
     internal static bool NurVorschau;
 
+    /// <summary>Wurden beim Start die Controller-Reiter gebaut? null: noch kein Hauptfenster.</summary>
+    internal static bool? ControllerReiterDa;
+
     protected override bool ShowWithoutActivation => NurVorschau;
 
     protected override void OnShown(EventArgs e)
@@ -378,7 +381,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         textPanel.Controls.Add(modusSchalter);
         // Im Konsolenmodus haengt der Controller an der Konsole: keine Auswahl, kein
         // "Suche Steam Controller" -- sondern was hier stattdessen passiert.
-        if (imKonsolenModus && !Rivals.OverlaySettings.Load().ConsoleControllerHere)
+        if (imKonsolenModus && !Rivals.OverlaySettings.Load().ControllerHier)
         {
             controllerZeile.Visible = false;
             _controllerStatus.Text = Loc.T("Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.");
@@ -407,7 +410,10 @@ internal sealed class MainForm : Form, ITelemetryHost
         {
             BackColor = PanelColor,
             ForeColor = Color.WhiteSmoke,
-            Padding = new Padding(18)
+            Padding = new Padding(18),
+            // Das Xbox-Feld rechts ist hoeher als ein kleiner Schirm (seit 2026-09-29):
+            // ohne Rollbalken war der Controller-Haken darunter nicht zu erreichen.
+            AutoScroll = true,
         };
 
         var mappingTab = new TabPage("Mapping curves")
@@ -528,6 +534,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         // Vibrationen gibt es, wo der Controller an diesem Rechner haengt: am PC immer,
         // auf der Xbox mit Remote Play (seit 2026-09-29).
         var controllerHier = Rivals.OverlaySettings.Load().ControllerHier;
+        ControllerReiterDa = controllerHier;
         if (controllerHier) { tabs.TabPages.Add(testTab); }
         tabs.TabPages.Add(telemetryTab);
         tabs.TabPages.Add(inspectorTab);
@@ -1237,7 +1244,7 @@ internal sealed class MainForm : Form, ITelemetryHost
                 // KONSOLENMODUS: dafuer das Dashboard -- ausser der HUD liegt ueber dem
                 // Fenster von Remote Play (wie am PC). Mit Remote Play haengt der
                 // Controller an diesem Rechner: dann wird er auch hier verbunden.
-                if (_rivals.Settings.ConsoleControllerHere)
+                if (_rivals.Settings.ControllerHier)
                 {
                     // Die Vibration, die Remote Play von der Konsole weiterreicht, jeden
                     // Takt ueberschreiben -- wie das Rumpeln von Forza am PC.
@@ -2210,7 +2217,7 @@ internal sealed class MainForm : Form, ITelemetryHost
                 return true;
             }
             // Konsolenmodus: der Controller haengt an der Konsole -- ausser mit Remote Play.
-            if (settings.ConsoleMode && !settings.ConsoleControllerHere)
+            if (settings.ConsoleMode && !settings.ControllerHier)
             {
                 return false;
             }

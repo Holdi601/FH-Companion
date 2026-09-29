@@ -65,6 +65,91 @@ internal static class EdgeCaseTest
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
         XboxAndMemoryOptions();
+        HudSideFitsItsColumn();
+    }
+
+    /// <summary>
+    /// DIE EINSTELLUNGEN RECHTS IM HUD-REITER (2026-09-29): ein Nutzer fand Text, der rechts
+    /// abgeschnitten war -- und auch mit Rollen nicht zu sehen. Jeder Abschnitt muss in seine
+    /// Spalte passen, jedes Stueck darin in den Abschnitt, jeder Knopftext in seinen Knopf;
+    /// in den Sprachen mit den laengsten Saetzen.
+    /// </summary>
+    private static void HudSideFitsItsColumn()
+    {
+        var fehler = new List<string>();
+        try
+        {
+            foreach (var sprache in new[] { "en", "de", "es", "fr", "ru", "el", "pl", "hu", "pt" })
+            {
+                Loc.Waehle(sprache);
+                using var form = new Form
+                {
+                    StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000),
+                    ShowInTaskbar = false, Size = new Size(420, 900),
+                    // DIE SCHRIFT DES HAUPTFENSTERS: mit der Vorgabeschrift passte alles, im
+                    // echten Fenster (10 pt) war die zweite Zeile einer CheckBox abgeschnitten.
+                    Font = new Font("Segoe UI", 10),
+                };
+                var seite = new Rivals.HudPartPanel(new Rivals.OverlaySettings()) { Dock = DockStyle.Fill };
+                form.Controls.Add(seite);
+                form.Show();
+                Application.DoEvents();
+                var spalten = seite.Controls.OfType<Rivals.AbschnittSpalten>().First();
+                foreach (Control abschnitt in spalten.Controls)
+                {
+                    var kopf = abschnitt.Controls.Count > 0 ? abschnitt.Controls[0].Text : "?";
+                    if (abschnitt.Width > Rivals.AbschnittSpalten.SpaltenBreite)
+                    {
+                        fehler.Add($"[{sprache}] section '{kopf}' is {abschnitt.Width} wide (column {Rivals.AbschnittSpalten.SpaltenBreite})");
+                    }
+                    foreach (var (c, links) in Nachkommen(abschnitt, 0))
+                    {
+                        if (!c.Visible) { continue; }
+                        if (links + c.Width > Rivals.AbschnittSpalten.SpaltenBreite)
+                        {
+                            fehler.Add($"[{sprache}] '{kopf}': {c.GetType().Name} '{Kurz(c.Text)}' ends at {links + c.Width}");
+                        }
+                        if (c is CheckBox { AutoSize: false } haken && haken.Text.Length > 0)
+                        {
+                            var hoch = TextRenderer.MeasureText(haken.Text, haken.Font, new Size(haken.Width - 30, 0),
+                                                                TextFormatFlags.WordBreak).Height;
+                            if (hoch > haken.Height - 2)
+                            {
+                                fehler.Add($"[{sprache}] '{kopf}': checkbox '{Kurz(haken.Text)}' needs {hoch} high, has {haken.Height}");
+                            }
+                        }
+                        if (c is ButtonBase and not CheckBox and not RadioButton && c.Text.Length > 0)
+                        {
+                            var noetig = TextRenderer.MeasureText(c.Text, c.Font).Width + 8;
+                            if (noetig > c.Width)
+                            {
+                                fehler.Add($"[{sprache}] '{kopf}': button '{Kurz(c.Text)}' needs {noetig}, has {c.Width}");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        finally
+        {
+            Loc.Waehle(Rivals.OverlaySettings.Load().Language);
+        }
+        foreach (var f in fehler.Take(40)) { Console.WriteLine("  HUD-Seite: " + f); }
+        Soll(fehler.Count == 0, $"{fehler.Count} Stellen in den HUD-Einstellungen passen nicht in ihre Spalte");
+
+        static string Kurz(string t) => t.Length > 40 ? t[..40] + "..." : t;
+        static IEnumerable<(Control, int)> Nachkommen(Control c, int versatz)
+        {
+            foreach (Control k in c.Controls)
+            {
+                var links = versatz + k.Left;
+                yield return (k, links);
+                if (k is not ComboBox and not NumericUpDown and not TrackBar)
+                {
+                    foreach (var x in Nachkommen(k, links)) { yield return x; }
+                }
+            }
+        }
     }
 
     /// <summary>Eine Bildquelle zum Testen mit einem vorgegebenen Bild.</summary>
@@ -324,6 +409,12 @@ internal static class EdgeCaseTest
         e.ConsoleControllerHere = true;
         Soll(e.ControllerHier && !e.SpeicherLesen, "Remote Play: Controller nicht hier, oder Speicher gelesen");
         Soll(e.VibrationJedenTakt, "Remote Play: die weitergereichte Vibration der Konsole wird nicht jeden Takt ueberschrieben");
+        // Die Quelle "Xbox Remote Play" heisst: der Controller haengt HIER -- ohne Haken (2026-09-29).
+        var rp = new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "window" };
+        Soll(rp.IstRemotePlay && rp.ControllerHier && rp.VibrationJedenTakt,
+             "Remote Play als Quelle: der Controller gilt nicht als hier, der Blueprint editor fehlte");
+        Soll(!new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "device" }.ControllerHier,
+             "mit einer Aufnahmekarte gilt der Controller als hier");
         using (var pads = new GenericGamepadHaptics())
         using (var ds = new DualSenseHaptics())
         {

@@ -71,17 +71,26 @@ internal sealed class HudTab : UserControl
         _side.AufnahmeFensterWunsch += () => AufnahmeFensterWunsch?.Invoke();
         _side.Select(HudPart.Delta);
 
+        // HOCH WIE SEIN TEXT (seit 2026-09-29): mit fester Hoehe war die zweite Zeile in
+        // schmalen Fenstern und langen Sprachen abgeschnitten. Und beide Saetze uebersetzt --
+        // vorher nur der Anfang des ersten (zusammengesetzte Texte findet der Sprachscanner nicht).
         var hint = new Label
         {
             Dock = DockStyle.Top,
-            Height = 46,
             ForeColor = Color.Gainsboro,
             Padding = new Padding(12, 7, 12, 6),
-            Text = Loc.T("Drag the blocks where you want them. Mouse wheel over a block ")
-                   + "resizes it. Everything saves itself.\r\n"
-                   + "The grey box is the game's own lap time and progress -- it sits "
-                   + "top left and cannot be moved, so keep clear of it.",
+            Text = Loc.T("Drag the blocks where you want them. Mouse wheel over a block resizes it. Everything saves itself.")
+                   + "\r\n"
+                   + Loc.T("The grey box is the game's own lap time and progress -- it sits top left and cannot be moved, so keep clear of it."),
         };
+        void HinweisHoehe()
+        {
+            var breite = Math.Max(200, Width - hint.Padding.Horizontal);
+            hint.Height = TextRenderer.MeasureText(hint.Text, hint.Font, new Size(breite, 0),
+                                                   TextFormatFlags.WordBreak).Height + hint.Padding.Vertical + 2;
+        }
+        HinweisHoehe();
+        SizeChanged += (_, _) => HinweisHoehe();
 
         var toggle = new Button
         {
@@ -97,8 +106,8 @@ internal sealed class HudTab : UserControl
         {
             _shown = !_shown;
             toggle.Text = _shown
-                ? "Hide it from the real screen"
-                : "Show it on the real screen while I set it up";
+                ? Loc.T("Hide it from the real screen")
+                : Loc.T("Show it on the real screen while I set it up");
             _preview(_shown);
         };
 
@@ -885,8 +894,7 @@ internal sealed class HudPartPanel : Panel
             // "Course maps on the Event Sign Up screen" endete bei "scr".
             var c = new CheckBox { Text = text, ForeColor = Color.Gainsboro, AutoSize = false,
                                    Width = 232, Checked = an, TextAlign = ContentAlignment.MiddleLeft };
-            c.Height = TextRenderer.MeasureText(text, c.Font, new Size(232 - 22, 0),
-                                                TextFormatFlags.WordBreak).Height + 8;
+            UmbruchHoehe(c);
             c.CheckedChanged += (_, _) => { if (_quiet) { return; } setzen(c.Checked); Changed?.Invoke(); };
             Rein(c);
             return c;
@@ -1101,12 +1109,16 @@ internal sealed class HudPartPanel : Panel
 
         // ---- EINGABESPUREN ------------------------------------------------------------
         Abschnitt(Titel(HudPart.Inputs), HudPart.Inputs);
+        // UMBRECHEND wie Schalter(): mit AutoSize lief der Text in langen Sprachen ueber die
+        // Spalte hinaus und lag unter der naechsten -- auch mit Rollen nicht zu lesen.
         var spuren = new CheckBox
         {
             Text = Loc.T("Show throttle, brake, clutch, steering, gear"),
-            ForeColor = Color.Gainsboro, AutoSize = true,
+            ForeColor = Color.Gainsboro, AutoSize = false, Width = 232,
+            TextAlign = ContentAlignment.MiddleLeft,
             Checked = settings.HudInputs,
         };
+        UmbruchHoehe(spuren);
         spuren.CheckedChanged += (_, _) =>
         {
             if (_quiet) { return; }
@@ -1298,9 +1310,11 @@ internal sealed class HudPartPanel : Panel
         var merken = new CheckBox
         {
             Text = Loc.T("Archive every lap for heatmaps"),
-            ForeColor = Color.Gainsboro, AutoSize = true,
+            ForeColor = Color.Gainsboro, AutoSize = false, Width = 232,
+            TextAlign = ContentAlignment.MiddleLeft,
             Checked = settings.ArchiveLaps,
         };
+        UmbruchHoehe(merken);
         merken.CheckedChanged += (_, _) =>
         {
             if (_quiet) { return; }
@@ -1607,6 +1621,33 @@ internal sealed class HudPartPanel : Panel
         return knopf;
     }
 
+    /// <summary>
+    /// So breit darf der Text neben dem Kaestchen einer 232 breiten CheckBox sein. 210 war
+    /// zu knapp: "Mostrar la franja durante la carrera" mass eine Zeile, stand aber in zwei
+    /// -- und die zweite war abgeschnitten.
+    /// </summary>
+    internal const int HakenText = 232 - 34;
+
+    /// <summary>
+    /// Eine umbrechende CheckBox so hoch wie ihr Text -- und NEU, sobald sich Schrift oder
+    /// Breite aendern (seit 2026-09-29). Gemessen wurde beim Anlegen mit der Vorgabeschrift
+    /// (9 pt); im Hauptfenster erbt sie Segoe UI 10 pt, die zweite Zeile war abgeschnitten.
+    /// </summary>
+    internal static void UmbruchHoehe(CheckBox c)
+    {
+        var breite = -1;
+        void Neu()
+        {
+            breite = c.Width;
+            c.Height = TextRenderer.MeasureText(c.Text, c.Font, new Size(Math.Max(40, c.Width - 34), 0),
+                                                TextFormatFlags.WordBreak).Height + 8;
+        }
+        Neu();
+        c.FontChanged += (_, _) => Neu();
+        c.TextChanged += (_, _) => Neu();
+        c.SizeChanged += (_, _) => { if (c.Width != breite) { Neu(); } };
+    }
+
     private static Label Head(string text) => new()
     {
         Text = text,
@@ -1634,7 +1675,9 @@ internal sealed class HudPartPanel : Panel
 /// </remarks>
 internal sealed class AbschnittSpalten : Panel
 {
-    public const int SpaltenBreite = 258;
+    // 268: jeder Abschnitt ist 262 breit (Farbzeile 236 plus Rand) -- bei 258 lagen die
+    // Spalten 4 Punkte uebereinander, und eine Rollleiste zur Seite erschien ohne Grund.
+    public const int SpaltenBreite = 268;
     private bool _ordnet;
 
     public AbschnittSpalten()

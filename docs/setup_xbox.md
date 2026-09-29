@@ -110,8 +110,8 @@ PC**.
 
 ![Remote Play with the HUD over the game window](img/setup/xbox_remoteplay.png)
 
-The HUD then shows over the Remote Play window while it is in front, and hides
-when you switch to another program. Place and size it in the **Lap delta HUD**
+The HUD then shows over the Remote Play window while it is in front, also in full
+screen, and hides when you switch to another program. Place and size it in the **Lap delta HUD**
 tab, as on the PC. The window may sit behind other windows on a screen, just not
 minimized. Windows draws a yellow frame around it while an app captures it.
 **Vibration with Remote Play.** Your controller is plugged into this PC, so the
@@ -192,4 +192,8 @@ mode. Only Rivals and Horizon Play laps count on the website.
 - The address in Forza is exactly the one the app shows, and the port matches.
 - The firewall line under the address table is green. If not, press **Allow in
   Windows Firewall** there.
+- Something else not working (HUD, course maps, car notes)? At the bottom of the
+  Xbox panel, **Something not working? Copy a report for whoever helps you** puts a
+  report on the clipboard: settings, the captured window, every window on this PC
+  and the last lines of the app's logs. Paste it into a message to whoever helps you.
 - The Xbox and this PC are in the same network.
