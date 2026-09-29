@@ -679,6 +679,25 @@ internal static class EdgeCaseTest
         Soll(liste.Select(e => e.Rang).SequenceEqual(liste.Select(e => e.Rang).OrderBy(r => r)), "die Fensterliste ist nicht nach Rang geordnet");
         Console.WriteLine($"  Fensterliste: {liste.Count} Fenster (vorher {Rivals.Fenster.Sichtbare().Count}), "
                           + string.Join(", ", liste.GroupBy(e => e.Rang).Select(g => $"Rang {g.Key}: {g.Count()}")));
+        // Fenster ohne Titel eines Remote-Play-Programms (Xbox-App im Vollbild): gesucht
+        // wird ueber das Programm, angezeigt "(no title)".
+        var ohneTitel = new Rivals.Fenster.Eintrag("", "Xbox app", false, 0, "program:XboxPcApp");
+        Soll(ohneTitel.Schluessel == "program:XboxPcApp" && ohneTitel.ToString().Contains("Xbox app"),
+             "ein Fenster ohne Titel bekommt keinen Suchschluessel");
+        Soll(Rivals.Fenster.Finden("program:gibt-es-nicht-7c1") == IntPtr.Zero, "ein unbekanntes Programm wird gefunden");
+        var alleFenster = Rivals.Fenster.AlleFenster();
+        Soll(alleFenster.Count >= liste.Count && alleFenster.All(f => f.Datei.Length > 0),
+             "die vollstaendige Fensterliste ist kleiner als die Auswahl");
+        // Auf diesem Rechner: ist die Xbox-App offen, findet "XBOX" sie -- und ueber das
+        // Programm dasselbe Fenster, wenn sie nur einen Rahmen hat.
+        if (alleFenster.Any(f => f.Datei.StartsWith("XboxPcApp", StringComparison.OrdinalIgnoreCase) && f.Sichtbar && f.Versteckt == 0))
+        {
+            Soll(Rivals.Fenster.Finden("program:XboxPcApp") != IntPtr.Zero, "die offene Xbox-App wird ueber ihr Programm nicht gefunden");
+            Soll(liste.Any(e => e.Programm == "Xbox app" && e.Rang == 0), "die offene Xbox-App steht nicht oben in der Liste");
+        }
+        var bericht = Rivals.Fenster.Bericht("XBOX");
+        Soll(bericht.Contains("program | class | title") && bericht.Contains("source \"XBOX\" finds:"),
+             "der Fensterbericht ist unvollstaendig");
         var xbox = new Rivals.Fenster.Eintrag("XBOX", "Xbox app", false, 0);
         Soll(xbox.ToString().Contains("Xbox app") && xbox.ToString().StartsWith("XBOX"), "der Eintrag nennt das Programm nicht");
         using (var feldListe = new ComboBox())

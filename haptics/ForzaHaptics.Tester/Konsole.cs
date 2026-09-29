@@ -207,7 +207,7 @@ internal static class Konsole
 
     /// <summary>Was ins Feld "Fenster" gehoert: der Titel -- auch wenn dort gerade "Titel — Programm" steht.</summary>
     internal static string FensterSchluessel(ComboBox feld) =>
-        feld.Items.OfType<Rivals.Fenster.Eintrag>().FirstOrDefault(e => e.ToString() == feld.Text)?.Titel
+        feld.Items.OfType<Rivals.Fenster.Eintrag>().FirstOrDefault(e => e.ToString() == feld.Text)?.Schluessel
         ?? feld.Text.Trim();
 
     /// <summary>Das Bedienfeld. Im PC-Modus nur der Hinweis auf den Schalter oben.</summary>
@@ -289,8 +289,31 @@ internal static class Konsole
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false,
             FlowDirection = FlowDirection.TopDown, Margin = new Padding(0),
         };
+        // FUER DIE FEHLERSUCHE (seit 2026-09-29): steht das eigene Fenster nicht in der
+        // Liste, kopiert dieser Verweis alle Fenster in die Zwischenablage -- zum Schicken an
+        // den, der hilft. Nur auf Klick; nichts verlaesst den Rechner von selbst.
+        var bericht = new LinkLabel
+        {
+            Text = Loc.T("Your window is not in the list? Copy the list of all windows"), AutoSize = true,
+            LinkColor = Color.FromArgb(120, 170, 255), ActiveLinkColor = Color.White,
+            Margin = new Padding(22, 0, 0, 4), MaximumSize = new Size(450, 0),
+        };
+        bericht.LinkClicked += (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText(Rivals.Fenster.Bericht(s.VideoWindow));
+                MessageBox.Show(stapel.FindForm(),
+                                Loc.T("The list of all windows is on the clipboard. Paste it into a message to whoever helps you."),
+                                AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception)
+            {
+            }
+        };
         fensterZeile.Controls.Add(fenster);
         fensterZeile.Controls.Add(waehlen);
+        fensterZeile.Controls.Add(bericht);
         felder["device"] = geraet;
         felder["window"] = fensterZeile;
         felder["url"] = adresse;
@@ -380,16 +403,16 @@ internal static class Konsole
         {
             if (fenster.SelectedItem is Rivals.Fenster.Eintrag e)
             {
-                fenster.BeginInvoke(() => { fenster.Text = e.Titel; fenster.SelectionLength = 0; });
+                fenster.BeginInvoke(() => { fenster.Text = e.Schluessel; fenster.SelectionLength = 0; });
             }
         };
         waehlen.Click += async (_, _) =>
         {
             string? titel;
             try { titel = await Rivals.Fenster.MitWindowsWaehlenAsync(stapel.FindForm()?.Handle ?? IntPtr.Zero); }
-            catch (Exception) { titel = null; }
-            if (string.IsNullOrWhiteSpace(titel)) { return; }
-            if (Rivals.Fenster.Finden(titel) == IntPtr.Zero)
+            catch (Exception) { titel = string.Empty; }
+            if (titel is { Length: 0 }) { return; }
+            if (titel is null || Rivals.Fenster.Finden(titel) == IntPtr.Zero)
             {
                 // Das Auswahlfenster bietet auch ganze Bildschirme an -- die haben keinen Fenstertitel.
                 MessageBox.Show(stapel.FindForm(), Loc.T("That is a whole screen, not a window. Pick the window that shows the game."),

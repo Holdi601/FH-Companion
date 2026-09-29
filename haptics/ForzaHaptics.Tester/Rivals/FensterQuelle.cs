@@ -89,6 +89,14 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         lock (_schloss)
         {
             if (_zu) { return; }
+            // Ein VERSTECKT gewordenes Fenster liefert kein Bild mehr -- so der Rahmen der
+            // Xbox-App, sobald sie ins Vollbild geht. Dann das Fenster neu suchen; findet die
+            // Suche dasselbe, bleibt es dabei.
+            if (_sitzung is not null && _fenster != IntPtr.Zero && Fenster.IsWindow(_fenster)
+                && Fenster.Versteckt(_fenster) && _finden() is var besser && besser != IntPtr.Zero && besser != _fenster)
+            {
+                Schliessen();
+            }
             if (_sitzung is not null && _fenster != IntPtr.Zero && Fenster.IsWindow(_fenster))
             {
                 Beschreibung = Fenster.IsIconic(_fenster)
@@ -430,6 +438,34 @@ internal static class Fenster
     {
         if (string.IsNullOrWhiteSpace(teil)) { return IntPtr.Zero; }
         var t = teil.Trim();
+        // Ein Fenster ohne Titel (Store-App im Vollbild): ueber sein Programm.
+        if (t.StartsWith("program:", StringComparison.OrdinalIgnoreCase))
+        {
+            return BestesFensterVon(t["program:".Length..].Trim());
+        }
+        var gefunden = NachTitel(t);
+        if (gefunden != IntPtr.Zero) { return gefunden; }
+        // KEIN FENSTER MIT DIESEM TITEL -- etwa "XBOX", waehrend die Xbox-App im Vollbild
+        // ist: dann ist der Rahmen versteckt und das Bild in einem Fenster ohne Titel.
+        // Nennt der Text ein Remote-Play-Programm, dessen bestes Fenster.
+        foreach (var (datei, name) in Spielbildprogramme)
+        {
+            if (!name.StartsWith(t, StringComparison.OrdinalIgnoreCase)
+                && !datei.StartsWith(t, StringComparison.OrdinalIgnoreCase)
+                && !t.Contains(datei, StringComparison.OrdinalIgnoreCase)) { continue; }
+            var alle = AlleFenster();
+            foreach (var d in alle.Where(f => f.Datei.StartsWith(datei, StringComparison.OrdinalIgnoreCase))
+                                  .Select(f => f.Datei).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var h = BestesFensterVon(d, alle);
+                if (h != IntPtr.Zero) { return h; }
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    private static IntPtr NachTitel(string t)
+    {
         var alle = Sichtbare();
         foreach (var pruefe in new Func<string, bool>[]
                  {
@@ -546,14 +582,18 @@ internal static class Fenster
                                             || t.Contains("xbox.com", StringComparison.OrdinalIgnoreCase))
                ?? titel.FirstOrDefault(t => t.StartsWith("Xbox", StringComparison.OrdinalIgnoreCase))
                // Sonst ein bekanntes Remote-Play-Programm, auch unter anderem Titel.
-               ?? Waehlbare().FirstOrDefault(e => e.Rang == 0 && !e.Minimiert)?.Titel;
+               ?? Waehlbare().FirstOrDefault(e => e.Rang == 0 && !e.Minimiert)?.Schluessel;
     }
 
     /// <summary>Ein Fenster in der Auswahlliste: gesucht wird nach dem Titel, angezeigt auch das Programm.</summary>
-    internal sealed record Eintrag(string Titel, string Programm, bool Minimiert, int Rang)
+    internal sealed record Eintrag(string Titel, string Programm, bool Minimiert, int Rang, string? Suche = null)
     {
+        /// <summary>Was ins Feld kommt und wonach gesucht wird: der Titel, oder "program:" + Datei.</summary>
+        public string Schluessel => Suche ?? Titel;
+
         public override string ToString() =>
-            Titel + "   \u2014   " + Programm + (Minimiert ? "   (" + Loc.T("minimized") + ")" : string.Empty);
+            (Titel.Length > 0 ? Titel : "(" + Loc.T("no title") + ")") + "   \u2014   " + Programm
+            + (Minimiert ? "   (" + Loc.T("minimized") + ")" : string.Empty);
     }
 
     /// <summary>Programme, die ein Konsolenbild zeigen: Dateiname (ohne .exe) und wie es in der Liste heisst.</summary>
@@ -587,6 +627,43 @@ internal static class Fenster
         return 2;
     }
 
+    /// <summary>Ein Top-Level-Fenster mit allem, was Auswahl, Suche und Bericht brauchen.</summary>
+    internal readonly record struct Roh(IntPtr Handle, string Titel, string Klasse, string Datei, string Name,
+                                        bool Sichtbar, int Versteckt, bool Werkzeug, bool Minimiert,
+                                        int Breite, int Hoehe);
+
+    /// <summary>Gehoert die Datei zu einem Programm, das ein Konsolenbild zeigt?</summary>
+    internal static bool IstSpielbildProgramm(string datei) =>
+        Spielbildprogramme.Any(p => datei.StartsWith(p.Datei, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>ALLE Top-Level-Fenster anderer Programme -- auch unsichtbare, versteckte, titellose.</summary>
+    internal static List<Roh> AlleFenster()
+    {
+        var eigene = (uint)Environment.ProcessId;
+        var programme = new Dictionary<uint, (string Datei, string Name)>();
+        var raus = new List<Roh>();
+        EnumWindows((h, _) =>
+        {
+            GetWindowThreadProcessId(h, out var pid);
+            if (pid == eigene) { return true; }
+            var klasse = Klasse(h);
+            var echt = ProzessVon(h, klasse, pid);
+            if (!programme.TryGetValue(echt, out var programm))
+            {
+                programm = ProgrammVon(echt);
+                programme[echt] = programm;
+            }
+            var versteckt = DwmGetWindowAttribute(h, 14, out int v, sizeof(int)) == 0 ? v : 0;
+            GetWindowRect(h, out var r);
+            raus.Add(new Roh(h, Titel(h), klasse, programm.Datei, programm.Name, IsWindowVisible(h), versteckt,
+                             (GetWindowLongW(h, -20) & 0x80) != 0, IsIconic(h), r.Right - r.Left, r.Bottom - r.Top));
+            return true;
+        }, IntPtr.Zero);
+        return raus;
+    }
+
+    private static bool GrossGenug(Roh f) => f.Minimiert || (f.Breite >= 320 && f.Hoehe >= 180);
+
     /// <summary>
     /// Die Fenster fuer die Auswahlliste (seit 2026-09-29): nur, was ein Spielbild sein
     /// kann, mit dem Programm dahinter, und die wahrscheinlichen zuerst.
@@ -594,29 +671,50 @@ internal static class Fenster
     /// <remarks>
     /// Vorher stand dort jedes sichtbare Fenster mit Titel, nach dem Alphabet -- auch der
     /// Schreibtisch ("Program Manager"), das NVIDIA-Overlay und Leisten. Ein Nutzer mit
-    /// Remote Play fand sein Fenster darin nicht; alles, was er sah, war falsch. Jetzt
-    /// fallen Werkzeugfenster und winzige Fenster weg, das Programm steht daneben (die
-    /// Xbox-App heisst im Titel nur "XBOX"), und Remote-Play-Programme stehen oben. Ein
-    /// minimiertes Fenster bleibt drin, aber als solches markiert: minimiert liefert es
-    /// kein Bild, und wer es nicht findet, sucht sonst am falschen Ende.
+    /// Remote Play fand sein Fenster darin nicht. Jetzt fallen Werkzeugfenster und
+    /// winzige Fenster weg, das Programm steht daneben (die Xbox-App heisst im Titel nur
+    /// "XBOX"), und Remote-Play-Programme stehen oben.
+    ///
+    /// FENSTER EINES REMOTE-PLAY-PROGRAMMS ZEIGT ES AUCH OHNE TITEL. Die Xbox-App ist eine
+    /// Store-App: ihr Rahmen "XBOX" gehoert ApplicationFrameHost, und im Vollbild -- so
+    /// spielt man Remote Play -- wandert das Bild in ein eigenes Fenster, der Rahmen wird
+    /// versteckt. Wer nur nach sichtbaren Fenstern mit Titel suchte, fand dann gar nichts.
+    /// Solche Eintraege suchen ueber "program:" und den Dateinamen.
     /// </remarks>
     internal static List<Eintrag> Waehlbare()
     {
         var raus = new List<Eintrag>();
-        foreach (var (h, titel) in Sichtbare())
+        foreach (var f in AlleFenster())
         {
-            // WS_EX_TOOLWINDOW: Overlays (NVIDIA, Game Bar), Leisten, Hilfsfenster.
-            if ((GetWindowLongW(h, -20) & 0x80) != 0) { continue; }
-            var klasse = Klasse(h);
-            if (klasse is "Progman" or "WorkerW" or "Shell_TrayWnd" or "Shell_SecondaryTrayWnd") { continue; }
-            var minimiert = IsIconic(h);
-            if (!minimiert && GetWindowRect(h, out var r) && (r.Right - r.Left < 320 || r.Bottom - r.Top < 180)) { continue; }
-            var (datei, name) = Programm(h, klasse);
-            raus.Add(new Eintrag(titel, name, minimiert, Rang(titel, datei)));
+            if (!f.Sichtbar || f.Versteckt != 0 || !GrossGenug(f)) { continue; }
+            if (f.Klasse is "Progman" or "WorkerW" or "Shell_TrayWnd" or "Shell_SecondaryTrayWnd") { continue; }
+            var bekannt = IstSpielbildProgramm(f.Datei);
+            // Werkzeugfenster und Fenster ohne Titel nur von Remote-Play-Programmen.
+            if (!bekannt && (f.Werkzeug || f.Titel.Length == 0)) { continue; }
+            var suche = f.Titel.Length > 0 ? null : "program:" + f.Datei;
+            raus.Add(new Eintrag(f.Titel, f.Name, f.Minimiert, Rang(f.Titel, f.Datei), suche));
         }
-        return raus.OrderBy(e => e.Rang).ThenBy(e => e.Minimiert)
+        return raus.GroupBy(e => e.Schluessel, StringComparer.OrdinalIgnoreCase).Select(g => g.First())
+                   .OrderBy(e => e.Rang).ThenBy(e => e.Minimiert)
                    .ThenBy(e => e.Titel, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
+
+    /// <summary>
+    /// Das beste Fenster eines Programms: sichtbar, nicht versteckt, nicht minimiert, das
+    /// groesste -- sonst ein minimiertes (das die Vorschau dann auch so nennt).
+    /// </summary>
+    internal static IntPtr BestesFensterVon(string datei, List<Roh>? alle = null)
+    {
+        var passend = (alle ?? AlleFenster())
+            .Where(f => f.Sichtbar && f.Versteckt == 0 && GrossGenug(f)
+                        && f.Datei.Equals(datei, StringComparison.OrdinalIgnoreCase)
+                        && f.Klasse is not ("IME" or "MSCTFIME UI"))
+            .OrderBy(f => f.Minimiert).ThenByDescending(f => (long)f.Breite * f.Hoehe).ToList();
+        return passend.Count > 0 ? passend[0].Handle : IntPtr.Zero;
+    }
+
+    /// <summary>Ist das Fenster versteckt ("cloaked": Store-App im Hintergrund, anderer Desktop)?</summary>
+    internal static bool Versteckt(IntPtr h) => DwmGetWindowAttribute(h, 14, out int v, sizeof(int)) == 0 && v != 0;
 
     private static string Klasse(IntPtr h)
     {
@@ -625,21 +723,22 @@ internal static class Fenster
         return s.ToString();
     }
 
-    /// <summary>Das Programm hinter einem Fenster: Dateiname und ein lesbarer Name.</summary>
-    /// <remarks>
-    /// Store-Apps haengen in einem Rahmen von ApplicationFrameHost; das eigentliche
-    /// Programm gehoert dem Kindfenster darin. Gefragt wird mit dem geringsten
-    /// Zugriffsrecht -- das geht auch bei Programmen, die als Administrator laufen.
-    /// </remarks>
-    private static (string Datei, string Name) Programm(IntPtr h, string klasse)
+    /// <summary>Der Prozess hinter einem Fenster -- bei Store-Apps der der App, nicht der des Rahmens.</summary>
+    private static uint ProzessVon(IntPtr h, string klasse, uint pid)
     {
-        var fenster = h;
         if (klasse == "ApplicationFrameWindow"
             && FindWindowExW(h, IntPtr.Zero, "Windows.UI.Core.CoreWindow", null) is var kind && kind != IntPtr.Zero)
         {
-            fenster = kind;
+            GetWindowThreadProcessId(kind, out var kindPid);
+            return kindPid;
         }
-        GetWindowThreadProcessId(fenster, out var pid);
+        return pid;
+    }
+
+    /// <summary>Das Programm zu einem Prozess: Dateiname und ein lesbarer Name.</summary>
+    /// <remarks>Mit dem geringsten Zugriffsrecht gefragt -- das geht auch bei Programmen als Administrator.</remarks>
+    private static (string Datei, string Name) ProgrammVon(uint pid)
+    {
         var pfad = string.Empty;
         var p = OpenProcess(0x1000, false, pid);
         if (p != IntPtr.Zero)
@@ -674,12 +773,50 @@ internal static class Fenster
     /// Das Fenster mit dem Auswahlfenster von Windows waehlen -- dem, das auch Teams und
     /// der Browser beim Bildschirmteilen zeigen, mit einem Vorschaubild je Fenster.
     /// </summary>
-    /// <returns>Der Titel des gewaehlten Fensters; null bei Abbruch.</returns>
+    /// <returns>Was ins Feld kommt (Titel oder "program:" + Datei); leer bei Abbruch; null, wenn es kein Fenster war.</returns>
     internal static async Task<string?> MitWindowsWaehlenAsync(IntPtr besitzer)
     {
         var waehler = new GraphicsCapturePicker();
         WinRT.Interop.InitializeWithWindow.Initialize(waehler, besitzer);
         var item = await waehler.PickSingleItemAsync();
-        return item?.DisplayName;
+        if (item is null) { return string.Empty; }
+        var name = item.DisplayName ?? string.Empty;
+        if (name.Trim().Length > 0 && Finden(name) != IntPtr.Zero) { return name; }
+        // Ohne (wiederauffindbaren) Titel: das Fenster ueber seine Groesse suchen und sein
+        // Programm merken -- so findet es die Quelle auch nach einem Neustart.
+        var g = item.Size;
+        var alle = AlleFenster();
+        var treffer = alle.Where(f => f.Sichtbar && f.Versteckt == 0 && Math.Abs(f.Breite - g.Width) <= 24
+                                      && Math.Abs(f.Hoehe - g.Height) <= 48)
+                          .OrderByDescending(f => f.Titel == name).ThenByDescending(f => IstSpielbildProgramm(f.Datei))
+                          .FirstOrDefault();
+        return treffer.Handle == IntPtr.Zero ? null
+             : treffer.Titel.Length > 0 && Finden(treffer.Titel) == treffer.Handle ? treffer.Titel
+             : "program:" + treffer.Datei;
+    }
+
+    /// <summary>
+    /// Alle Fenster als Text -- fuer jemanden, der helfen soll, wenn das eigene nicht in der
+    /// Liste steht. Nur auf Knopfdruck, und in die Zwischenablage, nirgendwohin sonst.
+    /// </summary>
+    internal static string Bericht(string? gesucht)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine(AppInfo.Name + " " + (AppUpdate.OwnBuild() ?? "dev") + " -- window list, " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+        sb.AppendLine("Windows " + Environment.OSVersion.Version + ", graphics capture " + (FensterQuelle.Unterstuetzt ? "yes" : "no"));
+        if (!string.IsNullOrWhiteSpace(gesucht))
+        {
+            var h = Finden(gesucht);
+            sb.AppendLine($"source \"{gesucht}\" finds: " + (h == IntPtr.Zero ? "nothing" : $"{Klasse(h)}, \"{Titel(h)}\""));
+        }
+        sb.AppendLine("program | class | title | visible | cloaked | size | tool | minimized | listed");
+        var liste = Waehlbare();
+        foreach (var f in AlleFenster().Where(f => f.Sichtbar || IstSpielbildProgramm(f.Datei)))
+        {
+            var drin = liste.Any(e => e.Titel == f.Titel && f.Titel.Length > 0)
+                       || liste.Any(e => e.Suche == "program:" + f.Datei);
+            sb.AppendLine($"{f.Datei} | {f.Klasse} | \"{f.Titel}\" | {f.Sichtbar} | {f.Versteckt} | {f.Breite}x{f.Hoehe} | {f.Werkzeug} | {f.Minimiert} | {drin}");
+        }
+        return sb.ToString();
     }
 }

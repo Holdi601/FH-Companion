@@ -101,6 +101,10 @@ suggests the Xbox window. The list next to it names the program behind each wind
 and puts Remote Play programs first; the Xbox app's window is simply called "XBOX".
 Not sure which one it is? **Pick with a preview …** opens Windows' own picker with a
 live picture of every window. Any window that shows the game works the same way.
+In full screen the Xbox app's picture sits in a window without a title; the list
+shows it as "(no title) — Xbox app". Still not there? **Your window is not in the
+list? Copy the list of all windows** puts a list of every window on the clipboard,
+to paste into a message to whoever helps you.
 Under **Where the HUD shows**, choose **Over the game window, like playing on the
 PC**.
 

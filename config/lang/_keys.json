@@ -396,7 +396,7 @@
   "Konsole.cs:253"
  ],
  "In the dashboard window": [
-  "Konsole.cs:450"
+  "Konsole.cs:475"
  ],
  "In the game now:": [
   "Rivals/CarNotesTab.cs:190"
@@ -411,7 +411,7 @@
   "scripts/contrib_scan.py:70"
  ],
  "It shows while that window is in front. Move and size the HUD in the Lap delta HUD tab, as on the PC.": [
-  "Konsole.cs:458"
+  "Konsole.cs:483"
  ],
  "Its first time here on the website -- thanks to you!": [
   "Rivals/OverlayController.cs:3753",
@@ -505,7 +505,7 @@
   "BlueprintEditor.cs:63"
  ],
  "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.": [
-  "Konsole.cs:326"
+  "Konsole.cs:351"
  ],
  "New car on the leaderboard!": [
   "Rivals/OverlayController.cs:3751",
@@ -546,8 +546,8 @@
   "Rivals/CarCollectionTab.cs:451"
  ],
  "No picture yet": [
-  "Konsole.cs:301",
-  "Konsole.cs:498"
+  "Konsole.cs:326",
+  "Konsole.cs:523"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
@@ -624,7 +624,7 @@
   "Konsole.cs:257"
  ],
  "Over the game window, like playing on the PC": [
-  "Konsole.cs:455"
+  "Konsole.cs:480"
  ],
  "Owned": [
   "Rivals/CarCollectionTab.cs:131"
@@ -969,7 +969,7 @@
   "MainForm.cs:977"
  ],
  "That is a whole screen, not a window. Pick the window that shows the game.": [
-  "Konsole.cs:393"
+  "Konsole.cs:418"
  ],
  "The Start menu entry could not be created.": [
   "MainForm.cs:1571"
@@ -1012,7 +1012,7 @@
   "Tuning/TunesTab.cs:554"
  ],
  "The game runs on:": [
-  "Konsole.cs:604"
+  "Konsole.cs:629"
  ],
  "The game will refuse new downloads.": [
   "Rivals/OverlayController.cs:555"
@@ -1028,6 +1028,9 @@
  ],
  "The language changes when the program next starts.": [
   "MainForm.cs:308"
+ ],
+ "The list of all windows is on the clipboard. Paste it into a message to whoever helps you.": [
+  "Konsole.cs:307"
  ],
  "The next tab will map these live grip values through your Bézier curve to the haptics.": [
   "MainForm.cs:836"
@@ -1061,7 +1064,7 @@
   "TelemetryInspector.cs:87"
  ],
  "The window is minimized. Restore it; it may stay behind other windows.": [
-  "Rivals/FensterQuelle.cs:95"
+  "Rivals/FensterQuelle.cs:103"
  ],
  "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.": [
   "Konsole.cs:195"
@@ -1070,7 +1073,7 @@
   "MainForm.cs:1001"
  ],
  "This PC": [
-  "Konsole.cs:586"
+  "Konsole.cs:611"
  ],
  "This PC now belongs to the scanner. Do not click, do not type,": [
   "scripts/contrib_scan.py:332"
@@ -1217,13 +1220,13 @@
   "MainForm.cs:1118"
  ],
  "Where the HUD shows": [
-  "Konsole.cs:447"
+  "Konsole.cs:472"
  ],
  "Which mode you are playing": [
-  "Konsole.cs:536"
+  "Konsole.cs:561"
  ],
  "Window not found: “{0}”": [
-  "Rivals/FensterQuelle.cs:103"
+  "Rivals/FensterQuelle.cs:111"
  ],
  "Windows Firewall blocks this program, so nothing from the Xbox arrives. Allow it once:": [
   "Konsole.cs:131"
@@ -1259,14 +1262,14 @@
   "Konsole.cs:236"
  ],
  "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.": [
-  "Konsole.cs:543"
+  "Konsole.cs:568"
  ],
  "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.": [
   "Rivals/RivalsTab.cs:177"
  ],
  "Xbox / 2nd PC": [
   "Konsole.cs:230",
-  "Konsole.cs:587"
+  "Konsole.cs:612"
  ],
  "Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.": [
   "MainForm.cs:384"
@@ -1299,6 +1302,9 @@
  "Your previous best here: {0}": [
   "Rivals/OverlayController.cs:3852",
   "Rivals/OverlayController.cs:3871"
+ ],
+ "Your window is not in the list? Copy the list of all windows": [
+  "Konsole.cs:297"
  ],
  "a newer version is ready (skipped)": [
   "Rivals/RivalsTab.cs:531"
@@ -1381,7 +1387,7 @@
   "Rivals/CarNotesTab.cs:295"
  ],
  "ffmpeg found.": [
-  "Konsole.cs:327"
+  "Konsole.cs:352"
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:142",
@@ -1415,7 +1421,7 @@
   "Rivals/RivalsTab.cs:559"
  ],
  "minimized": [
-  "Rivals/FensterQuelle.cs:556"
+  "Rivals/FensterQuelle.cs:596"
  ],
  "new version: {0}": [
   "Rivals/AppUpdate.cs:175"
@@ -1437,6 +1443,9 @@
  ],
  "no server set": [
   "Rivals/AppUpdate.cs:153"
+ ],
+ "no title": [
+  "Rivals/FensterQuelle.cs:595"
  ],
  "not driven yet": [
   "Rivals/CourseShapeHud.cs:189"
