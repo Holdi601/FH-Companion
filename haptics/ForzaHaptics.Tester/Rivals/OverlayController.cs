@@ -488,6 +488,7 @@ internal sealed class OverlayController : IDisposable
             if (_disposed) { return; }
             WartendeFeierZeigen();
             PruefeAutomenue();
+            PruefeTuneListe();
             PruefeUmrisseZeit();
             AnmeldungOhneOverlay();
             // Was die App kostet, einmal je Minute ins perf.log (siehe Leistung).
@@ -1112,6 +1113,10 @@ internal sealed class OverlayController : IDisposable
             kommentar = string.IsNullOrWhiteSpace(kommentar) ? tune : kommentar.TrimEnd() + "\n\n" + tune;
         }
         _carNote.SetNote(kopf, kommentar);
+        // PROTOKOLL (seit 2026-09-29): "die Autonotizen gingen gar nicht" liess sich im
+        // Nachhinein nicht pruefen. Jetzt steht in cars.log, was gezeigt wurde und warum.
+        CarsLog($"note for {name} ({quelle}): {(string.IsNullOrWhiteSpace(kommentar) ? "nothing to show" : $"{kommentar.Length} chars")}"
+                + $" -> {(string.IsNullOrWhiteSpace(kommentar) ? "hidden" : "shown")}, overlays over the game {(OverlayAusgabe.ImSpiel ? "on" : "off")}");
         if (string.IsNullOrWhiteSpace(kommentar))
         {
             if (_carNote.Visible) { _carNote.Hide(); }
@@ -1126,12 +1131,18 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Das aufgespielte Tune als Zeilen fuer die Autonotiz, oder null.</summary>
     private string? TuneText(int ordinal)
     {
-        // Das aufgespielte Tune steht im Spielstand -- im Konsolenmodus nicht auf diesem Rechner.
-        if (_settings.ConsoleMode) { return null; }
-        if (Tuning.TuneStorage.AppliedFor(ordinal) is not { } a) { return null; }
-        var t = a.Tune;
+        // Aus dem Spielstand (nur am PC), sonst -- oder wenn dort nur vermutet -- das Tune,
+        // das zuletzt in der Tunes-Liste als aufgespielt zu sehen war (SeenTunes).
+        var a = _settings.ConsoleMode ? null : Tuning.TuneStorage.AppliedFor(ordinal);
+        if ((a is null || !a.Value.Sicher) && SeenTunes.Fuer(ordinal) is { } g)
+        {
+            var zeile = "Tune: " + g.Name.Trim();
+            return string.IsNullOrWhiteSpace(g.Creator) ? zeile : zeile + "  ·  " + g.Creator.Trim();
+        }
+        if (a is null) { return null; }
+        var t = a.Value.Tune;
         if (string.IsNullOrWhiteSpace(t.Name) && string.IsNullOrWhiteSpace(t.Description)) { return null; }
-        var kopf = (a.Sicher ? "Tune: " : "Tune (probably): ") + t.Name.Trim();
+        var kopf = (a.Value.Sicher ? "Tune: " : "Tune (probably): ") + t.Name.Trim();
         if (!string.IsNullOrWhiteSpace(t.Creator)) { kopf += "  ·  " + t.Creator.Trim(); }
         return string.IsNullOrWhiteSpace(t.Description) ? kopf : kopf + "\n" + t.Description.Trim();
     }
@@ -1192,6 +1203,7 @@ internal sealed class OverlayController : IDisposable
                 var neu = false;
                 var meineAutos = false;
                 CarCollection.Auto? inListe = null;
+                List<(CarCollection.Auto Auto, (int Ordinal, string Name)? ImDatensatz)>? seite = null;
                 try
                 {
                     var hoehe = Math.Max(1, CarGridReader.Suchbreite * flaeche.Height / Math.Max(1, flaeche.Width));
@@ -1219,15 +1231,31 @@ internal sealed class OverlayController : IDisposable
                             if ((_autoliste ??= CarCollection.Laden()) is { } liste
                                 && CarGridReader.ImListe(zeilen, liste.Autos) is { } imListe)
                             {
-                                var kopfFlaeche = CarGridReader.KopfIn(klein.Size);
-                                using var kopf = new Bitmap(kopfFlaeche.Width * 2, kopfFlaeche.Height * 2);
-                                using (var g = Graphics.FromImage(kopf))
-                                {
-                                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                    g.DrawImage(klein, new Rectangle(0, 0, kopf.Width, kopf.Height), kopfFlaeche, GraphicsUnit.Pixel);
-                                }
-                                meineAutos = CarGridReader.IstMeineAutos(_reader.ReadLines(kopf));
+                                meineAutos = KopfSagtMeineAutos(klein);
                                 inListe = imListe;
+                            }
+                        }
+
+                        // DIE GANZE SEITE (seit 2026-09-29): alle Kacheln von My Cars, nicht
+                        // nur die gerahmte -- fuer die Xbox und fuer abgeschalteten
+                        // Speicherzugriff der einzige Weg zur Garage. Nur wenn sich das
+                        // Gitter geaendert hat, hoechstens alle 2,5 s, und nur unter "My Cars".
+                        var gitter = new Rectangle(0, klein.Height / 6, klein.Width, klein.Height * 2 / 3);
+                        var gitterAbdruck = CarGridReader.Fingerabdruck(klein, gitter);
+                        if (DateTime.UtcNow >= _gitterNaechster
+                            && (_gitterAbdruck is null || !CarGridReader.Gleich(gitterAbdruck, _gitterAbdruck))
+                            && (_autoliste ??= CarCollection.Laden()) is { } alleAutos)
+                        {
+                            _gitterNaechster = DateTime.UtcNow.AddSeconds(2.5);
+                            _gitterAbdruck = gitterAbdruck;
+                            if (inListe is not null ? meineAutos : KopfSagtMeineAutos(klein))
+                            {
+                                var breite = Math.Min(1920, Math.Max(1280, flaeche.Width));
+                                using var gross = GameArea.Capture(flaeche,
+                                    new Size(breite, Math.Max(1, breite * flaeche.Height / Math.Max(1, flaeche.Width))));
+                                var rat = _advisor;
+                                seite = CarGridReader.AlleImBild(_reader.ReadLines(gross), alleAutos.Autos)
+                                    .Select(t => (t.Auto, CarGridReader.Erkenne(t.Zeilen, rat))).ToList();
                             }
                         }
                     }
@@ -1251,6 +1279,14 @@ internal sealed class OverlayController : IDisposable
                         {
                             LogMeineAutos(inListe.Anzeige, meineAutos);
                             if (meineAutos) { OwnedCars.GesehenMerken(inListe); }
+                        }
+                        if (seite is { Count: > 0 })
+                        {
+                            var neueAutos = OwnedCars.GesehenMerkenAlle(seite.Select(s => s.Auto));
+                            // Auch in die Notizen: auf der Xbox fuellt sich der Reiter "Car notes" so.
+                            Notes.NoteModels(seite.Where(s => s.ImDatensatz is not null)
+                                                  .Select(s => (s.ImDatensatz!.Value.Ordinal, (string?)s.ImDatensatz.Value.Name)), "menu");
+                            LogSeite(seite.Count, neueAutos);
                         }
                     });
                 }
@@ -1316,6 +1352,109 @@ internal sealed class OverlayController : IDisposable
 
     // Die offizielle Autoliste fuer "My Cars" -- einmal geladen, im Hintergrund gelesen.
     private CarCollection? _autoliste;
+    private byte[]? _gitterAbdruck;
+    private DateTime _gitterNaechster;
+
+    /// <summary>Steht oben "My Cars"? Der Kopfstreifen des kleinen Bildes, doppelt so gross gelesen.</summary>
+    private bool KopfSagtMeineAutos(Bitmap klein)
+    {
+        var kopfFlaeche = CarGridReader.KopfIn(klein.Size);
+        using var kopf = new Bitmap(kopfFlaeche.Width * 2, kopfFlaeche.Height * 2);
+        using (var g = Graphics.FromImage(kopf))
+        {
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.DrawImage(klein, new Rectangle(0, 0, kopf.Width, kopf.Height), kopfFlaeche, GraphicsUnit.Pixel);
+        }
+        return CarGridReader.IstMeineAutos(_reader.ReadLines(kopf));
+    }
+
+    private static void CarsLog(string zeile)
+    {
+        try
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "forza-overlay");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "cars.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {zeile}{Environment.NewLine}");
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static void LogSeite(int autos, int neu) => CarsLog($"My Cars page: {autos} cars read, {neu} new");
+
+    // ---- DIE TUNES-LISTE: das aufgespielte Tune merken (Xbox, ohne Speicherzugriff) ----
+    private bool _tunesLesen;
+    private DateTime _tunesNaechster;
+    private byte[]? _tunesAbdruck;
+
+    /// <summary>
+    /// Steht die Tunes-Liste offen und die Auswahl auf dem aufgespielten Tune (graues
+    /// Zeichen), wird es fuer dieses Auto gemerkt -- die Autonotiz zeigt es dann auch dort,
+    /// wo die App den Spielstand nicht lesen kann.
+    /// </summary>
+    private void PruefeTuneListe()
+    {
+        try
+        {
+            if (!_settings.CarNotes || _tunesLesen || _hudPreview || !_reader.OcrAvailable) { return; }
+            if (!SpielbildDa() || FaehrtGerade() || DateTime.UtcNow < _tunesNaechster) { return; }
+            var flaeche = GameArea.Find(_settings.ForzaProcess);
+            if (flaeche.IsEmpty) { return; }
+            _tunesLesen = true;
+            var rat = _advisor;
+            Task.Run(() =>
+            {
+                (int Ordinal, string Name, Tuning.TuneDeleter.TuneAufSchirm Tune)? fund = null;
+                try
+                {
+                    // Erst billig im kleinen Bild, dann erst die Texterkennung.
+                    using var klein = GameArea.Capture(flaeche, new Size(960, 540));
+                    if (Tuning.TuneDeleter.SiehtNachTunesAus(klein))
+                    {
+                        var abdruck = CarGridReader.Fingerabdruck(klein, new Rectangle(50, 90, 240, 70));
+                        if (_tunesAbdruck is null || !CarGridReader.Gleich(abdruck, _tunesAbdruck))
+                        {
+                            using var bild = GameArea.Capture(flaeche, new Size(1920, 1080));
+                            var zeilen = _reader.ReadLines(bild);
+                            if (Tuning.TuneDeleter.Einordnen(zeilen) == Tuning.TuneDeleter.Schirm.TunesList)
+                            {
+                                _tunesAbdruck = abdruck;
+                                var t = Tuning.TuneDeleter.LiesListe(zeilen, bild);
+                                if (t.Symbol == '-' && Tuning.TuneDeleter.NameScharf(bild, _reader.ReadLines) is { Length: > 0 } scharf)
+                                {
+                                    t = t with { Name = scharf };
+                                }
+                                var teile = t.AutoZeile.Split(" / ", 2);
+                                if (t.Symbol == '-' && teile.Length == 2
+                                    && CarGridReader.Erkenne(new List<OcrLine> { new(teile[0], 0, 0), new(teile[1], 0, 40) }, rat) is { } a)
+                                {
+                                    fund = (a.Ordinal, a.Name, t);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    CarsLog("tune screen FAILED " + ex.GetType().Name + ": " + ex.Message);
+                }
+                finally
+                {
+                    _tunesNaechster = DateTime.UtcNow.AddSeconds(1.5);
+                    _tunesLesen = false;
+                }
+                if (fund is { } f && SeenTunes.Merken(f.Ordinal, f.Name, f.Tune.Name, f.Tune.Creator, f.Tune.Datum))
+                {
+                    CarsLog($"tune on {f.Name}: '{f.Tune.Name}' by {f.Tune.Creator} (from the tune list)");
+                }
+            });
+        }
+        catch (Exception)
+        {
+            _tunesLesen = false;
+        }
+    }
 
     private static void LogMeineAutos(string name, bool meineAutos)
     {
@@ -2495,7 +2634,10 @@ internal sealed class OverlayController : IDisposable
             }
             catch (Exception exception)
             {
-                failure = $"{exception.GetType().Name}: {exception.Message}";
+                // Mit der Stelle (seit 2026-09-29): "The parameter is incorrect" kam ~15-mal
+                // am Tag, ohne dass zu sehen war, welcher Schritt es warf.
+                var stelle = exception.StackTrace?.Split('\n').FirstOrDefault()?.Trim() ?? string.Empty;
+                failure = $"{exception.GetType().Name}: {exception.Message} {stelle}";
             }
             finally
             {

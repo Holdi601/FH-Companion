@@ -8,7 +8,13 @@ using WinRT;
 namespace ForzaHaptics.Tester.Rivals;
 
 /// <summary>One line of text the OCR found, in screen coordinates.</summary>
-internal readonly record struct OcrLine(string Text, double X, double Y);
+internal readonly record struct OcrLine(string Text, double X, double Y)
+{
+    /// <summary>Breite und Hoehe der Zeile (0, wo sie nicht bekannt ist -- aeltere Aufrufer).</summary>
+    /// <remarks>Seit 2026-09-29: um im Autogitter "JAHR MARKE" der Zeile darueber zuzuordnen, braucht es die Mitte.</remarks>
+    public double W { get; init; }
+    public double H { get; init; }
+}
 
 /// <summary>
 /// Text off a bitmap, using the OCR engine that ships with Windows.
@@ -59,14 +65,16 @@ internal sealed class WindowsOcr
             {
                 continue;
             }
-            double x = 0, y = 0;
+            double x = 0, y = 0, w = 0, h = 0;
             var first = line.Words.FirstOrDefault();
             if (first is not null)
             {
                 x = first.BoundingRect.X;
                 y = line.Words.Min(w => w.BoundingRect.Y);
+                w = line.Words.Max(v => v.BoundingRect.X + v.BoundingRect.Width) - x;
+                h = line.Words.Max(v => v.BoundingRect.Y + v.BoundingRect.Height) - y;
             }
-            lines.Add(new OcrLine(text, x, y));
+            lines.Add(new OcrLine(text, x, y) { W = w, H = h });
         }
         return lines;
     }

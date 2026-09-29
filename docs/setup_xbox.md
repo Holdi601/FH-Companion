@@ -32,7 +32,9 @@ When Windows asks whether FH Companion may use the network, allow it on
 
 ## 3. Switch on Data Out on the Xbox
 
-The **Live grip telemetry** tab shows this PC's address and the port:
+The **Live grip telemetry** tab shows exactly what to enter, as a small table:
+this PC's address and the port. If the PC has more than one network, the other
+addresses are listed underneath.
 
 ![This PC's address and port](img/setup/xbox_address.png)
 
@@ -48,6 +50,12 @@ set:
 The Xbox and this PC have to be in the same network (not a guest Wi-Fi). If your
 router gives this PC a new address now and then, reserve one for it in the
 router, or check the address in the app when nothing arrives.
+
+**Windows Firewall.** Right under the table the app says whether Windows lets the
+telemetry in. If it does not, for example because someone clicked "Cancel" when
+Windows first asked, press **Allow in Windows Firewall**. Windows asks for
+permission once, and the app adds one rule for exactly that UDP port. If your
+network is set to Public, the rule covers that too.
 
 ## 4. The dashboard
 
@@ -99,6 +107,12 @@ The HUD then shows over the Remote Play window while it is in front, and hides
 when you switch to another program. Place and size it in the **Lap delta HUD**
 tab, as on the PC. The window may sit behind other windows on a screen, just not
 minimized. Windows draws a yellow frame around it while an app captures it.
+**Vibration with Remote Play.** Your controller is plugged into this PC, so the
+app's own vibration works as on the PC. Under **Controller**, tick **My controller
+is connected to this PC (Xbox Remote Play)** and restart the app when it asks: the
+Vibration test and the Blueprint editor come back. Turn the game's own vibration
+down on the Xbox, so the two do not fight over the motors.
+
 Data Out on the Xbox (step 3) is still needed: the delta and the other parts come
 from the telemetry, not from the picture.
 
@@ -166,6 +180,6 @@ mode. Only Rivals and Horizon Play laps count on the website.
 ## Nothing arrives?
 
 - The address in Forza is exactly the one the app shows, and the port matches.
-- Windows allowed FH Companion on private networks. To check: **Windows
-  Security › Firewall & network protection › Allow an app through firewall**.
+- The firewall line under the address table is green. If not, press **Allow in
+  Windows Firewall** there.
 - The Xbox and this PC are in the same network.

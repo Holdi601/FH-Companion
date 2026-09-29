@@ -339,6 +339,25 @@ internal sealed class OverlaySettings
     [JsonPropertyName("console_mode")] public bool ConsoleMode { get; set; }
 
     /// <summary>
+    /// Den Speicher des Spiels lesen (Tuning inspector, Garage, Tune-Belegung)? Wer das
+    /// nicht will, schaltet es oben im Fenster ab; die App liest dann My Cars und die
+    /// Tunes-Liste vom Bildschirm, wie auf der Xbox (seit 2026-09-29).
+    /// </summary>
+    [JsonPropertyName("read_game_memory")] public bool ReadGameMemory { get; set; } = true;
+
+    /// <summary>
+    /// Konsolenmodus mit dem Controller an DIESEM Rechner -- Xbox Remote Play. Dann
+    /// laufen die Vibrationen der App wie am PC (seit 2026-09-29).
+    /// </summary>
+    [JsonPropertyName("console_controller_here")] public bool ConsoleControllerHere { get; set; }
+
+    /// <summary>Haengt der Controller an diesem Rechner? Am PC immer, auf der Xbox nur mit Remote Play.</summary>
+    [JsonIgnore] public bool ControllerHier => !ConsoleMode || ConsoleControllerHere;
+
+    /// <summary>Wird der Spielspeicher gelesen? Nie im Konsolenmodus (das Spiel laeuft nicht hier).</summary>
+    [JsonIgnore] public bool SpeicherLesen => !ConsoleMode && ReadGameMemory;
+
+    /// <summary>
     /// Konsolenmodus: den HUD ueber das Fenster legen, aus dem das Spielbild kommt
     /// (Xbox Remote Play, OBS-Projektor) -- wie beim Spielen am PC -- statt ins
     /// Dashboard (seit 2026-09-29).

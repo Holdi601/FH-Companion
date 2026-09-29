@@ -328,6 +328,38 @@ internal static class CarGridReader
         return null;
     }
 
+    /// <summary>
+    /// ALLE Kacheln einer My-Cars-Seite aus einer OCR des ganzen Bildes: jede Zeile
+    /// "JAHR MARKE" mit der Zeile direkt darueber in derselben Spalte (Mitte an Mitte).
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-09-29, fuer Xbox und fuer abgeschalteten Speicherzugriff: die Seite zeigt
+    /// bis zu zwoelf Autos, und alle gehoeren dem Spieler -- nicht nur das gerahmte.
+    /// Eine halb sichtbare Kachel am Rand ("2001 A") passt zu keiner Marke und faellt weg.
+    /// </remarks>
+    internal static List<(CarCollection.Auto Auto, IReadOnlyList<OcrLine> Zeilen)> AlleImBild(
+        IReadOnlyList<OcrLine> zeilen, IReadOnlyList<CarCollection.Auto> autos)
+    {
+        var raus = new List<(CarCollection.Auto, IReadOnlyList<OcrLine>)>();
+        var gesehen = new HashSet<string>();
+        foreach (var unten in zeilen.Where(z => JahrUndMarke.IsMatch(z.Text)))
+        {
+            var mitte = unten.X + unten.W / 2;
+            var hoehe = Math.Max(10, unten.H);
+            var oben = zeilen.Where(z => z.Y < unten.Y && unten.Y - z.Y <= hoehe * 2.6
+                                         && !JahrUndMarke.IsMatch(z.Text)
+                                         && Math.Abs(z.X + z.W / 2 - mitte) <= Math.Max(Math.Max(z.W, unten.W) * 0.35, hoehe * 1.5))
+                             .OrderByDescending(z => z.Y).FirstOrDefault();
+            if (oben.Text is null) { continue; }
+            var paar = new List<OcrLine> { oben, unten };
+            if (ImListe(paar, autos) is { } auto && gesehen.Add(auto.Schluessel))
+            {
+                raus.Add((auto, paar));
+            }
+        }
+        return raus;
+    }
+
     private static bool MarkePasst(string liste, string gelesen) =>
         gelesen.Length >= 2 && (liste == gelesen || liste.StartsWith(gelesen, StringComparison.Ordinal)
                                 || gelesen.StartsWith(liste, StringComparison.Ordinal));

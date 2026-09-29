@@ -68,6 +68,142 @@ internal static class Konsole
     internal static readonly string[] Quellen = { "none", "device", "obs", "window", "discord", "browser", "url" };
 
     private static readonly Color Grau = Color.FromArgb(147, 162, 181);
+    private static readonly Color Gruen = Color.FromArgb(130, 220, 150);
+    private static readonly Color Gelb = Color.FromArgb(255, 200, 90);
+
+    /// <summary>
+    /// Was an der Konsole einzutragen ist, als Tabelle statt als Satz (seit 2026-09-29):
+    /// die Adresse muss man abtippen, und in einem Satz ging sie unter.
+    /// </summary>
+    private static void DataOutBlock(FlowLayoutPanel stapel, int port)
+    {
+        stapel.Controls.Add(Notiz(Loc.T("Enter this in Forza on the Xbox or the other PC, under Settings › HUD and Gameplay:")));
+        var tabelle = new TableLayoutPanel
+        {
+            ColumnCount = 2, AutoSize = true, Margin = new Padding(12, 2, 0, 6), BackColor = Color.FromArgb(20, 24, 30),
+            Padding = new Padding(8, 4, 8, 4),
+        };
+        var adressen = Adressen();
+        void Zeile(string feld, string wert)
+        {
+            tabelle.Controls.Add(new Label { Text = feld, AutoSize = true, ForeColor = Grau, Margin = new Padding(0, 3, 18, 3) });
+            tabelle.Controls.Add(new Label
+            {
+                Text = wert, AutoSize = true, ForeColor = Color.White, Margin = new Padding(0, 3, 0, 3),
+                Font = new Font("Segoe UI Semibold", 10.5f),
+            });
+        }
+        // Die Namen, wie sie im Spiel stehen -- englisch, so zeigt sie auch ein englisches Spiel.
+        Zeile("Data Out", "On");
+        Zeile("Data Out IP Address", adressen.Count == 0 ? Loc.T("this PC's network address") : adressen[0]);
+        Zeile("Data Out IP Port", port.ToString());
+        stapel.Controls.Add(tabelle);
+        if (adressen.Count > 1)
+        {
+            stapel.Controls.Add(Notiz(string.Format(Loc.T("If that address does not work, try: {0}"), string.Join(", ", adressen.Skip(1)))));
+        }
+    }
+
+    /// <summary>
+    /// Laesst die Windows-Firewall die Telemetrie herein? Geprueft im Hintergrund, mit
+    /// Knopf, wenn nicht (siehe <see cref="Firewall"/>).
+    /// </summary>
+    private static void FirewallZeile(FlowLayoutPanel stapel, int port)
+    {
+        var zeile = Notiz(Loc.T("Checking Windows Firewall ..."));
+        var knopf = new Button
+        {
+            Text = Loc.T("Allow in Windows Firewall"), AutoSize = true, FlatStyle = FlatStyle.Flat, ForeColor = Color.White,
+            Visible = false, Margin = new Padding(0, 2, 0, 6),
+        };
+        stapel.Controls.Add(zeile);
+        stapel.Controls.Add(knopf);
+        var programm = Application.ExecutablePath;
+        var zuletzt = (Stand: Firewall.Stand.Unbekannt, Oeffentlich: false);
+
+        void Zeigen((Firewall.Stand Stand, bool Oeffentlich) e)
+        {
+            zuletzt = e;
+            var oeffentlich = e.Oeffentlich ? "  " + Loc.T("Your network is set to Public; the rule then covers that too.") : string.Empty;
+            (zeile.Text, zeile.ForeColor, knopf.Visible) = e.Stand switch
+            {
+                Firewall.Stand.Offen => (Loc.T("Windows Firewall lets the telemetry in."), Gruen, false),
+                Firewall.Stand.Blockiert => (Loc.T("Windows Firewall blocks this program, so nothing from the Xbox arrives. Allow it once:") + oeffentlich, Gelb, true),
+                Firewall.Stand.Fehlt => (Loc.T("Windows Firewall may block the telemetry. Allow it once:") + oeffentlich, Gelb, true),
+                _ => (string.Format(Loc.T("Could not check Windows Firewall. If nothing arrives, allow UDP port {0} there:"), port), Gelb, true),
+            };
+            // Die Zeile hatte die Breite ihres ersten Textes behalten ("Windows Firewall lets the teler").
+            zeile.Parent?.PerformLayout();
+        }
+
+        // In der Vorschau (Anleitungsbilder) gleich der Endstand -- vor dem ersten Layout.
+        if (MainForm.NurVorschau) { Zeigen((Firewall.Stand.Offen, false)); }
+
+        void Pruefen()
+        {
+            if (MainForm.NurVorschau) { return; }
+            Task.Run(() =>
+            {
+                var e = Firewall.Pruefen(port, programm);
+                try { if (!zeile.IsDisposed) { zeile.BeginInvoke(() => Zeigen(e)); } } catch (Exception) { }
+            });
+        }
+
+        knopf.Click += (_, _) =>
+        {
+            knopf.Enabled = false;
+            zeile.Text = Loc.T("Windows asks for permission ...");
+            var e = zuletzt;
+            Task.Run(() =>
+            {
+                var ok = Firewall.Anlegen(port, e.Oeffentlich, e.Stand == Firewall.Stand.Blockiert, programm);
+                var neu = Firewall.Pruefen(port, programm);
+                try
+                {
+                    zeile.BeginInvoke(() =>
+                    {
+                        knopf.Enabled = true;
+                        Zeigen(neu);
+                        if (!ok && neu.Stand != Firewall.Stand.Offen)
+                        {
+                            zeile.Text = Loc.T("Windows did not allow the change.") + "  " + zeile.Text;
+                        }
+                    });
+                }
+                catch (Exception)
+                {
+                }
+            });
+        };
+        zeile.HandleCreated += (_, _) => Pruefen();
+    }
+
+    /// <summary>
+    /// Xbox Remote Play: der Controller haengt an DIESEM Rechner. Dann gehen die
+    /// Vibrationen der App wie am PC (seit 2026-09-29) -- nach einem Neustart, weil die
+    /// Reiter beim Start entstehen.
+    /// </summary>
+    private static void ControllerHier(FlowLayoutPanel stapel, Rivals.OverlaySettings s)
+    {
+        stapel.Controls.Add(Kopf(Loc.T("Controller")));
+        var haken = new CheckBox
+        {
+            Text = Loc.T("My controller is connected to this PC (Xbox Remote Play)"), AutoSize = true,
+            ForeColor = Color.Gainsboro, Checked = s.ConsoleControllerHere, Margin = new Padding(0, 3, 0, 0),
+        };
+        stapel.Controls.Add(haken);
+        stapel.Controls.Add(Notiz(Loc.T(
+            "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. Turn the game's own vibration down on the Xbox, so the two do not fight over the motors.")));
+        haken.CheckedChanged += (_, _) =>
+        {
+            s.ConsoleControllerHere = haken.Checked;
+            s.Save();
+            if (MainForm.NurVorschau) { return; }
+            var frage = MessageBox.Show(Loc.T("Restart the app now to apply this?"), AppInfo.Name,
+                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (frage == DialogResult.Yes) { Application.Restart(); }
+        };
+    }
 
     /// <summary>Das Bedienfeld. Im PC-Modus nur der Hinweis auf den Schalter oben.</summary>
     internal static Control Feld(Rivals.OverlaySettings s, Point ort, Func<int>? port = null,
@@ -87,9 +223,8 @@ internal static class Konsole
         }
 
         stapel.Controls.Add(Kopf(Loc.T("Xbox / 2nd PC")));
-        stapel.Controls.Add(Notiz(string.Format(Loc.T(
-            "In Forza on the Xbox or the other PC: Settings → HUD and Gameplay → Data Out: On, Data Out IP Address: {0}, Data Out IP Port: {1}."),
-            AdressenText(), port?.Invoke() ?? 5300)));
+        DataOutBlock(stapel, port?.Invoke() ?? 5300);
+        FirewallZeile(stapel, port?.Invoke() ?? 5300);
 
         // ---- DAS SPIELBILD: vier Wege ------------------------------------------------
         stapel.Controls.Add(Kopf(Loc.T("Game picture (optional)")));
@@ -341,6 +476,9 @@ internal static class Konsole
         takt.Start();
         stapel.Disposed += (_, _) => { takt.Dispose(); pause.Dispose(); };
         ZeigeFelder();
+
+        // Der Controller unter den Bildquellen: wichtiger ist, dass ueberhaupt etwas ankommt.
+        ControllerHier(stapel, s);
 
         // ---- DER MODUS -----------------------------------------------------------------
         stapel.Controls.Add(Kopf(Loc.T("Which mode you are playing")));

@@ -213,6 +213,8 @@ internal sealed class CarCollectionTab : UserControl
     {
         _besitz = OwnedCars.Laden(_besitzPfad);
         _gefahren = Gefahren();
+        // Ohne Speicherzugriff gibt es keine Garage zu lesen -- dann wie auf der Xbox: My Cars.
+        _garage.Visible = !_konsole && Tuning.ForzaMemoryDb.Erlaubt;
         if (!_geladen)
         {
             _geladen = true;
@@ -260,7 +262,7 @@ internal sealed class CarCollectionTab : UserControl
                   : string.Empty)
             : _gefahren.Count > 0
                 ? Loc.T("Owned cars: the cars you have driven with the app. Tick the others you own.")
-                : _konsole
+                : _konsole || !Tuning.ForzaMemoryDb.Erlaubt
                     ? Loc.T("Scroll through My Cars in the game with the picture source on -- every highlighted car counts. Or tick the cars you own.")
                     : Loc.T("Read your garage while the game runs -- or tick the cars you own.");
         _stand.Text = string.Format(Loc.T("Car list from forza.net/fh6cars ({0}); ways to get them from the Forza Wiki (CC BY-SA)."),

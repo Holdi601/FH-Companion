@@ -64,6 +64,7 @@ internal static class EdgeCaseTest
         FullTelemetryTravelsWithTheLap();
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
+        XboxAndMemoryOptions();
     }
 
     /// <summary>Eine Bildquelle zum Testen: ein festes Bild.</summary>
@@ -273,6 +274,112 @@ internal static class EdgeCaseTest
             var e = Rivals.CarCollection.Lesen(File.ReadAllText(echt));
             Soll(e is { Autos.Count: >= 600 }, "die mitgelieferte Autoliste ist unvollstaendig");
             Soll(e!.Autos.All(a => a.Wege.Count > 0), "ein Auto der Liste hat keinen Weg");
+        }
+    }
+
+    /// <summary>Firewall, Speicherschalter, Controller mit Remote Play, gemerkte Tunes, ganze My-Cars-Seite.</summary>
+    private static void XboxAndMemoryOptions()
+    {
+        // --- Firewall: die Regel ohne Windows
+        const string App = @"C:\Games\FHC\FH Companion.exe";
+        static Firewall.Regel R(int aktion, string? programm = null, string? ports = "5300", int profile = 2, int proto = 17,
+                                bool an = true, int richtung = 1) => new(an, richtung, profile, proto, aktion, programm, ports);
+        Soll(Firewall.Bewerten(new[] { R(1) }, 2, 5300, App) == Firewall.Stand.Offen, "eine Port-Regel oeffnet nicht");
+        Soll(Firewall.Bewerten(new[] { R(1, App, "*") }, 2, 5300, App) == Firewall.Stand.Offen, "eine Programm-Regel oeffnet nicht");
+        Soll(Firewall.Bewerten(new[] { R(1), R(0, App, "*") }, 2, 5300, App) == Firewall.Stand.Blockiert,
+             "eine Sperre fuer das Programm gewinnt nicht gegen die Port-Regel");
+        Soll(Firewall.Bewerten(new[] { R(1, @"C:\other.exe", "*") }, 2, 5300, App) == Firewall.Stand.Fehlt,
+             "die Regel eines fremden Programms oeffnet den Port");
+        Soll(Firewall.Bewerten(new[] { R(1, profile: 4) }, 2, 5300, App) == Firewall.Stand.Fehlt, "eine Regel fuer ein anderes Profil zaehlt");
+        Soll(Firewall.Bewerten(new[] { R(1, an: false) }, 2, 5300, App) == Firewall.Stand.Fehlt, "eine abgeschaltete Regel zaehlt");
+        Soll(Firewall.Bewerten(new[] { R(1, proto: 6) }, 2, 5300, App) == Firewall.Stand.Fehlt, "eine TCP-Regel oeffnet UDP");
+        Soll(Firewall.Bewerten(new[] { R(1, richtung: 2) }, 2, 5300, App) == Firewall.Stand.Fehlt, "eine ausgehende Regel zaehlt");
+        Soll(Firewall.Bewerten(new[] { R(1, ports: "5000-5400") }, 6, 5300, App) == Firewall.Stand.Offen, "ein Portbereich passt nicht");
+        Soll(Firewall.Bewerten(new[] { R(1, ports: "80,443") }, 2, 5300, App) == Firewall.Stand.Fehlt, "fremde Ports oeffnen");
+        Soll(Firewall.Bewerten(Array.Empty<Firewall.Regel>(), 2, 5300, App) == Firewall.Stand.Fehlt, "ohne Regeln ist offen");
+        Soll(Firewall.PortPasst(null, 1) && Firewall.PortPasst("*", 1) && Firewall.PortPasst("1, 5300 ,9", 5300) && !Firewall.PortPasst("x", 5300),
+             "Portangaben falsch gelesen");
+        var befehl = Firewall.Befehl(5301, oeffentlich: true, sperreWeg: true, App);
+        Soll(befehl.Contains("localport=5301") && befehl.Contains("profile=private,domain,public") && befehl.Contains("protocol=UDP")
+             && befehl.Contains($"program=\"{App}\"") && befehl.Contains("dir=in action=allow"),
+             "der Firewall-Befehl ist falsch: " + befehl);
+        Soll(!Firewall.Befehl(5300, false, false, App).Contains("program=") && Firewall.Befehl(5300, false, false, App).EndsWith("profile=private,domain"),
+             "ohne Sperre wird trotzdem eine Programm-Regel geloescht oder das oeffentliche Netz geoeffnet");
+
+        // --- Schalter
+        var e = new Rivals.OverlaySettings();
+        Soll(e.ControllerHier && e.SpeicherLesen, "Vorgaben: Controller hier und Speicher lesen");
+        e.ConsoleMode = true;
+        Soll(!e.ControllerHier && !e.SpeicherLesen, "Konsole: Controller oder Speicher gelten als hier");
+        e.ConsoleControllerHere = true;
+        Soll(e.ControllerHier && !e.SpeicherLesen, "Remote Play: Controller nicht hier, oder Speicher gelesen");
+        e.ConsoleMode = false;
+        e.ReadGameMemory = false;
+        Soll(!e.SpeicherLesen, "abgeschalteter Speicher wird trotzdem gelesen");
+
+        // --- Speicher-Tor: jeder Weg wirft, wenn es aus ist
+        var vorher = Tuning.ForzaMemoryDb.Erlaubt;
+        try
+        {
+            Tuning.ForzaMemoryDb.Erlaubt = false;
+            var geworfen = false;
+            try { Tuning.ForzaMemoryDb.Dump(Path.GetTempPath()); } catch (InvalidOperationException) { geworfen = true; }
+            Soll(geworfen, "trotz abgeschaltetem Speicher wird gelesen (Dump)");
+            geworfen = false;
+            try { Tuning.ForzaMemoryDb.DumpFrom(Environment.ProcessId, Path.GetTempPath()); } catch (InvalidOperationException) { geworfen = true; }
+            Soll(geworfen, "trotz abgeschaltetem Speicher wird gelesen (DumpFrom)");
+            var (ids, fehler) = Rivals.GarageImport.Lesen(_ => { });
+            Soll(ids.Count == 0 && fehler is { Length: > 0 }, "die Garage meldet den abgeschalteten Speicher nicht");
+        }
+        finally
+        {
+            Tuning.ForzaMemoryDb.Erlaubt = vorher;
+        }
+
+        // --- Gemerkte Tunes
+        var altPfad = Rivals.SeenTunes.Pfad;
+        var tunePfad = Path.Combine(Path.GetTempPath(), "fhc-seen-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            Rivals.SeenTunes.Pfad = tunePfad;
+            Rivals.SeenTunes.Vergessen();
+            Soll(Rivals.SeenTunes.Fuer(42) is null, "ein ungesehenes Tune ist bekannt");
+            Soll(Rivals.SeenTunes.Merken(42, "X '20", " A700 Road AWD ", "x ShadowsBane x", "14/05/2026"), "ein Tune wird nicht gemerkt");
+            Soll(!Rivals.SeenTunes.Merken(42, "X '20", "A700 Road AWD", "x ShadowsBane x", "14/05/2026"), "dasselbe Tune gilt als neu");
+            Soll(!Rivals.SeenTunes.Merken(42, "X '20", "  ", "y", "z") && !Rivals.SeenTunes.Merken(0, "X", "N", "y", "z"),
+                 "ein leeres Tune oder Auto 0 wird gemerkt");
+            Rivals.SeenTunes.Vergessen();
+            Soll(Rivals.SeenTunes.Fuer(42)?.Name == "A700 Road AWD", "ein gemerktes Tune ueberlebt das Neuladen nicht");
+        }
+        finally
+        {
+            Rivals.SeenTunes.Pfad = altPfad;
+            Rivals.SeenTunes.Vergessen();
+            try { File.Delete(tunePfad); } catch (Exception) { }
+        }
+
+        // --- Die ganze My-Cars-Seite: Zeilen wie aus der Texterkennung (Mitte an Mitte).
+        if (Rivals.CarCollection.PaketPfad() is { } pfad && Rivals.CarCollection.Lesen(File.ReadAllText(pfad)) is { } liste)
+        {
+            static Rivals.OcrLine L(string t, double x, double y, double w) => new(t, x, y) { W = w, H = 22 };
+            var seite = new List<Rivals.OcrLine>
+            {
+                L("My Cars", 140, 110, 120),
+                L("S-CARGO FORZA EDITION", 420, 220, 300), L("1989 NISSAN", 505, 250, 130),
+                L("124 SPIDER", 820, 220, 140), L("2017 ABARTH", 820, 250, 140),
+                L("595 ESSEESSE", 1150, 220, 170), L("1968 ABARTH", 1165, 250, 140),
+                L("INTEGRA A-SPEC", 1500, 220, 200), L("2023 ACURA", 1530, 250, 140),
+                L("INTEGR", 1800, 220, 90), L("2001 A", 1805, 250, 80),
+                L("695 BIPOSTO", 830, 470, 150), L("2016 ABARTH", 835, 500, 140),
+                L("NSX TYPE S", 1520, 470, 150), L("2022 ACURA", 1525, 500, 140),
+                L("SPEED", 130, 500, 60),
+            };
+            var gefunden = Rivals.CarGridReader.AlleImBild(seite, liste.Autos).Select(t => t.Auto.Schluessel).ToList();
+            var erwartet = new[] { "Nissan S-Cargo Forza Edition|1989", "Abarth 124 Spider|2017", "Abarth 595 esseesse|1968",
+                                   "Acura Integra A-Spec|2023", "Abarth 695 Biposto|2016", "Acura NSX Type S|2022" };
+            Soll(erwartet.All(gefunden.Contains) && gefunden.Count == erwartet.Length,
+                 "My-Cars-Seite: " + string.Join(", ", gefunden));
+            Soll(Rivals.CarGridReader.IstMeineAutos(seite), "der Seitentitel 'My Cars' wird nicht erkannt");
         }
     }
 

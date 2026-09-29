@@ -331,6 +331,51 @@ internal sealed class TuneDeleter
                                  kachel.IsEmpty ? '?' : Symbol(bild, kachel));
     }
 
+    /// <summary>
+    /// Sieht das nach der Tunes-Liste aus? Drei gelbgruene Balken quer ueber die Seite auf
+    /// Hoehe 190-200 (1080p-Bezug). Billig -- erst danach lohnt eine Texterkennung.
+    /// </summary>
+    /// <remarks>
+    /// Gemessen an den Aufnahmen vom 2026-09-26: auf der Tunes-Liste 74 von 85 Proben
+    /// gelbgruen, auf My Cars, im Upgrades- und im Cars-Menue keine einzige.
+    /// </remarks>
+    internal static bool SiehtNachTunesAus(Bitmap bild)
+    {
+        // In jeder Groesse: die Stellen sind im 1080p-Bezug gemessen und werden umgerechnet.
+        if (bild.Width < 480 || bild.Height < 270) { return false; }
+        double fx = bild.Width / 1920.0, fy = bild.Height / 1080.0;
+        var beste = 0;
+        foreach (var y in new[] { 190, 196 })
+        {
+            var n = 0;
+            for (var x = 110; x < 1810; x += 20)
+            {
+                var c = bild.GetPixel((int)(x * fx), (int)(y * fy));
+                if (c.G > 200 && c.R > 150 && c.B < 90) { n++; }
+            }
+            beste = Math.Max(beste, n);
+        }
+        return beste >= 42;
+    }
+
+    /// <summary>
+    /// Den Tune-Namen im gelbgruenen Balken noch einmal lesen, dreifach vergroessert.
+    /// Schwarz auf Gelbgruen liest die Erkennung in voller Groesse schlecht: aus
+    /// "A700 Road AWD" wurde "moo Road AWD" (Loeschlauf 2026-09-26).
+    /// </summary>
+    internal static string NameScharf(Bitmap bild1080, Func<Bitmap, List<OcrLine>> ocr)
+    {
+        var balken = Rectangle.Intersect(new Rectangle(105, 178, 470, 40), new Rectangle(0, 0, bild1080.Width, bild1080.Height));
+        if (balken.Width < 10 || balken.Height < 10) { return string.Empty; }
+        using var gross = new Bitmap(balken.Width * 3, balken.Height * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(gross))
+        {
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.DrawImage(bild1080, new Rectangle(0, 0, gross.Width, gross.Height), balken, GraphicsUnit.Pixel);
+        }
+        return string.Join(" ", ocr(gross).OrderBy(l => l.X).Select(l => l.Text.Trim())).Trim();
+    }
+
     /// <summary>Der Rahmen der gewaehlten Kachel im Kachelband unten.</summary>
     internal static Rectangle GewaehlteKachel(Bitmap bild)
     {

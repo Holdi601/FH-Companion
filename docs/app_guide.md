@@ -228,11 +228,12 @@ the wiki**, to read its wiki page in your browser.
 - **On this PC:** press **Read my garage** while the game runs. The app reads the
   garage from the game's memory, as the tuning inspector does, and from then on the
   garage decides. The **Car notes** garage button does the same.
-- **My Cars in the game:** every car highlighted in **My Cars** counts as yours. The
-  app reads the name on the tile and finds the car on the official list by name, so
-  this also works for cars whose id the app does not know yet. Scroll through My
-  Cars once with the game in front, or on the Xbox with the picture source on. Only
-  the screen titled "My Cars" counts; the Autoshow looks the same but proves nothing.
+- **My Cars in the game:** every car on a **My Cars** page counts as yours -- the
+  app reads all tiles of the page, not only the highlighted one, and finds each car
+  on the official list by name, so this also works for cars whose id the app does
+  not know yet. Page through My Cars once with the game in front, or on the Xbox
+  with the picture source on. Only the screen titled "My Cars" counts; the Autoshow
+  looks the same but proves nothing. The cars also appear in the **Car notes** tab.
 - **Not sure:** some cars have no known id yet, because no scanned leaderboard has
   named them. If your garage holds cars the app cannot place, those cars show as
   **not sure** (amber) instead of missing. Highlight them in My Cars or tick them.
@@ -243,6 +244,16 @@ the wiki**, to read its wiki page in your browser.
 
 Filter by name or type, by the way to get a car, or by class, and choose missing,
 owned or all cars. Click a column header to sort, for example by Autoshow price.
+
+## Read game memory
+
+The tuning inspector, the garage import and "which tune is on which car" read the
+game's memory, and only when you press their button. To rule that out completely,
+untick **Read game memory** at the top of the window. The app then learns your
+cars from **My Cars** (see Car collection) and the tune on a car from its tune
+list: open **Upgrades & Tuning › My Tuning Setups** and move the selection onto
+the tune marked grey (unchanged against the car). The car note shows that tune
+from then on. The same works on the Xbox.
 
 ## My times
 
@@ -297,8 +308,11 @@ What works and what does not:
   map, tyre overview, lap recording, My times, personal records and the
   celebrations.
 - **Off:** the tuning inspector and tunes (they read the game's memory and
-  save), the vibration test, the Blueprint editor and all controller haptics.
-  The controller is on the other device.
+  save). The vibration test, the Blueprint editor and controller haptics are off
+  too, unless the controller is plugged into this PC for Xbox Remote Play: then
+  tick **My controller is connected to this PC** in the Xbox panel.
+- **From the screen instead:** your cars (every My Cars page you open) and the
+  tune on a car (its tune list), for the Car collection and the car notes.
 - **Needs the game's picture:** the Event Sign Up maps, the car recommendations,
   the car note from My Cars, and detecting Rivals and Horizon Play. Choose one of
   six ways under **Game picture (optional)**; a preview underneath shows what

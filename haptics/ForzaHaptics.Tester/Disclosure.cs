@@ -73,7 +73,10 @@ internal static class Disclosure
     // "Car collection" (Fassung 7 versprach "exactly four things"). Dazu liest der
     // Garagen-Knopf jetzt auch auf diesem Reiter den Spielspeicher, und das Spielbild
     // kann aus Discord oder einem Browserfenster kommen.
-    public const int Fassung = 8;
+    // 9 seit 2026-09-29: ein Schalter, der das Speicherlesen ganz abstellt; das Lesen von
+    // My Cars (alle Kacheln) und der Tunes-Liste vom Bildschirm; eine Firewall-Regel auf
+    // Knopfdruck im Modus "Xbox / 2nd PC"; Vibrationen dort mit Xbox Remote Play.
+    public const int Fassung = 9;
 
     private const string Titel = "What " + AppInfo.Name + " does";
 
@@ -91,7 +94,9 @@ WHAT IT DOES ON YOUR PC
       and uses it for the lap delta, the live map, your lap records and the
       controller vibration. Only if you switch the program to "Xbox / 2nd PC" at
       the top of its window does it listen on your network instead, so that the
-      Xbox or the other PC can reach it.
+      Xbox or the other PC can reach it. If Windows Firewall blocks that, a button
+      in the Xbox panel adds one rule for exactly that UDP port -- only when you
+      press it, and Windows asks for your permission first.
 
   Reads the memory of the running game -- only when you press a button.
       The list of parts fitted to your car, and which tune sits on which car, are
@@ -102,11 +107,15 @@ WHAT IT DOES ON YOUR PC
       It only READS. It never writes to the game and never changes anything in
       it. It does this only when you press the button for it on the Tuning,
       Tunes, Car notes or Car collection tab. If you never press one, the game's
-      memory is never touched.
+      memory is never touched. To rule it out completely, untick "Read game
+      memory" at the top of the window: the program then learns your cars and
+      their tunes from the screen instead (see below).
 
   Reads what the game shows on screen.
-      To know which routes the Event Sign Up screen offers and which car is
-      highlighted in the car menu, the program takes pictures of the game window
+      To know which routes the Event Sign Up screen offers, which car is
+      highlighted in the car menu, which cars are on the "My Cars" pages you look
+      at and which tune sits on a car in its tune list, the program takes
+      pictures of the game window
       and reads the text with the text recognition built into Windows. This
       happens on your PC; the pictures are not sent anywhere. In "Xbox / 2nd PC"
       mode it takes those pictures from the source you choose instead: a capture

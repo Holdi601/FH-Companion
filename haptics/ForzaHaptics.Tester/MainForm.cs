@@ -347,6 +347,29 @@ internal sealed class MainForm : Form, ITelemetryHost
             Margin = new Padding(0, 6, 0, 0)
         };
         startZeile.Controls.Add(_mitForzaKnopf);
+        // SPIELSPEICHER LESEN (seit 2026-09-29): wer das nicht will, schaltet es hier ab.
+        // Die App liest My Cars und die Tunes-Liste dann vom Bildschirm, wie auf der Xbox.
+        var kopfEinstellungen = Rivals.OverlaySettings.Load();
+        Tuning.ForzaMemoryDb.Erlaubt = kopfEinstellungen.SpeicherLesen;
+        var speicherHaken = new CheckBox
+        {
+            Text = Loc.T("Read game memory"),
+            AutoSize = true,
+            ForeColor = Color.WhiteSmoke,
+            Checked = kopfEinstellungen.ReadGameMemory,
+            Margin = new Padding(12, 8, 0, 0),
+            Visible = !imKonsolenModus,
+        };
+        _kopfTipps.SetToolTip(speicherHaken, Loc.T(
+            "Tuning inspector, garage and which tune is on which car read the game's memory, only when you press their button. Switched off, the app reads My Cars and the tune list from the screen instead."));
+        speicherHaken.CheckedChanged += (_, _) =>
+        {
+            var s = _rivals?.Settings ?? Rivals.OverlaySettings.Load();
+            s.ReadGameMemory = speicherHaken.Checked;
+            s.Save();
+            Tuning.ForzaMemoryDb.Erlaubt = s.SpeicherLesen;
+        };
+        startZeile.Controls.Add(speicherHaken);
         reconnectHost.Controls.Add(controllerZeile);
         reconnectHost.Controls.Add(programmZeile);
         reconnectHost.Controls.Add(startZeile);
@@ -355,7 +378,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         textPanel.Controls.Add(modusSchalter);
         // Im Konsolenmodus haengt der Controller an der Konsole: keine Auswahl, kein
         // "Suche Steam Controller" -- sondern was hier stattdessen passiert.
-        if (imKonsolenModus)
+        if (imKonsolenModus && !Rivals.OverlaySettings.Load().ConsoleControllerHere)
         {
             controllerZeile.Visible = false;
             _controllerStatus.Text = Loc.T("Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.");
@@ -502,7 +525,10 @@ internal sealed class MainForm : Form, ITelemetryHost
         // KONSOLENMODUS: ohne Vibrationstest (kein Controller hier); Blueprint, Tuning und
         // Tunes folgen unten und fallen ebenso weg (Controller, Spielspeicher, Spielstand).
         var konsole = Rivals.OverlaySettings.Load().ConsoleMode;
-        if (!konsole) { tabs.TabPages.Add(testTab); }
+        // Vibrationen gibt es, wo der Controller an diesem Rechner haengt: am PC immer,
+        // auf der Xbox mit Remote Play (seit 2026-09-29).
+        var controllerHier = Rivals.OverlaySettings.Load().ControllerHier;
+        if (controllerHier) { tabs.TabPages.Add(testTab); }
         tabs.TabPages.Add(telemetryTab);
         tabs.TabPages.Add(inspectorTab);
         _rivals = new RivalsTab(this);
@@ -577,7 +603,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             if (ReferenceEquals(e.TabPage, myTimesTab)) { myTimes.Reload(); }
         };
 
-        if (!konsole) { tabs.TabPages.Add(blueprintTab); }
+        if (controllerHier) { tabs.TabPages.Add(blueprintTab); }
         tabs.TabPages.Add(rivalsTab);
         tabs.TabPages.Add(hudTab);
         if (!konsole)
@@ -1208,8 +1234,10 @@ internal sealed class MainForm : Form, ITelemetryHost
         {
             if (_rivals?.Settings.ConsoleMode == true)
             {
-                // KONSOLENMODUS: kein Controller an diesem Rechner, dafuer das Dashboard --
-                // ausser der HUD liegt ueber dem Fenster von Remote Play (wie am PC).
+                // KONSOLENMODUS: dafuer das Dashboard -- ausser der HUD liegt ueber dem
+                // Fenster von Remote Play (wie am PC). Mit Remote Play haengt der
+                // Controller an diesem Rechner: dann wird er auch hier verbunden.
+                if (_rivals.Settings.ConsoleControllerHere) { await ConnectControllerAsync(); }
                 _ = StartTelemetryAsync();
                 if (!_rivals.Settings.HudUeberFenster) { _rivals.OeffneAufnahmefenster(); }
                 return;
@@ -2171,12 +2199,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             {
                 return true;
             }
-            // Konsolenmodus: der Controller haengt an der Konsole, nicht hier.
-            if (settings.ConsoleMode)
+            // Konsolenmodus: der Controller haengt an der Konsole -- ausser mit Remote Play.
+            if (settings.ConsoleMode && !settings.ConsoleControllerHere)
             {
                 return false;
             }
-            if (settings.HapticsRequireForza)
+            // Das Spiel laeuft dann nicht auf diesem Rechner: es zaehlt, dass Telemetrie kommt.
+            if (settings.HapticsRequireForza && !settings.ConsoleMode)
             {
                 _game ??= new GameWatch(settings.ForzaProcess);
                 if (!_game.Running)

@@ -38,6 +38,7 @@ internal static class CarCollectionUiTest
             Doppelklick(ordner);
             Server(ordner).GetAwaiter().GetResult();
             EchteListe(ordner);
+            EchteBilder();
         }
         finally
         {
@@ -428,6 +429,66 @@ internal static class CarCollectionUiTest
         Soll(await Rivals.CarCollection.VomServerAsync($"http://127.0.0.1:{port}", null, default, ziel, TimeSpan.FromSeconds(5)) is null,
              "ein toter Server liefert etwas");
         Soll(uhr.Elapsed < TimeSpan.FromSeconds(6), $"ein toter Server haelt {uhr.Elapsed.TotalSeconds:0.0} s auf");
+    }
+
+    // ------------------------------------------------------------------ echte Spielbilder
+
+    /// <summary>
+    /// Die echte Texterkennung auf echten Aufnahmen (vom Loeschlauf am 2026-09-26, im
+    /// Temp-Ordner dieses Rechners; fehlen sie, wird es uebersprungen). Sie liegen nicht
+    /// im Repository: oben rechts steht der Gamertag.
+    /// </summary>
+    private static void EchteBilder()
+    {
+        var ordner = Path.Combine(Path.GetTempPath(), "forza-overlay", "tune_frames");
+        var meine = Path.Combine(ordner, "0002_opening_My_Cars.jpg");
+        var tunes = Path.Combine(ordner, "0013_tune_list.jpg");
+        var menue = Path.Combine(ordner, "0005_Cars_menu_after_getting_in.jpg");
+        if (!File.Exists(meine) || !File.Exists(tunes) || Rivals.CarCollection.PaketPfad() is not { } pfad)
+        {
+            Console.WriteLine("  (keine echten Aufnahmen -- uebersprungen)");
+            return;
+        }
+        var ocr = new Rivals.WindowsOcr();
+        var liste = Rivals.CarCollection.Lesen(File.ReadAllText(pfad))!;
+        static Bitmap Gross(string datei)
+        {
+            using var roh = new Bitmap(datei);
+            var b = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using var g = Graphics.FromImage(b);
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.DrawImage(roh, new Rectangle(0, 0, 1920, 1080));
+            return b;
+        }
+        using (var bild = Gross(meine))
+        {
+            var zeilen = ocr.Read(bild);
+            var autos = Rivals.CarGridReader.AlleImBild(zeilen, liste.Autos).Select(t => t.Auto.Anzeige).ToList();
+            Console.WriteLine($"  My Cars (echtes Bild): {autos.Count} Autos: {string.Join(", ", autos)}");
+            Soll(Rivals.CarGridReader.IstMeineAutos(zeilen), "echtes Bild: 'My Cars' nicht erkannt");
+            Soll(autos.Count >= 6, $"echtes Bild: nur {autos.Count} von 8 Kacheln gelesen");
+            Soll(!Tuning.TuneDeleter.SiehtNachTunesAus(bild), "My Cars sieht nach der Tunes-Liste aus");
+        }
+        using (var bild = Gross(tunes))
+        {
+            Soll(Tuning.TuneDeleter.SiehtNachTunesAus(bild), "die echte Tunes-Liste wird nicht erkannt (Balken)");
+            using var klein = new Bitmap(bild, new Size(960, 540));
+            Soll(Tuning.TuneDeleter.SiehtNachTunesAus(klein), "die Tunes-Liste im kleinen Bild wird nicht erkannt");
+            var zeilen = ocr.Read(bild);
+            Soll(Tuning.TuneDeleter.Einordnen(zeilen) == Tuning.TuneDeleter.Schirm.TunesList, "Tunes-Liste: falscher Schirm");
+            var t = Tuning.TuneDeleter.LiesListe(zeilen, bild);
+            Console.WriteLine($"  Tunes-Liste (echtes Bild): '{t.Name}' by '{t.Creator}', {t.Datum}, Auto '{t.AutoZeile}', Zeichen {t.Symbol}");
+            var scharf = Tuning.TuneDeleter.NameScharf(bild, ocr.Read);
+            Console.WriteLine($"  Tune-Name vergroessert gelesen: '{scharf}'");
+            Soll(scharf.Contains("Road AWD"), "der vergroesserte Tune-Name ist schlechter als der normale: " + scharf);
+            Soll(t.Name.Contains("Road AWD") && t.AutoZeile.Contains("ALFA ROMEO") && t.Symbol == 'v',
+                 "Tunes-Liste falsch gelesen");
+        }
+        if (File.Exists(menue))
+        {
+            using var bild = Gross(menue);
+            Soll(!Tuning.TuneDeleter.SiehtNachTunesAus(bild), "das Cars-Menue sieht nach der Tunes-Liste aus");
+        }
     }
 
     // ------------------------------------------------------------------ die echte Liste

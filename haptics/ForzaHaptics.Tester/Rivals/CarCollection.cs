@@ -213,6 +213,19 @@ internal sealed class OwnedCars
     /// <summary>Nach jedem Lernen aus "My Cars": der Reiter baut sich neu.</summary>
     public static event Action? Geaendert;
 
+    /// <summary>Mehrere Autos einer My-Cars-Seite auf einmal merken -- ein Schreiben, nicht zwoelf.</summary>
+    public static int GesehenMerkenAlle(IEnumerable<CarCollection.Auto> autos, string? pfad = null)
+    {
+        var o = Laden(pfad);
+        var neu = autos.Where(a => !o.Gesehen(a.Schluessel)).Select(a => a.Schluessel).Distinct().ToList();
+        if (neu.Count == 0) { return 0; }
+        o.GesehenListe.AddRange(neu);
+        o._gesehen = null;
+        o.Speichern();
+        Geaendert?.Invoke();
+        return neu.Count;
+    }
+
     /// <summary>Ein Auto aus "My Cars" merken. Gibt zurueck, ob es neu war.</summary>
     public static bool GesehenMerken(CarCollection.Auto auto, string? pfad = null)
     {

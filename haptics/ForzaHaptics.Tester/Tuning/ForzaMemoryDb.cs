@@ -69,11 +69,29 @@ internal static class ForzaMemoryDb
 
     public static bool GameRunning => Process.GetProcessesByName(ProcessName).Length > 0;
 
+    /// <summary>
+    /// Darf die App den Speicher des Spiels ueberhaupt lesen? Der Nutzer schaltet es oben
+    /// im Fenster ab (seit 2026-09-29) -- dann wirft JEDER Weg hierher, statt dass sich
+    /// jeder Reiter selbst daran erinnern muss.
+    /// </summary>
+    public static bool Erlaubt { get; set; } = true;
+
+    private static void PruefeErlaubt()
+    {
+        if (!Erlaubt)
+        {
+            throw new InvalidOperationException(Loc.T("Reading the game's memory is switched off (top of the window)."));
+        }
+    }
+
     /// <summary>Wie <see cref="Dump"/>, aber in einem beliebigen Prozess.</summary>
     public static List<Fund> DumpFrom(int pid, string ordner,
                                       Action<string>? sagen = null,
-                                      Func<string, bool>? genug = null) =>
-        Sammeln(pid, ordner, sagen, genug);
+                                      Func<string, bool>? genug = null)
+    {
+        PruefeErlaubt();
+        return Sammeln(pid, ordner, sagen, genug);
+    }
 
     /// <summary>
     /// Alle plausiblen Datenbanken in eine eigene Ablage schreiben.
@@ -85,6 +103,7 @@ internal static class ForzaMemoryDb
     public static List<Fund> Dump(string ordner, Action<string>? sagen = null,
                                   Func<string, bool>? genug = null)
     {
+        PruefeErlaubt();
         var spiel = Process.GetProcessesByName(ProcessName).FirstOrDefault();
         if (spiel is null)
         {
