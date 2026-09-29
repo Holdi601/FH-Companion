@@ -60,6 +60,12 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
     // im Vollbild ist vorne ein ANDERES Fenster derselben App.
     private string _programm = string.Empty;
 
+    // EIN GANZER BILDSCHIRM statt eines Fensters (seit 2026-09-29): Schluessel "screen:N".
+    // Im Vollbild zeigt die Xbox-App ihr Bild in einem Fenster, das Windows als versteckt
+    // meldet -- es stand in keiner Liste. Der Bildschirm IST dann das Spiel.
+    private readonly int? _schirmNummer;
+    private Rectangle _schirm;
+
     public string Beschreibung { get; private set; }
 
     /// <summary>Kann dieses Windows Fenster so aufnehmen? (ab Windows 10 1903)</summary>
@@ -81,6 +87,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
     {
         _titel = titel;
         _finden = finden;
+        _schirmNummer = Fenster.BildschirmNummer(titel);
         Beschreibung = "window: looking for \"" + titel + "\"";
         // Alle zwei Sekunden nachsehen: das Fenster kann spaeter kommen, geschlossen
         // und neu geoeffnet werden.
@@ -92,6 +99,32 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         lock (_schloss)
         {
             if (_zu) { return; }
+            if (_schirmNummer is { } nummer)
+            {
+                var schirm = Fenster.Bildschirm(nummer);
+                if (_sitzung is not null && schirm is { } da && da.Bounds == _schirm)
+                {
+                    Beschreibung = $"screen {nummer}: {_schirm.Width}x{_schirm.Height}";
+                    return;
+                }
+                Schliessen();
+                if (schirm is null)
+                {
+                    Beschreibung = string.Format(Loc.T("Window not found: “{0}”"), _titel);
+                    return;
+                }
+                try
+                {
+                    StartenBildschirm(schirm);
+                    Beschreibung = $"screen {nummer}: {_schirm.Width}x{_schirm.Height}";
+                }
+                catch (Exception e)
+                {
+                    Schliessen();
+                    Beschreibung = "screen capture failed: " + e.Message;
+                }
+                return;
+            }
             // Ein VERSTECKT gewordenes Fenster liefert kein Bild mehr -- so der Rahmen der
             // Xbox-App, sobald sie ins Vollbild geht. Dann das Fenster neu suchen; findet die
             // Suche dasselbe, bleibt es dabei.
@@ -143,8 +176,27 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         _programm = Fenster.ProgrammDatei(fenster);
     }
 
+    private void StartenBildschirm(Screen schirm)
+    {
+        _geraet ??= D3dGeraet();
+        var monitor = Fenster.MonitorVon(schirm);
+        var item = ItemFuerMonitor(monitor);
+        _item = item;
+        _groesse = item.Size;
+        _pool = Direct3D11CaptureFramePool.CreateFreeThreaded(
+            _geraet, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, _groesse);
+        _pool.FrameArrived += Angekommen;
+        _sitzung = _pool.CreateCaptureSession(item);
+        try { _sitzung.IsCursorCaptureEnabled = false; } catch (Exception) { }
+        _sitzung.StartCapture();
+        _fenster = IntPtr.Zero;
+        _programm = string.Empty;
+        _schirm = schirm.Bounds;
+    }
+
     /// <summary>Das aufgenommene Fenster, fuer den Bericht: Programm, Klasse, versteckt.</summary>
-    public string Aufgenommen => _fenster == IntPtr.Zero ? "none" : Fenster.Beschreibe(_fenster);
+    public string Aufgenommen => _schirmNummer is { } n ? $"screen {n} {_schirm}"
+        : _fenster == IntPtr.Zero ? "none" : Fenster.Beschreibe(_fenster);
 
     /// <summary>
     /// Nur das neueste Bild behalten -- umgewandelt wird erst, wenn ein Leser fragt.
@@ -216,6 +268,10 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         {
             lock (_schloss)
             {
+                if (_schirmNummer is not null)
+                {
+                    return _sitzung is null || _schirm.IsEmpty ? null : Fenster.SpielAufSchirm(_schirm, _spielImBild);
+                }
                 var h = _fenster;
                 if (h == IntPtr.Zero || !Fenster.IsWindow(h) || Fenster.IsIconic(h)) { return null; }
                 var imBild = _spielImBild;
@@ -254,6 +310,9 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
     {
         get
         {
+            // Ein Bildschirm: "vorne" heisst, ein Vollbild-Fenster bedeckt ihn -- das Spiel.
+            // Sonst stuende der HUD ueber dem Schreibtisch.
+            if (_schirmNummer is not null) { return !_schirm.IsEmpty && Fenster.VollbildAuf(_schirm); }
             var h = _fenster;
             if (h == IntPtr.Zero) { return false; }
             var vorne = Fenster.GetAncestor(Fenster.GetForegroundWindow(), 2);
@@ -345,6 +404,28 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         }
     }
 
+    /// <summary>Ein Aufnahme-Objekt fuer einen ganzen Bildschirm (IGraphicsCaptureItemInterop.CreateForMonitor).</summary>
+    private static GraphicsCaptureItem ItemFuerMonitor(IntPtr monitor)
+    {
+        var fabrik = ActivationFactory.Get("Windows.Graphics.Capture.GraphicsCaptureItem");
+        var iid = IidInterop;
+        Marshal.ThrowExceptionForHR(Marshal.QueryInterface(fabrik.ThisPtr, ref iid, out var interop));
+        try
+        {
+            var tabelle = *(IntPtr**)interop;
+            var erzeuge = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, Guid*, IntPtr*, int>)tabelle[4];
+            var itemIid = IidItem;
+            IntPtr zeiger;
+            Marshal.ThrowExceptionForHR(erzeuge(interop, monitor, &itemIid, &zeiger));
+            try { return GraphicsCaptureItem.FromAbi(zeiger); }
+            finally { Marshal.Release(zeiger); }
+        }
+        finally
+        {
+            Marshal.Release(interop);
+        }
+    }
+
     /// <summary>Ein Direct3D-11-Geraet als WinRT-IDirect3DDevice fuer den Bildvorrat.</summary>
     private static IDirect3DDevice D3dGeraet()
     {
@@ -420,6 +501,7 @@ internal static class Fenster
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string? klasse, string? titel);
     [DllImport("kernel32.dll")] private static extern IntPtr OpenProcess(uint zugriff, bool erben, uint pid);
+    [DllImport("user32.dll")] private static extern IntPtr MonitorFromPoint(POINT pt, uint flags);
     [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr h);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern bool QueryFullProcessImageNameW(IntPtr prozess, int flags, StringBuilder pfad, ref int laenge);
@@ -464,6 +546,7 @@ internal static class Fenster
     {
         if (string.IsNullOrWhiteSpace(teil)) { return IntPtr.Zero; }
         var t = teil.Trim();
+        if (BildschirmNummer(t) is not null) { return IntPtr.Zero; }
         // Ein Fenster ohne Titel (Store-App im Vollbild): ueber sein Programm.
         if (t.StartsWith("program:", StringComparison.OrdinalIgnoreCase))
         {
@@ -658,6 +741,51 @@ internal static class Fenster
                                         bool Sichtbar, int Versteckt, bool Werkzeug, bool Minimiert,
                                         int Breite, int Hoehe);
 
+    /// <summary>Die Bildschirme, der Hauptbildschirm zuerst, dann von links nach rechts.</summary>
+    internal static List<Screen> Bildschirme() =>
+        Screen.AllScreens.OrderByDescending(s => s.Primary).ThenBy(s => s.Bounds.X).ThenBy(s => s.Bounds.Y).ToList();
+
+    /// <summary>"screen:2" -> 2; kein Bildschirm-Schluessel -> null.</summary>
+    internal static int? BildschirmNummer(string? schluessel) =>
+        schluessel is not null && schluessel.StartsWith("screen:", StringComparison.OrdinalIgnoreCase)
+        && int.TryParse(schluessel["screen:".Length..].Trim(), out var n) && n >= 1 ? n : null;
+
+    /// <summary>Der Bildschirm Nummer n (1-basiert), oder null.</summary>
+    internal static Screen? Bildschirm(int n)
+    {
+        var alle = Bildschirme();
+        return n >= 1 && n <= alle.Count ? alle[n - 1] : null;
+    }
+
+    internal static IntPtr MonitorVon(Screen s) =>
+        MonitorFromPoint(new POINT { X = s.Bounds.X + (s.Bounds.Width / 2), Y = s.Bounds.Y + (s.Bounds.Height / 2) }, 2);
+
+    /// <summary>Das Spielbild auf einem Bildschirm: wo es im Bild lag, sonst mittig 16:9.</summary>
+    internal static Rectangle SpielAufSchirm(Rectangle schirm, Rectangle? imBild)
+    {
+        if (imBild is { Width: > 0, Height: > 0 } r)
+        {
+            return new Rectangle(schirm.X + r.X, schirm.Y + r.Y, r.Width, r.Height);
+        }
+        var b = Math.Min(schirm.Width, (int)Math.Round(schirm.Height * 16.0 / 9));
+        var h = Math.Min(schirm.Height, (int)Math.Round(b * 9.0 / 16));
+        return new Rectangle(schirm.X + ((schirm.Width - b) / 2), schirm.Y + ((schirm.Height - h) / 2), b, h);
+    }
+
+    /// <summary>Bedeckt das Fenster im Vordergrund diesen Bildschirm (fast) ganz -- ein Spiel im Vollbild?</summary>
+    internal static bool VollbildAuf(Rectangle schirm)
+    {
+        var vorne = GetAncestor(GetForegroundWindow(), 2);
+        if (vorne == IntPtr.Zero) { return false; }
+        GetWindowThreadProcessId(vorne, out var pid);
+        if (pid == (uint)Environment.ProcessId) { return false; }
+        if (Klasse(vorne) is "Progman" or "WorkerW" or "Shell_TrayWnd") { return false; }
+        if (!GetWindowRect(vorne, out var r)) { return false; }
+        var fenster = Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
+        var schnitt = Rectangle.Intersect(fenster, schirm);
+        return (long)schnitt.Width * schnitt.Height >= (long)schirm.Width * schirm.Height * 85 / 100;
+    }
+
     /// <summary>Gehoert die Datei zu einem Programm, das ein Konsolenbild zeigt?</summary>
     internal static bool IstSpielbildProgramm(string datei) =>
         Spielbildprogramme.Any(p => datei.StartsWith(p.Datei, StringComparison.OrdinalIgnoreCase));
@@ -720,9 +848,16 @@ internal static class Fenster
             var suche = f.Titel.Length > 0 ? null : "program:" + f.Datei;
             raus.Add(new Eintrag(f.Titel, f.Name, f.Minimiert, Rang(f.Titel, f.Datei), suche));
         }
-        return raus.GroupBy(e => e.Schluessel, StringComparer.OrdinalIgnoreCase).Select(g => g.First())
+        var sortiert = raus.GroupBy(e => e.Schluessel, StringComparer.OrdinalIgnoreCase).Select(g => g.First())
                    .OrderBy(e => e.Rang).ThenBy(e => e.Minimiert)
                    .ThenBy(e => e.Titel, StringComparer.CurrentCultureIgnoreCase).ToList();
+        // DIE BILDSCHIRME direkt nach den Remote-Play-Programmen: fuer Spiele im Vollbild.
+        var schirme = Bildschirme().Select((s, i) => new Eintrag(
+            string.Format(Loc.T("Entire screen {0}"), i + 1) + $" ({s.Bounds.Width}\u00d7{s.Bounds.Height})",
+            Loc.T("for games in full screen"), false, 0, "screen:" + (i + 1))).ToList();
+        var nachRemotePlay = sortiert.FindIndex(e => e.Rang > 0);
+        sortiert.InsertRange(nachRemotePlay < 0 ? sortiert.Count : nachRemotePlay, schirme);
+        return sortiert;
     }
 
     /// <summary>
@@ -827,6 +962,14 @@ internal static class Fenster
         var item = await waehler.PickSingleItemAsync();
         if (item is null) { return string.Empty; }
         var name = item.DisplayName ?? string.Empty;
+        // EIN GANZER BILDSCHIRM (seit 2026-09-29): nach der Groesse dem Bildschirm zuordnen.
+        var alleSchirme = Bildschirme();
+        var passend = alleSchirme.FindIndex(s => Math.Abs(s.Bounds.Width - item.Size.Width) <= 2
+                                                 && Math.Abs(s.Bounds.Height - item.Size.Height) <= 2);
+        if (passend >= 0 && FindeFensterMitGroesse(item.Size.Width, item.Size.Height) == IntPtr.Zero)
+        {
+            return "screen:" + (passend + 1);
+        }
         if (name.Trim().Length > 0 && Finden(name) != IntPtr.Zero) { return name; }
         // Ohne (wiederauffindbaren) Titel: das Fenster ueber seine Groesse suchen und sein
         // Programm merken -- so findet es die Quelle auch nach einem Neustart.
@@ -840,6 +983,11 @@ internal static class Fenster
              : treffer.Titel.Length > 0 && Finden(treffer.Titel) == treffer.Handle ? treffer.Titel
              : "program:" + treffer.Datei;
     }
+
+    /// <summary>Ein sichtbares, nicht verstecktes Fenster dieser Groesse (fuer die Auswahl von Windows).</summary>
+    private static IntPtr FindeFensterMitGroesse(int breite, int hoehe) =>
+        AlleFenster().FirstOrDefault(f => f.Sichtbar && f.Versteckt == 0 && Math.Abs(f.Breite - breite) <= 24
+                                          && Math.Abs(f.Hoehe - hoehe) <= 48).Handle;
 
     /// <summary>
     /// Alle Fenster als Text -- fuer jemanden, der helfen soll, wenn das eigene nicht in der

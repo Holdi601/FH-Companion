@@ -841,6 +841,17 @@ internal static class EdgeCaseTest
         var bericht = Rivals.Fenster.Bericht("XBOX");
         Soll(bericht.Contains("program | class | title") && bericht.Contains("source \"XBOX\" finds:"),
              "der Fensterbericht ist unvollstaendig");
+        // GANZE BILDSCHIRME (2026-09-29): fuer Remote Play im Vollbild, je Bildschirm ein Eintrag.
+        var schirme = liste.Where(e => e.Schluessel.StartsWith("screen:", StringComparison.Ordinal)).ToList();
+        Soll(schirme.Count == Screen.AllScreens.Length && schirme[0].Schluessel == "screen:1",
+             $"die Liste bietet {schirme.Count} Bildschirme statt {Screen.AllScreens.Length}");
+        Soll(Rivals.Fenster.BildschirmNummer("screen:2") == 2 && Rivals.Fenster.BildschirmNummer("screen:0") is null
+             && Rivals.Fenster.BildschirmNummer("XBOX") is null && Rivals.Fenster.Finden("screen:1") == IntPtr.Zero,
+             "Bildschirm-Schluessel falsch gelesen");
+        Soll(Rivals.Fenster.SpielAufSchirm(new Rectangle(3840, 0, 2560, 1080), null) == new Rectangle(4160, 0, 1920, 1080),
+             "auf einem breiten Bildschirm liegt das Spielbild nicht mittig 16:9");
+        Soll(Rivals.Fenster.SpielAufSchirm(new Rectangle(0, 0, 3840, 2160), new Rectangle(0, 0, 3840, 2160)) == new Rectangle(0, 0, 3840, 2160),
+             "das Spielbild eines Bildschirms stimmt nicht");
         var xbox = new Rivals.Fenster.Eintrag("XBOX", "Xbox app", false, 0);
         Soll(xbox.ToString().Contains("Xbox app") && xbox.ToString().StartsWith("XBOX"), "der Eintrag nennt das Programm nicht");
         using (var feldListe = new ComboBox())

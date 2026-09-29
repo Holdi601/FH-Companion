@@ -393,7 +393,7 @@
  ],
  "Continue": [
   "Disclosure.cs:469",
-  "EdgeCaseTest.cs:102"
+  "EdgeCaseTest.cs:103"
  ],
  "Continuous": [
   "BlueprintEditor.cs:1616",
@@ -596,6 +596,9 @@
  ],
  "Enter this in Forza on the Xbox or the other PC, under Settings › HUD and Gameplay:": [
   "Konsole.cs:80"
+ ],
+ "Entire screen {0}": [
+  "Rivals/FensterQuelle.cs:856"
  ],
  "Event Sign Up maps": [
   "Rivals/HudTab.cs:854"
@@ -2124,7 +2127,7 @@
   "TelemetryInspector.cs:87"
  ],
  "The window is minimized. Restore it; it may stay behind other windows.": [
-  "Rivals/FensterQuelle.cs:106"
+  "Rivals/FensterQuelle.cs:139"
  ],
  "Then the app's vibrations work as on the PC: the Vibration test and the Blueprint editor come back after a restart. While telemetry arrives, the app overwrites the vibration that Remote Play passes on, as it does with the game on the PC. Only the game's own vibration setting on the Xbox silences it completely.": [
   "Konsole.cs:199"
@@ -2355,7 +2358,7 @@
  ],
  "What {0} does": [
   "Disclosure.cs:82",
-  "EdgeCaseTest.cs:102"
+  "EdgeCaseTest.cs:103"
  ],
  "Wheel-lock detection from braking slip ratio": [
   "MainForm.cs:825"
@@ -2379,7 +2382,8 @@
   "Rivals/HudTab.cs:1353"
  ],
  "Window not found: “{0}”": [
-  "Rivals/FensterQuelle.cs:114"
+  "Rivals/FensterQuelle.cs:113",
+  "Rivals/FensterQuelle.cs:147"
  ],
  "Windows Firewall blocks this program, so nothing from the Xbox arrives. Allow it once:": [
   "Konsole.cs:133"
@@ -2624,6 +2628,9 @@
  "flying sprint": [
   "Rivals/OverlayController.cs:3456"
  ],
+ "for games in full screen": [
+  "Rivals/FensterQuelle.cs:857"
+ ],
  "forzahorizon6.exe is not running -- start the game, then read.": [
   "Tuning/TuningTab.cs:166"
  ],
@@ -2705,7 +2712,7 @@
   "Rivals/OverlayController.cs:3636"
  ],
  "minimized": [
-  "Rivals/FensterQuelle.cs:622"
+  "Rivals/FensterQuelle.cs:705"
  ],
  "motor intensity": [
   "TelemetryInspector.cs:138"
@@ -2750,7 +2757,7 @@
   "Rivals/AppUpdate.cs:153"
  ],
  "no title": [
-  "Rivals/FensterQuelle.cs:621"
+  "Rivals/FensterQuelle.cs:704"
  ],
  "none": [
   "MainForm.cs:1883"

@@ -474,7 +474,7 @@ internal static class Konsole
             try { titel = await Rivals.Fenster.MitWindowsWaehlenAsync(stapel.FindForm()?.Handle ?? IntPtr.Zero); }
             catch (Exception) { titel = string.Empty; }
             if (titel is { Length: 0 }) { return; }
-            if (titel is null || Rivals.Fenster.Finden(titel) == IntPtr.Zero)
+            if (titel is null || (Rivals.Fenster.BildschirmNummer(titel) is null && Rivals.Fenster.Finden(titel) == IntPtr.Zero))
             {
                 // Das Auswahlfenster bietet auch ganze Bildschirme an -- die haben keinen Fenstertitel.
                 MessageBox.Show(stapel.FindForm(), Loc.T("That is a whole screen, not a window. Pick the window that shows the game."),
