@@ -338,6 +338,29 @@ internal sealed class OverlaySettings
     /// <summary>Konsolen- bzw. Zweitrechner-Modus. Wirkt nach einem Neustart der App.</summary>
     [JsonPropertyName("console_mode")] public bool ConsoleMode { get; set; }
 
+    /// <summary>
+    /// Konsolenmodus: den HUD ueber das Fenster legen, aus dem das Spielbild kommt
+    /// (Xbox Remote Play, OBS-Projektor) -- wie beim Spielen am PC -- statt ins
+    /// Dashboard (seit 2026-09-29).
+    /// </summary>
+    /// <remarks>
+    /// Mit Remote Play spielt man auf DIESEM Schirm: das Spiel laeuft auf der Xbox,
+    /// ihr Bild in einem Fenster hier, der Controller am PC. Der HUD gehoert dann ueber
+    /// dieses Fenster. Er erscheint nur, solange es vorne ist -- sonst stuende er beim
+    /// Wechsel zu einem anderen Programm ueber dem Desktop.
+    /// </remarks>
+    [JsonPropertyName("console_hud_over_window")] public bool ConsoleHudOverWindow { get; set; }
+
+    /// <summary>Liegt der HUD gerade ueber einem Fenster (statt im Dashboard)?</summary>
+    /// <remarks>
+    /// Nur, wo man in diesem Fenster SPIELT: Remote Play, der Projektor einer
+    /// Aufnahmekarte. Ein Strom bei Discord, Twitch oder YouTube hinkt Sekunden hinterher
+    /// -- ein HUD aus der Echtzeit-Telemetrie darueber passte nicht zum Bild.
+    /// </remarks>
+    [JsonIgnore]
+    public bool HudUeberFenster => ConsoleMode && ConsoleHudOverWindow
+                                   && (VideoSource ?? "none").ToLowerInvariant() is "window" or "obs";
+
     /// <summary>none | window | device | url -- woher das Spielbild zum Lesen kommt.</summary>
     [JsonPropertyName("video_source")] public string VideoSource { get; set; } = "none";
 
@@ -360,6 +383,8 @@ internal sealed class OverlaySettings
         "window" => !string.IsNullOrWhiteSpace(VideoWindow),
         "device" => !string.IsNullOrWhiteSpace(VideoDevice),
         "obs" => true,
+        "discord" => true,
+        "browser" => true,
         "url" => !string.IsNullOrWhiteSpace(VideoUrl),
         _ => false,
     };

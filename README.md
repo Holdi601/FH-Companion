@@ -79,6 +79,10 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
   bumpy ground.
 - **Car notes in the car menu.** Your own note for the car highlighted in My Cars,
   plus the applied tune's name, tuner and description.
+- **Car collection.** Every car on the official FH6 list, which ones you are still
+  missing and how to get each one: Autoshow price, Festival Playlist season,
+  Aftermarket dealer, Barn Find region, Car Mastery, DLC pack. On the PC the app
+  reads your garage; on the Xbox you tick your cars.
 - **Messages.** A short note when a lap or sprint is stored, and a warning when
   you get close to the game's limit for downloaded tunes.
 - **Celebration.** When a lap beats the website's best time for that car, route

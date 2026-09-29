@@ -323,6 +323,31 @@ def copy_dataset(root: Path) -> dict:
 
 
 ROUTE_MAPS = WORKSPACE / "data" / "route_maps"
+CAR_LIST = WORKSPACE / "data" / "cars" / "fh6_car_availability.json"
+
+
+def copy_car_list(root: Path) -> int:
+    """Die Autoliste fuer "Car collection" -- aelter als 20 Stunden, dann vorher neu holen.
+
+    Kein Abbruch, wenn es nicht geht: die App holt die Liste ohnehin vom Server, und
+    ein Paket ohne sie ist besser als keines. Eine alte Liste wird mitgeliefert.
+    """
+    import sys as _sys
+    import time as _time
+    _sys.path.insert(0, str(WORKSPACE / "server"))
+    import car_availability
+    alt = not CAR_LIST.exists() or _time.time() - CAR_LIST.stat().st_mtime > car_availability.HOECHSTALTER_S
+    if alt:
+        car_availability.aktualisieren(lambda m: say("  " + m), CAR_LIST)
+    if not CAR_LIST.exists():
+        say("  Autoliste: keine -- die App holt sie vom Server")
+        return 0
+    ziel = root / "data" / "cars" / CAR_LIST.name
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(CAR_LIST, ziel)
+    autos = len(json.loads(CAR_LIST.read_text(encoding="utf-8")).get("cars", []))
+    say(f"  Autoliste: {autos} Autos")
+    return autos
 
 
 def update_key_path() -> Path:
@@ -1241,6 +1266,7 @@ def refresh_data_only(root: Path, zip_it: bool, keep: int = 5) -> int:
     facts = copy_dataset(root)
     # Die Karten sind Daten wie der Bestand -- auch sie werden hier aufgefrischt.
     copy_route_maps(root)
+    copy_car_list(root)
     # Auch die LIESMICH nennt Boardzahl, Runden und Baustand. Nur die Daten zu
     # tauschen hiesse, ein Paket auszuliefern, das sich selbst falsch beschreibt --
     # und zwar mit Zahlen, die jemand nachrechnen kann.
@@ -1380,6 +1406,7 @@ def main(argv: list[str] | None = None) -> int:
         say("Daten und Einstellungen")
         facts = copy_dataset(root)
         copy_route_maps(root)
+        copy_car_list(root)
         copy_config(root, args.server)
         write_docs(root, facts, self_contained, args.server)
 

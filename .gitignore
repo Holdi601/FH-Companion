@@ -53,6 +53,9 @@ last_blueprint.txt
 # ---------------------------------------------------------------------------
 config/local.json
 config/overlay.json
+# Die eigenen Autos und die Notizen dazu -- persoenlich, wie overlay.json.
+config/car_notes.json
+config/owned_cars.json
 config/private_words.txt
 config/fh6_learned_route.json
 config/*.bak*

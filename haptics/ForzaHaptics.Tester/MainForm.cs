@@ -450,6 +450,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             Padding = new Padding(0)
         };
 
+        var carCollectionTab = new TabPage("Car collection")
+        {
+            BackColor = PanelColor,
+            ForeColor = Color.WhiteSmoke,
+            Padding = new Padding(0)
+        };
+
         var myTimesTab = new TabPage("My times")
         {
             BackColor = PanelColor,
@@ -542,6 +549,15 @@ internal sealed class MainForm : Form, ITelemetryHost
             () => _rivals.Controller);
         carNotesTab.Controls.Add(carNotes);
 
+        // Welche Autos fehlen noch, und wie kommt man an sie. Die Liste vom eigenen
+        // Server, der Besitz aus der Garage (PC) oder aus Haken und gefahrenen Autos.
+        var carCollection = new Rivals.CarCollectionTab(
+            () => _rivals.Settings.ServerUrl,
+            () => _rivals.Controller?.Notes ?? new Rivals.CarNotes(),
+            () => _rivals.Controller?.Advisor,
+            konsole);
+        carCollectionTab.Controls.Add(carCollection);
+
         // Der Berater kommt vom Overlay-Regler: er haelt den geladenen Datensatz,
         // aus dem Name, Marke, Herkunft und Kategorie jedes Autos stammen. Ohne ihn
         // zeigt der Reiter trotzdem alle Zeiten, nur ohne diese Filter.
@@ -557,6 +573,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             // Autos dazugekommen, und eine Liste, die das erst beim Neustart zeigt,
             // sieht aus wie eine, die nichts gemerkt hat.
             if (ReferenceEquals(e.TabPage, carNotesTab)) { carNotes.Refresh(); }
+            if (ReferenceEquals(e.TabPage, carCollectionTab)) { carCollection.Zeigen(); }
             if (ReferenceEquals(e.TabPage, myTimesTab)) { myTimes.Reload(); }
         };
 
@@ -569,6 +586,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             tabs.TabPages.Add(tunesTab);
         }
         tabs.TabPages.Add(carNotesTab);
+        tabs.TabPages.Add(carCollectionTab);
         tabs.TabPages.Add(myTimesTab);
         if (Environment.GetCommandLineArgs()
                 .Contains("--overlay", StringComparer.OrdinalIgnoreCase))
@@ -795,7 +813,8 @@ internal sealed class MainForm : Form, ITelemetryHost
             Location = new Point(690, 506)
         };
 
-        telemetryTab.Controls.Add(Konsole.Feld(_rivals!.Settings, new Point(700, 18), () => TelemetryPort));
+        telemetryTab.Controls.Add(Konsole.Feld(_rivals!.Settings, new Point(700, 18), () => TelemetryPort,
+                                               () => _rivals.OeffneAufnahmefenster()));
         telemetryTab.Controls.AddRange([
             telemetryTitle,
             telemetryInstructions,
@@ -1189,9 +1208,10 @@ internal sealed class MainForm : Form, ITelemetryHost
         {
             if (_rivals?.Settings.ConsoleMode == true)
             {
-                // KONSOLENMODUS: kein Controller an diesem Rechner, dafuer das Dashboard.
+                // KONSOLENMODUS: kein Controller an diesem Rechner, dafuer das Dashboard --
+                // ausser der HUD liegt ueber dem Fenster von Remote Play (wie am PC).
                 _ = StartTelemetryAsync();
-                _rivals.OeffneAufnahmefenster();
+                if (!_rivals.Settings.HudUeberFenster) { _rivals.OeffneAufnahmefenster(); }
                 return;
             }
             await ConnectControllerAsync();

@@ -65,12 +65,13 @@ internal static class Konsole
     }
 
     /// <summary>Die vier Wege zum Spielbild, dazu "keins" -- Schluessel wie in OverlaySettings.VideoSource.</summary>
-    internal static readonly string[] Quellen = { "none", "device", "obs", "window", "url" };
+    internal static readonly string[] Quellen = { "none", "device", "obs", "window", "discord", "browser", "url" };
 
     private static readonly Color Grau = Color.FromArgb(147, 162, 181);
 
     /// <summary>Das Bedienfeld. Im PC-Modus nur der Hinweis auf den Schalter oben.</summary>
-    internal static Control Feld(Rivals.OverlaySettings s, Point ort, Func<int>? port = null)
+    internal static Control Feld(Rivals.OverlaySettings s, Point ort, Func<int>? port = null,
+                                 Action? dashboardOeffnen = null)
     {
         var stapel = new FlowLayoutPanel
         {
@@ -101,6 +102,8 @@ internal static class Konsole
             ["device"] = Loc.T("Capture card"),
             ["obs"] = "OBS",
             ["window"] = Loc.T("Xbox Remote Play"),
+            ["discord"] = "Discord",
+            ["browser"] = Loc.T("Stream in the browser (Twitch, YouTube, Kick …)"),
             ["url"] = Loc.T("Stream address"),
         };
         var hilfen = new Dictionary<string, string>
@@ -108,7 +111,10 @@ internal static class Konsole
             ["none"] = string.Empty,
             ["device"] = Loc.T("Connect the Xbox to the capture card and pick the card here."),
             ["obs"] = Loc.T("In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized."),
-            ["window"] = Loc.T("Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized."),
+            ["window"] = Loc.T("Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.")
+                         + " " + Loc.T("Any other window that shows the game works too: pick it from the list."),
+            ["discord"] = Loc.T("Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox."),
+            ["browser"] = Loc.T("Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard."),
             ["url"] = string.Empty,
         };
 
@@ -249,6 +255,49 @@ internal static class Konsole
 
         stapel.Controls.Add(vorschau);
         stapel.Controls.Add(zustand);
+
+        // WO DER HUD ERSCHEINT (seit 2026-09-29): mit Remote Play oder dem OBS-Projektor
+        // liegt das Spiel in einem Fenster auf diesem Schirm -- der HUD kann darueber,
+        // wie beim Spielen am PC. Sonst im Dashboard.
+        var hudKopf = Kopf(Loc.T("Where the HUD shows"));
+        var imDashboard = new RadioButton
+        {
+            Text = Loc.T("In the dashboard window"), AutoSize = true, ForeColor = Color.Gainsboro,
+            Checked = !s.ConsoleHudOverWindow, Margin = new Padding(0, 3, 0, 0),
+        };
+        var ueberFenster = new RadioButton
+        {
+            Text = Loc.T("Over the game window, like playing on the PC"), AutoSize = true, ForeColor = Color.Gainsboro,
+            Checked = s.ConsoleHudOverWindow, Margin = new Padding(0, 3, 0, 0),
+        };
+        var hudNotiz = Notiz(Loc.T(
+            "It shows while that window is in front. Move and size the HUD in the Lap delta HUD tab, as on the PC."));
+        imDashboard.CheckedChanged += (_, _) =>
+        {
+            if (!imDashboard.Checked) { return; }
+            s.ConsoleHudOverWindow = false;
+            s.Save();
+            Rivals.OverlayAusgabe.SetzeImSpiel(false);
+            dashboardOeffnen?.Invoke();
+        };
+        ueberFenster.CheckedChanged += (_, _) =>
+        {
+            if (!ueberFenster.Checked) { return; }
+            s.ConsoleHudOverWindow = true;
+            s.Save();
+        };
+        stapel.Controls.Add(hudKopf);
+        stapel.Controls.Add(imDashboard);
+        stapel.Controls.Add(ueberFenster);
+        stapel.Controls.Add(hudNotiz);
+        // Nur mit einem Fenster als Quelle gibt es ein "darueber".
+        void HudWahlZeigen()
+        {
+            var fenster = (s.VideoSource ?? "none").ToLowerInvariant() is "window" or "obs";
+            hudKopf.Visible = imDashboard.Visible = ueberFenster.Visible = hudNotiz.Visible = fenster;
+        }
+        foreach (var k in knoepfe) { k.CheckedChanged += (_, _) => HudWahlZeigen(); }
+        HudWahlZeigen();
 
         // DIE VORSCHAU: was die App gerade sieht, damit man es nicht erraten muss. Nur
         // solange der Reiter offen ist -- sonst kostet sie nichts.

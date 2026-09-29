@@ -69,7 +69,11 @@ internal static class Disclosure
     // auf 127.0.0.1, und er liest das Spielbild aus einer gewaehlten Quelle (Aufnahme-
     // karte, OBS, Fenster von Xbox Remote Play, Stromadresse). Fassung 6 nannte nur
     // 127.0.0.1 und "the game window".
-    public const int Fassung = 7;
+    // 8 seit 2026-09-29: ein fuenfter Grund, den Server zu fragen -- die Autoliste fuer
+    // "Car collection" (Fassung 7 versprach "exactly four things"). Dazu liest der
+    // Garagen-Knopf jetzt auch auf diesem Reiter den Spielspeicher, und das Spielbild
+    // kann aus Discord oder einem Browserfenster kommen.
+    public const int Fassung = 8;
 
     private const string Titel = "What " + AppInfo.Name + " does";
 
@@ -97,8 +101,8 @@ WHAT IT DOES ON YOUR PC
 
       It only READS. It never writes to the game and never changes anything in
       it. It does this only when you press the button for it on the Tuning,
-      Tunes or Car notes tab. If you never press one, the game's memory is never
-      touched.
+      Tunes, Car notes or Car collection tab. If you never press one, the game's
+      memory is never touched.
 
   Reads what the game shows on screen.
       To know which routes the Event Sign Up screen offers and which car is
@@ -106,8 +110,8 @@ WHAT IT DOES ON YOUR PC
       and reads the text with the text recognition built into Windows. This
       happens on your PC; the pictures are not sent anywhere. In "Xbox / 2nd PC"
       mode it takes those pictures from the source you choose instead: a capture
-      card, OBS, the Xbox Remote Play window or a stream address. Windows then
-      draws a yellow frame around a captured window.
+      card, OBS, the Xbox Remote Play window, Discord, a stream in your browser or
+      a stream address. Windows then draws a yellow frame around a captured window.
 
   Reads your downloaded tunes from the game's save folder -- read-only.
       The Tunes tab counts them and shows which ones no car uses. The save folder
@@ -152,13 +156,16 @@ WHAT IT DOES ON YOUR PC
 
 WHAT LEAVES YOUR COMPUTER
 
-  The program contacts the server for exactly four things:
+  The program contacts the server for exactly five things:
 
       1. To ask whether the car ratings are newer than the ones you have,
          and to fetch them if they are.
       2. To ask whether a newer version of this program exists.
       3. To download that new version, when you press the update button.
       4. To submit a lap that BEATS the leaderboard -- ON unless you switch it off.
+      5. To fetch the list of all cars and how to get them, for the Car collection
+         tab -- at most every twelve hours, and only while that tab is open. It
+         sends nothing; which cars you own stays on this computer.
 
   About 4: a lap is sent only if it is faster than the best leaderboard time of
   that same car on that route and class, and faster than anything you sent for it

@@ -22,6 +22,16 @@ namespace ForzaHaptics.Tester.Rivals;
 /// Gelesen wird nur auf Anfrage: die Quelle wandelt nicht jedes eintreffende Bild um,
 /// sondern das neueste, wenn ein Leser danach fragt (hoechstens alle 150 ms neu).
 /// </remarks>
+/// <summary>Eine Quelle, deren Bild in einem Fenster auf diesem Schirm liegt (Remote Play, Projektor).</summary>
+internal interface IFensterBild
+{
+    /// <summary>Das 16:9-Spielbild in Bildschirmkoordinaten -- oder null (kein Fenster, minimiert).</summary>
+    Rectangle? Schirmflaeche { get; }
+
+    /// <summary>Ist dieses Fenster gerade das aktive (und nicht minimiert)?</summary>
+    bool IstVorne { get; }
+}
+
 internal interface IBildquelle : IDisposable
 {
     /// <summary>Was die Quelle ist -- oder warum sie nicht laeuft. Fuer die Statuszeile.</summary>
@@ -63,6 +73,8 @@ internal static class Bildquellen
     {
         "device" when !string.IsNullOrWhiteSpace(s.VideoDevice) => new GeraeteQuelle(s.VideoDevice!),
         "obs" => new ObsQuelle(),
+        "discord" when FensterQuelle.Unterstuetzt => new FensterQuelle("Discord", Fenster.DiscordFenster),
+        "browser" when FensterQuelle.Unterstuetzt => new FensterQuelle("a stream in the browser", Fenster.BrowserStrom),
         "window" when !string.IsNullOrWhiteSpace(s.VideoWindow) && FensterQuelle.Unterstuetzt
             => new FensterQuelle(s.VideoWindow!),
         "url" when !string.IsNullOrWhiteSpace(s.VideoUrl) => new StromQuelle(s.VideoUrl!, Ffmpeg.Finden(s.FfmpegPath)),
@@ -351,7 +363,7 @@ internal sealed class GeraeteQuelle : IBildquelle
 /// fuehrt sie nicht. Der Fensterprojektor geht immer: in OBS Rechtsklick auf die
 /// Vorschau, "Windowed Projector (Program)". Er darf verdeckt sein, nur nicht minimiert.
 /// </remarks>
-internal sealed class ObsQuelle : IBildquelle
+internal sealed class ObsQuelle : IBildquelle, IFensterBild
 {
     private readonly object _schloss = new();
     private IBildquelle _jetzt;
@@ -385,6 +397,16 @@ internal sealed class ObsQuelle : IBildquelle
     public Bitmap? Neuestes()
     {
         lock (_schloss) { return _jetzt.Neuestes(); }
+    }
+
+    public Rectangle? Schirmflaeche
+    {
+        get { lock (_schloss) { return (_jetzt as IFensterBild)?.Schirmflaeche; } }
+    }
+
+    public bool IstVorne
+    {
+        get { lock (_schloss) { return (_jetzt as IFensterBild)?.IstVorne == true; } }
     }
 
     public void Dispose()
@@ -422,6 +444,8 @@ internal sealed class StandbildQuelle : IBildquelle
         {
             "device" => "video device: " + (s.VideoDevice ?? "capture card"),
             "obs" => "OBS -- window: Windowed Projector (Program)",
+            "discord" => "window: Discord",
+            "browser" => "window: a stream in the browser",
             "window" => "window: " + (s.VideoWindow ?? "Xbox"),
             _ => "stream: " + (s.VideoUrl ?? string.Empty),
         };

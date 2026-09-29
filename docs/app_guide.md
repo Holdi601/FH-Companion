@@ -204,6 +204,38 @@ car is highlighted in the game's My Cars menu. The tab lists your cars and can
 filter them, and "In the game now" jumps to the highlighted car. It can also
 import your garage from the running game.
 
+## Car collection
+
+Which cars you are still missing, and how to get each one. The list holds every
+car on the official FH6 car list (forza.net/fh6cars), and the ways to get them
+come from the Forza Wiki:
+
+- Autoshow price and Wheelspin;
+- Festival Playlist rewards, with the season they last came in;
+- Aftermarket dealers, with the wiki's map code and price;
+- Barn Finds and treasure cars, with the region;
+- Car Mastery, the Collection Journal, campaign wristbands, gifts and loyalty rewards;
+- DLC packs such as the Car Pass;
+- the Auction House.
+
+The download server rebuilds the list once a day. The tab fetches it from there at
+most every twelve hours, and the package brings a copy for offline use. The app
+itself never contacts forza.net or the wiki. Double-click a car, or use **Open on
+the wiki**, to read its wiki page in your browser.
+
+**Which cars you own:**
+
+- **On this PC:** press **Read my garage** while the game runs. The app reads the
+  garage from the game's memory, as the tuning inspector does, and from then on the
+  garage decides. The **Car notes** garage button does the same.
+- **Xbox / 2nd PC:** there is no memory to read. Every car you drive with the app
+  counts by itself; tick the others you own.
+- **A tick always wins.** Untick a car the garage or a drive marked as yours, for
+  example a loaner from an event, and it counts as missing.
+
+Filter by name or type, by the way to get a car, or by class, and choose missing,
+owned or all cars. Click a column header to sort, for example by Autoshow price.
+
 ## My times
 
 Your recorded laps: the best per car and course, and standings by points and by
@@ -261,7 +293,7 @@ What works and what does not:
   The controller is on the other device.
 - **Needs the game's picture:** the Event Sign Up maps, the car recommendations,
   the car note from My Cars, and detecting Rivals and Horizon Play. Choose one of
-  four ways under **Game picture (optional)**; a preview underneath shows what
+  six ways under **Game picture (optional)**; a preview underneath shows what
   the app sees, and a change applies at once:
   - **Capture card:** the Xbox's HDMI goes through the card (Elgato and the like)
     to the TV. The app lists the video devices of this PC.
@@ -273,13 +305,31 @@ What works and what does not:
     the app suggests the Xbox window. It is captured through Windows Graphics
     Capture, so it may sit behind other windows, but it must be on a screen and
     not minimized. Windows draws a yellow frame around a window while an app
-    captures it.
+    captures it. The list offers every other window on this PC too: any window
+    that shows the game works.
+  - **Discord:** the Xbox's stream in a Discord voice channel, watched on this
+    PC (popped out or full screen). The app finds the Discord window by itself.
+    Your own stream needs a second Discord account on the PC, because your
+    account's call moves to the Xbox.
+  - **Stream in the browser:** the stream on Twitch, YouTube, Kick, Trovo,
+    Facebook, TikTok or Rumble, open in a browser on this PC (full screen or
+    theater mode). The app finds the browser window whose active tab names one
+    of them; the topmost wins.
   - **Stream address** (SRT, RTMP, RTSP, HLS): read through ffmpeg. The app finds
     ffmpeg on the PATH or from winget; without it, run `winget install
     Gyan.FFmpeg` once. A stream is a few seconds late, which is fine for menus.
 
   In a window, the game's 16:9 picture is cut out of any black or plain bars
   around it, but only when what remains is 16:9 — a flat sky is not a bar.
+
+  With Remote Play or the OBS projector you play looking at a window on this
+  screen, so **Where the HUD shows** offers **Over the game window, like playing
+  on the PC** besides the dashboard. The HUD then sits over that window's 16:9
+  picture, only while the window is in front, and is placed in the Lap delta HUD
+  tab as on the PC. The screen reading still captures the window itself, which
+  never contains the overlays. A stream in Discord, in the browser or from an
+  address runs behind the game, so there the HUD stays in the dashboard: it
+  follows the live telemetry and would run ahead of the picture.
 - **Without a game picture,** set **Which mode you are playing** so your laps
   carry the right mode. Only Rivals and Horizon Play laps count on the website.
 

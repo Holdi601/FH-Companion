@@ -812,6 +812,16 @@ def handle(method: str, path: str, headers, body: bytes, *,
             # Folge, dass alte Fassungen alt bleiben.
             return as_json(200, haptics_info())
 
+        if method == "GET" and path == "/api/cars":
+            # ALLE AUTOS UND WIE MAN AN SIE KOMMT, fuer "Car collection" in der App.
+            # Frei zu haben wie /api/haptics: nichts darin ist mehr als die
+            # offizielle Liste und das Wiki. Der Server baut sie selbst taeglich neu
+            # (car_availability.im_hintergrund).
+            import car_availability
+            if not car_availability.AUSGABE.exists():
+                raise ApiError(503, "The car list has not been built yet.")
+            return 200, "application/json; charset=utf-8", car_availability.AUSGABE.read_bytes()
+
         if method == "GET" and path == "/api/dataset":
             target = dataset_file or DATASET_FILE
             if not target.exists():

@@ -846,6 +846,11 @@ def main(argv: list[str] | None = None) -> int:
             threading.Thread(target=nachladen, daemon=True).start()
         # Die Laenderdatenbank holt sich der Dienst selbst, ohne den Start aufzuhalten.
         geoip.refresh_in_background(log)
+        # Die Autoliste ("Car collection" in der App) ebenso, einmal am Tag -- nur im
+        # Spiegelbetrieb: auf dem Spielrechner soll der Server nicht von selbst ins Netz.
+        if NUR_AUSLIEFERN:
+            import car_availability
+            car_availability.im_hintergrund(log)
         # BEIM BEENDEN SICHERN. `docker compose restart` schickt SIGTERM; ohne eigenen
         # Handler endet Python dann sofort, und die Besuche der letzten Sekunden
         # (visits.py schreibt hoechstens alle 15 s) waeren weg.

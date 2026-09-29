@@ -62,23 +62,100 @@ overview appear as soon as you drive.
 
 With the game's picture on this PC, the app also reads the Event Sign Up screen
 (route maps), My Cars (car notes) and which mode you play. Under **Game picture
-(optional)** choose one of four ways; the preview underneath shows what the app
+(optional)** choose one of six ways; the preview underneath shows what the app
 sees.
 
-![The four ways to the game's picture](img/setup/xbox_sources.png)
+![The ways to the game's picture](img/setup/xbox_sources.png)
 
-- **Capture card.** The Xbox's HDMI goes into the card, and the card's output to
-  your TV. Pick the card in the list.
-- **OBS.** If OBS already shows your Xbox: right-click the preview in OBS and
-  choose **Windowed Projector (Program)**. The app finds that window by itself.
-  It may sit behind other windows on a screen, just not minimized.
-- **Xbox Remote Play.** Start Remote Play in the Xbox app on this PC, or at
-  xbox.com/play. The app suggests the Xbox window. It may sit behind other
-  windows on a screen, just not minimized. Windows draws a yellow frame around a
-  window while an app captures it.
-- **Stream address.** An SRT, RTMP, RTSP or HLS address, read through ffmpeg. If
-  the app says it needs ffmpeg, run `winget install Gyan.FFmpeg` once. A stream
-  is a few seconds late, which is fine for menus.
+### Xbox Remote Play — play on this PC, with the HUD over the game
+
+Remote Play shows the Xbox's picture in a window on this PC, and you play there
+with the controller connected to the PC. The app can then put its HUD over that
+window, just like playing Forza on a PC.
+
+**On the Xbox, once:**
+
+1. **Settings › Devices & connections › Remote features:** tick **Enable remote
+   features**. **Test remote play** on the same page checks your network.
+2. **Settings › General › Power options:** choose **Sleep**, so the PC can wake
+   the Xbox.
+
+**On this PC:**
+
+1. Install the **Xbox** app from the Microsoft Store and sign in with the same
+   account as the Xbox. (A browser works too: xbox.com/play, then your console.)
+2. Connect your controller to the PC (cable, Bluetooth or the Xbox Wireless
+   Adapter).
+3. In the Xbox app, choose your console and **Remote play on this device**.
+
+**In FH Companion:** under **Game picture**, choose **Xbox Remote Play**. The app
+suggests the Xbox window; the list next to it offers every other window on this
+PC, so any window that shows the game works the same way. Under **Where the HUD
+shows**, choose **Over the game window, like playing on the PC**.
+
+![Remote Play with the HUD over the game window](img/setup/xbox_remoteplay.png)
+
+The HUD then shows over the Remote Play window while it is in front, and hides
+when you switch to another program. Place and size it in the **Lap delta HUD**
+tab, as on the PC. The window may sit behind other windows on a screen, just not
+minimized. Windows draws a yellow frame around it while an app captures it.
+Data Out on the Xbox (step 3) is still needed: the delta and the other parts come
+from the telemetry, not from the picture.
+
+### Capture card
+
+The Xbox's HDMI goes into the card's **HDMI in**, the card's **HDMI out** to your
+TV, and the card's USB cable to this PC. You keep playing on the TV without delay.
+Under **Game picture**, choose **Capture card** and pick the card. The HUD shows
+in the dashboard window — put it on a second screen next to the TV.
+
+### OBS
+
+If OBS already shows your Xbox (a capture card or the Remote Play window as a
+source): right-click the preview in OBS and choose **Windowed Projector
+(Program)**. Under **Game picture**, choose **OBS**; the app finds the projector
+window by itself. Here, too, the HUD can go over that window instead of into the
+dashboard.
+
+### Discord
+
+If you stream the Xbox to a Discord voice channel, the stream shows up in Discord
+on this PC. Under **Game picture**, choose **Discord**; the app finds the Discord
+window by itself. Pop the stream out or switch it to full screen, so the game's
+picture is not surrounded by chat and member lists.
+
+To watch **your own** Xbox stream on this PC you need a second Discord account
+there: while your account streams from the Xbox, its voice call is on the Xbox.
+
+### A stream on Twitch, YouTube, Kick …
+
+If you stream the Xbox to a platform — the Xbox streams to Twitch by itself
+(press the Xbox button, **Capture & share**), the others go through OBS — open
+the stream in the browser on this PC, in full screen or theater mode. Under
+**Game picture**, choose **Stream in the browser**. The app finds the browser
+window whose tab shows Twitch, YouTube, Kick, Trovo, Facebook, TikTok or Rumble;
+keep the stream's tab the active one in that window.
+
+A stream in Discord or on a platform runs a moment behind the game, so its HUD
+stays in the dashboard: the HUD follows the live telemetry and would run ahead
+of the picture. For reading menus, a few seconds do not matter.
+
+### Stream address
+
+For when the picture comes over the network from a second device, for example a
+PC with the capture card that runs OBS. The Xbox itself cannot stream to an
+address like this.
+
+1. In FH Companion, under **Game picture**, choose **Stream address** and enter
+   `srt://0.0.0.0:9000?mode=listener`.
+2. In OBS on the other device: **Settings › Stream**, service **Custom**, server
+   `srt://192.168.1.20:9000` (this PC's address from the app), then **Start
+   Streaming**.
+
+The stream is read through ffmpeg. If the app says it needs ffmpeg, run `winget
+install Gyan.FFmpeg` once. When Windows asks whether ffmpeg may use the network,
+allow it on private networks. A stream is a few seconds late, which is fine for
+menus.
 
 ## 6. Which mode you play
 

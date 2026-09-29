@@ -444,11 +444,12 @@ internal sealed class OverlayController : IDisposable
         // KONSOLENMODUS: das Spielbild kommt aus einer Videoquelle (oder gar nicht), und
         // ueber diesem Schirm liegt nichts -- gezeigt wird im Dashboard (AufnahmeFenster).
         Bildquellen.Anwenden(_settings);
+        // Ueber dem Fenster (Remote Play) erst, wenn es vorne ist -- das setzt GameIsUp.
         if (_settings.ConsoleMode) { OverlayAusgabe.SetzeImSpiel(false); }
 
         // DIE SPIELFLAECHE, nicht der Hauptschirm -- siehe GameArea. Laeuft das Spiel
         // noch nicht, ist es vorerst der Hauptschirm; FollowGameArea zieht nach.
-        var screen = GameArea.Find(_settings.ForzaProcess);
+        var screen = OverlayFlaeche();
         _area = screen;
         OverlayAusgabe.Flaeche = screen;
         var (rechts, links) = PanelRects(screen);
@@ -1780,9 +1781,33 @@ internal sealed class OverlayController : IDisposable
     /// The overlay usually starts before the game, so the first answer is the
     /// primary screen. Asked on the regular tick; cheap, GameArea caches for 2 s.
     /// </remarks>
+    /// <summary>
+    /// Wo die Overlays liegen: die Spielflaeche -- oder, mit dem HUD ueber einem Fenster
+    /// (Konsolenmodus, Remote Play), das Spielbild in diesem Fenster auf dem Schirm.
+    /// </summary>
+    /// <remarks>
+    /// Getrennt von GameArea.Find: die Leser brauchen im Konsolenmodus die Koordinaten
+    /// des aufgenommenen BILDES, die Overlays die des Schirms.
+    /// </remarks>
+    private Rectangle OverlayFlaeche() =>
+        _settings.HudUeberFenster && Bildquellen.Aktiv is IFensterBild f && f.Schirmflaeche is { } r
+            ? r
+            : GameArea.Find(_settings.ForzaProcess);
+
+    /// <summary>
+    /// Mit dem HUD ueber einem Fenster: ueber dem Schirm nur, solange das Fenster vorne ist.
+    /// </summary>
+    private void UeberFensterAnwenden()
+    {
+        if (!_settings.ConsoleMode) { return; }
+        var an = _settings.HudUeberFenster && Bildquellen.Aktiv is IFensterBild f && f.IstVorne
+                 && f.Schirmflaeche is not null;
+        OverlayAusgabe.SetzeImSpiel(an);
+    }
+
     private void FollowGameArea()
     {
-        var jetzt = GameArea.Find(_settings.ForzaProcess);
+        var jetzt = OverlayFlaeche();
         if (jetzt == _area || jetzt.Width < 640 || jetzt.Height < 360) { return; }
         _area = jetzt;
         OverlayAusgabe.Flaeche = jetzt;
@@ -1813,7 +1838,7 @@ internal sealed class OverlayController : IDisposable
             if (!_hud.Visible) { _hud.Show(); _hud.TopMost = true; }
             return;
         }
-        var schirm = _area.IsEmpty ? GameArea.Find(_settings.ForzaProcess) : _area;
+        var schirm = _area.IsEmpty ? OverlayFlaeche() : _area;
         _hud = new DeltaHud(schirm, _settings);
         _hud.Show();
         _hud.TopMost = true;
@@ -2241,6 +2266,7 @@ internal sealed class OverlayController : IDisposable
         if (_settings.ConsoleMode)
         {
             var da = DateTime.UtcNow - _telemetryAt < TimeSpan.FromSeconds(5) || _settings.HasVideoSource;
+            UeberFensterAnwenden();
             if (da)
             {
                 FollowGameArea();

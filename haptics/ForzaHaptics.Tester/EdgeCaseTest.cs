@@ -63,6 +63,7 @@ internal static class EdgeCaseTest
         ConsoleModeReadsItsSource();
         FullTelemetryTravelsWithTheLap();
         PictureSourcesFindTheGame();
+        CarCollectionKnowsWhatIsMissing();
     }
 
     /// <summary>Eine Bildquelle zum Testen: ein festes Bild.</summary>
@@ -88,6 +89,62 @@ internal static class EdgeCaseTest
     /// mit Balken finden -- und einen gleichmaessigen Himmel NICHT fuer einen Balken halten;
     /// ein Fenster per Graphics Capture aufnehmen, auch ausserhalb des Schirms.
     /// </summary>
+    /// <summary>
+    /// "Car collection": die Liste vom Server, wer was besitzt, und die Saetze dazu.
+    /// </summary>
+    private static void CarCollectionKnowsWhatIsMissing()
+    {
+        static string Liste(int n, string format = "fhc-cars-1")
+        {
+            var autos = Enumerable.Range(1, n).Select(i =>
+                "{\"name\":\"Car " + i + "\",\"year\":2020,\"id\":" + i
+                + ",\"ways\":[{\"k\":\"autoshow\",\"price\":" + (1000 * i) + "}]}");
+            return "{\"format\":\"" + format + "\",\"built\":\"2026-09-29T01:00:00Z\",\"cars\":["
+                   + string.Join(",", autos) + "]}";
+        }
+        var liste = Rivals.CarCollection.Lesen(Liste(150));
+        Soll(liste is { Autos.Count: 150 }, "eine vollstaendige Autoliste wird nicht gelesen");
+        Soll(Rivals.CarCollection.Lesen(Liste(150, "other")) is null, "eine Liste in fremdem Format gilt");
+        Soll(Rivals.CarCollection.Lesen(Liste(20)) is null, "eine halbe Liste gilt -- alles andere stuende als fehlend da");
+        Soll(Rivals.CarCollection.Lesen("{") is null, "kaputtes JSON wirft statt null");
+
+        var a1 = liste!.Autos[0];   // id 1
+        var a2 = liste.Autos[1];    // id 2
+        var gefahren = new HashSet<int> { 1 };
+        var besitz = new Rivals.OwnedCars();
+        Soll(besitz.Besitz(a1, gefahren) == (true, Rivals.OwnedCars.Grund.Gefahren)
+             && !besitz.Besitz(a2, gefahren).Hat, "ohne Garage zaehlt das gefahrene Auto nicht als eigenes");
+        besitz.GarageMerken(new[] { 2 });
+        Soll(!besitz.Besitz(a1, gefahren).Hat && besitz.Besitz(a2, gefahren) == (true, Rivals.OwnedCars.Grund.Garage),
+             "eine gelesene Garage entscheidet nicht allein (ein gefahrenes Leihauto gilt als gekauft)");
+        besitz.Setze(a1, true, gefahren);
+        Soll(besitz.Besitz(a1, gefahren) == (true, Rivals.OwnedCars.Grund.VonHand), "ein Haken von Hand zaehlt nicht");
+        besitz.Setze(a2, true, gefahren);
+        Soll(!besitz.Markiert.ContainsKey(a2.Schluessel), "ein Haken, der nichts aendert, wird gemerkt");
+        besitz.Setze(a2, false, gefahren);
+        Soll(besitz.Besitz(a2, gefahren) == (false, Rivals.OwnedCars.Grund.VonHand), "ein entfernter Haken ueberstimmt die Garage nicht");
+
+        var w = Rivals.CarCollection.Lesen(
+            "{\"format\":\"fhc-cars-1\",\"cars\":[" + string.Join(",", Enumerable.Repeat(
+                "{\"name\":\"X\",\"year\":2001,\"ways\":[{\"k\":\"autoshow\",\"price\":65000},"
+                + "{\"k\":\"playlist\",\"series\":2,\"season\":\"Winter\",\"wk\":\"champ\",\"wx\":\"Retro Rewind\"},"
+                + "{\"k\":\"aftermarket\",\"where\":\"SHI6\",\"price\":18750},{\"k\":\"dlc\",\"pack\":\"Car Pass\"}]}", 120))
+            + "]}")!.Autos[0].Wege;
+        var texte = w.Select(Rivals.CarCollectionTab.WegLang).ToList();
+        Soll(texte[0].Contains("65") && texte[0].Contains("CR"), "Autoshow ohne Preis: " + texte[0]);
+        Soll(texte[1].Contains("2") && texte[1].Contains("Retro Rewind"), "Festival Playlist ohne Serie oder Meisterschaft: " + texte[1]);
+        Soll(texte[2].Contains("SHI6") && texte[2].Contains("18"), "Aftermarket ohne Ort oder Preis: " + texte[2]);
+        Soll(Rivals.CarCollectionTab.WegKurz(w[3]) == "DLC: Car Pass", "DLC ohne Paketnamen: " + Rivals.CarCollectionTab.WegKurz(w[3]));
+
+        // Die mitgelieferte Liste: jedes Auto hat mindestens einen Weg.
+        if (Rivals.CarCollection.PaketPfad() is { } echt)
+        {
+            var e = Rivals.CarCollection.Lesen(File.ReadAllText(echt));
+            Soll(e is { Autos.Count: >= 600 }, "die mitgelieferte Autoliste ist unvollstaendig");
+            Soll(e!.Autos.All(a => a.Wege.Count > 0), "ein Auto der Liste hat keinen Weg");
+        }
+    }
+
     private static void PictureSourcesFindTheGame()
     {
         // Ein 1600x1000-Fenster, darin ein 1440x810-Spielbild mit schwarzen Balken.
@@ -131,6 +188,30 @@ internal static class EdgeCaseTest
             Soll(r.Width == 1000 && Math.Abs(r.Height - 563) <= 1 && Math.Abs(r.Y - 218) <= 1,
                  $"eine quadratische Flaeche wurde nicht mittig auf 16:9 gebracht: {r}");
         }
+
+        // DER HUD UEBER DEM FENSTER (seit 2026-09-29): nur mit einem Fenster als Quelle
+        // (Remote Play, OBS-Projektor) -- eine Aufnahmekarte hat kein Fenster auf dem Schirm.
+        var ueber = new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "window", VideoWindow = "Xbox",
+                                                 ConsoleHudOverWindow = true };
+        Soll(ueber.HudUeberFenster, "Remote Play mit 'ueber dem Fenster' legt den HUD nicht darueber");
+        ueber.VideoSource = "obs";
+        Soll(ueber.HudUeberFenster, "der OBS-Projektor mit 'ueber dem Fenster' legt den HUD nicht darueber");
+        // Discord und ein Strom im Browser hinken hinterher: dort spielt niemand, der HUD bleibt im Dashboard.
+        ueber.VideoSource = "discord";
+        Soll(!ueber.HudUeberFenster && ueber.HasVideoSource, "Discord: der HUD laege ueber einem verspaeteten Bild");
+        ueber.VideoSource = "browser";
+        Soll(!ueber.HudUeberFenster && ueber.HasVideoSource, "Browser-Strom: der HUD laege ueber einem verspaeteten Bild");
+        Soll(Rivals.Fenster.IstStromTitel("somebody - Twitch - Google Chrome")
+             && Rivals.Fenster.IstStromTitel("FH6 live - YouTube \u2014 Mozilla Firefox")
+             && Rivals.Fenster.IstStromTitel("somebody | Kick - Profile 1 - Microsoft Edge"),
+             "ein Strom-Reiter wird nicht als Strom erkannt");
+        Soll(!Rivals.Fenster.IstStromTitel("Kickstarter - Google Chrome") && !Rivals.Fenster.IstStromTitel("Forza Horizon 6"),
+             "ein Fenster ohne Strom gilt als Strom (nur ganze Woerter zaehlen)");
+        ueber.VideoSource = "device";
+        Soll(!ueber.HudUeberFenster, "mit einer Aufnahmekarte gilt 'ueber dem Fenster' -- es gibt keines");
+        ueber.VideoSource = "window";
+        ueber.ConsoleMode = false;
+        Soll(!ueber.HudUeberFenster, "im PC-Modus gilt 'ueber dem Fenster'");
 
         // Die Einstellungen: OBS braucht nichts weiter, die anderen ihren Namen.
         var s = new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = "obs" };

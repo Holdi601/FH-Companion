@@ -341,47 +341,19 @@ internal sealed class CarNotesTab : UserControl
         }
         _garage.Enabled = false;
         _garageStand.Text = Loc.T("searching the game's memory for its database ...");
-        var ablage = Path.Combine(AppInfo.TempFolder, "garage");
         var rat = _regler()?.Advisor;
         Task.Run(() =>
         {
-            string? fund = null;
-            var meldung = string.Empty;
-            try
-            {
-                var funde = Tuning.ForzaMemoryDb.Dump(
-                    ablage,
-                    m => BeiUns(() => _garageStand.Text = m),
-                    pfad =>
-                    {
-                        if (Tuning.GarageReader.FindGarage(new[] { pfad }) is null) { return false; }
-                        fund = pfad;
-                        return true;
-                    });
-                fund ??= Tuning.GarageReader.FindGarage(funde.Select(f => f.Path));
-            }
-            catch (Exception fehler)
-            {
-                meldung = fehler.Message;
-            }
-            var autos = new List<int>();
-            if (fund is not null)
-            {
-                try { autos = Tuning.GarageReader.Cars(fund).Distinct().ToList(); } catch (Exception) { }
-            }
-            var mitNamen = autos.Select(id =>
-                (id, rat?.CarIndexForId(id) is { } ix ? rat.RealCarName(ix) : null)).ToList();
+            var (autos, fehler) = GarageImport.Lesen(m => BeiUns(() => _garageStand.Text = m));
             BeiUns(() =>
             {
                 _garage.Enabled = true;
-                if (fund is null || autos.Count == 0)
+                if (fehler is not null)
                 {
-                    _garageStand.Text = meldung.Length > 0
-                        ? meldung
-                        : Loc.T("No garage found in the game's memory -- open My Cars once, then try again.");
+                    _garageStand.Text = fehler;
                     return;
                 }
-                var neu = _notes().NoteModels(mitNamen, "garage");
+                var neu = GarageImport.Merken(autos, _notes(), rat);
                 _garageStand.Text = string.Format(
                     Loc.T("{0} cars in your garage, {1} new in the list."), autos.Count, neu);
                 Refresh();

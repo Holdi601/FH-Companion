@@ -118,6 +118,10 @@ CODE = [
     "config/local.json",
     "server/downloads.py",
     "server/geoip.py",
+    # Die Autoliste der App (/api/cars, 2026-09-29): der Server baut sie taeglich
+    # selbst aus forza.net und dem Wiki; die car_id je Auto kommt aus dieser Datei.
+    "server/car_availability.py",
+    "config/fh6_car_id_names.json",
     "server/assets/world-110m.json",
     "server/deploy/Dockerfile",
     "server/deploy/docker-compose.yml",

@@ -27,7 +27,7 @@ namespace ForzaHaptics.Tester.Rivals;
 /// Aus dem Bild wird die Innenflaeche geschnitten (ohne Titelleiste), und davon das
 /// 16:9-Spielbild, wenn es mit Balken darin liegt -- siehe <see cref="Bildquellen.Spielbild"/>.
 /// </remarks>
-internal sealed unsafe class FensterQuelle : IBildquelle
+internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
 {
     private static readonly Guid IidInterop = new("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356");
     private static readonly Guid IidItem = new("79C3F95B-31F7-4EC2-A464-632EF5D30760");
@@ -49,6 +49,9 @@ internal sealed unsafe class FensterQuelle : IBildquelle
     // soll es nicht unter der Hand verlieren.
     private Bitmap? _altesBild;
     private DateTime _bildAm = DateTime.MinValue;
+    // Wo im aufgenommenen Bild das Spielbild zuletzt lag (Bildkoordinaten) -- fuer den
+    // HUD ueber dem Fenster (Schirmflaeche).
+    private Rectangle? _spielImBild;
     private bool _zu;
 
     public string Beschreibung { get; private set; }
@@ -170,6 +173,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle
                 var flaeche = Innenflaeche(new Rectangle(0, 0,
                     Math.Min(roh.Width, Math.Max(1, inhalt.Width)), Math.Min(roh.Height, Math.Max(1, inhalt.Height))));
                 var spiel = Bildquellen.Spielbild(roh, flaeche);
+                _spielImBild = spiel;
                 var neu = roh.Clone(spiel, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                 _altesBild?.Dispose();
                 _altesBild = _bild;
@@ -181,6 +185,44 @@ internal sealed unsafe class FensterQuelle : IBildquelle
                 // Ein verlorenes Bild ist kein Fehler; das naechste kommt.
             }
             return _bild;
+        }
+    }
+
+    /// <summary>
+    /// Das Spielbild auf dem Schirm: die Lage des Fensters plus die Stelle, an der das
+    /// 16:9-Bild zuletzt im Fensterbild lag. Vor dem ersten Bild: die Innenflaeche, mittig 16:9.
+    /// </summary>
+    public Rectangle? Schirmflaeche
+    {
+        get
+        {
+            lock (_schloss)
+            {
+                var h = _fenster;
+                if (h == IntPtr.Zero || !Fenster.IsWindow(h) || Fenster.IsIconic(h)) { return null; }
+                if (Fenster.DwmGetWindowAttribute(h, 9, out var aussen, sizeof(Fenster.RECT)) != 0) { return null; }
+                var imBild = _spielImBild;
+                if (imBild is null)
+                {
+                    var ganz = new Rectangle(0, 0, aussen.Right - aussen.Left, aussen.Bottom - aussen.Top);
+                    var innen = Innenflaeche(ganz);
+                    var b = Math.Min(innen.Width, (int)Math.Round(innen.Height * 16.0 / 9));
+                    var hh = Math.Min(innen.Height, (int)Math.Round(b * 9.0 / 16));
+                    imBild = new Rectangle(innen.X + ((innen.Width - b) / 2), innen.Y + ((innen.Height - hh) / 2), b, hh);
+                }
+                var r = imBild.Value;
+                return new Rectangle(aussen.Left + r.X, aussen.Top + r.Y, r.Width, r.Height);
+            }
+        }
+    }
+
+    /// <summary>Ist das aufgenommene Fenster das aktive? (Der Controller spielt nur dann hinein.)</summary>
+    public bool IstVorne
+    {
+        get
+        {
+            var h = _fenster;
+            return h != IntPtr.Zero && !Fenster.IsIconic(h) && Fenster.GetAncestor(Fenster.GetForegroundWindow(), 2) == h;
         }
     }
 
@@ -326,6 +368,8 @@ internal static class Fenster
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr h);
     [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr h);
     [DllImport("user32.dll")] internal static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] internal static extern IntPtr GetAncestor(IntPtr h, uint flags);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowTextW(IntPtr h, StringBuilder s, int n);
     [DllImport("user32.dll")] private static extern int GetWindowTextLengthW(IntPtr h);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
@@ -405,6 +449,71 @@ internal static class Fenster
             {
                 using var p = System.Diagnostics.Process.GetProcessById((int)pid);
                 if (p.ProcessName.StartsWith("obs", StringComparison.OrdinalIgnoreCase)) { return h; }
+            }
+            catch (Exception)
+            {
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Das Fenster, in dem Discord einen Strom zeigt: ein herausgeloestes Fenster von
+    /// Discord, wenn es eines gibt -- sonst das Hauptfenster (Strom im Vollbild).
+    /// </summary>
+    /// <remarks>
+    /// Nach dem Prozess gesucht, nicht nach dem Titel: der Titel des Hauptfensters
+    /// wechselt mit Server und Kanal ("#allgemein | Server - Discord").
+    /// </remarks>
+    internal static IntPtr DiscordFenster()
+    {
+        var eigene = new List<(IntPtr Handle, string Titel)>();
+        foreach (var (h, t) in Sichtbare())
+        {
+            GetWindowThreadProcessId(h, out var pid);
+            try
+            {
+                using var p = System.Diagnostics.Process.GetProcessById((int)pid);
+                if (p.ProcessName.StartsWith("Discord", StringComparison.OrdinalIgnoreCase)) { eigene.Add((h, t)); }
+            }
+            catch (Exception)
+            {
+            }
+        }
+        var herausgeloest = eigene.FirstOrDefault(f => !f.Titel.EndsWith("Discord", StringComparison.OrdinalIgnoreCase));
+        return herausgeloest.Handle != IntPtr.Zero ? herausgeloest.Handle
+             : eigene.Count > 0 ? eigene[0].Handle : IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Plattformen, deren Name im Titel eines Browserfensters steht, wenn dort ein Strom
+    /// laeuft ("name - Twitch - Google Chrome"). Als ganzes Wort: "Kickstarter" ist keiner.
+    /// </summary>
+    private static readonly System.Text.RegularExpressions.Regex StromSeite = new(
+        @"\b(Twitch|YouTube|Kick|Trovo|Facebook|TikTok|Rumble)\b",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static readonly string[] Browser =
+        { "msedge", "chrome", "firefox", "brave", "opera", "vivaldi", "arc", "librewolf", "waterfox", "zen" };
+
+    /// <summary>Nennt dieser Fenstertitel eine Strom-Plattform?</summary>
+    internal static bool IstStromTitel(string titel) => StromSeite.IsMatch(titel);
+
+    /// <summary>
+    /// Ein Browserfenster, das einen Strom zeigt (Twitch, YouTube, Kick ...): der Titel
+    /// des Fensters ist der des aktiven Reiters, und der nennt die Plattform.
+    /// </summary>
+    internal static IntPtr BrowserStrom()
+    {
+        foreach (var (h, t) in Sichtbare())
+        {
+            // Sichtbare() liefert von vorn nach hinten: bei mehreren gewinnt das oberste.
+            if (!IstStromTitel(t)) { continue; }
+            GetWindowThreadProcessId(h, out var pid);
+            try
+            {
+                using var p = System.Diagnostics.Process.GetProcessById((int)pid);
+                if (Browser.Any(b => p.ProcessName.StartsWith(b, StringComparison.OrdinalIgnoreCase))) { return h; }
             }
             catch (Exception)
             {
