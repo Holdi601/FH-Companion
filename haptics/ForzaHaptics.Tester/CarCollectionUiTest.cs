@@ -34,6 +34,7 @@ internal static class CarCollectionUiTest
         {
             BesitzDatei(ordner);
             Reiter(ordner);
+            NichtSicher(ordner);
             Doppelklick(ordner);
             Server(ordner).GetAwaiter().GetResult();
             EchteListe(ordner);
@@ -236,6 +237,7 @@ internal static class CarCollectionUiTest
         }
 
         // PC-Modus mit gelesener Garage: der Knopf ist da, nicht erkannte Autos werden genannt.
+        // (Die Testliste hat fuer jedes Auto eine id -- "nicht sicher" prueft der eigene Teil unten.)
         var g = Rivals.OwnedCars.Laden(besitz);
         g.GarageMerken(new[] { 1, 2, 3 });
         g.Speichern();
@@ -251,6 +253,42 @@ internal static class CarCollectionUiTest
             t2.Zeigen();
             Soll(t2.QuellText.Length > ohne.Length && t2.QuellText.Contains("1"),
                  "ein nicht erkanntes Garagenauto wird nicht genannt: " + t2.QuellText);
+        }
+    }
+
+    // ------------------------------------------------------------------ nicht sicher / My Cars
+
+    private static void NichtSicher(string ordner)
+    {
+        var besitz = Path.Combine(ordner, "owned_unsure.json");
+        // 120 Autos, die Nummern 5 und 6 ohne id.
+        var json = ListeJson(120, DateTime.UtcNow).Replace("\"id\":5,", string.Empty).Replace("\"id\":6,", string.Empty);
+        var liste = Rivals.CarCollection.Lesen(json) ?? throw new InvalidOperationException("Liste unlesbar");
+        Soll(liste.Autos[4].AlleIds.Count == 0 && liste.Autos[5].AlleIds.Count == 0, "Testliste: Nr. 5 und 6 haben eine id");
+        var g = Rivals.OwnedCars.Laden(besitz);
+        g.GarageMerken(new[] { 1, 2, 777777 });
+        g.Speichern();
+        var (form, t, _) = Aufbauen(liste, besitz, null, konsole: false);
+        using (form)
+        {
+            // Fehlt: alle ausser 1, 2 -- 5 und 6 darunter, aber als "nicht sicher".
+            Soll(t.Liste.Items.Count == 118, $"'fehlt' zeigt {t.Liste.Items.Count} statt 118");
+            Soll(Zeile(t, 5).ForeColor != Zeile(t, 7).ForeColor, "'nicht sicher' sieht aus wie 'fehlt'");
+            Soll(t.KopfText.Contains("116") && t.KopfText.Contains("2"), "Kopfzeile ohne 'nicht sicher': " + t.KopfText);
+            t.Zeige.SelectedIndex = 3;
+            Application.DoEvents();
+            Soll(t.Liste.Items.Count == 2 && Hat(t, 5) && Hat(t, 6), $"'nicht sicher' zeigt {t.Liste.Items.Count} statt 2");
+            Zeile(t, 5).Selected = true;
+            Application.DoEvents();
+            Soll(t.DetailText.Split('\n').Length >= 3, "die Einzelheit erklaert 'nicht sicher' nicht: " + t.DetailText);
+
+            // Im Spiel unter My Cars gesehen: wandert sofort zu 'besessen'.
+            Rivals.OwnedCars.GesehenMerken(Auto(liste, 6), besitz);
+            Application.DoEvents();
+            Soll(t.Liste.Items.Count == 1 && Hat(t, 5), "ein in My Cars gesehenes Auto bleibt 'nicht sicher'");
+            t.Zeige.SelectedIndex = 1;
+            Application.DoEvents();
+            Soll(Hat(t, 6) && t.Liste.Items.Count == 3, $"'besessen' zeigt {t.Liste.Items.Count} statt 3 (1, 2, 6)");
         }
     }
 

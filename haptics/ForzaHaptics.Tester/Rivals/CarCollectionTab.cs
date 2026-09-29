@@ -128,7 +128,7 @@ internal sealed class CarCollectionTab : UserControl
             box.FlatStyle = FlatStyle.Flat;
         }
         _zeige.Width = 130;
-        _zeige.Items.AddRange(new object[] { Loc.T("Missing"), Loc.T("Owned"), Loc.T("All cars") });
+        _zeige.Items.AddRange(new object[] { Loc.T("Missing"), Loc.T("Owned"), Loc.T("All cars"), Loc.T("Not sure") });
         _zeige.SelectedIndex = 0;
         _weg.Width = 190;
         _weg.Items.Add(Loc.T("Any way"));
@@ -203,6 +203,8 @@ internal sealed class CarCollectionTab : UserControl
         Controls.Add(oben);
 
         GarageImport.GarageGelesen += () => BeiUns(() => { _besitz = OwnedCars.Laden(_besitzPfad); if (_geladen) { Fuellen(); } });
+        // Im Spiel unter "My Cars" erkannt: sofort mitzaehlen, wenn der Reiter offen ist.
+        OwnedCars.Geaendert += () => BeiUns(() => { _besitz = OwnedCars.Laden(_besitzPfad); if (_geladen && Visible) { Fuellen(); } });
         _detailKopf.Text = Loc.T("Select a car to see every way to get it.");
     }
 
@@ -245,17 +247,21 @@ internal sealed class CarCollectionTab : UserControl
         var uhr = System.Diagnostics.Stopwatch.StartNew();
         var besitz = s.Autos.ToDictionary(a => a, a => _besitz.Besitz(a, _gefahren));
         var hat = besitz.Count(b => b.Value.Hat);
-        _kopf.Text = string.Format(Loc.T("{0} of {1} cars owned -- {2} missing"), hat, s.Autos.Count, s.Autos.Count - hat);
+        var fremd = _besitz.GarageGelesen is null ? 0 : _besitz.NichtErkannt(s);
+        var unsicher = s.Autos.Where(a => _besitz.Unsicher(a, _gefahren, fremd)).ToHashSet();
+        _kopf.Text = unsicher.Count > 0
+            ? string.Format(Loc.T("{0} owned · {1} missing · {2} not sure"), hat, s.Autos.Count - hat - unsicher.Count, unsicher.Count)
+            : string.Format(Loc.T("{0} of {1} cars owned -- {2} missing"), hat, s.Autos.Count, s.Autos.Count - hat);
         _quelle.Text = _besitz.GarageGelesen is { } wann
             ? string.Format(Loc.T("Owned cars: your garage, read {0}. Ticks you set count over it."),
                             wann.LocalDateTime.ToString("g"))
-              + (_besitz.NichtErkannt(s) is > 0 and var fremd
-                  ? "  " + string.Format(Loc.T("{0} cars in your garage are not identified in the list yet -- tick them by hand."), fremd)
+              + (fremd > 0
+                  ? "  " + string.Format(Loc.T("{0} cars in your garage are not identified yet -- highlight them in My Cars in the game, or tick them here."), fremd)
                   : string.Empty)
             : _gefahren.Count > 0
                 ? Loc.T("Owned cars: the cars you have driven with the app. Tick the others you own.")
                 : _konsole
-                    ? Loc.T("Tick the cars you own. Cars you drive with the app count by themselves.")
+                    ? Loc.T("Scroll through My Cars in the game with the picture source on -- every highlighted car counts. Or tick the cars you own.")
                     : Loc.T("Read your garage while the game runs -- or tick the cars you own.");
         _stand.Text = string.Format(Loc.T("Car list from forza.net/fh6cars ({0}); ways to get them from the Forza Wiki (CC BY-SA)."),
                                     s.ListeStand ?? "?");
@@ -265,7 +271,7 @@ internal sealed class CarCollectionTab : UserControl
         var klasse = _klasse.SelectedIndex > 0 ? Klassen[_klasse.SelectedIndex - 1] : null;
         var zeige = _zeige.SelectedIndex;
         var treffer = s.Autos.Where(a =>
-            (zeige == 2 || besitz[a].Hat == (zeige == 1))
+            (zeige == 2 || (zeige == 3 ? unsicher.Contains(a) : besitz[a].Hat == (zeige == 1)))
             && (text.Length == 0 || a.Anzeige.Contains(text, StringComparison.OrdinalIgnoreCase)
                 || a.Typ.Contains(text, StringComparison.OrdinalIgnoreCase))
             && (art is null || a.Wege.Any(w => w.Art == art))
@@ -280,7 +286,7 @@ internal sealed class CarCollectionTab : UserControl
             var z = ZeileFuer(a);
             var hat = besitz[a].Hat;
             z.Checked = hat;
-            z.ForeColor = hat ? Color.Gray : Color.WhiteSmoke;
+            z.ForeColor = hat ? Color.Gray : unsicher.Contains(a) ? Color.FromArgb(255, 200, 90) : Color.WhiteSmoke;
             z.Selected = false;
             return z;
         }).ToArray();
@@ -362,16 +368,23 @@ internal sealed class CarCollectionTab : UserControl
             return;
         }
         var (hat, warum) = _besitz.Besitz(a, _gefahren);
+        var fremd = _besitz.GarageGelesen is null || _sammlung is null ? 0 : _besitz.NichtErkannt(_sammlung);
+        var unsicher = _besitz.Unsicher(a, _gefahren, fremd);
         var zustand = hat
             ? warum switch
             {
                 OwnedCars.Grund.Garage => Loc.T("In your garage"),
                 OwnedCars.Grund.Gefahren => Loc.T("Driven with the app"),
+                OwnedCars.Grund.MeineAutos => Loc.T("Seen in My Cars"),
                 _ => Loc.T("Marked as yours"),
             }
-            : Loc.T("Missing");
+            : unsicher ? Loc.T("Not sure") : Loc.T("Missing");
         _detailKopf.Text = $"{a.Anzeige}  ·  {zustand}";
-        _detail.Text = string.Join(Environment.NewLine, a.Wege.Select(WegLang));
+        _detail.Text = (unsicher
+                           ? Loc.T("The app does not know this car's id yet, so it cannot find it in your garage. Highlight it in My Cars in the game, or tick it if you have it.")
+                             + Environment.NewLine
+                           : string.Empty)
+                       + string.Join(Environment.NewLine, a.Wege.Select(WegLang));
         _wiki.Visible = !string.IsNullOrEmpty(a.Wiki);
     }
 

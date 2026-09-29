@@ -203,6 +203,70 @@ internal static class EdgeCaseTest
             Soll(!e.HudUeberFenster, $"HUD ueber dem Fenster im PC-Modus bei '{quelle}'");
         }
 
+        // MY CARS NACH NAMEN: die Kacheln aus dem Screenshot des Nutzers (2026-09-29), gegen die echte Liste.
+        if (Rivals.CarCollection.PaketPfad() is { } listePfad && Rivals.CarCollection.Lesen(File.ReadAllText(listePfad)) is { } echteListe)
+        {
+            static List<Rivals.OcrLine> Kachel(params string[] zeilen) =>
+                zeilen.Select((t, i) => new Rivals.OcrLine(t, 10, 10 + i * 40)).ToList();
+            foreach (var (zeilen, erwartet) in new (string[], string?)[]
+                     {
+                         (new[] { "UTODELTA TIPO 33/2 DAY'", "1968 ALFA ROMEO" }, "Alfa Romeo Autodelta Tipo 33/2 Daytona|1968"),
+                         (new[] { "GIULIA TZ2", "1965 ALFA ROMEO" }, "Alfa Romeo Giulia TZ2|1965"),
+                         (new[] { "33 STRADALE", "1968 ALFA ROMEO" }, "Alfa Romeo 33 Stradale|1968"),
+                         (new[] { "#6165 TRICK TRUCK", "2022 ALUMICRAFT" }, "Alumicraft #6165 Trick Truck|2022"),
+                         (new[] { "GIULIA SPRINT GTA STR...", "1965 ALFA ROMEO" }, "Alfa Romeo Giulia Sprint GTA Stradale|1965"),
+                         (new[] { "ASTRA VXR", "2006 VAUXHALL" }, "Vauxhall Astra VXR|2006"),
+                         (new[] { "M12S WA", "2554 AMG TR..." }, null),
+                         (new[] { "ASTRA VXR", "2007 VAUXHALL" }, null),
+                         (new[] { "ASTRA VXR" }, null),
+                         (new[] { "1968 ALFA ROMEO" }, null),
+                         (new[] { "XY", "1968 ALFA ROMEO" }, null),
+                     })
+            {
+                var treffer = Rivals.CarGridReader.ImListe(Kachel(zeilen), echteListe.Autos);
+                Soll(treffer?.Schluessel == erwartet,
+                     $"My Cars '{string.Join(" / ", zeilen)}': {treffer?.Schluessel ?? "nichts"} statt {erwartet ?? "nichts"}");
+            }
+            Soll(Rivals.CarGridReader.IstMeineAutos(Kachel("My Cars")) && Rivals.CarGridReader.IstMeineAutos(Kachel("MY CARS", "ACURA"))
+                 && !Rivals.CarGridReader.IstMeineAutos(Kachel("Autoshow")) && !Rivals.CarGridReader.IstMeineAutos(Kachel()),
+                 "der Titel 'My Cars' wird falsch erkannt");
+        }
+
+        // Gesehen in My Cars: zaehlt als besessen, auch ohne car_id; ein Haken schlaegt es.
+        {
+            var ordner = Path.Combine(Path.GetTempPath(), "fhc-edge-owned-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var pfad = Path.Combine(ordner, "owned_cars.json");
+                var l = Rivals.CarCollection.Lesen("{\"format\":\"fhc-cars-1\",\"cars\":[" + string.Join(",",
+                    Enumerable.Range(1, 110).Select(i => i == 1 ? "{\"name\":\"Ohne Id\",\"year\":2006}"
+                                                        : "{\"name\":\"A" + i + "\",\"year\":2020,\"id\":" + i + "}")) + "]}")!;
+                var ohneId = l.Autos[0];
+                var leer = new HashSet<int>();
+                var o = Rivals.OwnedCars.Laden(pfad);
+                o.GarageMerken(new[] { 2, 3, 9999 });
+                o.Speichern();
+                o = Rivals.OwnedCars.Laden(pfad);
+                var fremd = o.NichtErkannt(l);
+                Soll(fremd == 1 && o.Unsicher(ohneId, leer, fremd) && !o.Unsicher(l.Autos[5], leer, fremd),
+                     "ein Auto ohne id gilt bei nicht erkannten Garagenautos nicht als 'nicht sicher'");
+                Soll(!o.Unsicher(ohneId, leer, 0), "ohne nicht erkannte Garagenautos ist ein Auto ohne id 'nicht sicher'");
+                Soll(Rivals.OwnedCars.GesehenMerken(ohneId, pfad) && !Rivals.OwnedCars.GesehenMerken(ohneId, pfad),
+                     "My Cars merkt nicht oder doppelt");
+                o = Rivals.OwnedCars.Laden(pfad);
+                Soll(o.Besitz(ohneId, leer) == (true, Rivals.OwnedCars.Grund.MeineAutos) && !o.Unsicher(ohneId, leer, fremd),
+                     "ein in My Cars gesehenes Auto gilt nicht als besessen");
+                o.Setze(ohneId, true, leer);
+                Soll(!o.Markiert.ContainsKey(ohneId.Schluessel), "ein Haken, der My Cars nur bestaetigt, wird gemerkt");
+                o.Setze(ohneId, false, leer);
+                Soll(o.Besitz(ohneId, leer) == (false, Rivals.OwnedCars.Grund.VonHand), "ein entfernter Haken schlaegt My Cars nicht");
+            }
+            finally
+            {
+                try { Directory.Delete(ordner, true); } catch (Exception) { }
+            }
+        }
+
         // Die mitgelieferte Liste: jedes Auto hat mindestens einen Weg.
         if (Rivals.CarCollection.PaketPfad() is { } echt)
         {

@@ -273,6 +273,72 @@ internal static class CarGridReader
         return (rahmen, gelesen, Erkenne(zeilen, advisor));
     }
 
+    // Der Titel oben links. Englisch ist gemessen (Screenshot des Nutzers, 2026-09-29);
+    // die uebrigen sind Vermutungen -- trifft keiner, lernt die App nur nichts dazu.
+    private static readonly string[] MeineAutosTitel =
+        { "my cars", "meine autos", "mes voitures", "mis coches", "mis autos", "le mie auto", "meus carros",
+          "moje auta", "mijn auto s" };
+
+    /// <summary>
+    /// Steht "My Cars" oben im Bild? Nur dann gehoert das gerahmte Auto dem Spieler -- die
+    /// Autoshow zeigt dieselben Kacheln mit demselben Rahmen, auch fuer Autos, die man nicht hat.
+    /// </summary>
+    internal static bool IstMeineAutos(IEnumerable<OcrLine> kopf) =>
+        kopf.Any(z => MeineAutosTitel.Any(t => TextMatch.Normalise(z.Text).Contains(t, StringComparison.Ordinal)));
+
+    /// <summary>Der obere Streifen, in dem der Schirmtitel steht (im verkleinerten Bild).</summary>
+    internal static Rectangle KopfIn(Size bild) => new(0, 0, Math.Max(1, (int)(bild.Width * 0.45)), Math.Max(1, (int)(bild.Height * 0.2)));
+
+    /// <summary>
+    /// Die Kachel als Auto der offiziellen Liste -- nach NAME und Jahr, ohne car_id.
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-09-29. Fuer 39 Autos kennt die App keine car_id (kein gescanntes Board hat
+    /// sie genannt); die Garage aus dem Speicher kann sie darum nicht zuordnen, und der
+    /// Nutzer sah seinen Vauxhall Astra VXR und seinen Alfa 33/2 Daytona als "fehlt".
+    /// Der Name auf der Kachel braucht keine id. Abgeschnitten ist er oft an BEIDEN Enden
+    /// ("UTODELTA TIPO 33/2 DAY'") -- darum zaehlt auch "steckt darin", solange nur ein
+    /// Auto derselben Marke und desselben Jahres passt.
+    /// </remarks>
+    internal static CarCollection.Auto? ImListe(IReadOnlyList<OcrLine> zeilen, IReadOnlyList<CarCollection.Auto> autos)
+    {
+        var sortiert = zeilen.Where(z => !string.IsNullOrWhiteSpace(z.Text)).OrderBy(z => z.Y).ToList();
+        for (var i = 0; i < sortiert.Count; i++)
+        {
+            var m = JahrUndMarke.Match(sortiert[i].Text);
+            if (!m.Success) { continue; }
+            var modell = TextMatch.Normalise(string.Join(' ', sortiert.Take(i).Select(z => z.Text)));
+            if (modell.Replace(" ", string.Empty).Length < 2) { continue; }
+            var jahr = int.Parse(m.Groups[1].Value);
+            var marke = TextMatch.Normalise(m.Groups[2].Value);
+            var kandidaten = autos.Where(a => a.Jahr == jahr && MarkePasst(TextMatch.Normalise(a.Marke), marke)).ToList();
+            var genau = kandidaten.Where(a => ModellVon(a) == modell).ToList();
+            if (genau.Count == 1) { return genau[0]; }
+            var kompakt = modell.Replace(" ", string.Empty);
+            var drin = kandidaten.Where(a => ModellVon(a).Replace(" ", string.Empty).Contains(kompakt, StringComparison.Ordinal)).ToList();
+            if (kompakt.Length >= 5 && drin.Count == 1) { return drin[0]; }
+            var aehnlich = kandidaten.Select(a => (Auto: a, Wert: TextMatch.Similarity(ModellVon(a), modell)))
+                                     .Where(x => x.Wert >= 0.85).OrderByDescending(x => x.Wert).ToList();
+            if (aehnlich.Count == 1 || (aehnlich.Count > 1 && aehnlich[0].Wert - aehnlich[1].Wert >= 0.08))
+            {
+                return aehnlich[0].Auto;
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private static bool MarkePasst(string liste, string gelesen) =>
+        gelesen.Length >= 2 && (liste == gelesen || liste.StartsWith(gelesen, StringComparison.Ordinal)
+                                || gelesen.StartsWith(liste, StringComparison.Ordinal));
+
+    private static string ModellVon(CarCollection.Auto a)
+    {
+        var name = TextMatch.Normalise(a.Name);
+        var marke = TextMatch.Normalise(a.Marke);
+        return marke.Length > 0 && name.StartsWith(marke + " ", StringComparison.Ordinal) ? name[(marke.Length + 1)..] : name;
+    }
+
     /// <summary>Das Baujahr eines Datensatz-Namens ("... '68" -> 1968), oder null.</summary>
     internal static int? JahrVon(string? name)
     {

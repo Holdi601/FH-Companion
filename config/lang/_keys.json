@@ -36,7 +36,7 @@
   "BlueprintEditor.cs:1650"
  ],
  "Aftermarket dealer": [
-  "Rivals/CarCollectionTab.cs:488"
+  "Rivals/CarCollectionTab.cs:501"
  ],
  "All cars": [
   "Rivals/CarCollectionTab.cs:131"
@@ -67,25 +67,25 @@
   "Rivals/HudTab.cs:1298"
  ],
  "Auction House": [
-  "Rivals/CarCollectionTab.cs:497"
+  "Rivals/CarCollectionTab.cs:510"
  ],
  "Automatic: your laps, else Rivals": [
   "Rivals/HudTab.cs:1178"
  ],
  "Autoshow": [
-  "Rivals/CarCollectionTab.cs:485"
+  "Rivals/CarCollectionTab.cs:498"
  ],
  "Autoshow: {0} CR": [
-  "Rivals/CarCollectionTab.cs:518"
+  "Rivals/CarCollectionTab.cs:531"
  ],
  "Autumn": [
-  "Rivals/CarCollectionTab.cs:573"
+  "Rivals/CarCollectionTab.cs:586"
  ],
  "Barn Find": [
-  "Rivals/CarCollectionTab.cs:490"
+  "Rivals/CarCollectionTab.cs:503"
  ],
  "Barn Find: {0}": [
-  "Rivals/CarCollectionTab.cs:543"
+  "Rivals/CarCollectionTab.cs:556"
  ],
  "Black": [
   "Rivals/HudTab.cs:1288"
@@ -94,10 +94,10 @@
   "TelemetryInspector.cs:70"
  ],
  "Campaign": [
-  "Rivals/CarCollectionTab.cs:493"
+  "Rivals/CarCollectionTab.cs:506"
  ],
  "Campaign: the {0} wristband": [
-  "Rivals/CarCollectionTab.cs:556"
+  "Rivals/CarCollectionTab.cs:569"
  ],
  "Capture card": [
   "Konsole.cs:102"
@@ -112,13 +112,13 @@
   "Tuning/TunesTab.cs:418"
  ],
  "Car Mastery": [
-  "Rivals/CarCollectionTab.cs:492"
+  "Rivals/CarCollectionTab.cs:505"
  ],
  "Car Mastery of the {0}": [
-  "Rivals/CarCollectionTab.cs:547"
+  "Rivals/CarCollectionTab.cs:560"
  ],
  "Car list from forza.net/fh6cars ({0}); ways to get them from the Forza Wiki (CC BY-SA).": [
-  "Rivals/CarCollectionTab.cs:260"
+  "Rivals/CarCollectionTab.cs:266"
  ],
  "Car note": [
   "Rivals/HudTab.cs:839",
@@ -147,7 +147,7 @@
   "Tuning/TunesTab.cs:68"
  ],
  "Check your connection, then press “Check for a newer list”.": [
-  "Rivals/CarCollectionTab.cs:239"
+  "Rivals/CarCollectionTab.cs:241"
  ],
  "Choose Forza telemetry": [
   "BlueprintEditor.cs:1642"
@@ -162,7 +162,7 @@
   "Rivals/OwnTimes.cs:419"
  ],
  "Collection Journal": [
-  "Rivals/CarCollectionTab.cs:489"
+  "Rivals/CarCollectionTab.cs:502"
  ],
  "Connect the Xbox to the capture card and pick the card here.": [
   "Konsole.cs:112"
@@ -256,7 +256,7 @@
   "MainForm.cs:849"
  ],
  "Driven with the app": [
-  "Rivals/CarCollectionTab.cs:369"
+  "Rivals/CarCollectionTab.cs:377"
  ],
  "Enable live mapping": [
   "MainForm.cs:920"
@@ -271,13 +271,13 @@
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how a personal record looks.": [
-  "Rivals/OverlayController.cs:3688"
+  "Rivals/OverlayController.cs:3730"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:3705"
+  "Rivals/OverlayController.cs:3747"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:3695"
+  "Rivals/OverlayController.cs:3737"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
@@ -298,21 +298,21 @@
   "MainForm.cs:723"
  ],
  "FIRST": [
-  "Rivals/OverlayController.cs:3680"
+  "Rivals/OverlayController.cs:3722"
  ],
  "Feel wheel lock separately": [
   "MainForm.cs:1019"
  ],
  "Festival Playlist": [
-  "Rivals/CarCollectionTab.cs:486",
-  "Rivals/CarCollectionTab.cs:529"
+  "Rivals/CarCollectionTab.cs:499",
+  "Rivals/CarCollectionTab.cs:542"
  ],
  "Filter by name": [
   "Rivals/CarCollectionTab.cs:120",
   "Rivals/CarNotesTab.cs:64"
  ],
  "First lap in class {0} here": [
-  "Rivals/OverlayController.cs:3678"
+  "Rivals/OverlayController.cs:3720"
  ],
  "Forza is running": [
   "MainForm.cs:1304"
@@ -336,7 +336,7 @@
   "Rivals/HudTab.cs:835"
  ],
  "Gift": [
-  "Rivals/CarCollectionTab.cs:494"
+  "Rivals/CarCollectionTab.cs:507"
  ],
  "Graph output enabled": [
   "BlueprintEditor.cs:72"
@@ -378,7 +378,7 @@
   "Rivals/CarNotesTab.cs:190"
  ],
  "In your garage": [
-  "Rivals/CarCollectionTab.cs:368"
+  "Rivals/CarCollectionTab.cs:376"
  ],
  "Input traces": [
   "Rivals/HudTab.cs:837"
@@ -390,8 +390,8 @@
   "Konsole.cs:273"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:3569",
-  "Rivals/OverlayController.cs:3694"
+  "Rivals/OverlayController.cs:3611",
+  "Rivals/OverlayController.cs:3736"
  ],
  "Key colour for OBS": [
   "Rivals/HudTab.cs:1287"
@@ -441,10 +441,10 @@
   "MainForm.cs:195"
  ],
  "Loyalty reward": [
-  "Rivals/CarCollectionTab.cs:495"
+  "Rivals/CarCollectionTab.cs:508"
  ],
  "Loyalty reward for playing {0}": [
-  "Rivals/CarCollectionTab.cs:560"
+  "Rivals/CarCollectionTab.cs:573"
  ],
  "Magenta": [
   "Rivals/HudTab.cs:1288"
@@ -453,14 +453,14 @@
   "Rivals/OwnTimesTab.cs:103"
  ],
  "Marked as yours": [
-  "Rivals/CarCollectionTab.cs:370"
+  "Rivals/CarCollectionTab.cs:379"
  ],
  "Maximum uses the strongest input. Average blends them; SumClamped adds them up to 100%. If several output nodes target the same actuator, the strongest live output wins.": [
   "BlueprintEditor.cs:849"
  ],
  "Missing": [
   "Rivals/CarCollectionTab.cs:131",
-  "Rivals/CarCollectionTab.cs:372"
+  "Rivals/CarCollectionTab.cs:381"
  ],
  "Mode": [
   "Rivals/OwnTimesTab.cs:104",
@@ -470,9 +470,9 @@
   "Rivals/CarNotesTab.cs:198"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:3570",
-  "Rivals/OverlayController.cs:3676",
-  "Rivals/OverlayController.cs:3696"
+  "Rivals/OverlayController.cs:3612",
+  "Rivals/OverlayController.cs:3718",
+  "Rivals/OverlayController.cs:3738"
  ],
  "NODE PALETTE": [
   "BlueprintEditor.cs:63"
@@ -481,11 +481,11 @@
   "Konsole.cs:172"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:3567",
-  "Rivals/OverlayController.cs:3693"
+  "Rivals/OverlayController.cs:3609",
+  "Rivals/OverlayController.cs:3735"
  ],
  "New car on your list": [
-  "Rivals/OverlayController.cs:3675"
+  "Rivals/OverlayController.cs:3717"
  ],
  "No Discord window found. Open Discord and watch the stream, popped out or full screen.": [
   "Rivals/Bildquelle.cs:78"
@@ -494,7 +494,7 @@
   "Rivals/CarNotesTab.cs:192"
  ],
  "No car list yet -- it comes from the server.": [
-  "Rivals/CarCollectionTab.cs:238"
+  "Rivals/CarCollectionTab.cs:240"
  ],
  "No car matches the filter": [
   "Rivals/CarNotesTab.cs:258"
@@ -510,7 +510,7 @@
   "MainForm.cs:2364"
  ],
  "No newer list on the server.": [
-  "Rivals/CarCollectionTab.cs:436"
+  "Rivals/CarCollectionTab.cs:449"
  ],
  "No picture yet": [
   "Konsole.cs:147",
@@ -538,7 +538,11 @@
   "MainForm.cs:756"
  ],
  "Not obtainable": [
-  "Rivals/CarCollectionTab.cs:498"
+  "Rivals/CarCollectionTab.cs:511"
+ ],
+ "Not sure": [
+  "Rivals/CarCollectionTab.cs:131",
+  "Rivals/CarCollectionTab.cs:381"
  ],
  "Note": [
   "Rivals/CarNotesTab.cs:80"
@@ -557,7 +561,7 @@
   "scripts/contrib_scan.py:362"
  ],
  "Now it is the time to beat": [
-  "Rivals/OverlayController.cs:3679"
+  "Rivals/OverlayController.cs:3721"
  ],
  "OCR readers at once. More is faster, but the reader pool has already crashed at twelve on the main machine.": [
   "scripts/contrib_scan.py:296"
@@ -593,10 +597,10 @@
   "Rivals/CarCollectionTab.cs:131"
  ],
  "Owned cars: the cars you have driven with the app. Tick the others you own.": [
-  "Rivals/CarCollectionTab.cs:256"
+  "Rivals/CarCollectionTab.cs:262"
  ],
  "Owned cars: your garage, read {0}. Ticks you set count over it.": [
-  "Rivals/CarCollectionTab.cs:250"
+  "Rivals/CarCollectionTab.cs:256"
  ],
  "Packets: --   Rate: --   Race: --": [
   "MainForm.cs:765"
@@ -605,14 +609,14 @@
   "Rivals/HudTab.cs:1246"
  ],
  "Personal best in class {0}!": [
-  "Rivals/OverlayController.cs:3667",
-  "Rivals/OverlayController.cs:3686"
+  "Rivals/OverlayController.cs:3709",
+  "Rivals/OverlayController.cs:3728"
  ],
  "Personal best with a car (every car, class and course)": [
   "Rivals/HudTab.cs:1247"
  ],
  "Personal best with this car": [
-  "Rivals/OverlayController.cs:3671"
+  "Rivals/OverlayController.cs:3713"
  ],
  "Personal records": [
   "Rivals/HudTab.cs:1243"
@@ -658,7 +662,7 @@
   "Tuning/TunesTab.cs:422"
  ],
  "Previous best with it: {0}": [
-  "Rivals/OverlayController.cs:3672"
+  "Rivals/OverlayController.cs:3714"
  ],
  "Price": [
   "Rivals/CarCollectionTab.cs:165"
@@ -670,7 +674,7 @@
   "MainForm.cs:319"
  ],
  "P{0} of {1} on your list": [
-  "Rivals/OverlayController.cs:3660"
+  "Rivals/OverlayController.cs:3702"
  ],
  "Quit": [
   "Disclosure.cs:433",
@@ -684,7 +688,7 @@
   "Tuning/TuningTab.cs:253"
  ],
  "Read your garage while the game runs -- or tick the cars you own.": [
-  "Rivals/CarCollectionTab.cs:259"
+  "Rivals/CarCollectionTab.cs:265"
  ],
  "Reads the game's memory while it runs -- takes up to a minute.": [
   "Rivals/CarNotesTab.cs:94"
@@ -741,9 +745,15 @@
  "Scan leaderboards on THIS PC and hand in the result.": [
   "scripts/contrib_scan.py:277"
  ],
+ "Scroll through My Cars in the game with the picture source on -- every highlighted car counts. Or tick the cars you own.": [
+  "Rivals/CarCollectionTab.cs:264"
+ ],
+ "Seen in My Cars": [
+  "Rivals/CarCollectionTab.cs:378"
+ ],
  "Select a car to see every way to get it.": [
-  "Rivals/CarCollectionTab.cs:206",
-  "Rivals/CarCollectionTab.cs:359"
+  "Rivals/CarCollectionTab.cs:208",
+  "Rivals/CarCollectionTab.cs:365"
  ],
  "Select a force and start the test.": [
   "MainForm.cs:687"
@@ -755,11 +765,11 @@
   "Rivals/HudTab.cs:1253"
  ],
  "Series milestone, {0} points": [
-  "Rivals/CarCollectionTab.cs:588"
+  "Rivals/CarCollectionTab.cs:601"
  ],
  "Series {0}": [
-  "Rivals/CarCollectionTab.cs:506",
-  "Rivals/CarCollectionTab.cs:524"
+  "Rivals/CarCollectionTab.cs:519",
+  "Rivals/CarCollectionTab.cs:537"
  ],
  "Shared colours": [
   "Rivals/HudTab.cs:1267"
@@ -816,7 +826,7 @@
   "Rivals/OverlayController.cs:555"
  ],
  "Spring": [
-  "Rivals/CarCollectionTab.cs:575"
+  "Rivals/CarCollectionTab.cs:588"
  ],
  "Stacked": [
   "Rivals/HudTab.cs:1203"
@@ -843,7 +853,7 @@
   "Rivals/RivalsTab.cs:343"
  ],
  "Start the game first -- the garage is read from its memory.": [
-  "Rivals/CarCollectionTab.cs:398",
+  "Rivals/CarCollectionTab.cs:411",
   "Rivals/CarNotesTab.cs:339",
   "Tuning/TunesTab.cs:351",
   "Tuning/TunesTab.cs:583"
@@ -886,7 +896,7 @@
   "Rivals/RivalsTab.cs:116"
  ],
  "Summer": [
-  "Rivals/CarCollectionTab.cs:572"
+  "Rivals/CarCollectionTab.cs:585"
  ],
  "Switch mode": [
   "MainForm.cs:2093"
@@ -917,7 +927,10 @@
   "MainForm.cs:1533"
  ],
  "The Trial “{0}”": [
-  "Rivals/CarCollectionTab.cs:589"
+  "Rivals/CarCollectionTab.cs:602"
+ ],
+ "The app does not know this car's id yet, so it cannot find it in your garage. Highlight it in My Cars in the game, or tick it if you have it.": [
+  "Rivals/CarCollectionTab.cs:384"
  ],
  "The app will delete {0} tunes on {1} cars in the game.": [
   "Tuning/TunesTab.cs:358"
@@ -970,7 +983,7 @@
   "scripts/contrib_scan.py:357"
  ],
  "The server could not be reached.": [
-  "Rivals/CarCollectionTab.cs:435"
+  "Rivals/CarCollectionTab.cs:448"
  ],
  "The server's certificate could not be checked on this PC -- sending over plain http, as before.": [
   "scripts/contrib_scan.py:246"
@@ -996,9 +1009,6 @@
  "This stays inside the final tool so you can calibrate the controller at any time.": [
   "MainForm.cs:607"
  ],
- "Tick the cars you own. Cars you drive with the app count by themselves.": [
-  "Rivals/CarCollectionTab.cs:258"
- ],
  "Time": [
   "Rivals/OwnTimesTab.cs:259"
  ],
@@ -1012,10 +1022,10 @@
   "Rivals/OwnTimesTab.cs:251"
  ],
  "Treasure car": [
-  "Rivals/CarCollectionTab.cs:491"
+  "Rivals/CarCollectionTab.cs:504"
  ],
  "Treasure car: {0}": [
-  "Rivals/CarCollectionTab.cs:545"
+  "Rivals/CarCollectionTab.cs:558"
  ],
  "Try it": [
   "Rivals/HudTab.cs:1227",
@@ -1107,8 +1117,8 @@
   "Konsole.cs:116"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:3545",
-  "Rivals/OverlayController.cs:3704"
+  "Rivals/OverlayController.cs:3587",
+  "Rivals/OverlayController.cs:3746"
  ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:259"
@@ -1117,7 +1127,7 @@
   "MainForm.cs:792"
  ],
  "Wheelspin": [
-  "Rivals/CarCollectionTab.cs:487"
+  "Rivals/CarCollectionTab.cs:500"
  ],
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": [
   "MainForm.cs:1092"
@@ -1144,7 +1154,7 @@
   "Rivals/OwnTimesTab.cs:250"
  ],
  "Winter": [
-  "Rivals/CarCollectionTab.cs:574"
+  "Rivals/CarCollectionTab.cs:587"
  ],
  "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.": [
   "Konsole.cs:96"
@@ -1169,8 +1179,8 @@
   "Rivals/OwnTimesTab.cs:127"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:3542",
-  "Rivals/OverlayController.cs:3703"
+  "Rivals/OverlayController.cs:3584",
+  "Rivals/OverlayController.cs:3745"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
@@ -1182,8 +1192,8 @@
   "Rivals/HudTab.cs:1179"
  ],
  "Your previous best here: {0}": [
-  "Rivals/OverlayController.cs:3668",
-  "Rivals/OverlayController.cs:3687"
+  "Rivals/OverlayController.cs:3710",
+  "Rivals/OverlayController.cs:3729"
  ],
  "a newer version is ready (skipped)": [
   "Rivals/RivalsTab.cs:531"
@@ -1192,7 +1202,7 @@
   "scripts/contrib_scan.py:300"
  ],
  "a possible seasonal reward": [
-  "Rivals/CarCollectionTab.cs:531"
+  "Rivals/CarCollectionTab.cs:544"
  ],
  "accepted: {rows} rows in {runs} run(s)": [
   "scripts/contrib_scan.py:249"
@@ -1219,7 +1229,7 @@
   "Rivals/OwnTimesTab.cs:171"
  ],
  "checking the server ...": [
-  "Rivals/CarCollectionTab.cs:426",
+  "Rivals/CarCollectionTab.cs:439",
   "Rivals/RivalsTab.cs:445"
  ],
  "comma separated, e.g. D,C,B,A,S1,S2,R": [
@@ -1273,7 +1283,7 @@
   "Rivals/OwnTimesTab.cs:150"
  ],
  "last time; it can come back": [
-  "Rivals/CarCollectionTab.cs:532"
+  "Rivals/CarCollectionTab.cs:545"
  ],
  "later": [
   "Rivals/RivalsTab.cs:558"
@@ -1324,13 +1334,13 @@
   "Rivals/OwnTimesTab.cs:167"
  ],
  "searching the game's memory for its database ...": [
-  "Rivals/CarCollectionTab.cs:402",
+  "Rivals/CarCollectionTab.cs:415",
   "Rivals/CarNotesTab.cs:343",
   "Tuning/TunesTab.cs:587",
   "Tuning/TuningTab.cs:187"
  ],
  "season milestone, {0} points": [
-  "Rivals/CarCollectionTab.cs:587"
+  "Rivals/CarCollectionTab.cs:600"
  ],
  "send it afterwards": [
   "scripts/contrib_scan.py:281"
@@ -1359,13 +1369,13 @@
   "Tuning/TuningTab.cs:340"
  ],
  "the “{0}” championship": [
-  "Rivals/CarCollectionTab.cs:586"
+  "Rivals/CarCollectionTab.cs:599"
  ],
  "this PC's network address": [
   "Konsole.cs:64"
  ],
  "this course": [
-  "Rivals/OverlayController.cs:3657"
+  "Rivals/OverlayController.cs:3699"
  ],
  "this version stays skipped": [
   "Rivals/RivalsTab.cs:553"
@@ -1387,7 +1397,7 @@
   "MainForm.cs:1304"
  ],
  "week {0}": [
-  "Rivals/CarCollectionTab.cs:578"
+  "Rivals/CarCollectionTab.cs:591"
  ],
  "yes": [
   "Tuning/TunesTab.cs:258"
@@ -1399,7 +1409,7 @@
   "Tuning/TunesTab.cs:430"
  ],
  "{0} CR": [
-  "Rivals/CarCollectionTab.cs:538"
+  "Rivals/CarCollectionTab.cs:551"
  ],
  "{0} best laps of yours, on tunes by {1} tuners.": [
   "Tuning/TunesTab.cs:552"
@@ -1407,8 +1417,8 @@
  "{0} car(s) in {1} class(es), scored over {2} course(s). On each course, place 1 earns as many points as cars you drove there, like on the website; standing and flying starts count separately. * = the total includes the slowest time on courses that car did not drive.": [
   "Rivals/OwnTimesTab.cs:309"
  ],
- "{0} cars in your garage are not identified in the list yet -- tick them by hand.": [
-  "Rivals/CarCollectionTab.cs:253"
+ "{0} cars in your garage are not identified yet -- highlight them in My Cars in the game, or tick them here.": [
+  "Rivals/CarCollectionTab.cs:259"
  ],
  "{0} cars in your garage, {1} new in the list.": [
   "Rivals/CarNotesTab.cs:358"
@@ -1423,8 +1433,8 @@
   "Rivals/OwnTimesTab.cs:376"
  ],
  "{0} of {1} cars owned -- {2} missing": [
-  "Rivals/CarCollectionTab.cs:248",
-  "Rivals/CarCollectionTab.cs:351"
+  "Rivals/CarCollectionTab.cs:254",
+  "Rivals/CarCollectionTab.cs:357"
  ],
  "{0} of {1} tune slots in use -- {2} free": [
   "Tuning/TunesTab.cs:180"
@@ -1432,8 +1442,11 @@
  "{0} of {1} tunes -- {2} free.": [
   "Rivals/OverlayController.cs:552"
  ],
+ "{0} owned · {1} missing · {2} not sure": [
+  "Rivals/CarCollectionTab.cs:253"
+ ],
  "{0} points": [
-  "Rivals/CarCollectionTab.cs:552"
+  "Rivals/CarCollectionTab.cs:565"
  ],
  "{0} tunes by {1} tuners.": [
   "Tuning/TunesTab.cs:573"

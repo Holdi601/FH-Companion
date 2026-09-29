@@ -1190,6 +1190,8 @@ internal sealed class OverlayController : IDisposable
                 (int Ordinal, string Name)? auto = vorherAuto;
                 string? gelesen = null;
                 var neu = false;
+                var meineAutos = false;
+                CarCollection.Auto? inListe = null;
                 try
                 {
                     var hoehe = Math.Max(1, CarGridReader.Suchbreite * flaeche.Height / Math.Max(1, flaeche.Width));
@@ -1212,6 +1214,21 @@ internal sealed class OverlayController : IDisposable
                             var zeilen = _reader.ReadLines(bild);
                             gelesen = string.Join(" / ", zeilen.OrderBy(z => z.Y).Select(z => z.Text));
                             auto = ErkenneAuto(zeilen);
+                            // BESITZ AUS "MY CARS": nach Name, fuer "Car collection". Nur wenn
+                            // der Titel oben "My Cars" sagt -- die Autoshow rahmt genauso.
+                            if ((_autoliste ??= CarCollection.Laden()) is { } liste
+                                && CarGridReader.ImListe(zeilen, liste.Autos) is { } imListe)
+                            {
+                                var kopfFlaeche = CarGridReader.KopfIn(klein.Size);
+                                using var kopf = new Bitmap(kopfFlaeche.Width * 2, kopfFlaeche.Height * 2);
+                                using (var g = Graphics.FromImage(kopf))
+                                {
+                                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                    g.DrawImage(klein, new Rectangle(0, 0, kopf.Width, kopf.Height), kopfFlaeche, GraphicsUnit.Pixel);
+                                }
+                                meineAutos = CarGridReader.IstMeineAutos(_reader.ReadLines(kopf));
+                                inListe = imListe;
+                            }
                         }
                     }
                 }
@@ -1226,7 +1243,16 @@ internal sealed class OverlayController : IDisposable
                 }
                 try
                 {
-                    _owner.BeginInvoke(() => { if (!_disposed) { MenueGelesen(rahmen, abdruck, auto, gelesen, neu); } });
+                    _owner.BeginInvoke(() =>
+                    {
+                        if (_disposed) { return; }
+                        MenueGelesen(rahmen, abdruck, auto, gelesen, neu);
+                        if (neu && inListe is not null)
+                        {
+                            LogMeineAutos(inListe.Anzeige, meineAutos);
+                            if (meineAutos) { OwnedCars.GesehenMerken(inListe); }
+                        }
+                    });
                 }
                 catch (Exception)
                 {
@@ -1286,6 +1312,22 @@ internal sealed class OverlayController : IDisposable
         _nachAuswahl = true;
         CurrentCar = null;
         CurrentCarChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // Die offizielle Autoliste fuer "My Cars" -- einmal geladen, im Hintergrund gelesen.
+    private CarCollection? _autoliste;
+
+    private static void LogMeineAutos(string name, bool meineAutos)
+    {
+        try
+        {
+            File.AppendAllText(Path.Combine(Path.GetTempPath(), "forza-overlay", "cars.log"),
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} list match {name} -> "
+                + (meineAutos ? "owned (My Cars)" : "not My Cars") + Environment.NewLine);
+        }
+        catch (Exception)
+        {
+        }
     }
 
     private static void LogMenue(string? gelesen, (int Ordinal, string Name)? auto)

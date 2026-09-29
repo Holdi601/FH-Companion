@@ -200,16 +200,52 @@ internal sealed class OwnedCars
     /// <summary>"Name|Jahr" -> true (hab ich) / false (hab ich nicht), von Hand.</summary>
     [JsonPropertyName("marked")] public Dictionary<string, bool> Markiert { get; set; } = new();
 
+    /// <summary>
+    /// "Name|Jahr" der Autos, die im Spiel unter "My Cars" gerahmt waren -- sie gehoeren dem
+    /// Spieler, auch wenn die App ihre car_id nicht kennt (seit 2026-09-29).
+    /// </summary>
+    [JsonPropertyName("seen_in_my_cars")] public List<string> GesehenListe { get; set; } = new();
+
+    [JsonIgnore] private HashSet<string>? _gesehen;
+
+    private bool Gesehen(string schluessel) => (_gesehen ??= GesehenListe.ToHashSet()).Contains(schluessel);
+
+    /// <summary>Nach jedem Lernen aus "My Cars": der Reiter baut sich neu.</summary>
+    public static event Action? Geaendert;
+
+    /// <summary>Ein Auto aus "My Cars" merken. Gibt zurueck, ob es neu war.</summary>
+    public static bool GesehenMerken(CarCollection.Auto auto, string? pfad = null)
+    {
+        var o = Laden(pfad);
+        if (o.Gesehen(auto.Schluessel)) { return false; }
+        o.GesehenListe.Add(auto.Schluessel);
+        o._gesehen = null;
+        o.Speichern();
+        Geaendert?.Invoke();
+        return true;
+    }
+
     [JsonIgnore] private string _pfad = string.Empty;
 
-    internal enum Grund { Keiner, VonHand, Garage, Gefahren }
+    internal enum Grund { Keiner, VonHand, Garage, Gefahren, MeineAutos }
 
     /// <summary>Hat der Nutzer dieses Auto -- und woher die App das weiss.</summary>
     public (bool Hat, Grund Warum) Besitz(CarCollection.Auto auto, IReadOnlySet<int> gefahren)
     {
         if (Markiert.TryGetValue(auto.Schluessel, out var hand)) { return (hand, Grund.VonHand); }
-        return Automatisch(auto, gefahren);
+        return OhneHand(auto, gefahren);
     }
+
+    /// <summary>Was ohne Haken gilt: in "My Cars" gesehen, sonst Garage oder gefahren.</summary>
+    private (bool Hat, Grund Warum) OhneHand(CarCollection.Auto auto, IReadOnlySet<int> gefahren) =>
+        Gesehen(auto.Schluessel) ? (true, Grund.MeineAutos) : Automatisch(auto, gefahren);
+
+    /// <summary>
+    /// Nicht als fehlend zu melden, weil die App es nicht wissen KANN: die Garage ist
+    /// gelesen, enthaelt Autos ohne Zuordnung, und diesem Auto fehlt die car_id.
+    /// </summary>
+    public bool Unsicher(CarCollection.Auto auto, IReadOnlySet<int> gefahren, int nichtErkannt) =>
+        nichtErkannt > 0 && GarageGelesen is not null && auto.AlleIds.Count == 0 && !Besitz(auto, gefahren).Hat;
 
     /// <summary>Was ohne Haken gilt -- um einen Haken, der nichts aendert, gar nicht erst zu merken.</summary>
     public (bool Hat, Grund Warum) Automatisch(CarCollection.Auto auto, IReadOnlySet<int> gefahren)
@@ -235,7 +271,7 @@ internal sealed class OwnedCars
     /// <summary>Einen Haken setzen -- faellt er mit dem Automatischen zusammen, wird er vergessen.</summary>
     public void Setze(CarCollection.Auto auto, bool hat, IReadOnlySet<int> gefahren)
     {
-        if (Automatisch(auto, gefahren).Hat == hat) { Markiert.Remove(auto.Schluessel); }
+        if (OhneHand(auto, gefahren).Hat == hat) { Markiert.Remove(auto.Schluessel); }
         else { Markiert[auto.Schluessel] = hat; }
     }
 
@@ -262,6 +298,7 @@ internal sealed class OwnedCars
         // der Reiter fiele beim ersten Auto mit einer NullReferenceException um.
         o.Markiert ??= new Dictionary<string, bool>();
         o.GarageIds ??= new List<int>();
+        o.GesehenListe ??= new List<string>();
         o._pfad = pfad;
         return o;
     }

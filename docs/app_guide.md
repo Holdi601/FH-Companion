@@ -227,11 +227,17 @@ the wiki**, to read its wiki page in your browser.
 
 - **On this PC:** press **Read my garage** while the game runs. The app reads the
   garage from the game's memory, as the tuning inspector does, and from then on the
-  garage decides. The **Car notes** garage button does the same. A car the app
-  cannot identify yet (no scanned leaderboard has named its id) is counted in a
-  line above the list; tick it by hand.
-- **Xbox / 2nd PC:** there is no memory to read. Every car you drive with the app
-  counts by itself; tick the others you own.
+  garage decides. The **Car notes** garage button does the same.
+- **My Cars in the game:** every car highlighted in **My Cars** counts as yours. The
+  app reads the name on the tile and finds the car on the official list by name, so
+  this also works for cars whose id the app does not know yet. Scroll through My
+  Cars once with the game in front, or on the Xbox with the picture source on. Only
+  the screen titled "My Cars" counts; the Autoshow looks the same but proves nothing.
+- **Not sure:** some cars have no known id yet, because no scanned leaderboard has
+  named them. If your garage holds cars the app cannot place, those cars show as
+  **not sure** (amber) instead of missing. Highlight them in My Cars or tick them.
+- **Xbox / 2nd PC:** there is no memory to read. Cars you drive with the app and
+  cars highlighted in My Cars count by themselves; tick the others you own.
 - **A tick always wins.** Untick a car the garage or a drive marked as yours, for
   example a loaner from an event, and it counts as missing.
 
