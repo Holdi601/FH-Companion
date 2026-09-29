@@ -47,6 +47,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 from local_settings import app_data  # noqa: E402  (FHCompanion, bis 2026-09-26 ForzaGripHaptics)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lap_folders import kennung, kurs_ordner, kurs_pfad  # noqa: E402,F401
 STANDARD = app_data() / "laps"
 
 # Groesse des gezeichneten Bildes, in Bildpunkten.
@@ -160,7 +162,8 @@ def zeichne(ordner: Path, notiz: dict, fahrten: list[dict]) -> Path | None:
 def setze_namen(wurzel: Path, paare: list[tuple[str, str]]) -> int:
     geaendert = 0
     for ordner_name, name in paare:
-        ordner = wurzel / ordner_name
+        # Die Kennung genuegt: der Ordner heisst inzwischen "Name (course_...)".
+        ordner = kurs_pfad(wurzel, ordner_name)
         notiz = lade_notiz(ordner)
         if notiz is None:
             print("  %-24s keine course.json -- uebersprungen" % ordner_name)
@@ -262,7 +265,7 @@ def main(argv: list[str] | None = None) -> int:
         print("%d Strecke(n) benannt." % n)
         return 0
 
-    ordner = sorted((d for d in wurzel.glob("course_*") if d.is_dir()),
+    ordner = sorted(kurs_ordner(wurzel),
                     key=lambda d: -(lade_notiz(d) or {}).get("Laps", 0))
 
     if args.zeiten:

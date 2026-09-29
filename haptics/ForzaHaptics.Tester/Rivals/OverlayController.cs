@@ -525,6 +525,9 @@ internal sealed class OverlayController : IDisposable
             {
                 var n = LapArchive.NamenNachtragen();
                 if (n > 0) { WriteDiagnostic($"Kursnamen aus den Runden nachgetragen: {n}"); }
+                // Danach die Ordner nach ihren Strecken benennen: "Soni Circuit (course_…)".
+                var u = LapArchive.OrdnerBenennen();
+                if (u > 0) { WriteDiagnostic($"Kursordner nach Strecken benannt: {u}"); }
             }
             catch (Exception) { }
         });
@@ -2160,7 +2163,7 @@ internal sealed class OverlayController : IDisposable
             {
                 foreach (var ordner in Directory.EnumerateDirectories(wurzel))
                 {
-                    var kurs = Path.GetFileName(ordner);
+                    var kurs = LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
                     var u = CourseShape.For(kurs, _settings.ShapeSourceChoice, wurzel);
                     if (u is null || u.IsEmpty) { continue; }
                     var name = CourseShape.KursName(wurzel, kurs);

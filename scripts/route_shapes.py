@@ -54,6 +54,8 @@ FRAMES = WORKSPACE / "data" / "runtime" / "navigation"
 ERNTE = WORKSPACE / "data" / "route_shapes"
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 from local_settings import app_data  # noqa: E402  (FHCompanion, bis 2026-09-26 ForzaGripHaptics)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lap_folders import kennung, kurs_ordner, kurs_pfad  # noqa: E402,F401
 LAPS = app_data() / "laps"
 
 # Die magenta Linie der Strecke. Gemessen am Frame vom 2026-09-14: rund
@@ -415,7 +417,7 @@ def eigene_kurse(wurzel: Path) -> dict[str, dict]:
                 break
         if spur is None:
             continue
-        ergebnis[ordner.name] = {
+        ergebnis[kennung(ordner.name) or ordner.name] = {
             "name": notiz.get("Name", ""),
             "startX": notiz.get("StartX", 0.0),
             "startZ": notiz.get("StartZ", 0.0),

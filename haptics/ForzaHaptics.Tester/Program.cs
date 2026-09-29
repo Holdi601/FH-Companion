@@ -820,7 +820,7 @@ internal static class Program
             {
                 foreach (var ordner in Directory.EnumerateDirectories(wurzel))
                 {
-                    var kurs = Path.GetFileName(ordner);
+                    var kurs = Rivals.LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
                     var u = Rivals.CourseShape.For(kurs, einst.ShapeSourceChoice, wurzel);
                     if (u is null || u.IsEmpty) { continue; }
                     var name = Rivals.CourseShape.KursName(wurzel, kurs);
@@ -893,7 +893,7 @@ internal static class Program
                       ?? throw new InvalidDataException("keine Runde in " + pfad);
             // laps/<kurs>/<klasse>/car<n>/<tune>/<tag>/<datei>
             var kursOrdner = new DirectoryInfo(Path.GetDirectoryName(pfad)!).Parent?.Parent?.Parent?.Parent;
-            var kurs = (string?)knoten["Course"] ?? kursOrdner?.Name ?? string.Empty;
+            var kurs = (string?)knoten["Course"] ?? Rivals.LapArchive.KennungAus(kursOrdner?.Name) ?? kursOrdner?.Name ?? string.Empty;
             var wurzel = kursOrdner?.Parent?.FullName ?? Rivals.LapArchive.Root;
             // Der Kurs aus der Datei, und falls der (alter Schluessel) nichts hergibt,
             // der Ordner, in dem sie heute liegt.
@@ -1032,7 +1032,7 @@ internal static class Program
                 : Rivals.ShapeSource.Auto;
             var wurzel = Rivals.LapArchive.Root;
             var kurse = Directory.Exists(wurzel)
-                ? Directory.GetDirectories(wurzel).Select(Path.GetFileName)
+                ? Directory.GetDirectories(wurzel).Select(d => Rivals.LapArchive.KennungAus(Path.GetFileName(d)) ?? Path.GetFileName(d))
                            .Where(k => !string.IsNullOrEmpty(k)).OrderBy(k => k).ToList()
                 : new List<string?>();
             const int Kachel = 190, Spalten = 8, Rand = 10;

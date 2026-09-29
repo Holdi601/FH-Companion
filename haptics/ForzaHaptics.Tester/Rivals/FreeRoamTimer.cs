@@ -300,7 +300,7 @@ internal sealed class FreeRoamTimer
         try
         {
             if (!Directory.Exists(wurzel)) { return; }
-            foreach (var ordner in Directory.EnumerateDirectories(wurzel, "course_*"))
+            foreach (var ordner in LapArchive.KursOrdner(wurzel))
             {
                 var notiz = Path.Combine(ordner, "course.json");
                 if (!File.Exists(notiz)) { continue; }
@@ -316,7 +316,7 @@ internal sealed class FreeRoamTimer
                 Add(new FreeRoamAnchor
                 {
                     Name = string.IsNullOrWhiteSpace(gelesen.Name)
-                        ? Path.GetFileName(ordner)
+                        ? LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner)
                         : gelesen.Name,
                     X = gelesen.StartX,
                     Z = gelesen.StartZ,

@@ -51,6 +51,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 from local_settings import app_data  # noqa: E402  (FHCompanion, bis 2026-09-26 ForzaGripHaptics)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lap_folders import kennung, kurs_ordner, kurs_pfad  # noqa: E402,F401
 WURZEL = app_data()
 ARCHIV = WURZEL / "laps"
 SICHERUNG = WURZEL / "laps_vor_zusammenfuehrung"
@@ -113,7 +115,7 @@ def main(argv: list | None = None) -> int:
         print("Kein Archiv unter " + archiv.as_posix())
         return 1
 
-    ordner = sorted(p for p in archiv.iterdir() if p.is_dir())
+    ordner = sorted(kurs_ordner(archiv))
     print("Ordner: %d, Runden: %d" % (
         len(ordner), sum(len(runden(o)) for o in ordner)))
 
@@ -167,7 +169,8 @@ def main(argv: list | None = None) -> int:
             # dem Ordner, in dem sie liegt.
             try:
                 d = json.loads(datei.read_text(encoding="utf-8-sig"))
-                d["Course"] = ziel.name
+                # Die KENNUNG, nicht der Ordnername "Name (course_...)".
+                d["Course"] = kennung(ziel.name) or ziel.name
                 neu.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
                 datei.unlink()
             except (OSError, ValueError):
@@ -183,7 +186,7 @@ def main(argv: list | None = None) -> int:
             nz["ShortestMetres"] = min(kurz)
         if lang:
             nz["LongestMetres"] = max(lang)
-        nz.setdefault("MergedFrom", []).append(quelle.name)
+        nz.setdefault("MergedFrom", []).append(kennung(quelle.name) or quelle.name)
         (ziel / "course.json").write_text(
             json.dumps(nz, indent=1, ensure_ascii=False), encoding="utf-8")
 
@@ -201,7 +204,7 @@ def main(argv: list | None = None) -> int:
             continue
         shutil.rmtree(quelle)
 
-    ordner = sorted(p for p in archiv.iterdir() if p.is_dir())
+    ordner = sorted(kurs_ordner(archiv))
     print("\n%d Runden verschoben. Jetzt: %d Ordner, %d Runden." % (
         verschoben, len(ordner), sum(len(runden(o)) for o in ordner)))
     rest = gruppen(ordner, args.toleranz)

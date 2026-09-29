@@ -133,7 +133,7 @@ internal static class CourseShape
     /// <summary>Aus einer aufgezeichneten Runde: X/Z von oben.</summary>
     private static Outline? AusTelemetrie(string wurzel, string kurs)
     {
-        var ordner = Path.Combine(wurzel, kurs);
+        var ordner = LapArchive.KursPfad(wurzel, kurs);
         if (!Directory.Exists(ordner)) { return null; }
 
         // DIE LÄNGSTE RUNDE, nicht die erste. Eine abgebrochene Runde liefert ein
@@ -448,7 +448,7 @@ internal static class CourseShape
     {
         try
         {
-            var datei = Path.Combine(wurzel, kurs, "course.json");
+            var datei = Path.Combine(LapArchive.KursPfad(wurzel, kurs), "course.json");
             if (!File.Exists(datei)) { return string.Empty; }
             using var strom = File.OpenRead(datei);
             using var dok = JsonDocument.Parse(strom);

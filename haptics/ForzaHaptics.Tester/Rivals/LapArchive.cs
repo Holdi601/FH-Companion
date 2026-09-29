@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ForzaHaptics.Tester.Rivals;
 
@@ -25,6 +26,110 @@ internal static class LapArchive
     private static readonly JsonSerializerOptions Format = new() { WriteIndented = false };
 
     public static string Root => Path.Combine(AppInfo.DataFolder, "laps");
+
+    // ------------------------------------------------------------------ Kursordner
+    //
+    // DER ORDNER TRAEGT DEN NAMEN DER STRECKE (seit 2026-09-30): "Soni Circuit
+    // (course_2800_5000_to_2775_5000)". Vorher hiess er nur nach den Koordinaten, und
+    // wer seine Runden suchte, musste jede course.json oeffnen. Die KENNUNG bleibt
+    // dieselbe -- in jeder Rundendatei, bei der Einreichung, auf dem Server. Nur der
+    // Ordner auf der Platte heisst anders; wer von einer Kennung zum Ordner will, geht
+    // ueber KursPfad, wer vom Ordner zur Kennung, ueber KennungAus.
+
+    private static readonly Regex KennungAmEnde = new(@"\((course_[^()\s]+)\)\s*$", RegexOptions.CultureInvariant);
+
+    /// <summary>Ablegen und Umbenennen nie gleichzeitig -- sonst entstuende ein zweiter Ordner.</summary>
+    private static readonly object OrdnerSchloss = new();
+
+    /// <summary>Die Kennung zu einem Ordnernamen: "Soni Circuit (course_…)" oder "course_…"; sonst null.</summary>
+    internal static string? KennungAus(string? ordnerName)
+    {
+        var n = (ordnerName ?? string.Empty).Trim();
+        if (n.StartsWith("course_", StringComparison.OrdinalIgnoreCase) && !n.Contains(' ')) { return n; }
+        var m = KennungAmEnde.Match(n);
+        return m.Success ? m.Groups[1].Value : null;
+    }
+
+    /// <summary>Alle Kursordner, benannt oder nicht.</summary>
+    internal static IEnumerable<string> KursOrdner(string wurzel)
+    {
+        if (!Directory.Exists(wurzel)) { return Array.Empty<string>(); }
+        return Directory.EnumerateDirectories(wurzel).Where(d => KennungAus(Path.GetFileName(d)) is not null);
+    }
+
+    /// <summary>Der Ordner einer Kennung, so wie er heute heisst; gibt es ihn nicht, die Kennung selbst.</summary>
+    internal static string KursPfad(string wurzel, string kennung)
+    {
+        var direkt = Path.Combine(wurzel, Clean(kennung));
+        if (Directory.Exists(direkt)) { return direkt; }
+        try
+        {
+            foreach (var d in KursOrdner(wurzel))
+            {
+                if (string.Equals(KennungAus(Path.GetFileName(d)), kennung, StringComparison.OrdinalIgnoreCase)) { return d; }
+            }
+        }
+        catch (Exception)
+        {
+            // Nicht lesbar: dann der Ordner, den ein neuer Kurs bekaeme.
+        }
+        return direkt;
+    }
+
+    /// <summary>Wie der Ordner eines Kurses heissen soll: "Name (Kennung)", ohne Namen nur die Kennung.</summary>
+    internal static string OrdnerName(string kennung, string? name)
+    {
+        if (!IstStreckenname(name)) { return kennung; }
+        var sauber = Clean(name!.Trim());
+        // Kurz genug, dass der ganze Pfad bis zur Runde unter den alten 260 Zeichen
+        // bleibt -- der Explorer und manches Werkzeug kennen nichts anderes.
+        if (sauber.Length > 48) { sauber = sauber[..48].TrimEnd(' ', '.'); }
+        return $"{sauber} ({kennung})";
+    }
+
+    /// <summary>
+    /// Die Kursordner nach ihren Strecken benennen: einmal beim Start, nach
+    /// <see cref="NamenNachtragen"/>. Nie mitten in der Sitzung -- ein zurueckgegebener
+    /// Rundenpfad soll gueltig bleiben, solange die App laeuft.
+    /// </summary>
+    /// <remarks>
+    /// Ein Ordner, in dem gerade etwas offen ist (der Explorer, ein Editor), bleibt,
+    /// wie er heisst; beim naechsten Start wieder. Aendert sich der Name in course.json,
+    /// folgt der Ordner beim naechsten Start.
+    /// </remarks>
+    /// <returns>Wie viele Ordner umbenannt wurden.</returns>
+    public static int OrdnerBenennen(string? wurzel = null)
+    {
+        wurzel ??= Root;
+        var n = 0;
+        lock (OrdnerSchloss)
+        {
+            foreach (var ordner in KursOrdner(wurzel).ToList())
+            {
+                try
+                {
+                    var alt = Path.GetFileName(ordner);
+                    var kennung = KennungAus(alt)!;
+                    var pfad = Path.Combine(ordner, "course.json");
+                    var name = File.Exists(pfad)
+                        ? JsonSerializer.Deserialize<CourseNote>(File.ReadAllText(pfad))?.Name
+                        : null;
+                    var soll = OrdnerName(kennung, name);
+                    if (string.Equals(alt, soll, StringComparison.Ordinal)) { continue; }
+                    var ziel = Path.Combine(wurzel, soll);
+                    // Nur Gross-/Kleinschreibung anders: Windows sieht denselben Ordner.
+                    if (Directory.Exists(ziel) && !string.Equals(alt, soll, StringComparison.OrdinalIgnoreCase)) { continue; }
+                    Directory.Move(ordner, ziel);
+                    n++;
+                }
+                catch (Exception)
+                {
+                    // Gesperrt oder unlesbar: der Ordner bleibt, wie er heisst.
+                }
+            }
+        }
+        return n;
+    }
 
     /// <summary>
     /// Die Leistungsklasse aus dem PI.
@@ -135,7 +240,7 @@ internal static class LapArchive
             if (!Directory.Exists(wurzel)) { return null; }
             string? beste = null;
             var besteEntfernung = float.MaxValue;
-            foreach (var ordner in Directory.EnumerateDirectories(wurzel, "course_*"))
+            foreach (var ordner in KursOrdner(wurzel))
             {
                 var notiz = Path.Combine(ordner, "course.json");
                 if (!File.Exists(notiz)) { continue; }
@@ -184,7 +289,9 @@ internal static class LapArchive
                 }
 
                 besteEntfernung = entfernung;
-                beste = Path.GetFileName(ordner);
+                // DIE KENNUNG, nicht der Ordnername: sie wandert in die Rundendatei und
+                // zum Server, und der Ordner heisst inzwischen "Soni Circuit (course_…)".
+                beste = KennungAus(Path.GetFileName(ordner));
             }
             return beste;
         }
@@ -205,6 +312,12 @@ internal static class LapArchive
     /// <summary>Eine Runde ablegen. Gibt den Pfad zurueck, oder null.</summary>
     public static string? Save(RecordedLap lap, string? tag, string? root = null)
     {
+        // Nie waehrend des Umbenennens beim Start (OrdnerBenennen).
+        lock (OrdnerSchloss) { return Ablegen(lap, tag, root); }
+    }
+
+    private static string? Ablegen(RecordedLap lap, string? tag, string? root)
+    {
         try
         {
             if (lap.Samples.Count < 3) { return null; }
@@ -213,9 +326,15 @@ internal static class LapArchive
             // dreimal dieselbe Suche koennte dreimal verschieden ausgehen, wenn
             // dazwischen geschrieben wird.
             var kurs = CourseKey(lap, wurzel);
+            // Der Ordner, wie er heute heisst. Ein NEUER Kurs traegt den Streckennamen
+            // gleich mit; ein alter bekommt ihn beim naechsten Start (OrdnerBenennen).
+            var kursOrdner = KursPfad(wurzel, kurs);
+            if (!Directory.Exists(kursOrdner) && IstStreckenname(lap.Track))
+            {
+                kursOrdner = Path.Combine(wurzel, OrdnerName(kurs, lap.Track));
+            }
             var ordner = Path.Combine(
-                wurzel,
-                Clean(kurs),
+                kursOrdner,
                 Clean(ClassOf(lap.PerformanceIndex)),
                 Clean($"car{lap.CarOrdinal}"),
                 Clean(lap.TuneKey.Replace('/', '-')),
@@ -246,7 +365,7 @@ internal static class LapArchive
                 Lap = lap,
             }, Format));
 
-            NoteCourse(Path.Combine(wurzel, Clean(kurs)), lap);
+            NoteCourse(kursOrdner, lap);
 
             // Die volle Spur DANEBEN, nicht hinein. Scheitert sie, ist die Runde
             // trotzdem abgelegt -- sie ist das Wichtige, die Spur ein Zusatz.

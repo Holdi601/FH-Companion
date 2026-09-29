@@ -137,7 +137,8 @@ internal static class OwnTimes
                                System.IO.Path.AltDirectorySeparatorChar);
         // kurs / klasse / carN / tune / tag / datei
         if (teile.Length < 6) { return null; }
-        var kurs = teile[0];
+        // Die Kennung, nicht der Ordnername: der heisst inzwischen "Soni Circuit (course_…)".
+        var kurs = LapArchive.KennungAus(teile[0]) ?? teile[0];
         var klasse = teile[1];
         if (!teile[2].StartsWith("car", StringComparison.OrdinalIgnoreCase)
             || !int.TryParse(teile[2].AsSpan(3), NumberStyles.Integer,

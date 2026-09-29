@@ -629,7 +629,7 @@ internal sealed class HudLayoutCanvas : Control
             {
                 foreach (var ordner in Directory.EnumerateDirectories(wurzel))
                 {
-                    var kurs = Path.GetFileName(ordner);
+                    var kurs = LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
                     var u = CourseShape.For(kurs, _settings.ShapeSourceChoice, wurzel);
                     if (u is null || u.IsEmpty) { continue; }
                     var name = CourseShape.KursName(wurzel, kurs);

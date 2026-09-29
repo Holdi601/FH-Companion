@@ -2292,7 +2292,7 @@ internal static class SelfTest
             Ablegen(wurzel, ordinal: 7, pi: 600, sekunden: 40f, x: 505f, z: 495f,
                     zielX: -2000f, zielZ: 1000f);
 
-            var ordner = Directory.GetDirectories(wurzel, "course_*");
+            var ordner = Rivals.LapArchive.KursOrdner(wurzel).ToArray();
             if (ordner.Length != 2)
             {
                 throw new InvalidOperationException(
@@ -2304,7 +2304,7 @@ internal static class SelfTest
             // Meter daneben, muss im SELBEN Ordner landen.
             Ablegen(wurzel, ordinal: 8, pi: 600, sekunden: 82f, x: 510f, z: 490f,
                     zielX: 3040f, zielZ: 2960f);
-            ordner = Directory.GetDirectories(wurzel, "course_*");
+            ordner = Rivals.LapArchive.KursOrdner(wurzel).ToArray();
             if (ordner.Length != 2)
             {
                 throw new InvalidOperationException(

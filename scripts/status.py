@@ -240,8 +240,10 @@ def pruefe_freie_welt(b: Bericht) -> None:
     if not wurzel.exists():
         b.sag(GELB, "Freie Welt", "kein Rundenbestand -- noch nichts aufgezeichnet")
         return
+    sys.path.insert(0, str(WORKSPACE / "scripts"))
+    from lap_folders import kurs_ordner
     linien = benannt = 0
-    for d in wurzel.glob("course_*"):
+    for d in kurs_ordner(wurzel):
         try:
             notiz = json.loads((d / "course.json").read_text(encoding="utf-8-sig"))
         except (OSError, ValueError):

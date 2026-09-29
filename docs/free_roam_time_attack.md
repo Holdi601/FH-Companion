@@ -151,6 +151,14 @@ python scripts/name_courses.py --zeiten           # what you have driven, and yo
 of that course drawn to scale, with the start line ringed. Open it, recognise the
 road, name it. It takes a few seconds per course.
 
+Once a course has a name, its folder carries it: the app renames
+`course_2800_5000_to_2775_5000` to `Soni Circuit (course_2800_5000_to_2775_5000)` at
+its next start, and a new course gets the named folder straight away when the lap
+knows its route. The coordinate key in brackets stays the identity: it is what
+every lap file stores as `Course`, what goes to the website, and what
+`--setzen` accepts. Two folders with the same name are two different start and
+finish lines, and the key tells them apart.
+
 Two automatic routes to those names were tried and both fail on the data:
 
 - **By route length.** The catalogue knows 89 routes with a length. Against the 32

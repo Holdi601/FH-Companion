@@ -41,6 +41,7 @@ internal static class EdgeCaseTest
         TuneStorageReading();
         ChampionshipStates();
         CourseNamesFromLaps();
+        CourseFoldersCarryTheName();
         ShapeDisplayTime();
         TuneForLap();
         AppliedTuneForNote();
@@ -1936,6 +1937,90 @@ internal static class EdgeCaseTest
     /// Kursordner mit 34 Runden hiess nach seiner Kennung, also griff die Rivalen-Karte,
     /// und deren Linie war an einer zu kleinen Karte falsch nachgezeichnet.
     /// </remarks>
+    /// <summary>
+    /// Der Kursordner heisst "Soni Circuit (course_…)" -- die Kennung in den Runden bleibt die alte.
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-09-30. Vorher hiess jeder Ordner nur nach seinen Koordinaten, und um
+    /// die eigenen Runden einer Strecke zu finden, musste man jede course.json oeffnen.
+    /// </remarks>
+    private static void CourseFoldersCarryTheName()
+    {
+        const string K = "course_2800_5000_to_2775_5000";
+        Soll(Rivals.LapArchive.KennungAus("Soni Circuit (" + K + ")") == K, "Kursordner: Kennung aus dem benannten Ordner");
+        Soll(Rivals.LapArchive.KennungAus(K) == K, "Kursordner: Kennung aus dem alten Ordner");
+        Soll(Rivals.LapArchive.KennungAus("state (x)") is null && Rivals.LapArchive.KennungAus("course_1 x") is null,
+             "Kursordner: ein fremder Ordner gilt als Kurs");
+        Soll(Rivals.LapArchive.OrdnerName(K, "") == K && Rivals.LapArchive.OrdnerName(K, K) == K,
+             "Kursordner: ohne Namen bekommt der Ordner einen");
+        var schraeg = Rivals.LapArchive.OrdnerName(K, "A/B: C?");
+        Soll(Rivals.LapArchive.KennungAus(schraeg) == K && schraeg.IndexOfAny(Path.GetInvalidFileNameChars()) < 0,
+             $"Kursordner: '{schraeg}' ist kein gueltiger Ordnername");
+        Soll(Rivals.LapArchive.KennungAus(Rivals.LapArchive.OrdnerName(K, new string('x', 200))) == K,
+             "Kursordner: ein langer Name verliert die Kennung");
+
+        var wurzel = Path.Combine(Path.GetTempPath(), $"forza-folders-test-{Environment.ProcessId}");
+        try
+        {
+            Rivals.RecordedLap Runde(float x, float z, string? strecke, int sekunde)
+            {
+                var punkte = Enumerable.Range(0, 12).Select(i => new Rivals.LapSample
+                {
+                    Seconds = 60f * i / 11f, Metres = 1500f * i / 11f, X = x + i, Z = z + i,
+                }).ToList();
+                return new Rivals.RecordedLap
+                {
+                    LapSeconds = 60f, LengthMetres = 1500f, CarOrdinal = 7, PerformanceIndex = 600, CarClass = 2,
+                    Drivetrain = 1, Cylinders = 6, MaxRpm = 7000, IdleRpm = 800, StartX = x, StartZ = z,
+                    Track = strecke, RecordedAt = DateTimeOffset.Now.AddSeconds(-sekunde), Samples = punkte,
+                };
+            }
+            string Kennung(string datei) => System.Text.Json.JsonDocument.Parse(File.ReadAllText(datei))
+                .RootElement.GetProperty("Course").GetString() ?? "";
+
+            // Ein NEUER Kurs mit Streckennamen heisst gleich richtig.
+            var erste = Rivals.LapArchive.Save(Runde(100f, 200f, "Soni Circuit", 10), null, wurzel);
+            Soll(erste is not null, "Kursordner: die erste Runde liess sich nicht ablegen");
+            var ordner = Directory.GetDirectories(wurzel).Select(Path.GetFileName).ToList();
+            Soll(ordner.Count == 1 && ordner[0]!.StartsWith("Soni Circuit (course_", StringComparison.Ordinal),
+                 $"Kursordner: ein neuer Kurs heisst '{string.Join(", ", ordner)}'");
+            var kennung = Kennung(erste!);
+            Soll(kennung.StartsWith("course_", StringComparison.Ordinal) && Rivals.LapArchive.KennungAus(ordner[0]) == kennung,
+                 $"Kursordner: die Runde traegt '{kennung}' statt der Kennung");
+
+            // Dieselbe Strecke ohne Namen: derselbe Ordner, dieselbe Kennung.
+            var zweite = Rivals.LapArchive.Save(Runde(103f, 198f, null, 20), null, wurzel);
+            Soll(Directory.GetDirectories(wurzel).Length == 1 && Kennung(zweite!) == kennung,
+                 "Kursordner: dieselbe Strecke landete woanders oder unter anderer Kennung");
+
+            // Ein alter Ordner nach Koordinaten wird beim Start umbenannt.
+            const string Alt = "course_5000_5000_to_5000_5000";
+            var altOrdner = Path.Combine(wurzel, Alt);
+            Directory.CreateDirectory(Path.Combine(altOrdner, "B", "car7", "t", "untagged"));
+            File.WriteAllText(Path.Combine(altOrdner, "course.json"),
+                              System.Text.Json.JsonSerializer.Serialize(new { Name = "Daikoku Circuit", StartX = 5000f, StartZ = 5000f }));
+            File.WriteAllText(Path.Combine(altOrdner, "B", "car7", "t", "untagged", "2026-09-30_10-00-00_61.500s.json"),
+                              System.Text.Json.JsonSerializer.Serialize(new { Course = Alt, Lap = new { lapSeconds = 61.5 } }));
+            var n = Rivals.LapArchive.OrdnerBenennen(wurzel);
+            Soll(n == 1 && Directory.Exists(Path.Combine(wurzel, "Daikoku Circuit (" + Alt + ")")) && !Directory.Exists(altOrdner),
+                 $"Kursordner: {n} Ordner umbenannt, der alte heisst weiter nach seinen Koordinaten");
+            Soll(Rivals.LapArchive.OrdnerBenennen(wurzel) == 0, "Kursordner: ein zweiter Start benennt noch einmal um");
+            Soll(Rivals.CourseShape.KursName(wurzel, Alt) == "Daikoku Circuit",
+                 "Kursordner: der Name ist ueber die Kennung nicht mehr zu finden");
+            Soll(Rivals.LapArchive.KursPfad(wurzel, Alt) == Path.Combine(wurzel, "Daikoku Circuit (" + Alt + ")"),
+                 "Kursordner: die Kennung fuehrt nicht zum umbenannten Ordner");
+
+            // Die eigenen Zeiten zaehlen nach Kennung, nicht nach Ordnername.
+            var kurse = Rivals.OwnTimes.Einlesen(wurzel).Select(l => l.Course).Distinct().OrderBy(k => k).ToList();
+            Soll(kurse.Count == 2 && kurse.Contains(Alt) && kurse.Contains(kennung),
+                 $"Kursordner: eigene Zeiten unter '{string.Join(", ", kurse)}'");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, true); } catch (Exception) { }
+        }
+    }
+
     private static void CourseNamesFromLaps()
     {
         Soll(!Rivals.LapArchive.IstStreckenname("course_-1850_1575_to_-1850_1575")

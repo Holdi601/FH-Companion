@@ -335,7 +335,7 @@ internal static class OwnCars
                         // Ein unlesbarer Vermerk kostet einen Kurs, nicht die Tabelle.
                         continue;
                     }
-                    ergebnis[Path.GetFileName(ordner)] = (name, meter);
+                    ergebnis[LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner)] = (name, meter);
                 }
             }
         }
@@ -432,7 +432,8 @@ internal static class OwnCars
         // kurs / klasse / carN / tune / tag / datei
         if (rel.Length < 6) { return null; }
 
-        var kurs = rel[0];
+        // Die Kennung, nicht der Ordnername: der heisst inzwischen "Soni Circuit (course_…)".
+        var kurs = LapArchive.KennungAus(rel[0]) ?? rel[0];
         var klasse = rel[1];
         var auto = rel[2];
         if (!auto.StartsWith("car", StringComparison.OrdinalIgnoreCase)

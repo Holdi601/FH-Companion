@@ -54,6 +54,8 @@ TOLERANZ_M = 120.0
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 from local_settings import app_data  # noqa: E402  (FHCompanion, bis 2026-09-26 ForzaGripHaptics)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lap_folders import kennung, kurs_ordner, kurs_pfad  # noqa: E402,F401
 WURZEL = app_data() / "laps"
 
 
@@ -176,7 +178,8 @@ def main(argv: list[str] | None = None) -> int:
     bewegt = geblieben = 0
     fehler = []
     for h in plan:
-        ziel_ordner = wurzel / h["name"]
+        # Heisst der Kurs schon "Name (course_...)", bleibt er in seinem Ordner.
+        ziel_ordner = kurs_pfad(wurzel, h["name"])
         for r in h["runden"]:
             neu = ziel_ordner.joinpath(*r["rest"])
             if neu == r["datei"]:
