@@ -136,6 +136,73 @@ internal static class EdgeCaseTest
         Soll(texte[2].Contains("SHI6") && texte[2].Contains("18"), "Aftermarket ohne Ort oder Preis: " + texte[2]);
         Soll(Rivals.CarCollectionTab.WegKurz(w[3]) == "DLC: Car Pass", "DLC ohne Paketnamen: " + Rivals.CarCollectionTab.WegKurz(w[3]));
 
+        // JEDE ART, auch mit fehlenden Feldern und unbekannten Werten: nie leer, nie "{0}", nie eine Ausnahme.
+        static Rivals.CarCollection.Weg W(string json) =>
+            System.Text.Json.JsonSerializer.Deserialize<Rivals.CarCollection.Weg>(json)!;
+        var alleWege = new[]
+        {
+            "{\"k\":\"autoshow\"}", "{\"k\":\"autoshow\",\"price\":\"viel\"}", "{\"k\":\"playlist\"}",
+            "{\"k\":\"playlist\",\"series\":4,\"season\":\"Winter, week 2\"}",
+            "{\"k\":\"playlist\",\"series\":1,\"season\":\"Monsoon\",\"wk\":\"lab\",\"what\":\"EventLab: \\\"X\\\"\"}",
+            "{\"k\":\"playlist\",\"wk\":\"season\",\"wx\":\"20\"}", "{\"k\":\"playlist\",\"wk\":\"trial\",\"wx\":\"Y\"}",
+            "{\"k\":\"playlist\",\"wk\":\"series\",\"wx\":\"30\"}", "{\"k\":\"playlist\",\"wk\":\"champ\"}",
+            "{\"k\":\"wheelspin\"}", "{\"k\":\"aftermarket\"}", "{\"k\":\"aftermarket\",\"event\":\"E\"}",
+            "{\"k\":\"barn\"}", "{\"k\":\"barn\",\"where\":\"Ito\"}", "{\"k\":\"treasure\"}",
+            "{\"k\":\"treasure\",\"where\":\"Hokubu\"}", "{\"k\":\"mastery\"}", "{\"k\":\"mastery\",\"car\":\"C\"}",
+            "{\"k\":\"journal\"}", "{\"k\":\"journal\",\"points\":100}", "{\"k\":\"campaign\"}",
+            "{\"k\":\"campaign\",\"band\":\"Blue\"}", "{\"k\":\"gift\"}", "{\"k\":\"gift\",\"date\":\"D\"}",
+            "{\"k\":\"loyalty\"}", "{\"k\":\"loyalty\",\"game\":\"FH4\"}", "{\"k\":\"dlc\"}", "{\"k\":\"auction\"}",
+            "{\"k\":\"unobtainable\"}", "{\"k\":\"somethingnew\"}", "{\"k\":\"\"}",
+        };
+        foreach (var roh in alleWege)
+        {
+            var weg = W(roh);
+            var lang = Rivals.CarCollectionTab.WegLang(weg);
+            var kurz = Rivals.CarCollectionTab.WegKurz(weg);
+            Soll(!string.IsNullOrWhiteSpace(lang + kurz) || weg.Art.Length == 0, "leerer Satz fuer " + roh);
+            Soll(!lang.Contains("{0}") && !kurz.Contains("{0}"), "roher Platzhalter fuer " + roh + ": " + lang);
+        }
+        Soll(Rivals.CarCollectionTab.WegLang(W(alleWege[3])).Contains("4"), "Woche/Serie fehlt: " + Rivals.CarCollectionTab.WegLang(W(alleWege[3])));
+        Soll(Rivals.CarCollectionTab.WegLang(W(alleWege[4])).Contains("EventLab"), "unbekannte Art faellt nicht auf den englischen Satz zurueck");
+        Soll(Rivals.CarCollectionTab.WegKurz(W(alleWege[29])) == "somethingnew", "eine neue Art des Servers verschwindet statt angezeigt zu werden");
+
+        // Eine Liste mit fremden Feldern, ids, leerem Namen und ohne Jahr.
+        var gemischt = Rivals.CarCollection.Lesen("{\"format\":\"fhc-cars-1\",\"neu\":1,\"cars\":["
+            + string.Join(",", Enumerable.Range(1, 110).Select(i =>
+                i == 1 ? "{\"name\":\"\",\"ways\":[]}"
+                : i == 2 ? "{\"name\":\"Ohne Jahr\",\"ids\":[5,6],\"zukunft\":{\"a\":1},\"ways\":[{\"k\":\"x\",\"y\":[1]}]}"
+                : "{\"name\":\"A" + i + "\",\"year\":2020}")) + "]}");
+        Soll(gemischt is { Autos.Count: 109 }, "leerer Name wird nicht uebersprungen oder fremde Felder brechen das Lesen");
+        var ohneJahr = gemischt!.Autos[0];
+        Soll(ohneJahr.Schluessel == "Ohne Jahr|" && ohneJahr.Anzeige == "Ohne Jahr" && ohneJahr.AlleIds.SequenceEqual(new[] { 5, 6 }),
+             "Auto ohne Jahr oder mit ids-Liste falsch gelesen");
+        Soll(gemischt.GebautAm is null, "ohne 'built' gibt es trotzdem einen Baustand");
+
+        // Stromtitel: mehr echte und falsche Faelle.
+        foreach (var ja in new[] { "Twitch", "twitch - Opera", "Live - TikTok", "Rumble", "Stream | Trovo", "(3) Facebook" })
+        {
+            Soll(Rivals.Fenster.IstStromTitel(ja), "kein Strom erkannt: " + ja);
+        }
+        foreach (var nein in new[] { "", "Twitcher", "YouTubers Club", "Kickoff meeting", "Facebooking", "Forza Horizon 6 - Discord" })
+        {
+            Soll(!Rivals.Fenster.IstStromTitel(nein), "Strom erkannt, wo keiner ist: " + nein);
+        }
+        Soll(Rivals.Fenster.StromPlattform("x - YouTube - Google Chrome") == "YouTube", "Plattform nicht genannt");
+
+        // HUD ueber dem Fenster: jede Quelle, an und aus, Konsole und PC.
+        foreach (var (quelle, erwartet) in new[] { ("window", true), ("obs", true), ("OBS", true), ("discord", false),
+                                                   ("browser", false), ("device", false), ("url", false), ("none", false),
+                                                   ("", false), (null, false) })
+        {
+            var e = new Rivals.OverlaySettings { ConsoleMode = true, ConsoleHudOverWindow = true, VideoSource = quelle };
+            Soll(e.HudUeberFenster == erwartet, $"HUD ueber dem Fenster bei '{quelle}': {e.HudUeberFenster}");
+            e.ConsoleHudOverWindow = false;
+            Soll(!e.HudUeberFenster, $"HUD ueber dem Fenster ohne Wahl bei '{quelle}'");
+            e.ConsoleHudOverWindow = true;
+            e.ConsoleMode = false;
+            Soll(!e.HudUeberFenster, $"HUD ueber dem Fenster im PC-Modus bei '{quelle}'");
+        }
+
         // Die mitgelieferte Liste: jedes Auto hat mindestens einen Weg.
         if (Rivals.CarCollection.PaketPfad() is { } echt)
         {

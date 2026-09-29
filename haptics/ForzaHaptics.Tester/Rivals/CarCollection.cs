@@ -45,6 +45,13 @@ internal sealed class CarCollection
         [JsonPropertyName("class")] public string? Klasse { get; set; }
         [JsonPropertyName("country")] public string Land { get; set; } = string.Empty;
         [JsonPropertyName("id")] public int? Id { get; set; }
+
+        /// <summary>Alle car_ids dieses Autos (seit 2026-09-29; aeltere Listen nennen nur "id").</summary>
+        [JsonPropertyName("ids")] public List<int>? IdListe { get; set; }
+
+        [JsonIgnore]
+        public IReadOnlyList<int> AlleIds =>
+            IdListe is { Count: > 0 } l ? l : Id is { } i ? new[] { i } : Array.Empty<int>();
         [JsonPropertyName("collection")] public List<string> Sammlung { get; set; } = new();
         [JsonPropertyName("addons")] public List<string> Zusatz { get; set; } = new();
         [JsonPropertyName("price")] public long? Preis { get; set; }
@@ -141,21 +148,23 @@ internal sealed class CarCollection
     /// Beim eigenen Server nach einer neueren Liste fragen. Null heisst: nichts Neueres
     /// oder nicht erreichbar -- beides kein Fehler.
     /// </summary>
-    public static async Task<CarCollection?> VomServerAsync(string? basis, CarCollection? jetzt, CancellationToken ct = default)
+    public static async Task<CarCollection?> VomServerAsync(string? basis, CarCollection? jetzt, CancellationToken ct = default,
+                                                            string? ziel = null, TimeSpan? zeit = null)
     {
+        ziel ??= ZwischenPfad;
         basis = (basis ?? string.Empty).Trim().TrimEnd('/');
         if (basis.Length == 0) { return null; }
         try
         {
-            using var client = ServerHttp.Client(TimeSpan.FromSeconds(30));
+            using var client = ServerHttp.Client(zeit ?? TimeSpan.FromSeconds(30));
             var json = await client.GetStringAsync(basis + "/api/cars", ct).ConfigureAwait(false);
             var neu = Lesen(json);
             if (neu is null) { return null; }
             if (jetzt?.GebautAm is { } alt && neu.GebautAm is { } frisch && frisch <= alt) { return null; }
-            Directory.CreateDirectory(Path.GetDirectoryName(ZwischenPfad)!);
-            var zwischen = ZwischenPfad + ".tmp";
+            Directory.CreateDirectory(Path.GetDirectoryName(ziel)!);
+            var zwischen = ziel + ".tmp";
             await File.WriteAllTextAsync(zwischen, json, ct).ConfigureAwait(false);
-            File.Move(zwischen, ZwischenPfad, overwrite: true);
+            File.Move(zwischen, ziel, overwrite: true);
             return neu;
         }
         catch (Exception)
@@ -207,9 +216,20 @@ internal sealed class OwnedCars
     {
         if (GarageGelesen is not null)
         {
-            return auto.Id is { } g && GarageIds.Contains(g) ? (true, Grund.Garage) : (false, Grund.Keiner);
+            return auto.AlleIds.Any(GarageIds.Contains) ? (true, Grund.Garage) : (false, Grund.Keiner);
         }
-        return auto.Id is { } id && gefahren.Contains(id) ? (true, Grund.Gefahren) : (false, Grund.Keiner);
+        return auto.AlleIds.Any(gefahren.Contains) ? (true, Grund.Gefahren) : (false, Grund.Keiner);
+    }
+
+    /// <summary>
+    /// Wie viele Autos der Garage in der Liste kein Gegenstueck haben -- die App kennt
+    /// ihre car_id noch nicht (kein gescanntes Board nannte sie) oder das Spiel fuehrt
+    /// sie nicht in der offiziellen Liste (Verkehrsautos, Sonderfahrzeuge).
+    /// </summary>
+    public int NichtErkannt(CarCollection liste)
+    {
+        var bekannt = liste.Autos.SelectMany(a => a.AlleIds).ToHashSet();
+        return GarageIds.Distinct().Count(i => !bekannt.Contains(i));
     }
 
     /// <summary>Einen Haken setzen -- faellt er mit dem Automatischen zusammen, wird er vergessen.</summary>
@@ -237,6 +257,11 @@ internal sealed class OwnedCars
         {
         }
         o ??= new OwnedCars();
+        // "marked": null oder "garage_ids": null -- von Hand bearbeitet oder von einer
+        // anderen Fassung geschrieben. JSON setzt dann null statt der leeren Vorgabe, und
+        // der Reiter fiele beim ersten Auto mit einer NullReferenceException um.
+        o.Markiert ??= new Dictionary<string, bool>();
+        o.GarageIds ??= new List<int>();
         o._pfad = pfad;
         return o;
     }

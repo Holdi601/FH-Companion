@@ -51,9 +51,9 @@ internal static class GarageImport
     }
 
     /// <summary>Im UI-Faden: in die Notizen und in die eigenen Autos. Gibt zurueck, wie viele neu in den Notizen sind.</summary>
-    public static int Merken(IReadOnlyList<int> ids, CarNotes? notizen, RivalsAdvisor? rat)
+    public static int Merken(IReadOnlyList<int> ids, CarNotes? notizen, RivalsAdvisor? rat, string? besitzPfad = null)
     {
-        var besitz = OwnedCars.Laden();
+        var besitz = OwnedCars.Laden(besitzPfad);
         besitz.GarageMerken(ids);
         besitz.Speichern();
         GarageGelesen?.Invoke();

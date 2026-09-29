@@ -37,8 +37,15 @@ internal sealed class CarCollectionTab : UserControl
     private readonly Label _detail = new();
     private readonly LinkLabel _wiki = new();
 
+    private readonly Func<CarCollection?> _laden;
+    private readonly string? _besitzPfad;
     private CarCollection? _sammlung;
-    private OwnedCars _besitz = OwnedCars.Laden();
+    private OwnedCars _besitz;
+    private bool _doppelklick;
+
+    /// <summary>Wie eine Wiki-Seite geoeffnet wird -- im Test ein Mitschreiber statt des Browsers.</summary>
+    internal Action<string> OeffneUrl =
+        url => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     private HashSet<int> _gefahren = new();
     private bool _geladen;
     private bool _still;
@@ -51,8 +58,12 @@ internal sealed class CarCollectionTab : UserControl
 
     private static readonly string[] Klassen = { "D", "C", "B", "A", "S1", "S2", "R", "X" };
 
-    public CarCollectionTab(Func<string?> server, Func<CarNotes?> notizen, Func<RivalsAdvisor?> rat, bool konsole)
+    public CarCollectionTab(Func<string?> server, Func<CarNotes?> notizen, Func<RivalsAdvisor?> rat, bool konsole,
+                            Func<CarCollection?>? laden = null, string? besitzPfad = null)
     {
+        _laden = laden ?? CarCollection.Laden;
+        _besitzPfad = besitzPfad;
+        _besitz = OwnedCars.Laden(besitzPfad);
         _server = server;
         _notizen = notizen;
         _rat = rat;
@@ -61,27 +72,47 @@ internal sealed class CarCollectionTab : UserControl
         ForeColor = Color.WhiteSmoke;
         Dock = DockStyle.Fill;
 
-        var oben = new Panel { Dock = DockStyle.Top, Height = 118, Padding = new Padding(12, 8, 12, 0) };
-        _kopf.SetBounds(12, 8, 900, 28);
+        // FLIESSEND, NICHT AUF FESTEN PLAETZEN: auf Russisch lief der Garagen-Knopf in den
+        // zweiten hinein, auf Griechisch endete die Zeile mitten im Satz (2026-09-29).
+        var oben = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false,
+            Padding = new Padding(12, 8, 12, 4),
+        };
+        _kopf.AutoSize = true;
         _kopf.Font = new Font("Segoe UI Semibold", 13f);
         _kopf.ForeColor = Color.FromArgb(127, 211, 255);
-        _quelle.SetBounds(12, 38, 1100, 20);
+        _kopf.Margin = new Padding(0, 0, 0, 4);
+        _quelle.AutoSize = true;
         _quelle.ForeColor = Color.Gainsboro;
+        _quelle.Margin = new Padding(0, 0, 0, 4);
 
         _garage.Text = Loc.T("Read my garage");
         _garage.AutoSize = true;
         _garage.FlatStyle = FlatStyle.Flat;
-        _garage.Location = new Point(12, 62);
         _garage.Visible = !_konsole;
         _garage.Click += (_, _) => GarageLesen();
         _neuHolen.Text = Loc.T("Check for a newer list");
         _neuHolen.AutoSize = true;
         _neuHolen.FlatStyle = FlatStyle.Flat;
-        _neuHolen.Location = new Point(_konsole ? 12 : 170, 62);
         _neuHolen.Click += (_, _) => VomServer(zeigen: true);
-        _stand.SetBounds(12, 94, 1100, 20);
+        _stand.AutoSize = true;
         _stand.ForeColor = Color.Gray;
-        oben.Controls.AddRange(new Control[] { _kopf, _quelle, _garage, _neuHolen, _stand });
+        _stand.Margin = new Padding(0, 4, 0, 0);
+        var knoepfe = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        _garage.Margin = new Padding(0, 0, 10, 0);
+        knoepfe.Controls.AddRange(new Control[] { _garage, _neuHolen });
+        oben.Controls.AddRange(new Control[] { _kopf, _quelle, knoepfe, _stand });
+        // Lange Zeilen umbrechen statt abschneiden: die Breite folgt dem Reiter.
+        void Breite()
+        {
+            var w = new Size(Math.Max(200, oben.ClientSize.Width - oben.Padding.Horizontal - 4), 0);
+            _quelle.MaximumSize = w;
+            _stand.MaximumSize = w;
+            _kopf.MaximumSize = w;
+        }
+        oben.Resize += (_, _) => Breite();
+        Breite();
 
         var filter = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 34, Padding = new Padding(10, 4, 10, 0),
                                            WrapContents = false };
@@ -107,6 +138,13 @@ internal sealed class CarCollectionTab : UserControl
         _klasse.Items.Add(Loc.T("Any class"));
         _klasse.Items.AddRange(Klassen);
         _klasse.SelectedIndex = 0;
+        // Jede Auswahl so breit wie ihr laengster Eintrag -- "Mikä tahansa luokka" passte
+        // nicht in 110 Bildpunkte.
+        foreach (var box in new[] { _zeige, _weg, _klasse })
+        {
+            var laengste = box.Items.Cast<object>().Select(i => TextRenderer.MeasureText(i.ToString(), box.Font).Width).Max();
+            box.Width = Math.Max(box.Width, laengste + 34);
+        }
         filter.Controls.AddRange(new Control[] { _filter, _zeige, _weg, _klasse });
         _filter.TextChanged += (_, _) => Fuellen();
         _zeige.SelectedIndexChanged += (_, _) => Fuellen();
@@ -135,6 +173,12 @@ internal sealed class CarCollectionTab : UserControl
             Fuellen();
         };
         _liste.DoubleClick += (_, _) => WikiOeffnen();
+        // EIN DOPPELKLICK HAKT NICHT AB. Eine Liste mit Kaestchen kippt beim Doppelklick
+        // von selbst das Kaestchen der Zeile -- wer die Wiki-Seite oeffnen wollte, haette
+        // nebenbei das Auto als gekauft oder als fehlend markiert.
+        _liste.MouseDown += (_, e) => _doppelklick = e.Clicks > 1;
+        _liste.MouseUp += (_, _) => _doppelklick = false;
+        _liste.ItemCheck += (_, e) => { if (_doppelklick && DoppelklickSchutz) { e.NewValue = e.CurrentValue; } };
 
         var unten = new Panel { Dock = DockStyle.Bottom, Height = 132, Padding = new Padding(12, 6, 12, 6) };
         _detailKopf.Dock = DockStyle.Top;
@@ -158,19 +202,19 @@ internal sealed class CarCollectionTab : UserControl
         Controls.Add(filter);
         Controls.Add(oben);
 
-        GarageImport.GarageGelesen += () => BeiUns(() => { _besitz = OwnedCars.Laden(); if (_geladen) { Fuellen(); } });
+        GarageImport.GarageGelesen += () => BeiUns(() => { _besitz = OwnedCars.Laden(_besitzPfad); if (_geladen) { Fuellen(); } });
         _detailKopf.Text = Loc.T("Select a car to see every way to get it.");
     }
 
     /// <summary>Beim Oeffnen des Reiters: Liste laden (einmal), Besitz neu lesen, bei Bedarf beim Server nachfragen.</summary>
     public void Zeigen()
     {
-        _besitz = OwnedCars.Laden();
+        _besitz = OwnedCars.Laden(_besitzPfad);
         _gefahren = Gefahren();
         if (!_geladen)
         {
             _geladen = true;
-            _sammlung = CarCollection.Laden();
+            _sammlung = _laden();
             // Hoechstens alle zwoelf Stunden -- der Server baut sie nur einmal am Tag neu.
             var alter = DateTimeOffset.UtcNow - (_sammlung?.GebautAm ?? DateTimeOffset.MinValue);
             if (alter > TimeSpan.FromHours(12)) { VomServer(zeigen: false); }
@@ -198,12 +242,16 @@ internal sealed class CarCollectionTab : UserControl
             return;
         }
 
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
         var besitz = s.Autos.ToDictionary(a => a, a => _besitz.Besitz(a, _gefahren));
         var hat = besitz.Count(b => b.Value.Hat);
         _kopf.Text = string.Format(Loc.T("{0} of {1} cars owned -- {2} missing"), hat, s.Autos.Count, s.Autos.Count - hat);
         _quelle.Text = _besitz.GarageGelesen is { } wann
             ? string.Format(Loc.T("Owned cars: your garage, read {0}. Ticks you set count over it."),
                             wann.LocalDateTime.ToString("g"))
+              + (_besitz.NichtErkannt(s) is > 0 and var fremd
+                  ? "  " + string.Format(Loc.T("{0} cars in your garage are not identified in the list yet -- tick them by hand."), fremd)
+                  : string.Empty)
             : _gefahren.Count > 0
                 ? Loc.T("Owned cars: the cars you have driven with the app. Tick the others you own.")
                 : _konsole
@@ -225,21 +273,28 @@ internal sealed class CarCollectionTab : UserControl
         treffer = Sortiert(treffer);
 
         var gewaehlt = (_liste.SelectedItems.Count > 0 ? _liste.SelectedItems[0].Tag as CarCollection.Auto : null)?.Schluessel;
+        // ZEILEN EINMAL BAUEN, DANN NUR NOCH EINREIHEN. Bei 647 Autos kostete jeder
+        // Filterwechsel 409 ms, solange jede Zeile neu entstand und einzeln einzog.
+        var zeilen = treffer.Select(a =>
+        {
+            var z = ZeileFuer(a);
+            var hat = besitz[a].Hat;
+            z.Checked = hat;
+            z.ForeColor = hat ? Color.Gray : Color.WhiteSmoke;
+            z.Selected = false;
+            return z;
+        }).ToArray();
+        RechnenMs = uhr.Elapsed.TotalMilliseconds;
+        uhr.Restart();
         _still = true;
         _liste.BeginUpdate();
         try
         {
             _liste.Items.Clear();
-            foreach (var a in treffer)
+            _liste.Items.AddRange(zeilen);
+            if (gewaehlt is not null && zeilen.FirstOrDefault(z => ((CarCollection.Auto)z.Tag!).Schluessel == gewaehlt) is { } w)
             {
-                var z = new ListViewItem(a.Anzeige) { Tag = a, Checked = besitz[a].Hat };
-                z.SubItems.Add(a.Klasse is null ? string.Empty : $"{a.Klasse} {a.Pi}");
-                z.SubItems.Add(a.Typ);
-                z.SubItems.Add(Preis(a) is { } p ? p.ToString("N0") + " CR" : string.Empty);
-                z.SubItems.Add(string.Join("  ·  ", a.Wege.Where(w => w.Art != "auction").Take(3).Select(WegKurz)));
-                z.ForeColor = besitz[a].Hat ? Color.Gray : Color.WhiteSmoke;
-                _liste.Items.Add(z);
-                if (a.Schluessel == gewaehlt) { z.Selected = true; }
+                w.Selected = true;
             }
         }
         finally
@@ -247,7 +302,22 @@ internal sealed class CarCollectionTab : UserControl
             _liste.EndUpdate();
             _still = false;
         }
+        ListeMs = uhr.Elapsed.TotalMilliseconds;
         Auswahl();
+    }
+
+    private readonly Dictionary<CarCollection.Auto, ListViewItem> _zeilen = new();
+
+    private ListViewItem ZeileFuer(CarCollection.Auto a)
+    {
+        if (_zeilen.TryGetValue(a, out var z)) { return z; }
+        z = new ListViewItem(a.Anzeige) { Tag = a };
+        z.SubItems.Add(a.Klasse is null ? string.Empty : $"{a.Klasse} {a.Pi}");
+        z.SubItems.Add(a.Typ);
+        z.SubItems.Add(Preis(a) is { } p ? p.ToString("N0") + " CR" : string.Empty);
+        z.SubItems.Add(string.Join("  ·  ", a.Wege.Where(w => w.Art != "auction").Take(3).Select(WegKurz)));
+        _zeilen[a] = z;
+        return z;
     }
 
     private IEnumerable<CarCollection.Auto> Sortiert(IEnumerable<CarCollection.Auto> autos)
@@ -313,8 +383,7 @@ internal sealed class CarCollectionTab : UserControl
         }
         try
         {
-            var url = "https://forza.fandom.com/wiki/" + Uri.EscapeDataString(seite.Replace(' ', '_'));
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            OeffneUrl(WikiUrl(seite));
         }
         catch (Exception)
         {
@@ -344,8 +413,8 @@ internal sealed class CarCollectionTab : UserControl
                     _quelle.Text = fehler;
                     return;
                 }
-                GarageImport.Merken(ids, notizen, rat);
-                _besitz = OwnedCars.Laden();
+                GarageImport.Merken(ids, notizen, rat, _besitzPfad);
+                _besitz = OwnedCars.Laden(_besitzPfad);
                 Fuellen();
             });
         });
@@ -358,7 +427,7 @@ internal sealed class CarCollectionTab : UserControl
         var neu = await CarCollection.VomServerAsync(_server(), _sammlung);
         if (IsDisposed) { return; }
         _neuHolen.Enabled = true;
-        if (neu is not null) { _sammlung = neu; }
+        if (neu is not null) { _sammlung = neu; _zeilen.Clear(); }
         Fuellen();
         if (zeigen && neu is null)
         {
@@ -374,6 +443,40 @@ internal sealed class CarCollectionTab : UserControl
         if (IsHandleCreated && InvokeRequired) { BeginInvoke(was); }
         else { was(); }
     }
+
+    internal static string WikiUrl(string seite) =>
+        "https://forza.fandom.com/wiki/" + Uri.EscapeDataString(seite.Replace(' ', '_'));
+
+    // ------------------------------------------------------------------ fuer die Pruefung
+
+    /// <summary>Nur fuer die Gegenprobe im Test: ohne Schutz muss ein Doppelklick den Haken kippen.</summary>
+    internal bool DoppelklickSchutz = true;
+
+    /// <summary>Wie lange der letzte Aufbau rechnete und die Liste fuellte (fuer die Tempo-Probe).</summary>
+    internal double RechnenMs;
+    internal double ListeMs;
+
+    internal void WikiFuerAuswahl() => WikiOeffnen();
+
+    internal ListView Liste => _liste;
+    internal ComboBox Zeige => _zeige;
+    internal ComboBox WegFilter => _weg;
+    internal ComboBox KlassenFilter => _klasse;
+    internal TextBox Suche => _filter;
+    internal string KopfText => _kopf.Text;
+    internal string QuellText => _quelle.Text;
+    internal string DetailText => _detailKopf.Text + "\n" + _detail.Text;
+    internal bool GarageKnopfSichtbar => _garage.Visible;
+
+    /// <summary>Wie ein Klick auf einen Spaltenkopf.</summary>
+    internal void Sortiere(int spalte)
+    {
+        _sortAb = spalte == _sortSpalte ? !_sortAb : false;
+        _sortSpalte = spalte;
+        Fuellen();
+    }
+
+    internal void NeuFuellen() => Fuellen();
 
     // ------------------------------------------------------------------ Texte
 

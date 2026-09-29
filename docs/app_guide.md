@@ -227,7 +227,9 @@ the wiki**, to read its wiki page in your browser.
 
 - **On this PC:** press **Read my garage** while the game runs. The app reads the
   garage from the game's memory, as the tuning inspector does, and from then on the
-  garage decides. The **Car notes** garage button does the same.
+  garage decides. The **Car notes** garage button does the same. A car the app
+  cannot identify yet (no scanned leaderboard has named its id) is counted in a
+  line above the list; tick it by hand.
 - **Xbox / 2nd PC:** there is no memory to read. Every car you drive with the app
   counts by itself; tick the others you own.
 - **A tick always wins.** Untick a car the garage or a drive marked as yours, for

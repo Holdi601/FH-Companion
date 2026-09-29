@@ -1370,6 +1370,43 @@ internal static class Program
             Environment.Exit(0);
         }
 
+        // "Car collection" am echten Reiter: Fenster abseits des Schirms, Haken, Filter,
+        // Sortierung, Doppelklick, eigener kleiner Server. NICHT waehrend gespielt wird.
+        if (args.Contains("--car-collection-ui-test", StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                CarCollectionUiTest.Run();
+                Console.WriteLine("Car collection UI OK.");
+                Environment.Exit(0);
+            }
+            catch (Exception ausnahme)
+            {
+                Console.WriteLine(ausnahme.ToString());
+                Environment.Exit(1);
+            }
+        }
+
+        // Proben gegen die Wirklichkeit, ohne etwas Persoenliches auszugeben.
+        if (args.Contains("--stream-window-probe", StringComparer.OrdinalIgnoreCase))
+        {
+            var h = Rivals.Fenster.BrowserStrom();
+            var titel = h == IntPtr.Zero ? null : Rivals.Fenster.Sichtbare().FirstOrDefault(f => f.Handle == h).Titel;
+            Console.WriteLine(h == IntPtr.Zero ? "stream window: none"
+                                               : "stream window: found, platform " + Rivals.Fenster.StromPlattform(titel ?? ""));
+            Environment.Exit(0);
+        }
+        if (args.Contains("--car-list-probe", StringComparer.OrdinalIgnoreCase))
+        {
+            var ziel = Path.Combine(Path.GetTempPath(), "fhc-car-list-probe.json");
+            var liste = Rivals.CarCollection.VomServerAsync(Rivals.OverlaySettings.Load().ServerUrl, null, default, ziel)
+                .GetAwaiter().GetResult();
+            Console.WriteLine(liste is null ? "car list: none"
+                              : $"car list: {liste.Autos.Count} cars, built {liste.Gebaut}, list {liste.ListeStand}, "
+                                + $"{liste.Autos.Count(a => a.AlleIds.Count > 0)} with car id");
+            Environment.Exit(liste is null ? 1 : 0);
+        }
+
         // Nur die Grenzfaelle: kein Fenster, keine Overlays -- darf laufen, waehrend
         // jemand spielt (der volle Selbsttest zeigt Overlays auf dem Schirm).
         if (args.Contains("--edge-case-test", StringComparer.OrdinalIgnoreCase))

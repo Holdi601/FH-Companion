@@ -29,6 +29,9 @@ namespace ForzaHaptics.Tester.Rivals;
 /// </remarks>
 internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
 {
+    /// <summary>Was die Vorschau sagt, wenn das Fenster fehlt -- statt "Window not found: ...".</summary>
+    internal string? NichtGefunden { get; init; }
+
     private static readonly Guid IidInterop = new("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356");
     private static readonly Guid IidItem = new("79C3F95B-31F7-4EC2-A464-632EF5D30760");
     private static readonly Guid IidDxgiDevice = new("54EC77FA-1377-44E6-8C32-88FD5F44C84C");
@@ -89,7 +92,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
             if (_sitzung is not null && _fenster != IntPtr.Zero && Fenster.IsWindow(_fenster))
             {
                 Beschreibung = Fenster.IsIconic(_fenster)
-                    ? "window is minimized -- restore it; it may stay behind other windows"
+                    ? Loc.T("The window is minimized. Restore it; it may stay behind other windows.")
                     : "window: " + Fenster.Titel(_fenster);
                 return;
             }
@@ -97,7 +100,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
             var h = _finden();
             if (h == IntPtr.Zero)
             {
-                Beschreibung = "window not found: \"" + _titel + "\"";
+                Beschreibung = NichtGefunden ?? string.Format(Loc.T("Window not found: “{0}”"), _titel);
                 return;
             }
             try
@@ -498,6 +501,9 @@ internal static class Fenster
 
     /// <summary>Nennt dieser Fenstertitel eine Strom-Plattform?</summary>
     internal static bool IstStromTitel(string titel) => StromSeite.IsMatch(titel);
+
+    /// <summary>Welche Plattform der Titel nennt -- fuer die Probe, die keinen Titel ausgeben soll.</summary>
+    internal static string? StromPlattform(string titel) => StromSeite.Match(titel) is { Success: true } m ? m.Value : null;
 
     /// <summary>
     /// Ein Browserfenster, das einen Strom zeigt (Twitch, YouTube, Kick ...): der Titel

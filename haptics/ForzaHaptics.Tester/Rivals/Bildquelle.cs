@@ -73,8 +73,14 @@ internal static class Bildquellen
     {
         "device" when !string.IsNullOrWhiteSpace(s.VideoDevice) => new GeraeteQuelle(s.VideoDevice!),
         "obs" => new ObsQuelle(),
-        "discord" when FensterQuelle.Unterstuetzt => new FensterQuelle("Discord", Fenster.DiscordFenster),
-        "browser" when FensterQuelle.Unterstuetzt => new FensterQuelle("a stream in the browser", Fenster.BrowserStrom),
+        "discord" when FensterQuelle.Unterstuetzt => new FensterQuelle("Discord", Fenster.DiscordFenster)
+        {
+            NichtGefunden = Loc.T("No Discord window found. Open Discord and watch the stream, popped out or full screen."),
+        },
+        "browser" when FensterQuelle.Unterstuetzt => new FensterQuelle("a stream in the browser", Fenster.BrowserStrom)
+        {
+            NichtGefunden = Loc.T("No stream found in a browser window. Open it on Twitch, YouTube or Kick; keep its tab in front."),
+        },
         "window" when !string.IsNullOrWhiteSpace(s.VideoWindow) && FensterQuelle.Unterstuetzt
             => new FensterQuelle(s.VideoWindow!),
         "url" when !string.IsNullOrWhiteSpace(s.VideoUrl) => new StromQuelle(s.VideoUrl!, Ffmpeg.Finden(s.FfmpegPath)),

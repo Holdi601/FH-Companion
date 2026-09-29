@@ -362,24 +362,47 @@ def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
-def _ids_je_auto(pfad: Path) -> dict[tuple[str, int], int]:
+def _json_by_car_id(pfad: Path) -> dict:
     try:
-        roh = json.loads(pfad.read_text(encoding="utf-8"))["by_car_id"]
+        return json.loads(pfad.read_text(encoding="utf-8"))["by_car_id"]
     except (OSError, ValueError, KeyError):
         return {}
-    ids: dict[tuple[str, int], int] = {}
-    for cid, e in roh.items():
+
+
+def ids_je_auto(liste: list[dict], namen: dict) -> dict[tuple[str, int], list[int]]:
+    """Welche car_id zu welchem Auto der Liste gehoert -- die Garage kennt nur die Nummer.
+
+    Aus der Rundenzeit-Zuordnung (config/fh6_car_id_names.json): Bildschirmname und
+    Speicher-car_id, verbunden ueber die Rundenzeit, mit Tausenden Stichproben je Auto.
+
+    JE NAME NUR DIE MEISTBELEGTE ID. Manchmal tragen zwei ids denselben Namen (drei die
+    Corvette '53); hoechstens eine stimmt, die uebrigen sind andere Autos. Zaehlten alle,
+    bekaeme wer eine der anderen besitzt ein Auto gutgeschrieben, das er nicht hat.
+
+    NICHT aus config/fh6_car_catalogue.json (Codenamen): gegen eine echte Garage
+    geprueft (2026-09-29) nennen beide Quellen dieselbe id in 0 von 17 Faellen gleich, und
+    die Garage fuehrt den Abarth 124 Spider unter der id der Rundenzeit-Zuordnung (2740),
+    nicht unter der des Katalogs (4074). Dessen ids sind aus Feldposition und Anker
+    errechnet -- vermutlich versetzt.
+    """
+    in_liste = {(_norm(a["name"]), a.get("year")) for a in liste if a.get("year")}
+    beste: dict[tuple[str, int], tuple[int, int]] = {}
+    for cid, e in namen.items():
         try:
-            schluessel = (_norm(e["name"]), int(e["year"]))
-            if cid.lstrip("-").isdigit() and int(cid) > 0:
-                ids.setdefault(schluessel, int(cid))
+            nummer = int(cid)
+            ziel = (_norm(e["name"]), int(e["year"]))
+            stimmen = int(e.get("votes") or 0)
         except (KeyError, TypeError, ValueError):
             continue
-    return ids
+        if nummer <= 0 or ziel not in in_liste:
+            continue
+        if ziel not in beste or stimmen > beste[ziel][1]:
+            beste[ziel] = (nummer, stimmen)
+    return {ziel: [nummer] for ziel, (nummer, _) in beste.items()}
 
 
 def zusammenfuehren(liste: list[dict], seiten: list[tuple[str, str]],
-                    ids: dict[tuple[str, int], int]) -> tuple[list[dict], dict]:
+                    ids: dict[tuple[str, int], list[int]]) -> tuple[list[dict], dict]:
     """Jedem Auto der offiziellen Liste seine Wiki-Seite und seine car_id zuordnen."""
     je_jahr: dict[int, list[tuple[str, str, dict]]] = {}
     for titel, text in seiten:
@@ -404,9 +427,11 @@ def zusammenfuehren(liste: list[dict], seiten: list[tuple[str, str]],
             eintrag["wiki"] = treffer[1]
             if p := _zahl(treffer[2].get("price")):
                 eintrag["price"] = p
-        if jahr is not None and (cid := ids.get((name, jahr))) is not None:
+        if jahr is not None and (nummern := ids.get((name, jahr))):
             zahlen["id"] += 1
-            eintrag["id"] = cid
+            # "id" fuer Fassungen der App, die nur eine kennen; "ids" fuer alle.
+            eintrag["id"] = nummern[0]
+            eintrag["ids"] = nummern
         eintrag["ways"] = wege(auto, treffer[2] if treffer else None)
         raus.append(eintrag)
     return raus, zahlen
@@ -424,7 +449,8 @@ def bauen(log=print) -> dict:
         log(f"Wiki nicht erreichbar ({e}) -- nur die offizielle Liste")
         seiten = []
     log(f"Wiki: {len(seiten)} Seiten")
-    autos, zahlen = zusammenfuehren(liste, seiten, _ids_je_auto(ID_NAMEN))
+    ids = ids_je_auto(liste, _json_by_car_id(ID_NAMEN))
+    autos, zahlen = zusammenfuehren(liste, seiten, ids)
     log(f"verbunden: {zahlen['wiki']} mit Wiki-Seite, {zahlen['id']} mit car_id")
     return {
         "format": FORMAT,
