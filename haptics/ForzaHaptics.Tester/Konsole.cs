@@ -262,18 +262,43 @@ internal static class Konsole
         }
     }
 
+    /// <summary>
+    /// Den Bericht aufnehmen -- ZEHN SEKUNDEN SPAETER, wenn das Spiel wieder vorne ist
+    /// (seit 2026-09-29).
+    /// </summary>
+    /// <remarks>
+    /// Um den Verweis zu klicken, muss man das Spiel verlassen (Alt+Tab, minimieren). Ein
+    /// sofort aufgenommener Bericht zeigte darum nie den Zustand, um den es ging: Remote
+    /// Play im Vollbild, vorne. Jetzt: OK, zurueck ins Spiel, nach zehn Sekunden nimmt die
+    /// App alle Fenster samt dem vordersten auf und meldet sich mit einem Ton.
+    /// </remarks>
     private static void BerichtKopieren(Control wo, Rivals.OverlaySettings s)
     {
-        try
+        var form = wo.FindForm();
+        if (MessageBox.Show(form,
+                Loc.T("Click OK, then switch back to the game within 10 seconds, the way you play (for example in full screen). The app then records all windows and puts the report on the clipboard; a sound tells you when it is done."),
+                AppInfo.Name, MessageBoxButtons.OKCancel, MessageBoxIcon.Information) != DialogResult.OK)
         {
-            Clipboard.SetText(Bericht(s));
-            MessageBox.Show(wo.FindForm(),
-                            Loc.T("The report is on the clipboard. Paste it into a message to whoever helps you."),
-                            AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
         }
-        catch (Exception)
+        var uhr = new System.Windows.Forms.Timer { Interval = 10_000 };
+        uhr.Tick += (_, _) =>
         {
-        }
+            uhr.Stop();
+            uhr.Dispose();
+            try
+            {
+                Clipboard.SetText(Bericht(s));
+                System.Media.SystemSounds.Asterisk.Play();
+                MessageBox.Show(form,
+                                Loc.T("The report is on the clipboard. Paste it into a message to whoever helps you."),
+                                AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception)
+            {
+            }
+        };
+        uhr.Start();
     }
 
     /// <summary>Was ins Feld "Fenster" gehoert: der Titel -- auch wenn dort gerade "Titel — Programm" steht.</summary>

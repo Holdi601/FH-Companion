@@ -121,7 +121,7 @@
   "Rivals/CarCollectionTab.cs:138"
  ],
  "Any other window that shows the game works too: pick it from the list, or with a preview of every window.": [
-  "Konsole.cs:326"
+  "Konsole.cs:351"
  ],
  "Any way": [
   "Rivals/CarCollectionTab.cs:134"
@@ -254,7 +254,7 @@
   "Rivals/RivalsTab.cs:543"
  ],
  "Capture card": [
-  "Konsole.cs:313"
+  "Konsole.cs:338"
  ],
  "Car": [
   "Rivals/CarCollectionTab.cs:162",
@@ -355,6 +355,9 @@
  "Clear graph": [
   "BlueprintEditor.cs:108"
  ],
+ "Click OK, then switch back to the game within 10 seconds, the way you play (for example in full screen). The app then records all windows and puts the report on the clipboard; a sound tells you when it is done.": [
+  "Konsole.cs:279"
+ ],
  "Close": [
   "Disclosure.cs:469"
  ],
@@ -374,7 +377,7 @@
   "Rivals/HudTab.cs:1275"
  ],
  "Connect the Xbox to the capture card and pick the card here.": [
-  "Konsole.cs:323"
+  "Konsole.cs:348"
  ],
  "Connect this directly to an output node to verify one controller actuator at an exact force.": [
   "BlueprintEditor.cs:663"
@@ -598,7 +601,7 @@
   "Konsole.cs:80"
  ],
  "Entire screen {0}": [
-  "Rivals/FensterQuelle.cs:856"
+  "Rivals/FensterQuelle.cs:857"
  ],
  "Event Sign Up maps": [
   "Rivals/HudTab.cs:854"
@@ -771,7 +774,7 @@
   "scripts/contrib_scan.py:149"
  ],
  "Game picture (optional)": [
-  "Konsole.cs:306"
+  "Konsole.cs:331"
  ],
  "Gamepad": [
   "BlueprintEditor.cs:1651"
@@ -862,10 +865,10 @@
   "scripts/contrib_scan.py:329"
  ],
  "In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized.": [
-  "Konsole.cs:324"
+  "Konsole.cs:349"
  ],
  "In the dashboard window": [
-  "Konsole.cs:537"
+  "Konsole.cs:562"
  ],
  "In the game now:": [
   "Rivals/CarNotesTab.cs:190"
@@ -886,7 +889,7 @@
   "scripts/contrib_scan.py:70"
  ],
  "It shows while that window is in front. Move and size the HUD in the Lap delta HUD tab, as on the PC.": [
-  "Konsole.cs:545"
+  "Konsole.cs:570"
  ],
  "Its first time here on the website -- thanks to you!": [
   "Rivals/OverlayController.cs:3867",
@@ -1131,7 +1134,7 @@
   "Rivals/OverlayController.cs:3677"
  ],
  "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.": [
-  "Konsole.cs:412"
+  "Konsole.cs:437"
  ],
  "New car on the leaderboard!": [
   "Rivals/OverlayController.cs:3865",
@@ -1184,8 +1187,8 @@
   "Rivals/CarCollectionTab.cs:451"
  ],
  "No picture yet": [
-  "Konsole.cs:387",
-  "Konsole.cs:585"
+  "Konsole.cs:412",
+  "Konsole.cs:610"
  ],
  "No reference yet": [
   "Rivals/HudTab.cs:1477"
@@ -1206,7 +1209,7 @@
   "Rivals/HudTab.cs:1104"
  ],
  "None -- telemetry only": [
-  "Konsole.cs:312"
+  "Konsole.cs:337"
  ],
  "Normalize maximum": [
   "BlueprintEditor.cs:734"
@@ -1324,13 +1327,13 @@
   "Rivals/HudTab.cs:1295"
  ],
  "Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard.": [
-  "Konsole.cs:328"
+  "Konsole.cs:353"
  ],
  "Output": [
   "BezierCurveEditor.cs:23"
  ],
  "Over the game window, like playing on the PC": [
-  "Konsole.cs:542"
+  "Konsole.cs:567"
  ],
  "Owned": [
   "Rivals/CarCollectionTab.cs:131"
@@ -1386,7 +1389,7 @@
   "Rivals/CarNotesTab.cs:293"
  ],
  "Pick with a preview …": [
-  "Konsole.cs:355"
+  "Konsole.cs:380"
  ],
  "Pin the panel that is up": [
   "Rivals/RivalsTab.cs:275"
@@ -1409,7 +1412,7 @@
   "Rivals/HudTab.cs:1243"
  ],
  "Playing on an Xbox or another PC?": [
-  "Konsole.cs:296"
+  "Konsole.cs:321"
  ],
  "Point +": [
   "MainForm.cs:931",
@@ -1837,7 +1840,7 @@
   "Rivals/OwnTimes.cs:422"
  ],
  "Something not working? Copy a report for whoever helps you": [
-  "Konsole.cs:636"
+  "Konsole.cs:661"
  ],
  "Soon the game will refuse new downloads.": [
   "Rivals/OverlayController.cs:563"
@@ -1861,7 +1864,7 @@
   "Rivals/OwnTimesTab.cs:267"
  ],
  "Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.": [
-  "Konsole.cs:325"
+  "Konsole.cs:350"
  ],
  "Start listening": [
   "MainForm.cs:778"
@@ -1924,10 +1927,10 @@
   "MainForm.cs:708"
  ],
  "Stream address": [
-  "Konsole.cs:318"
+  "Konsole.cs:343"
  ],
  "Stream in the browser (Twitch, YouTube, Kick …)": [
-  "Konsole.cs:317"
+  "Konsole.cs:342"
  ],
  "Strength": [
   "TelemetryInspector.cs:80"
@@ -1964,7 +1967,7 @@
   "Rivals/HudTab.cs:1082"
  ],
  "Switch to “Xbox / 2nd PC” at the top of the window.": [
-  "Konsole.cs:297"
+  "Konsole.cs:322"
  ],
  "TELEMETRY": [
   "BlueprintEditor.cs:1274"
@@ -2008,7 +2011,7 @@
   "MainForm.cs:984"
  ],
  "That is a whole screen, not a window. Pick the window that shows the game.": [
-  "Konsole.cs:480"
+  "Konsole.cs:505"
  ],
  "The Rivals overlay tab has a \"Save mask preview\" button: it draws both regions on a capture, which is how a mask that has drifted is spotted.": [
   "Rivals/OverlayController.cs:3597"
@@ -2057,7 +2060,7 @@
   "Tuning/TunesTab.cs:554"
  ],
  "The game runs on:": [
-  "Konsole.cs:712"
+  "Konsole.cs:737"
  ],
  "The game will refuse new downloads.": [
   "Rivals/OverlayController.cs:562"
@@ -2097,7 +2100,7 @@
   "Rivals/AppUpdate.cs:283"
  ],
  "The report is on the clipboard. Paste it into a message to whoever helps you.": [
-  "Konsole.cs:271"
+  "Konsole.cs:294"
  ],
  "The route names have to be on screen as text.": [
   "Rivals/OverlayController.cs:3589"
@@ -2136,7 +2139,7 @@
   "MainForm.cs:1008"
  ],
  "This PC": [
-  "Konsole.cs:694"
+  "Konsole.cs:719"
  ],
  "This PC now belongs to the scanner. Do not click, do not type,": [
   "scripts/contrib_scan.py:332"
@@ -2332,7 +2335,7 @@
   "Rivals/HudTab.cs:1112"
  ],
  "Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox.": [
-  "Konsole.cs:327"
+  "Konsole.cs:352"
  ],
  "Weapon click": [
   "BlueprintEditor.cs:1298"
@@ -2370,13 +2373,13 @@
   "MainForm.cs:1125"
  ],
  "Where the HUD shows": [
-  "Konsole.cs:534"
+  "Konsole.cs:559"
  ],
  "Where the sign-up maps come from": [
   "Rivals/HudTab.cs:1193"
  ],
  "Which mode you are playing": [
-  "Konsole.cs:623"
+  "Konsole.cs:648"
  ],
  "Which mode you are playing, written with every lap. \"automatic\" works it out from the menu you came from: the Rivals screen, a Horizon Play sign-up, or an ordinary sign-up (a solo or co-op race). Free-roam runs prove themselves by their own clock. Only Rivals and Horizon Play laps count on the website; a lap whose mode is unknown is not sent.": [
   "Rivals/HudTab.cs:1353"
@@ -2416,23 +2419,23 @@
   "Rivals/CarCollectionTab.cs:591"
  ],
  "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.": [
-  "Konsole.cs:307"
+  "Konsole.cs:332"
  ],
  "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.": [
-  "Konsole.cs:630"
+  "Konsole.cs:655"
  ],
  "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.": [
   "Rivals/RivalsTab.cs:178"
  ],
  "Xbox / 2nd PC": [
-  "Konsole.cs:301",
-  "Konsole.cs:695"
+  "Konsole.cs:326",
+  "Konsole.cs:720"
  ],
  "Xbox / 2nd PC mode: telemetry arrives over the network, the controller is on the console.": [
   "MainForm.cs:387"
  ],
  "Xbox Remote Play": [
-  "Konsole.cs:315"
+  "Konsole.cs:340"
  ],
  "YOUR TIMES ON THESE ROUTES ({0})": [
   "Rivals/OverlayController.cs:3260"
@@ -2474,7 +2477,7 @@
   "Rivals/OverlayController.cs:3985"
  ],
  "Your window is not in the list? Copy the list of all windows": [
-  "Konsole.cs:370"
+  "Konsole.cs:395"
  ],
  "a low place usually means few surviving laps, not a slow car": [
   "Rivals/OverlayController.cs:3393"
@@ -2616,7 +2619,7 @@
   "Rivals/CarNotesTab.cs:295"
  ],
  "ffmpeg found.": [
-  "Konsole.cs:413"
+  "Konsole.cs:438"
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:146",
@@ -2629,7 +2632,7 @@
   "Rivals/OverlayController.cs:3456"
  ],
  "for games in full screen": [
-  "Rivals/FensterQuelle.cs:857"
+  "Rivals/FensterQuelle.cs:858"
  ],
  "forzahorizon6.exe is not running -- start the game, then read.": [
   "Tuning/TuningTab.cs:166"
@@ -2712,7 +2715,7 @@
   "Rivals/OverlayController.cs:3636"
  ],
  "minimized": [
-  "Rivals/FensterQuelle.cs:705"
+  "Rivals/FensterQuelle.cs:706"
  ],
  "motor intensity": [
   "TelemetryInspector.cs:138"
@@ -2757,7 +2760,7 @@
   "Rivals/AppUpdate.cs:153"
  ],
  "no title": [
-  "Rivals/FensterQuelle.cs:704"
+  "Rivals/FensterQuelle.cs:705"
  ],
  "none": [
   "MainForm.cs:1883"

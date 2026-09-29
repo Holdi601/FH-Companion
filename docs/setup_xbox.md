@@ -195,6 +195,9 @@ mode. Only Rivals and Horizon Play laps count on the website.
   Windows Firewall** there.
 - Something else not working (HUD, course maps, car notes)? At the bottom of the
   Xbox panel, **Something not working? Copy a report for whoever helps you** puts a
-  report on the clipboard: settings, the captured window, every window on this PC
-  and the last lines of the app's logs. Paste it into a message to whoever helps you.
+  report on the clipboard: settings, the captured window, every window on this PC,
+  which one is in front, and the last lines of the app's logs. After you click OK you
+  have 10 seconds to switch back into the game the way you play (full screen too) --
+  the report is taken then, and a sound tells you it is on the clipboard. Paste it
+  into a message to whoever helps you.
 - The Xbox and this PC are in the same network.

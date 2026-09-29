@@ -502,6 +502,7 @@ internal static class Fenster
     private static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string? klasse, string? titel);
     [DllImport("kernel32.dll")] private static extern IntPtr OpenProcess(uint zugriff, bool erben, uint pid);
     [DllImport("user32.dll")] private static extern IntPtr MonitorFromPoint(POINT pt, uint flags);
+    [DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr h, uint cmd);
     [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr h);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern bool QueryFullProcessImageNameW(IntPtr prozess, int flags, StringBuilder pfad, ref int laenge);
@@ -1002,6 +1003,17 @@ internal static class Fenster
         {
             var h = Finden(gesucht);
             sb.AppendLine($"source \"{gesucht}\" finds: " + (h == IntPtr.Zero ? "nothing" : $"{Klasse(h)}, \"{Titel(h)}\""));
+        }
+        // DAS FENSTER VORNE -- beim verzoegerten Bericht das Spiel selbst, so wie gespielt wird.
+        var vorne = GetAncestor(GetForegroundWindow(), 2);
+        if (vorne != IntPtr.Zero && GetWindowRect(vorne, out var vr))
+        {
+            sb.AppendLine($"in front: {Beschreibe(vorne)} \"{Titel(vorne)}\" {vr.Right - vr.Left}x{vr.Bottom - vr.Top} at {vr.Left},{vr.Top}, "
+                          + $"exstyle 0x{GetWindowLongW(vorne, -20):x}, owner {GetWindow(vorne, 4) != IntPtr.Zero}");
+        }
+        foreach (var (s, i) in Bildschirme().Select((s, i) => (s, i)))
+        {
+            sb.AppendLine($"screen {i + 1}: {s.Bounds}{(s.Primary ? " primary" : string.Empty)}, full-screen window in front: {VollbildAuf(s.Bounds)}");
         }
         sb.AppendLine("program | class | title | visible | cloaked | size | tool | minimized | listed");
         var liste = Waehlbare();
