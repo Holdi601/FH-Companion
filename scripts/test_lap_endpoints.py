@@ -277,7 +277,7 @@ with tempfile.TemporaryDirectory() as tmp:
                               json.dumps({"hardware": "d" * 64, "gamertag": "Sharer"}).encode("utf-8"))
         pruefe(status == 200, "eine zweite Installation meldet sich an (war %d)" % status)
         teil_id, teil_secret = antwort.get("install_id", ""), antwort.get("secret", "")
-        b = json.dumps({"lap": dict(runde(95.0), carOrdinal=3001), "telemetry": volle_spur(95.0),
+        b = json.dumps({"lap": dict(runde(95.0), carOrdinal=3001, carName="Test Car '21"), "telemetry": volle_spur(95.0),
                         "publishTelemetry": True}).encode("utf-8")
         status, antwort = ruf(port, "POST", "/api/lap/submit", b,
                               unterschrieben(teil_secret, teil_id, "/api/lap/submit", b, "nonce-pub-1"))
@@ -296,7 +296,7 @@ with tempfile.TemporaryDirectory() as tmp:
         pruefe(zeilen[0] == "t,metres,Speed" and len(zeilen) == 61,
                "CSV: Kopfzeile und eine Zeile je Paket (%s, %d Zeilen)" % (zeilen[0], len(zeilen)))
         name = kopf.get("Content-Disposition", "")
-        pruefe("attachment" in name and "FH6_Test-Circuit_S1_95.000s_" in name and name.endswith('.csv"'),
+        pruefe("attachment" in name and "FH6_Test-Circuit_Test-Car-21_S1_95.000s_" in name and name.endswith('.csv"'),
                "CSV: als Datei mit sprechendem Namen (%s)" % name)
         status, kopf, roh = hol(port, "/api/lap/telemetry/%s.json.gz" % offen_id)
         import gzip as _gz

@@ -65,6 +65,7 @@ internal static class EdgeCaseTest
         CelebrationsWaitWhileDriving();
         ConsoleModeReadsItsSource();
         FullTelemetryTravelsWithTheLap();
+        CarNameTravelsWithTheLap();
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
         XboxAndMemoryOptions();
@@ -648,6 +649,80 @@ internal static class EdgeCaseTest
             spur.Add(p, i * 0.016f, i * 0.5f);
         }
         return spur;
+    }
+
+    /// <summary>
+    /// DER AUTONAME REIST MIT (2026-10-01): ein Auswertungswerkzeug zeigte statt des Autos
+    /// nur "car 1269" -- in Rundendatei und Spur stand allein die Nummer.
+    /// </summary>
+    private static void CarNameTravelsWithTheLap()
+    {
+        const string name = "BMW 2002 \"Turbo\" Coupé '73";
+        var mit = System.Text.Json.JsonSerializer.Serialize(
+            new Rivals.RecordedLap { CarOrdinal = 1269, CarName = name });
+        Soll(mit.Contains("\"carOrdinal\":1269,\"carName\":", StringComparison.Ordinal),
+             "carName steht nicht neben carOrdinal: " + mit[..Math.Min(120, mit.Length)]);
+        Soll(System.Text.Json.JsonSerializer.Deserialize<Rivals.RecordedLap>(mit)!.CarName == name,
+             "carName kommt nicht zurueck");
+        Soll(!System.Text.Json.JsonSerializer.Serialize(new Rivals.RecordedLap { CarOrdinal = 1 })
+                .Contains("carName", StringComparison.Ordinal),
+             "ohne Namen steht carName in der Datei");
+        Soll(Rivals.AutoNamen.Fuer(0, null, null) is null && Rivals.AutoNamen.Fuer(1269, null, null) is null,
+             "ohne Datensatz und Liste wurde ein Name erfunden");
+
+        // Der Kopf der Spur -- auch wenn sie schon einmal gepackt war.
+        var spur = TestSpur();
+        _ = spur.Gepackt();
+        spur.Beschreibe(new Rivals.TelemetryTrack.Kopfdaten(1269, name, "Soni Circuit", "A", 700, 61.25f));
+        using (var gz = new System.IO.Compression.GZipStream(new MemoryStream(spur.Gepackt()!),
+                   System.IO.Compression.CompressionMode.Decompress))
+        {
+            var kopf = System.Text.Json.Nodes.JsonNode.Parse(gz)!;
+            Soll(kopf["car"]?["name"]?.GetValue<string>() == name, "der Spur fehlt der Autoname");
+            Soll(kopf["car"]?["ordinal"]?.GetValue<int>() == 1269, "der Spur fehlt die Autonummer");
+            Soll(kopf["car"]?["pi"]?.GetValue<int>() == 700 && kopf["car"]?["class"]?.GetValue<string>() == "A",
+                 "der Spur fehlen Klasse und PI");
+            Soll(kopf["track"]?.GetValue<string>() == "Soni Circuit", "der Spur fehlt die Strecke");
+            Soll(Math.Abs(kopf["lapSeconds"]!.GetValue<double>() - 61.25) < 1e-6, "der Spur fehlt die Zeit");
+            Soll(kopf["data"]?.AsArray().Count == 40, "der Kopf verdarb die Daten");
+        }
+
+        // Nachtragen im Bestand: nur wo er fehlt, der Rest der Datei bleibt, wie er war.
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-edge-namen-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var ordner = Directory.CreateDirectory(Path.Combine(wurzel, "Soni Circuit (course_1_2_to_3_4)", "A", "car1269")).FullName;
+            var ohne = Path.Combine(ordner, "2026-09-01_10-00-00_61.250s.json");
+            File.WriteAllText(ohne, "{\"Course\":\"course_1_2_to_3_4\",\"Lap\":"
+                + System.Text.Json.JsonSerializer.Serialize(new Rivals.RecordedLap
+                  { CarOrdinal = 1269, LapSeconds = 61.25f, Track = "Soni Circuit" }) + "}");
+            var fremd = Path.Combine(ordner, "2026-09-01_10-05-00_62.000s.json");
+            File.WriteAllText(fremd, "{\"Lap\":" + System.Text.Json.JsonSerializer.Serialize(
+                new Rivals.RecordedLap { CarOrdinal = 77, LapSeconds = 62f }) + "}");
+            File.WriteAllText(Path.Combine(wurzel, "Soni Circuit (course_1_2_to_3_4)", "course.json"),
+                              "{\"carOrdinal\":1269,\"x\":1}");
+            string? Namen(int o) => o == 1269 ? name : null;
+
+            Soll(Rivals.AutoNamen.Nachtragen(wurzel, Namen, pauseMs: 0) == 1, "Nachtragen zaehlt falsch");
+            var zurueck = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(ohne))!;
+            Soll(zurueck["Lap"]?["carName"]?.GetValue<string>() == name, "der Name wurde nicht nachgetragen");
+            Soll(zurueck["Lap"]?["track"]?.GetValue<string>() == "Soni Circuit"
+                 && zurueck["Course"]?.GetValue<string>() == "course_1_2_to_3_4",
+                 "Nachtragen veraenderte den Rest der Datei");
+            Soll(!File.ReadAllText(fremd).Contains("carName", StringComparison.Ordinal),
+                 "ein unbekanntes Auto bekam einen Namen");
+            Soll(!File.ReadAllText(Path.Combine(wurzel, "Soni Circuit (course_1_2_to_3_4)", "course.json"))
+                    .Contains("carName", StringComparison.Ordinal), "course.json wurde angefasst");
+            Soll(File.ReadAllText(ohne).Contains("'73", StringComparison.Ordinal),
+                 "der Name steht nicht lesbar in der Datei");
+            Soll(Rivals.AutoNamen.Nachtragen(wurzel, Namen, pauseMs: 0) == 0, "Nachtragen trug zweimal ein");
+            Soll(Directory.GetFiles(wurzel, "*.tmp", SearchOption.AllDirectories).Length == 0,
+                 "Nachtragen liess eine Zwischendatei liegen");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
     }
 
     private static void FullTelemetryTravelsWithTheLap()

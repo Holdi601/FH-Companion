@@ -253,6 +253,19 @@ internal static class Program
             Console.WriteLine($"  nach {Rivals.LapArchive.UnfertigOrdner} verlegt: {Rivals.LapArchive.UnfertigeAussortieren(wurzel)}");
             Console.WriteLine($"  Namen nachgetragen oder berichtigt: {Rivals.LapArchive.NamenNachtragen(wurzel)}");
             Console.WriteLine($"  Ordner benannt: {Rivals.LapArchive.OrdnerBenennen(wurzel)}");
+            Rivals.RivalsAdvisor? berater = null;
+            try
+            {
+                if (Rivals.DatasetSync.LocalBest().Path is { } datensatz && File.Exists(datensatz))
+                {
+                    berater = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz));
+                }
+            }
+            catch (Exception) { }
+            var autoliste = Rivals.CarCollection.Laden();
+            var gelernt = new Rivals.OrdinalMap();
+            Console.WriteLine("  Autonamen nachgetragen: " + Rivals.AutoNamen.Nachtragen(
+                wurzel, o => Rivals.AutoNamen.Fuer(o, berater, autoliste, gelernt), pauseMs: 0));
             Environment.Exit(0);
         }
 

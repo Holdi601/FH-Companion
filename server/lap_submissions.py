@@ -1088,7 +1088,11 @@ def spur_als_csv(gepackt: bytes) -> bytes:
 
 
 def spur_dateiname(datensatz: dict, endung: str) -> str:
-    """Ein Dateiname, der sagt, was darin ist: Strecke, Klasse, Zeit, Kennung."""
+    """Ein Dateiname, der sagt, was darin ist: Strecke, Auto, Klasse, Zeit, Kennung.
+
+    Das Auto beim Namen (seit 2026-10-01), sonst bei der Nummer -- mit der Nummer allein
+    zeigte ein Auswertungswerkzeug nur "car 1269".
+    """
     lap = datensatz.get("lap") or {}
     try:
         klasse = _KLASSEN[int(lap.get("carClass"))]
@@ -1098,7 +1102,13 @@ def spur_dateiname(datensatz: dict, endung: str) -> str:
         zeit = "%.3fs" % float(lap.get("lapSeconds"))
     except (TypeError, ValueError):
         zeit = "lap"
-    teile = [str(lap.get("track") or "lap"), klasse, zeit, str(datensatz.get("id") or "")[:8]]
+    auto = str(lap.get("carName") or "").strip()
+    if not auto:
+        try:
+            auto = "car%d" % int(lap.get("carOrdinal"))
+        except (TypeError, ValueError):
+            auto = "car"
+    teile = [str(lap.get("track") or "lap"), auto, klasse, zeit, str(datensatz.get("id") or "")[:8]]
     name = "_".join(re.sub(r"[^A-Za-z0-9.-]+", "-", t).strip("-") or "x" for t in teile)
     return "FH6_" + name + "." + endung
 

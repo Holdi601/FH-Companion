@@ -197,6 +197,18 @@ internal sealed class OverlayController : IDisposable
                     : $"route: {strecke.Name} (sign-up screen, matched by length)");
             }
 
+            // DER AUTONAME (seit 2026-10-01): in die Rundendatei und in den Kopf der vollen
+            // Spur -- ein Werkzeug, das sie liest, soll "BMW 2002 Turbo '73" zeigen und nicht
+            // "car 1269".
+            try
+            {
+                lap.CarName ??= AutoNamen.Fuer(lap.CarOrdinal, _advisor, _autoliste ??= CarCollection.Laden(), _ordinals);
+                lap.FullTrack?.Beschreibe(new TelemetryTrack.Kopfdaten(
+                    lap.CarOrdinal, lap.CarName, lap.Track, LapArchive.ClassOf(lap.PerformanceIndex),
+                    lap.PerformanceIndex, lap.LapSeconds));
+            }
+            catch (Exception) { }
+
             // Die volle Spur nur, wenn sie gewollt ist -- sie kostet rund
             // 1,5 MB je Runde. Weggeworfen wird sie hier und nicht im Aufzeichner:
             // dort wird sie ohnehin gesammelt, und ein zweiter Schalter mitten im
@@ -554,6 +566,22 @@ internal sealed class OverlayController : IDisposable
                 // Danach die Ordner nach ihren Strecken benennen: "Soni Circuit (course_…)".
                 var u = LapArchive.OrdnerBenennen();
                 if (u > 0) { WriteDiagnostic($"Kursordner nach Strecken benannt: {u}"); }
+                // AUTONAMEN NACHTRAGEN, in aelteren Rundendateien. Leise: eigener Faden mit
+                // niedriger Prioritaet und Pausen, denn das Spiel laeuft vielleicht schon.
+                new Thread(() =>
+                {
+                    try
+                    {
+                        // Eine eigene Karte der gelernten Paare: die der Anzeige lernt
+                        // waehrend der Fahrt weiter, und dieser Faden liest nebenher.
+                        var liste = CarCollection.Laden();
+                        var gelernt = new OrdinalMap();
+                        var k = AutoNamen.Nachtragen(LapArchive.Root, o => AutoNamen.Fuer(o, _advisor, liste, gelernt));
+                        if (k > 0) { WriteDiagnostic($"Autonamen in Rundendateien nachgetragen: {k}"); }
+                    }
+                    catch (Exception) { }
+                })
+                { IsBackground = true, Priority = ThreadPriority.Lowest, Name = "Autonamen" }.Start();
             }
             catch (Exception) { }
         });

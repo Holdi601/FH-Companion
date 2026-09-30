@@ -144,6 +144,25 @@ internal sealed class TelemetryTrack
 
     public int Count => _reihen.Count;
 
+    /// <summary>Wovon die Spur handelt -- steht im Kopf der Datei, damit sie auch allein lesbar ist.</summary>
+    internal sealed record Kopfdaten(int CarOrdinal, string? CarName, string? Track, string? CarClass,
+                                     int Pi, float LapSeconds);
+
+    private Kopfdaten? _kopf;
+
+    /// <summary>
+    /// Auto, Strecke, Klasse und Zeit in den Kopf schreiben (seit 2026-10-01). Vor dem Packen
+    /// aufrufen; ein spaeterer Aufruf packt neu.
+    /// </summary>
+    public void Beschreibe(Kopfdaten kopf)
+    {
+        lock (_packSchloss)
+        {
+            _kopf = kopf;
+            _gepackt = null;
+        }
+    }
+
     /// <summary>Wie viele Pakete dieselbe Spielzeit trugen wie das vorige -- aufgenommen, nur gezaehlt.</summary>
     public int RepeatedTimestamps { get; private set; }
 
@@ -308,6 +327,39 @@ internal sealed class TelemetryTrack
         schreiber.Write(IdenticalRepeats);
         schreiber.Write(",\"truncated\":");
         schreiber.Write(Truncated ? "true" : "false");
+        if (_kopf is { } k)
+        {
+            // WAS DAS FUER EINE RUNDE IST -- ein Werkzeug, das nur diese Datei bekommt,
+            // soll das Auto beim Namen nennen koennen und nicht nur bei der Nummer.
+            schreiber.Write(",\"car\":{\"ordinal\":");
+            schreiber.Write(k.CarOrdinal.ToString(CultureInfo.InvariantCulture));
+            if (!string.IsNullOrWhiteSpace(k.CarName))
+            {
+                schreiber.Write(",\"name\":");
+                schreiber.Write(System.Text.Json.JsonSerializer.Serialize(k.CarName, AutoNamen.Lesbar));
+            }
+            if (!string.IsNullOrWhiteSpace(k.CarClass))
+            {
+                schreiber.Write(",\"class\":");
+                schreiber.Write(System.Text.Json.JsonSerializer.Serialize(k.CarClass, AutoNamen.Lesbar));
+            }
+            if (k.Pi > 0)
+            {
+                schreiber.Write(",\"pi\":");
+                schreiber.Write(k.Pi.ToString(CultureInfo.InvariantCulture));
+            }
+            schreiber.Write('}');
+            if (!string.IsNullOrWhiteSpace(k.Track))
+            {
+                schreiber.Write(",\"track\":");
+                schreiber.Write(System.Text.Json.JsonSerializer.Serialize(k.Track, AutoNamen.Lesbar));
+            }
+            if (k.LapSeconds > 0)
+            {
+                schreiber.Write(",\"lapSeconds\":");
+                schreiber.Write(Gleitkomma(k.LapSeconds));
+            }
+        }
         schreiber.Write(",\"columns\":[");
         for (var i = 0; i < spalten.Length; i++)
         {

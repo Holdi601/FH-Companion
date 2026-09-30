@@ -147,6 +147,15 @@ Feld als eigene Spalte (`Byte323`, bei längeren Paketen mehr). Pakete mit derse
 Spielzeit wie das vorige bleiben drin; der Kopf zählt sie (`repeatedTimestamps`,
 davon Byte für Byte gleich: `identicalRepeats`).
 
+Seit 2026-10-01 sagt der Kopf auch, **welches Auto** und welche Strecke: `"car":
+{"ordinal": 1269, "name": "BMW 2002 Turbo '73", "class": "A", "pi": 700}`, `"track"`,
+`"lapSeconds"` — damit die Datei auch allein lesbar ist. Die Rundendatei trägt den
+Namen als `carName` neben `carOrdinal`; ältere Runden bekommen ihn beim Start der App
+nachgetragen, sobald eine Quelle das Auto kennt (vom Schirm gelernt, Datensatz der
+Bestenlisten, Autoliste). Ein Auto, das keine Quelle kennt, bleibt ohne Namen — nie ein
+geratener. Die Downloads der Seite heißen danach:
+`FH6_<Strecke>_<Auto>_<Klasse>_<Zeit>s_<Kennung>.csv`.
+
 Format 1 (bis 2026-09-30) nahm 73 ausgewählte Felder, rundete auf drei
 Nachkommastellen und verwarf jedes Paket mit wiederholter Spielzeit — in einer echten
 Runde 4 689 von 11 247. Gelesen wird eine Spur darum immer über die Spaltennamen im

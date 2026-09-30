@@ -42,6 +42,15 @@ internal sealed class RecordedLap
     [JsonPropertyName("lapSeconds")] public float LapSeconds { get; set; }
     [JsonPropertyName("lengthMetres")] public float LengthMetres { get; set; }
     [JsonPropertyName("carOrdinal")] public int CarOrdinal { get; set; }
+
+    /// <summary>
+    /// Der Name des Autos (seit 2026-10-01), wie ihn der Datensatz oder die Autoliste kennt --
+    /// fuer jedes Werkzeug, das die Runde liest. Mit der Nummer allein zeigte ein
+    /// Auswertungswerkzeug nur "car 1269".
+    /// </summary>
+    [JsonPropertyName("carName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CarName { get; set; }
     [JsonPropertyName("performanceIndex")] public int PerformanceIndex { get; set; }
     [JsonPropertyName("carClass")] public int CarClass { get; set; }
     [JsonPropertyName("drivetrain")] public int Drivetrain { get; set; }
