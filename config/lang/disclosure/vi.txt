@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Vui lòng đọc phần này một lần. Nó giải thích chương trình làm gì trên PC của
 bạn, những gì rời khỏi máy tính của bạn, và vì sao Windows có thể cảnh báo bạn
 về nó.
@@ -115,6 +115,11 @@ NHỮNG GÌ RỜI KHỎI MÁY TÍNH CỦA BẠN
   được giữ. Máy chủ kiểm tra lại vòng đó trước khi hiển thị. Tắt tính năng này
   trong thẻ Rivals ("Gửi vòng của tôi ...") hoặc đặt "submit_laps": false trong
   config/overlay.json.
+
+  Các vòng bạn gửi từ phiên bản này trở đi cũng được công bố kèm telemetry đó:
+  trên trang web, cạnh thời gian của bạn, ai cũng có thể tải telemetry đầy đủ
+  của vòng (dạng bảng CSV và tệp gốc) để xem vòng đó được lái thế nào. Các
+  vòng bạn đã gửi trước đó vẫn riêng tư và chỉ dùng để kiểm tra thời gian.
 
   Một vòng vượt bảng xếp hạng nhưng không thể gửi ngay lúc đó -- do việc gửi
   đang tắt, đang ngoại tuyến, hoặc máy chủ không trả lời -- sẽ được giữ trên máy

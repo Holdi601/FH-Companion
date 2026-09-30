@@ -118,6 +118,16 @@ pruefe(s8.placed === 1 && p8.submitted && p8.submitted.mode === "horizon-play",
 pruefe(S.modeText("race") === "Solo / co-op race" && S.modeText("horizon-play") === "Horizon Play",
        "Anzeigenamen der Modi");
 
+// Die Telemetrie zum Herunterladen (seit 2026-09-30): nur, wenn der Server sie anbietet.
+var mitSpur = JSON.parse(JSON.stringify(hp));
+mitSpur.telemetryDownload = true;
+var s9 = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [mitSpur]);
+var p9 = S.applySubmitted(D, board, picks(), s9).get(auto);
+pruefe(p9.submitted && p9.submitted.download === true && p9.submitted.id === mitSpur.id,
+       "eine angebotene Telemetrie kommt mit Kennung bis in die Zeile");
+pruefe(p8.submitted && p8.submitted.download === false,
+       "ohne Angebot vom Server gibt es keinen Download");
+
 console.log("");
 if (fehler) { console.log(fehler + " Pruefung(en) fehlgeschlagen."); process.exit(1); }
 console.log("Alle Pruefungen bestanden.");

@@ -72,6 +72,15 @@ def ruf(port: int, method: str, pfad: str, body: bytes | None = None,
             return e.code, {"_roh": roh[:200]}
 
 
+def hol(port: int, pfad: str) -> tuple[int, dict, bytes]:
+    """Ein GET, das die Antwort roh zurueckgibt -- fuer Downloads statt JSON."""
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:%d%s" % (port, pfad), timeout=10) as a:
+            return a.status, dict(a.headers), a.read()
+    except urllib.error.HTTPError as e:
+        return e.code, dict(e.headers), e.read()
+
+
 def unterschrieben(secret: str, install_id: str, pfad: str, body: bytes,
                    nonce: str) -> dict:
     stamp = str(int(time.time()))
@@ -251,6 +260,75 @@ with tempfile.TemporaryDirectory() as tmp:
         status, _ = ruf(port, "POST", "/api/admin/lap/telemetry", koerper,
                         admin_kopf(ADMIN, "POST", "/api/admin/lap/telemetry", koerper))
         pruefe(status == 400, "eine Kennung, die kein Dateiname von uns ist: 400 (war %d)" % status)
+
+        print("\nTelemetrie zum Herunterladen -- nur, wenn die Runde es erlaubt")
+        # Die erste Runde kam OHNE "publishTelemetry": so wie jede Runde vor Fassung 10.
+        status, antwort = ruf(port, "GET", "/api/lap/list")
+        erste = [r for r in antwort.get("laps", []) if r.get("id") == lap_id]
+        pruefe(bool(erste) and erste[0].get("telemetryDownload") is False,
+               "eine Runde ohne Erlaubnis bietet keinen Download an")
+        for endung in ("csv", "json.gz"):
+            status, _, _ = hol(port, "/api/lap/telemetry/%s.%s" % (lap_id, endung))
+            pruefe(status == 404, "und ihre Telemetrie gibt es nicht (.%s: HTTP %d)" % (endung, status))
+
+        # Eine zweite Installation reicht MIT Erlaubnis ein -- auf einem eigenen Auto, damit
+        # sie die Gruppe der ersten nicht beruehrt.
+        status, antwort = ruf(port, "POST", "/api/lap/register",
+                              json.dumps({"hardware": "d" * 64, "gamertag": "Sharer"}).encode("utf-8"))
+        pruefe(status == 200, "eine zweite Installation meldet sich an (war %d)" % status)
+        teil_id, teil_secret = antwort.get("install_id", ""), antwort.get("secret", "")
+        b = json.dumps({"lap": dict(runde(95.0), carOrdinal=3001), "telemetry": volle_spur(95.0),
+                        "publishTelemetry": True}).encode("utf-8")
+        status, antwort = ruf(port, "POST", "/api/lap/submit", b,
+                              unterschrieben(teil_secret, teil_id, "/api/lap/submit", b, "nonce-pub-1"))
+        pruefe(status == 200, "eine Runde mit Erlaubnis wird angenommen (war %d: %s)"
+               % (status, antwort.get("error", "")))
+        offen_id = antwort.get("id", "")
+        status, antwort = ruf(port, "GET", "/api/lap/list")
+        offen = [r for r in antwort.get("laps", []) if r.get("id") == offen_id]
+        pruefe(bool(offen) and offen[0].get("telemetryDownload") is True,
+               "die Liste bietet ihren Download an")
+
+        status, kopf, csv = hol(port, "/api/lap/telemetry/%s.csv" % offen_id)
+        zeilen = csv.decode("utf-8").strip().split("\n")
+        pruefe(status == 200 and kopf.get("Content-Type", "").startswith("text/csv"),
+               "CSV: 200 und text/csv (war %d, %s)" % (status, kopf.get("Content-Type")))
+        pruefe(zeilen[0] == "t,metres,Speed" and len(zeilen) == 61,
+               "CSV: Kopfzeile und eine Zeile je Paket (%s, %d Zeilen)" % (zeilen[0], len(zeilen)))
+        name = kopf.get("Content-Disposition", "")
+        pruefe("attachment" in name and "FH6_Test-Circuit_S1_95.000s_" in name and name.endswith('.csv"'),
+               "CSV: als Datei mit sprechendem Namen (%s)" % name)
+        status, kopf, roh = hol(port, "/api/lap/telemetry/%s.json.gz" % offen_id)
+        import gzip as _gz
+        try:
+            inhalt = json.loads(_gz.decompress(roh).decode("utf-8"))
+        except Exception:
+            inhalt = {}
+        pruefe(status == 200 and kopf.get("Content-Type") == "application/gzip"
+               and inhalt.get("columns") == ["t", "metres", "Speed"] and len(inhalt.get("data") or []) == 60,
+               "Rohdatei: die gepackte Telemetrie, wie sie ankam (HTTP %d)" % status)
+        for pfad in ("/api/lap/telemetry/../../config/contrib_keys.csv",
+                     "/api/lap/telemetry/%s.exe" % offen_id,
+                     "/api/lap/telemetry/%s.csv" % ("0" * 20)):
+            status, _, _ = hol(port, pfad)
+            pruefe(status in (400, 404), "%s: abgewiesen (HTTP %d)" % (pfad, status))
+
+        # Ausgeblendet ist sie nicht mehr herunterzuladen -- die Verwaltung behaelt das letzte Wort.
+        koerper = json.dumps({"id": offen_id, "reason": "Probe"}).encode("utf-8")
+        status, _ = ruf(port, "POST", "/api/admin/lap/hide", koerper,
+                        admin_kopf(ADMIN, "POST", "/api/admin/lap/hide", koerper))
+        status, _, _ = hol(port, "/api/lap/telemetry/%s.csv" % offen_id)
+        pruefe(status == 404, "eine ausgeblendete Runde gibt ihre Telemetrie nicht heraus (HTTP %d)" % status)
+
+        # Die Bremse: hoechstens 20 auf einmal je Adresse.
+        gebremst = False
+        for _ in range(30):
+            status, kopf, _ = hol(port, "/api/lap/telemetry/%s.csv" % offen_id)
+            if status == 429:
+                gebremst = True
+                break
+        pruefe(gebremst, "nach vielen Downloads von derselben Adresse: 429")
+        srv._EIMER.clear()
 
         print("\nAdmin: ausblenden")
         koerper = json.dumps({"id": lap_id, "reason": "Probe"}).encode("utf-8")

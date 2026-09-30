@@ -880,7 +880,7 @@ def lap_id(install_id: str, runde: dict) -> str:
 def store(install_id: str, eintrag: dict, runde: dict, auffaellig: list,
           root: Path | None = None, keys_path: Path | None = None,
           now: float | None = None, volle_spur: bytes | None = None,
-          spur_info: dict | None = None) -> dict:
+          spur_info: dict | None = None, veroeffentlichen: bool = False) -> dict:
     root = root or LAPS_DIR
     root.mkdir(parents=True, exist_ok=True)
     kennung = lap_id(install_id, runde)
@@ -905,6 +905,9 @@ def store(install_id: str, eintrag: dict, runde: dict, auffaellig: list,
         tmp.write_bytes(volle_spur)
         os.replace(tmp, ziel)
         datensatz["fullTelemetry"] = spur_info or {}
+        # Zum Herunterladen fuer jeden -- nur, wenn die App es mit der Runde sagt
+        # (siehe telemetrie_oeffentlich).
+        datensatz["publicTelemetry"] = bool(veroeffentlichen)
     _atomar_schreiben(root / (kennung + ".json"),
                       json.dumps(datensatz, ensure_ascii=False, indent=1))
 
@@ -1014,6 +1017,88 @@ def get_full_telemetry(kennung: str, root: Path | None = None) -> dict:
     if not p.exists():
         raise SubmitError(404, "There is no full telemetry for this lap.")
     return json.loads(gzip.decompress(p.read_bytes()).decode("utf-8"))
+
+
+# ---------------------------------------------------------------- oeffentliche Telemetrie
+#
+# SEIT 2026-09-30: die volle Telemetrie einer eingereichten Runde zum Herunterladen, als
+# CSV (eine Zeile je Paket, eine Spalte je Wert) und als die gepackte Datei der App.
+#
+# NUR FUER RUNDEN, DIE ES ERLAUBEN. Bis dahin versprach der Hinweis der App, die
+# Telemetrie diene der Pruefung ("so the server can check the time is real and a person
+# can look at a lap that seems wrong") -- eine Veroeffentlichung war nicht zugesagt. Ab
+# Fassung 10 des Hinweises kuendigt die App sie an und schickt mit jeder Runde
+# "publishTelemetry": true. Aeltere Runden bleiben bei der Verwaltung, auch wenn eine
+# spaetere desselben Spielers oeffentlich ist.
+
+_KLASSEN = ["D", "C", "B", "A", "S1", "S2", "R", "X"]
+
+
+def telemetrie_oeffentlich(datensatz: dict) -> bool:
+    """Darf jeder die volle Telemetrie dieser Runde herunterladen?"""
+    return (bool(datensatz.get("publicTelemetry"))
+            and "fullTelemetry" in datensatz
+            and not datensatz.get("hidden"))
+
+
+def oeffentliche_spur(kennung: str, root: Path | None = None) -> tuple[bytes, dict]:
+    """Die gepackte volle Telemetrie und die Runde -- nur, wenn sie oeffentlich ist.
+
+    Nicht oeffentlich, ausgeblendet oder nicht da: immer dieselbe 404. Ob es eine
+    private Telemetrie gibt, soll von aussen nicht zu erfahren sein.
+    """
+    root = root or LAPS_DIR
+    if not re.match(r"^[0-9a-f]{20}$", kennung or ""):
+        raise SubmitError(400, "Not a valid ID.")
+    p = root / (kennung + ".json")
+    t = root / (kennung + ".tele.gz")
+    fehlt = SubmitError(404, "There is no downloadable telemetry for this lap.")
+    if not p.exists() or not t.exists():
+        raise fehlt
+    try:
+        d = json.loads(p.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        raise fehlt from None
+    if not telemetrie_oeffentlich(d):
+        raise fehlt
+    return t.read_bytes(), d
+
+
+def spur_als_csv(gepackt: bytes) -> bytes:
+    """Die volle Telemetrie als CSV: Kopfzeile mit den Spaltennamen, dann eine Zeile je Paket.
+
+    Komma als Trenner, Punkt als Dezimalzeichen -- das Format, das jedes
+    Auswertungswerkzeug liest. Zahlen so kurz wie moeglich und ohne Verlust.
+    """
+    import csv
+    import io
+    inhalt = json.loads(_entpacken(gepackt).decode("utf-8"))
+    spalten = [str(c) for c in (inhalt.get("columns") or [])]
+    puffer = io.StringIO()
+    schreiber = csv.writer(puffer, lineterminator="\n")
+    schreiber.writerow(spalten)
+    for zeile in inhalt.get("data") or []:
+        if not isinstance(zeile, list):
+            continue
+        schreiber.writerow(["" if v is None else repr(v) if isinstance(v, float) else v
+                            for v in zeile])
+    return puffer.getvalue().encode("utf-8")
+
+
+def spur_dateiname(datensatz: dict, endung: str) -> str:
+    """Ein Dateiname, der sagt, was darin ist: Strecke, Klasse, Zeit, Kennung."""
+    lap = datensatz.get("lap") or {}
+    try:
+        klasse = _KLASSEN[int(lap.get("carClass"))]
+    except (TypeError, ValueError, IndexError):
+        klasse = "class"
+    try:
+        zeit = "%.3fs" % float(lap.get("lapSeconds"))
+    except (TypeError, ValueError):
+        zeit = "lap"
+    teile = [str(lap.get("track") or "lap"), klasse, zeit, str(datensatz.get("id") or "")[:8]]
+    name = "_".join(re.sub(r"[^A-Za-z0-9.-]+", "-", t).strip("-") or "x" for t in teile)
+    return "FH6_" + name + "." + endung
 
 
 def set_hidden(kennung: str, hidden: bool, grund: str = "",

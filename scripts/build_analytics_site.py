@@ -242,6 +242,9 @@ td.car button:hover { text-decoration: underline; }
 .gap .v { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); min-width: 62px; text-align: right; }
 
 .flag { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 0 7px; border-radius: 999px; border: 1px solid currentColor; color: var(--warn); background: var(--warn-bg); white-space: nowrap; }
+.dl { display: inline-flex; gap: 4px; margin-left: 4px; }
+.dl a { font-size: 11.5px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--link); text-decoration: none; white-space: nowrap; }
+.dl a:hover, .dl a:focus-visible { border-color: var(--link); }
 .sub2 { font-size: 12.5px; color: var(--muted); }
 .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
 .empty b { color: var(--ink); }
@@ -658,6 +661,23 @@ function pickCarsRivals(board, need, forbid) {
 /* ---------- eingereichte Zeiten ---------- */
 /* Runden aus Solo, Koop, freier Fahrt oder ohne Modus: eine eigene Tabelle, nie in
    der Wertung (siehe CLEAN_MODES in submitted_laps.js). */
+/* Die volle Telemetrie einer eingereichten Runde zum Herunterladen (seit 2026-09-30):
+   als CSV (eine Zeile je Paket) und als die gepackte Datei der App. Nur, wenn der
+   Server es anbietet -- der Fahrer hat es mit der Einreichung erlaubt. */
+function downloadLinks(id) {
+  const box = el("span", "dl");
+  [["csv", "\u2193 CSV", "Download this lap's full telemetry as a CSV table: one row per packet the game sent, one column per value (speed, inputs, gear, tyres, position ...)"],
+   ["json.gz", "\u2193 raw", "Download this lap's full telemetry as the app's compressed file (.json.gz)"]]
+    .forEach(([endung, text, titel]) => {
+      const a = el("a", null, text);
+      a.href = "/api/lap/telemetry/" + encodeURIComponent(id) + "." + endung;
+      a.setAttribute("download", "");
+      a.title = titel;
+      box.appendChild(a);
+    });
+  return box;
+}
+
 function zeigeAndereModi(liste) {
   const box = document.getElementById("other-laps");
   const ziel = document.getElementById("other-laps-table");
@@ -666,7 +686,7 @@ function zeigeAndereModi(liste) {
   if (!liste || !liste.length) { box.hidden = true; return; }
   const table = el("table");
   const head = el("tr");
-  ["Track", "Class", "Car", "Time", "Mode", "Driver", "Submitted"]
+  ["Track", "Class", "Car", "Time", "Mode", "Driver", "Submitted", "Telemetry"]
     .forEach(text => head.appendChild(el("th", null, text)));
   table.appendChild(head);
   liste.forEach(r => {
@@ -678,6 +698,10 @@ function zeigeAndereModi(liste) {
     tr.appendChild(el("td", null, modeText(r.mode)));
     tr.appendChild(el("td", null, r.gamertag || "—"));
     tr.appendChild(el("td", "num", String(r.received || "").slice(0, 10)));
+    const tele = el("td");
+    if (r.download && r.id) tele.appendChild(downloadLinks(r.id));
+    else tele.textContent = "—";
+    tr.appendChild(tele);
     table.appendChild(tr);
   });
   ziel.appendChild(table);
@@ -1245,6 +1269,7 @@ function renderBoards(host) {
         + (row.pick.rivalsMs ? ". Replaces the Rivals time " + lapText(row.pick.rivalsMs) : "")
         + ". Not verified by the game.";
       zeit.append(document.createTextNode(" "), marke);
+      if (s.download && s.id) zeit.appendChild(downloadLinks(s.id));
     }
     tr.appendChild(zeit);
     tr.appendChild(gapCell(row.pick.ms - fastest, worstGap,

@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Læs dette én gang. Det forklarer, hvad programmet gør på din pc, hvad der forlader
 din computer, og hvorfor Windows måske advarer dig om det.
 
@@ -111,6 +111,12 @@ HVAD DER FORLADER DIN COMPUTER
   sidste navn. Serveren kontrollerer omgangen igen, før den viser den. Slå det fra
   på fanen Rivals ("Indsend mine omgange ...") eller sæt "submit_laps": false i
   config/overlay.json.
+
+  Omgange, du sender fra denne version, offentliggøres også med den telemetri:
+  På hjemmesiden kan alle ved siden af din tid downloade omgangens fulde
+  telemetri (som CSV-tabel og som rå fil) for at se, hvordan den blev kørt.
+  Omgange, du sendte før, forbliver private og bruges kun til at kontrollere
+  tiden.
 
   En omgang, der slår ranglisten, men ikke kan sendes lige med det samme --
   indsendelse slået fra, offline, eller serveren svarer ikke -- gemmes på denne

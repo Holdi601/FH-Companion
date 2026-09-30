@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Lütfen bunu bir kez oku. Programın PC'nde ne yaptığını, bilgisayarından neyin
 çıktığını ve Windows'un seni neden bu konuda uyarabileceğini açıklar.
 
@@ -111,6 +111,12 @@ BİLGİSAYARINDAN NE ÇIKAR
   korunur. Sunucu turu göstermeden önce yeniden kontrol eder. Bunu Rivals
   sekmesinden (“Turlarım sıralamayı geçtiğinde gönder”) kapat ya da
   config/overlay.json içinde "submit_laps": false ayarla.
+
+  Bu sürümden itibaren gönderdiğin turlar bu telemetriyle birlikte yayımlanır
+  da: web sitesinde, zamanının yanında herkes turun tam telemetrisini (CSV
+  tablosu ve ham dosya olarak) indirip nasıl sürüldüğünü inceleyebilir. Daha
+  önce gönderdiğin turlar gizli kalır ve yalnızca zamanı doğrulamak için
+  kullanılır.
 
   Sıralamayı geçen ama o anda gönderilemeyen bir tur -- gönderim kapalıysa,
   çevrimdışıysan ya da sunucu yanıt vermiyorsa -- bu bilgisayarda saklanır ve tüm

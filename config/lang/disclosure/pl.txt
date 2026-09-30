@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Przeczytaj to raz. Wyjaśnia, co program robi na twoim PC, co opuszcza twój
 komputer i dlaczego Windows może cię przed nim ostrzegać.
 
@@ -113,6 +113,12 @@ CO OPUSZCZA TWÓJ KOMPUTER
   wyczyszczenie pola zachowuje ostatnią nazwę. Serwer sprawdza okrążenie ponownie,
   zanim je pokaże. Wyłącz to na karcie Rivals („Wysyłaj moje okrążenia ...”) lub
   ustaw "submit_laps": false w config/overlay.json.
+
+  Okrążenia wysłane od tej wersji są też publikowane z tą telemetrią: na
+  stronie obok twojego czasu każdy może pobrać pełną telemetrię okrążenia
+  (jako tabelę CSV i jako surowy plik), aby zobaczyć, jak zostało przejechane.
+  Okrążenia wysłane wcześniej pozostają prywatne i służą tylko do sprawdzenia
+  czasu.
 
   Okrążenie, które pobija ranking, ale nie może zostać wysłane od razu --
   wysyłanie wyłączone, brak połączenia lub serwer nie odpowiada -- jest

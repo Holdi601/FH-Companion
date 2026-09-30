@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Les dette én gang. Det forklarer hva programmet gjør på PC-en din, hva som
 forlater datamaskinen din, og hvorfor Windows kanskje advarer deg om det.
 
@@ -110,6 +110,12 @@ HVA SOM FORLATER DATAMASKINEN DIN
   navnet. Serveren sjekker runden på nytt før den viser den. Slå det av i fanen
   Rivaler-overlegg ("Send inn rundene mine ...") eller sett "submit_laps": false i
   config/overlay.json.
+
+  Runder du sender fra denne versjonen, publiseres også med den telemetrien:
+  på nettstedet kan hvem som helst ved siden av tiden din laste ned rundens
+  fulle telemetri (som CSV-tabell og som råfil) for å se hvordan den ble
+  kjørt. Runder du sendte før, forblir private og brukes bare til å
+  kontrollere tiden.
 
   En runde som slår ledertavlen, men som ikke kan sendes akkurat da -- innsending
   slått av, frakoblet, eller serveren svarer ikke -- blir lagret på denne

@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Sila baca ini sekali. Ia menerangkan apa yang dilakukan program ini pada PC
 anda, apa yang meninggalkan komputer anda, dan mengapa Windows mungkin memberi
 amaran kepada anda tentangnya.
@@ -128,6 +128,12 @@ APA YANG MENINGGALKAN KOMPUTER ANDA
   sekali lagi sebelum memaparkannya. Matikannya dalam tab Rivals
   ("Hantar pusingan saya ...") atau tetapkan "submit_laps": false dalam
   config/overlay.json.
+
+  Pusingan yang anda hantar mulai versi ini juga diterbitkan bersama telemetri
+  itu: di laman web, di sebelah masa anda, sesiapa boleh memuat turun
+  telemetri penuh pusingan itu (sebagai jadual CSV dan sebagai fail mentah)
+  untuk mengkaji cara ia dipandu. Pusingan yang anda hantar sebelum ini kekal
+  peribadi dan hanya digunakan untuk menyemak masa.
 
   Pusingan yang mengatasi papan pendahulu tetapi tidak dapat dihantar pada masa
   itu -- penghantaran dimatikan, di luar talian, atau pelayan tidak menjawab --

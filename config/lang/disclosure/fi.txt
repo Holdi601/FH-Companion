@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Lue tämä kerran. Se kertoo, mitä ohjelma tekee PC:lläsi, mitä tietokoneeltasi
 lähtee ja miksi Windows saattaa varoittaa sinua siitä.
 
@@ -116,6 +116,12 @@ MITÄ TIETOKONEELTASI LÄHTEE
   kierroksen uudelleen ennen kuin näyttää sen. Kytke se pois Rivals-välilehdellä
   ("Lähetä kierrokseni ...") tai aseta "submit_laps": false tiedostossa
   config/overlay.json.
+
+  Tästä versiosta alkaen lähettämäsi kierrokset julkaistaan myös tämän
+  telemetrian kanssa: verkkosivustolla kuka tahansa voi ladata aikasi vierestä
+  kierroksen täyden telemetrian (CSV-taulukkona ja raakatiedostona)
+  nähdäkseen, miten se ajettiin. Aiemmin lähettämäsi kierrokset pysyvät
+  yksityisinä, ja niitä käytetään vain ajan tarkistamiseen.
 
   Kierros, joka lyö tulostaulun mutta jota ei voida lähettää juuri silloin --
   lähettäminen pois päältä, ei verkkoyhteyttä tai palvelin ei vastaa --

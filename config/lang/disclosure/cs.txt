@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Přečti si to jednou. Vysvětluje, co program dělá na tvém PC, co opouští tvůj
 počítač a proč tě před ním Windows může varovat.
 
@@ -110,6 +110,11 @@ CO OPOUŠTÍ TVŮJ POČÍTAČ
   ponechá poslední jméno. Server kolo před zobrazením znovu zkontroluje. Vypneš to
   na kartě Rivals („Odesílat moje kola ...“) nebo nastavením "submit_laps": false
   v config/overlay.json.
+
+  Kola, která odešleš od této verze, se s touto telemetrií také zveřejňují: na
+  webu si kdokoli vedle tvého času může stáhnout úplnou telemetrii kola (jako
+  tabulku CSV a jako surový soubor) a prostudovat, jak bylo odjeto. Kola
+  odeslaná dříve zůstávají soukromá a slouží jen ke kontrole času.
 
   Kolo, které překoná žebříček, ale které nejde hned odeslat -- odesílání vypnuté,
   bez připojení nebo server neodpovídá -- se uchová na tomto počítači a odešle se

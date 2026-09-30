@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Lees dit één keer. Het legt uit wat het programma op je pc doet, wat je computer
 verlaat en waarom Windows je ervoor kan waarschuwen.
 
@@ -118,6 +118,12 @@ WAT JE COMPUTER VERLAAT
   naam staan. De server controleert de ronde opnieuw voordat hij ze toont. Zet het
   uit op het tabblad Rivals (‘Mijn ronden insturen ...’) of zet
   "submit_laps": false in config/overlay.json.
+
+  Ronden die je vanaf deze versie verstuurt, worden ook met die telemetrie
+  gepubliceerd: op de website kan iedereen naast je tijd de volledige
+  telemetrie van de ronde downloaden (als CSV-tabel en als ruw bestand) om te
+  bekijken hoe die gereden is. Ronden die je eerder verstuurde, blijven privé
+  en dienen alleen om de tijd te controleren.
 
   Een ronde die de ranglijst verslaat maar op dat moment niet kan worden verstuurd
   -- insturen uitgeschakeld, offline, of de server antwoordt niet -- wordt op deze

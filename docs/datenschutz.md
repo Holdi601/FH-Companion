@@ -45,12 +45,23 @@ Wer über die App eine eigene Rundenzeit einreicht, übermittelt:
 |---|---|---|
 | Gamertag | **Klartext** | Er ist der Name, unter dem die Zeit erscheinen soll |
 | Hardware-Kennung | **gepfefferter SHA-256**, nie im Klartext | Damit eine Sperre nicht durch Neuanmeldung umgangen wird |
-| Telemetrie der Runde | Positionen, Zeit, Tempo, Eingaben | Ohne sie ist eine Zeit nicht überprüfbar |
+| Telemetrie der Runde | Positionen, Zeit, Tempo, Eingaben | Ohne sie ist eine Zeit nicht überprüfbar; ab App-Hinweis Fassung 10 zudem zum Herunterladen veröffentlicht (siehe unten) |
 | Installationskennung | Zufallswert | Zuordnung von Einreichungen, um sperren zu können |
 
 Rechtsgrundlage ist die **Einwilligung** (Art. 6 Abs. 1 lit. a): niemand reicht
 etwas ein, ohne es auszulösen. Die Einwilligung ist widerrufbar — die Runde wird
 dann ausgeblendet.
+
+**Veröffentlichte Telemetrie (seit 2026-09-30).** Runden, die mit der App ab Fassung
+10 ihres Hinweises eingereicht werden, stehen mit ihrer vollen Telemetrie zum
+Herunterladen auf der Seite: als CSV-Tabelle und als gepackte Rohdatei, neben der
+Zeit, unter dem Gamertag oder vorläufigen Spielernamen. Der Hinweis der App sagt das,
+bevor ihm zugestimmt wird; die App kennzeichnet solche Runden bei der Einreichung
+(`publishTelemetry`). Runden, die vorher eingereicht wurden, bleiben unveröffentlicht
+und dienen weiter nur der Prüfung. Eine ausgeblendete Runde ist auch nicht mehr
+herunterzuladen. Ein Download kann nicht zurückgeholt werden: wer seine Einwilligung
+widerruft, bekommt die Runde ausgeblendet, aber schon heruntergeladene Kopien liegen
+außerhalb dieses Servers.
 
 **Der Pfeffer** ist ein serverseitiges Geheimnis in `config/submit_keys.json`. Ohne
 ihn lässt sich aus dem abgelegten Hash nicht zurückrechnen, welche Maschine gemeint
@@ -164,7 +175,7 @@ dem zugestimmt wurde.
 | Was | Wie lange | Warum |
 |---|---|---|
 | Bestenlisten-Zeilen | dauerhaft | Sie sind der Zweck der Seite |
-| Eingereichte Runden samt Telemetrie | dauerhaft, solange sichtbar | Eine Bestzeit ohne Beleg ist wertlos |
+| Eingereichte Runden samt Telemetrie | dauerhaft, solange sichtbar (ab Fassung 10 auch zum Herunterladen) | Eine Bestzeit ohne Beleg ist wertlos |
 | Ausgeblendete Runden | bleiben, aber unsichtbar | Was heute falsch aussieht, ist morgen der einzige Beleg dafür, **was** schiefging |
 | Hardware-Hashes nicht gesperrter Konten | **12 Monate** ohne Einreichung | Danach hat er keinen Zweck mehr |
 | Hardware-Hashes gesperrter Konten | länger | Sonst hebt sich die Sperre von selbst auf |

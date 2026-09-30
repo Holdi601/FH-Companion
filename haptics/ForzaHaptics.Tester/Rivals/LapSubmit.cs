@@ -204,7 +204,8 @@ internal static class LapSubmit
     /// </param>
     public static async Task<string> SubmitAsync(Identity wer, RecordedLap lap,
                                                  string course, TimeSpan timeout,
-                                                 string? gamertag = null, byte[]? volleSpur = null)
+                                                 string? gamertag = null, byte[]? volleSpur = null,
+                                                 bool veroeffentlichen = false)
     {
         if (string.IsNullOrWhiteSpace(wer.Server) || string.IsNullOrWhiteSpace(wer.Secret)
             || string.IsNullOrWhiteSpace(wer.InstallId))
@@ -212,7 +213,7 @@ internal static class LapSubmit
             throw new InvalidOperationException("this installation is not registered with the server");
         }
 
-        var rumpf = Rumpf(lap, course, gamertag, volleSpur ?? VolleSpur(lap));
+        var rumpf = Rumpf(lap, course, gamertag, volleSpur ?? VolleSpur(lap), veroeffentlichen);
 
         const string pfad = "/api/lap/submit";
         var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
@@ -248,7 +249,13 @@ internal static class LapSubmit
     /// .tele.gz, unveraendert, als Base64: jedes Paket der Runde, damit eine
     /// verdaechtige Zeit von einem Menschen nachgesehen werden kann.
     /// </remarks>
-    internal static byte[] Rumpf(RecordedLap lap, string course, string? gamertag, byte[]? volleSpur)
+    /// <param name="veroeffentlichen">
+    /// "publishTelemetry": die volle Telemetrie darf auf der Website jeder herunterladen
+    /// (seit 2026-09-30). Nur, wenn der Hinweis, dem zugestimmt wurde, das ankuendigt
+    /// (<see cref="Disclosure.TelemetrieOeffentlichAb"/>) -- sonst bleibt sie beim Server.
+    /// </param>
+    internal static byte[] Rumpf(RecordedLap lap, string course, string? gamertag, byte[]? volleSpur,
+                                 bool veroeffentlichen = false)
     {
         var knoten = JsonSerializer.SerializeToNode(lap, Lesbar)!.AsObject();
         knoten["course"] = course;
@@ -262,6 +269,7 @@ internal static class LapSubmit
                 ["format"] = "fhc-tele-" + TelemetryTrack.Version,
                 ["data"] = Convert.ToBase64String(volleSpur),
             };
+            if (veroeffentlichen) { gesamt["publishTelemetry"] = true; }
         }
         return JsonSerializer.SerializeToUtf8Bytes(gesamt, Lesbar);
     }

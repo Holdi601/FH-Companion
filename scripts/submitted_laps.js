@@ -94,7 +94,8 @@ function buildSubmitted(D, laps) {
                     car: bekannt !== undefined ? D.carNames[bekannt]
                          : (lap.carName ? String(lap.carName) : (nr > 0 ? "Car #" + nr : "?")),
                     ms: Math.round(sek * 1000), gamertag: eintrag.gamertag || "",
-                    received: eintrag.received || "" });
+                    received: eintrag.received || "",
+                    download: eintrag.telemetryDownload === true });
       return;
     }
 
@@ -149,8 +150,11 @@ function buildSubmitted(D, laps) {
     var da = karte.get(car);
     // Je Auto und Board nur die SCHNELLSTE eingereichte Runde.
     if (!da || ms < da.ms) {
+      // Ob die volle Telemetrie herunterzuladen ist, sagt der Server (seit 2026-09-30):
+      // nur bei Runden, deren Fahrer es mit der Einreichung erlaubt hat.
       karte.set(car, { ms: ms, gamertag: eintrag.gamertag || "",
-                       received: eintrag.received || "", id: id, pi: pi, mode: mode });
+                       received: eintrag.received || "", id: id, pi: pi, mode: mode,
+                       download: eintrag.telemetryDownload === true });
     }
     placed += 1;
   });

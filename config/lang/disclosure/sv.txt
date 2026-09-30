@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Läs det här en gång. Det förklarar vad programmet gör på din dator, vad som lämnar
 din dator och varför Windows kan varna dig för det.
 
@@ -114,6 +114,12 @@ VAD SOM LÄMNAR DIN DATOR
   namnet. Servern kontrollerar varvet igen innan den visar det. Stäng av det på
   fliken Rivals ("Skicka mina varv ...") eller ställ in "submit_laps": false i
   config/overlay.json.
+
+  Varv som du skickar från den här versionen publiceras också med den
+  telemetrin: på webbplatsen kan vem som helst bredvid din tid ladda ner
+  varvets fullständiga telemetri (som CSV-tabell och som råfil) för att se hur
+  det kördes. Varv som du skickade tidigare förblir privata och används bara
+  för att kontrollera tiden.
 
   Ett varv som slår topplistan men inte kan skickas just då -- inskickning
   avstängd, offline eller servern svarar inte -- sparas på den här datorn och

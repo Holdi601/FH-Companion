@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Lee esto una vez, por favor. Explica qué hace el programa en tu PC, qué sale de tu
 ordenador y por qué Windows puede advertirte sobre él.
 
@@ -120,6 +120,12 @@ QUÉ SALE DE TU ORDENADOR
   conserva el último nombre. El servidor vuelve a comprobar la vuelta antes de
   mostrarla. Desactívalo en la pestaña Rivals ("Enviar mis vueltas ...") o pon
   "submit_laps": false en config/overlay.json.
+
+  Las vueltas que envíes a partir de esta versión también se publican con esa
+  telemetría: en la web, junto a tu tiempo, cualquiera puede descargar la
+  telemetría completa de la vuelta (como tabla CSV y como archivo sin
+  procesar) para estudiar cómo se condujo. Las vueltas que enviaste antes
+  siguen siendo privadas y solo sirven para comprobar el tiempo.
 
   Una vuelta que supera la clasificación pero no puede enviarse en ese momento --
   envío desactivado, sin conexión o el servidor no responde -- se guarda en este

@@ -50,6 +50,8 @@ GRENZEN = {
     "post":     (0.5, 30),
     "page":     (0.5, 30),          # die grosse Seite
     "download": (30 / 3600, 10),    # Paket: 10 auf einmal, 30 je Stunde
+    # Die volle Telemetrie einer Runde (seit 2026-09-30): bis zu einige MB je Stueck.
+    "telemetry": (60 / 3600, 20),   # 20 auf einmal, 60 je Stunde
 }
 _EIMER: dict = {}
 _EIMER_SCHLOSS = threading.Lock()
@@ -432,6 +434,9 @@ def make_handler(root: Path, page: Path, builder: Path):
             if self.path in ("/download/haptics", "/download/app", "/download/tool"):
                 if self.gebremst("download"):
                     return
+            elif self.path.startswith("/api/lap/telemetry/"):
+                if self.gebremst("telemetry"):
+                    return
             elif (self.path.startswith("/api/") or self.path.startswith("/fonts/")
                   or self.path.startswith("/brand/") or self.path == "/favicon.ico"
                   or self.path.startswith("/guide/")):
@@ -556,9 +561,10 @@ def make_handler(root: Path, page: Path, builder: Path):
                                 payload, "forza-contrib-tool.zip"), self.headers.get("User-Agent"))
                     except Exception:
                         pass
-                self.send_api(status, content_type, payload,
-                              "forza-contrib-tool.zip"
-                              if content_type == "application/zip" else None)
+                name = ("forza-contrib-tool.zip" if content_type == "application/zip"
+                        else analytics_api.download_name(self.path) if status == 200
+                        else None)
+                self.send_api(status, content_type, payload, name)
                 return
             if self.path == "/admin/world.json":
                 # Die Weltkarte der Verwaltungsseite (scripts/build_world_map.py, Natural

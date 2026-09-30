@@ -76,7 +76,14 @@ internal static class Disclosure
     // 9 seit 2026-09-29: ein Schalter, der das Speicherlesen ganz abstellt; das Lesen von
     // My Cars (alle Kacheln) und der Tunes-Liste vom Bildschirm; eine Firewall-Regel auf
     // Knopfdruck im Modus "Xbox / 2nd PC"; Vibrationen dort mit Xbox Remote Play.
-    public const int Fassung = 9;
+    // 10 seit 2026-09-30: eingereichte Runden werden MIT ihrer Telemetrie veroeffentlicht --
+    // jeder kann sie auf der Website herunterladen (CSV und Rohdatei). Fassung 9 nannte als
+    // Zweck nur die Pruefung ("so the server can check the time is real ..."). Runden, die
+    // vor dieser Zustimmung gesendet wurden, bleiben privat (LapSubmit "publishTelemetry").
+    public const int Fassung = 10;
+
+    /// <summary>Ab dieser Fassung darf die Telemetrie eingereichter Runden veroeffentlicht werden.</summary>
+    public const int TelemetrieOeffentlichAb = 10;
 
     /// <summary>Der Fenstertitel, in der Sprache der App.</summary>
     private static string Titel => string.Format(Loc.T("What {0} does"), AppInfo.Name);
@@ -226,6 +233,11 @@ WHAT LEAVES YOUR COMPUTER
   ones, and emptying the field later keeps the last name. The server checks the
   lap again before it shows it. Switch it off in the Rivals tab
   ("Submit my laps ...") or set "submit_laps": false in config/overlay.json.
+
+  Laps you send from this version on are also published with that telemetry:
+  on the website, next to your time, anyone can download the lap's full
+  telemetry (as a CSV table and as the raw file) to study how it was driven.
+  Laps you sent before stay private and are only used to check the time.
 
   A lap that beats the leaderboard but cannot be sent right then -- submission
   switched off, offline, or the server not answering -- is kept on

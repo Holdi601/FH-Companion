@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Kérlek, olvasd el ezt egyszer. Elmagyarázza, mit csinál a program a PC-den, mi
 hagyja el a számítógépedet, és miért figyelmeztethet emiatt a Windows.
 
@@ -116,6 +116,12 @@ MI HAGYJA EL A SZÁMÍTÓGÉPEDET
   szerver újra ellenőrzi a kört, mielőtt megjeleníti. Kapcsold ki a Rivals lapon
   ("Köreim beküldése ...") vagy állítsd be a "submit_laps": false értéket a
   config/overlay.json fájlban.
+
+  Az ettől a változattól elküldött köreid ezzel a telemetriával együtt
+  nyilvánosak is lesznek: a weboldalon az időd mellett bárki letöltheti a kör
+  teljes telemetriáját (CSV-táblázatként és nyers fájlként), hogy megnézze,
+  hogyan ment. A korábban elküldött köreid privátok maradnak, és csak az idő
+  ellenőrzésére szolgálnak.
 
   Az a kör, amely megveri a ranglistát, de éppen nem küldhető el -- mert a
   beküldés ki van kapcsolva, offline vagy, vagy a szerver nem válaszol --, ezen a

@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Harap baca ini sekali. Isinya menjelaskan apa yang dilakukan program ini di
 PC-mu, apa yang keluar dari komputermu, dan mengapa Windows mungkin
 memperingatkanmu tentangnya.
@@ -120,6 +120,12 @@ APA YANG KELUAR DARI KOMPUTERMU
   tetap dipertahankan. Server memeriksa lap itu lagi sebelum menampilkannya.
   Matikan di tab Rivals ("Kirim putaranku ...") atau atur "submit_laps": false
   di config/overlay.json.
+
+  Lap yang kamu kirim mulai versi ini juga dipublikasikan bersama telemetri
+  tersebut: di situs web, di samping waktumu, siapa pun dapat mengunduh
+  telemetri lengkap lap itu (sebagai tabel CSV dan sebagai file mentah) untuk
+  mempelajari cara lap itu dikendarai. Lap yang kamu kirim sebelumnya tetap
+  pribadi dan hanya dipakai untuk memeriksa waktu.
 
   Lap yang mengalahkan papan peringkat tetapi tidak dapat dikirim saat itu --
   pengiriman dimatikan, sedang offline, atau server tidak menjawab -- disimpan

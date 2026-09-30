@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Bitte lies das einmal durch. Es erklärt, was das Programm auf deinem PC tut, was
 deinen Rechner verlässt und warum Windows dich davor warnen könnte.
 
@@ -122,6 +122,12 @@ WAS DEINEN RECHNER VERLÄSST
   der letzte Name. Der Server prüft die Runde noch einmal, bevor er sie zeigt.
   Schalte es im Reiter Rivals aus ("Meine Runden einreichen ...") oder setze
   "submit_laps": false in config/overlay.json.
+
+  Runden, die du ab dieser Fassung sendest, werden mit dieser Telemetrie auch
+  veröffentlicht: Auf der Website kann jeder neben deiner Zeit die volle
+  Telemetrie der Runde herunterladen (als CSV-Tabelle und als Rohdatei), um
+  nachzuvollziehen, wie sie gefahren wurde. Runden, die du vorher gesendet
+  hast, bleiben privat und dienen nur der Prüfung der Zeit.
 
   Eine Runde, die die Bestenliste schlägt, aber gerade nicht gesendet werden
   kann -- Einreichen ausgeschaltet, offline oder der Server antwortet nicht --,

@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Lê isto uma vez. Explica o que o programa faz no teu PC, o que sai do teu
 computador e porque é que o Windows te pode avisar sobre ele.
 
@@ -118,6 +118,12 @@ O QUE SAI DO TEU COMPUTADOR
   mais tarde mantém o último nome. O servidor verifica a volta de novo antes de a
   mostrar. Desliga isto no separador Rivals («Enviar as minhas voltas ...») ou
   define "submit_laps": false em config/overlay.json.
+
+  As voltas que enviares a partir desta versão também são publicadas com essa
+  telemetria: no site, ao lado do teu tempo, qualquer pessoa pode descarregar
+  a telemetria completa da volta (como tabela CSV e como ficheiro bruto) para
+  estudar como foi conduzida. As voltas que enviaste antes continuam privadas
+  e servem só para verificar o tempo.
 
   Uma volta que bate a classificação mas não pode ser enviada nesse momento --
   envio desligado, sem ligação à internet ou o servidor sem responder -- fica

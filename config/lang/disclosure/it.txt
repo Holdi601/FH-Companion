@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Per favore, leggi questo testo una volta. Spiega che cosa fa il programma sul tuo
 PC, che cosa esce dal tuo computer e perché Windows potrebbe avvisarti al
 riguardo.
@@ -121,6 +121,12 @@ CHE COSA ESCE DAL TUO COMPUTER
   server controlla di nuovo il giro prima di mostrarlo. Disattivalo nella scheda
   Rivals ("Invia i miei giri ...") o imposta "submit_laps": false in
   config/overlay.json.
+
+  I giri che invii da questa versione in poi vengono anche pubblicati con
+  quella telemetria: sul sito, accanto al tuo tempo, chiunque può scaricare la
+  telemetria completa del giro (come tabella CSV e come file grezzo) per
+  studiare come è stato guidato. I giri inviati prima restano privati e
+  servono solo a verificare il tempo.
 
   Un giro che batte la classifica ma non può essere inviato subito -- invio
   disattivato, offline o server che non risponde -- viene conservato su questo

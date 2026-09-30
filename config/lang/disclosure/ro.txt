@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Te rog să citești asta o dată. Explică ce face programul pe PC-ul tău, ce pleacă
 de pe calculatorul tău și de ce Windows te-ar putea avertiza în legătură cu el.
 
@@ -116,6 +116,12 @@ CE PLEACĂ DE PE CALCULATORUL TĂU
   târziu, rămâne ultimul nume. Serverul verifică din nou turul înainte
   să-l afișeze. Dezactivează asta în fila Rivals („Trimite tururile mele ...”) sau
   setează "submit_laps": false în config/overlay.json.
+
+  Tururile pe care le trimiți începând cu această versiune sunt publicate și
+  cu această telemetrie: pe site, lângă timpul tău, oricine poate descărca
+  telemetria completă a turului (ca tabel CSV și ca fișier brut) pentru a
+  studia cum a fost condus. Tururile trimise înainte rămân private și servesc
+  doar la verificarea timpului.
 
   Un tur care bate clasamentul, dar nu poate fi trimis chiar atunci -- trimiterea
   este dezactivată, ești offline sau serverul nu răspunde -- este păstrat pe acest

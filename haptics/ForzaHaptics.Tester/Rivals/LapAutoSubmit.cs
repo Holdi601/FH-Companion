@@ -456,7 +456,11 @@ internal sealed class LapAutoSubmit
         var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
         try
         {
-            await LapSubmit.SubmitAsync(wer, lap, course, timeout, gamertag, spur).ConfigureAwait(false);
+            // Veroeffentlicht wird die Telemetrie nur, wenn der Hinweis, dem zugestimmt wurde,
+            // das sagt -- auch fuer eine Runde, die wartete und erst jetzt hinausgeht.
+            await LapSubmit.SubmitAsync(wer, lap, course, timeout, gamertag, spur,
+                veroeffentlichen: _settings.DisclosureAcknowledged >= Disclosure.TelemetrieOeffentlichAb)
+                .ConfigureAwait(false);
             InsBuch(buch, befund.Schluessel, ms);
             return (Ausgang.Gesendet, $"submitted: {lap.LapSeconds:0.000} s on {track} -- {befund.Grund}");
         }

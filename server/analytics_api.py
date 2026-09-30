@@ -39,6 +39,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import sys
 import threading
@@ -609,8 +610,11 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             laps.set_gamertag(install_id, anfrage.get("gamertag"), eintrag)
             if befund.get("newCar"):
                 auffaellig = list(auffaellig) + ["car not on this leaderboard yet"]
+            # Oeffentlich zum Herunterladen nur, wenn die App es sagt -- sie tut es erst
+            # mit dem Hinweis, der es ankuendigt (Fassung 10). Siehe telemetrie_oeffentlich.
             abgelegt = laps.store(install_id, eintrag, runde, auffaellig, now=now,
-                                  volle_spur=volle_spur, spur_info=spur_info)
+                                  volle_spur=volle_spur, spur_info=spur_info,
+                                  veroeffentlichen=anfrage.get("publishTelemetry") is True)
             # Je Auto, Strecke und Klasse nur die zehn schnellsten, je Mensch eine.
             entfernt = laps.nur_die_besten(laps.gruppe_von(runde))
             if abgelegt["id"] in entfernt:
@@ -628,8 +632,19 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
 
         if method == "GET" and path == "/api/lap/list":
             return as_json(200, {"laps": [
-                {k: v for k, v in laps.ohne_telemetrie(runde).items() if k != "install_id"}
+                dict({k: v for k, v in laps.ohne_telemetrie(runde).items() if k != "install_id"},
+                     telemetryDownload=laps.telemetrie_oeffentlich(runde))
                 for runde in laps.mit_spielernamen(laps.list_laps())]})
+
+        # DIE VOLLE TELEMETRIE ZUM HERUNTERLADEN (seit 2026-09-30), fuer jeden -- aber nur
+        # die von Runden, die es erlauben (telemetrie_oeffentlich). Als CSV oder als die
+        # gepackte Datei der App. Den Dateinamen setzt serve_analytics (download_name).
+        spur = SPUR_PFAD.fullmatch(path)
+        if method == "GET" and spur:
+            gepackt, _ = laps.oeffentliche_spur(spur.group(1))
+            if spur.group(2) == "csv":
+                return (200, "text/csv; charset=utf-8", laps.spur_als_csv(gepackt))
+            return (200, "application/gzip", gepackt)
 
         # --- ab hier nur mit Admin-Unterschrift ---
         # Dieselben Schluessel wie der Rest von handle(), nicht frisch von Platte:
@@ -700,6 +715,21 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
         raise ApiError(404, "%s %s does not exist here" % (method, path))
     except laps.SubmitError as e:
         raise ApiError(e.status, e.message) from None
+
+
+SPUR_PFAD = re.compile(r"/api/lap/telemetry/([0-9a-f]{20})\.(csv|json\.gz)")
+
+
+def download_name(path: str) -> str | None:
+    """Der Dateiname fuer einen Telemetrie-Download -- oder None fuer alles andere."""
+    spur = SPUR_PFAD.fullmatch(path or "")
+    if not spur:
+        return None
+    try:
+        _, datensatz = laps.oeffentliche_spur(spur.group(1))
+        return laps.spur_dateiname(datensatz, spur.group(2))
+    except Exception:
+        return "FH6_lap_%s.%s" % (spur.group(1)[:8], spur.group(2))
 
 
 def handle(method: str, path: str, headers, body: bytes, *,

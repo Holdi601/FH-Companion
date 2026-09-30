@@ -1,4 +1,4 @@
-#fassung 9
+#fassung 10
 Lis ceci une fois, s'il te plaît. Cela explique ce que le programme fait sur ton
 PC, ce qui quitte ton ordinateur et pourquoi Windows peut t'avertir à son sujet.
 
@@ -124,6 +124,12 @@ CE QUI QUITTE TON ORDINATEUR
   tard conserve le dernier nom. Le serveur vérifie à nouveau le tour avant de
   l'afficher. Désactive-le dans l'onglet Rivals ("Envoyer mes tours ...") ou mets
   "submit_laps": false dans config/overlay.json.
+
+  Les tours que tu envoies à partir de cette version sont aussi publiés avec
+  cette télémétrie : sur le site, à côté de ton temps, chacun peut télécharger
+  la télémétrie complète du tour (en tableau CSV et en fichier brut) pour
+  étudier comment il a été piloté. Les tours envoyés avant restent privés et
+  servent uniquement à vérifier le temps.
 
   Un tour qui bat le classement mais ne peut pas être envoyé sur le moment --
   envoi désactivé, hors ligne, ou serveur qui ne répond pas -- est conservé sur

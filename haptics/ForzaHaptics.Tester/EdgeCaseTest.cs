@@ -677,6 +677,16 @@ internal static class EdgeCaseTest
             var text = System.Text.Encoding.UTF8.GetString(rumpf);
             Soll(!text.Contains(ordner.Replace("\\", "\\\\")) && !text.Contains("fhc-edge-tele"),
                  "ein lokaler Pfad steht im Rumpf");
+            // Veroeffentlichen nur, wenn es erlaubt ist -- und nur mit einer Spur.
+            Soll(knoten["publishTelemetry"] is null, "ohne Erlaubnis steht publishTelemetry im Rumpf");
+            var offen = System.Text.Json.Nodes.JsonNode.Parse(
+                Rivals.LapSubmit.Rumpf(lap, "course_1_2_to_3_4", "Tester", gepackt, veroeffentlichen: true))!;
+            Soll(offen["publishTelemetry"]?.GetValue<bool>() == true, "mit Erlaubnis fehlt publishTelemetry im Rumpf");
+            var ohneSpur = System.Text.Json.Nodes.JsonNode.Parse(
+                Rivals.LapSubmit.Rumpf(lap, "course_1_2_to_3_4", "Tester", null, veroeffentlichen: true))!;
+            Soll(ohneSpur["publishTelemetry"] is null, "ohne Spur steht publishTelemetry im Rumpf");
+            Soll(Disclosure.Fassung >= Disclosure.TelemetrieOeffentlichAb,
+                 "der Hinweis kuendigt die Veroeffentlichung nicht an, die App schickt sie aber");
 
             // Eine wartende Runde: die Spur liegt als Nebendatei und kommt wieder.
             Environment.SetEnvironmentVariable("FORZA_SUBMIT_HOME", ordner);
