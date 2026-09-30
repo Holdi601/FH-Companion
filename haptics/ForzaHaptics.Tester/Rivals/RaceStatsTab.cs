@@ -22,6 +22,7 @@ internal sealed class RaceStatsTab : UserControl
     private readonly Func<RivalsAdvisor?> _advisor;
     private readonly RaceFilter _f = new();
     private readonly FlowLayoutPanel _kacheln = new();
+    private readonly FlowLayoutPanel _oben;
     private readonly BellChart _glocke = new();
     private readonly ListView _tabelle = new();
     private readonly Label _status = new();
@@ -45,7 +46,7 @@ internal sealed class RaceStatsTab : UserControl
         ForeColor = Color.WhiteSmoke;
         Dock = DockStyle.Fill;
 
-        var oben = new FlowLayoutPanel
+        var oben = _oben = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
             AutoSize = true,
@@ -114,6 +115,7 @@ internal sealed class RaceStatsTab : UserControl
                      (Loc.T("Races"), 60, true), (Loc.T("Wins"), 70, true),
                      (Loc.T("Avg finish"), 90, true), (Loc.T("Avg start"), 90, true),
                      (Loc.T("Avg field"), 80, true), (Loc.T("Gained"), 70, true),
+                     (Loc.T("Vs co-players"), 110, true),
                  })
         {
             // Nie schmaler als die Ueberschrift: "Gewonnen" passte nicht in die Breite von "Gained".
@@ -124,7 +126,7 @@ internal sealed class RaceStatsTab : UserControl
         _status.Dock = DockStyle.Bottom;
         _status.ForeColor = Color.Gray;
         _status.Padding = new Padding(8, 4, 8, 0);
-        Resize += (_, _) => Status(_status.Text);
+        Resize += (_, _) => { Status(_status.Text); Hoehen(); };
 
         Controls.Add(_tabelle);
         Controls.Add(_glocke);
@@ -279,7 +281,17 @@ internal sealed class RaceStatsTab : UserControl
                 : string.Format(Loc.T("{0} race(s) with a known field"), s.WithField)));
         _kacheln.Controls.Add(Kachel(Loc.T("Gained"), s.AvgGain is { } g ? (g >= 0 ? "+" : "") + g.ToString("0.0") : "–",
             Loc.T("places from start to finish")));
+        // GEGEN DIE MITSPIELER (Koop): welcher Anteil von ihnen kam hinter dir ins Ziel. Nur,
+        // wenn Koop-Rennen in der Auswahl sind -- sonst waere die Kachel immer leer.
+        if (_auswahl.Any(r => r.Mode == "coop"))
+        {
+            _kacheln.Controls.Add(Kachel(Loc.T("Vs co-players"), Prozent(s.CoBeaten),
+                s.CoRaces > 0
+                    ? string.Format(Loc.T("first of the humans in {0} of {1} race(s)"), s.CoFirst, s.CoRaces)
+                    : Loc.T("co-op races only")));
+        }
         _kacheln.ResumeLayout();
+        Hoehen();
     }
 
     private static Control Kachel(string titel, string wert, string unter)
@@ -305,6 +317,16 @@ internal sealed class RaceStatsTab : UserControl
         return p;
     }
 
+    /// <summary>
+    /// Die Glocke bekommt, was nach Filtern, Kacheln und Statuszeile bleibt -- hoechstens 300,
+    /// mindestens 150 Punkte, und die Tabelle behaelt immer ihren Teil.
+    /// </summary>
+    private void Hoehen()
+    {
+        var rest = ClientSize.Height - _oben.Height - _kacheln.Height - _status.Height;
+        _glocke.Height = Math.Clamp((int)(rest * 0.6), 150, 300);
+    }
+
     private void Tabelle()
     {
         var gruppen = _auswahl
@@ -325,6 +347,7 @@ internal sealed class RaceStatsTab : UserControl
             z.SubItems.Add(Prozent(s.AvgStartPct));
             z.SubItems.Add(Zahl(s.AvgField));
             z.SubItems.Add(s.AvgGain is { } a ? (a >= 0 ? "+" : "") + a.ToString("0.0") : "–");
+            z.SubItems.Add(s.CoRaces > 0 ? $"{Prozent(s.CoBeaten)} ({s.CoFirst}/{s.CoRaces})" : "–");
             _tabelle.Items.Add(z);
         }
         _tabelle.EndUpdate();

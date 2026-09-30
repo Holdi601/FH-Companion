@@ -202,8 +202,11 @@ internal static class Program
                         g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
                     }
                     var r = Rivals.RaceGrid.Read(klein);
+                    var e = r is null ? Rivals.RaceGrid.ReadResults(klein) : null;
                     Console.WriteLine($"{Path.GetFileName(datei)}: "
-                                      + (r is { } g2 ? $"start grid, {g2.Drivers} drivers, own slot {g2.OwnSlot?.ToString() ?? "?"}" : "no start grid"));
+                                      + (r is { } g2 ? $"START GRID, {g2.Drivers} drivers, rows {g2.Rows}, cursor {g2.Cursor?.ToString() ?? "-"}"
+                                         : e is { } e2 ? $"RESULTS, {e2.Drivers} drivers, rows {e2.Rows}, cursor {e2.Cursor?.ToString() ?? "-"}"
+                                         : "-"));
                 }
                 catch (Exception e)
                 {

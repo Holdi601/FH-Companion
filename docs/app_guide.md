@@ -268,10 +268,17 @@ total time. Laps are stored on your disk in `%LOCALAPPDATA%\FHCompanion\laps`.
 
 ## Race statistics
 
-How you place, per game mode (Horizon Play, solo and co-op races) and per route
-type (road, street, dirt, cross-country, touge): races, win rate, average finish
-and average start, and a chart of where you start and finish. Filter by mode,
-route type, course, car and class.
+How you place, per game mode (Horizon Play, solo, co-op) and per route type
+(road, street, dirt, cross-country, touge): races, win rate, average finish and
+average start, and a chart of where you start and finish. Filter by mode, route
+type, course, car and class.
+
+Solo and co-op are told apart on the start grid: in solo you start last with only
+AI drivers ahead; in co-op your co-players start at the back with you. Human
+drivers carry a level badge on the grid, AI drivers do not. For co-op, **Vs
+co-players** shows how many of your co-players finished behind you, and how
+often you were the first human over the line. It comes from the results screen
+after the race, whose rows are in finishing order.
 
 Places are measured against the field: 0% is first, 100% is last, so a win
 against four and a win against eleven count the same. The telemetry gives your

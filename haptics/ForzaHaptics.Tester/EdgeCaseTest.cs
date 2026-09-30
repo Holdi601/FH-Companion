@@ -1950,34 +1950,43 @@ internal static class EdgeCaseTest
     /// </remarks>
     private static void RaceStatistics()
     {
-        // --- DIE STARTAUFSTELLUNG, gezeichnet wie im Spiel (1080p-Mass, klein aufgenommen)
-        Bitmap Schirm(bool tuerkis, int fahrer, int? eigen)
+        // --- DIE STARTAUFSTELLUNG UND DAS ERGEBNIS, gezeichnet wie im Spiel (1080p-Mass, klein aufgenommen)
+        // zeilen: je Fahrer 'H' (Mensch, mit Abzeichen) oder 'A' (KI, ohne); markiert: die schwarze Zeile.
+        Bitmap Schirm(bool ergebnis, string zeilen, int? markiert)
         {
             var b = new Bitmap(1920, 1080);
             using (var g = Graphics.FromImage(b))
             {
-                g.Clear(tuerkis ? Color.FromArgb(44, 140, 124) : Color.FromArgb(20, 18, 24));
+                g.Clear(ergebnis ? Color.FromArgb(20, 18, 24) : Color.FromArgb(44, 140, 124));
                 using var limette = new SolidBrush(Color.FromArgb(204, 255, 0));
-                g.FillRectangle(limette, 317, 222, 916, 46);
-                g.FillRectangle(limette, 1240, 222, 363, 46);
-                g.DrawString("Driver    Car    Class", new Font("Segoe UI", 16f), Brushes.Black, 400, 228);
+                var x0 = ergebnis ? 341 : 317;
+                var breite = ergebnis ? 1239 : 916;
+                g.FillRectangle(limette, x0, 222, breite, 46);
+                if (!ergebnis) { g.FillRectangle(limette, 1240, 222, 363, 46); }
+                g.DrawString("Driver    Car    Class", new Font("Segoe UI", 16f), Brushes.Black, x0 + 80, 228);
+                var abzeichenX = ergebnis ? 353 : 330;
                 for (var s = 0; s < 12; s++)
                 {
                     var y = 276 + (54 * s);
-                    var farbe = s >= fahrer ? Color.FromArgb(16, 62, 60)
-                        : eigen == s + 1 ? Color.Black : Color.White;
+                    var belegt = s < zeilen.Length;
+                    var farbe = !belegt ? (ergebnis ? Color.FromArgb(24, 24, 28) : Color.FromArgb(16, 62, 60))
+                        : markiert == s + 1 ? Color.Black : Color.White;
                     using var pinsel = new SolidBrush(farbe);
-                    g.FillRectangle(pinsel, 317, y, 916, 48);
-                    if (s < fahrer)
+                    g.FillRectangle(pinsel, x0, y, breite, 48);
+                    if (!belegt) { continue; }
+                    if (zeilen[s] == 'H')
                     {
-                        g.DrawString("Driver" + s + "    Some Car '99", new Font("Segoe UI", 16f),
-                                     farbe == Color.White ? Brushes.Black : Brushes.White, 400, y + 10);
+                        using var abzeichen = new SolidBrush(Color.FromArgb(230, 60, 90));
+                        g.FillRectangle(Brushes.Black, abzeichenX, y + 10, 20, 30);
+                        g.FillRectangle(abzeichen, abzeichenX + 20, y + 10, 45, 30);
                     }
+                    g.DrawString("Driver" + s + "    Some Car '99", new Font("Segoe UI", 16f),
+                                 farbe == Color.White ? Brushes.Black : Brushes.White, abzeichenX + 75, y + 10);
                 }
             }
             return b;
         }
-        Rivals.GridRead? Lies(Bitmap gross)
+        Rivals.GridRead? Lies(Bitmap gross, bool ergebnis = false)
         {
             using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height, PixelFormat.Format24bppRgb);
             using (var g = Graphics.FromImage(klein))
@@ -1985,14 +1994,41 @@ internal static class EdgeCaseTest
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
                 g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
             }
-            return Rivals.RaceGrid.Read(klein);
+            return ergebnis ? Rivals.RaceGrid.ReadResults(klein) : Rivals.RaceGrid.Read(klein);
         }
-        using (var s = Schirm(true, 9, 8)) { Soll(Lies(s) == new Rivals.GridRead(9, 8), $"Aufstellung: 9 Fahrer, Platz 8 gelesen als {Lies(s)}"); }
-        using (var s = Schirm(true, 12, 1)) { Soll(Lies(s) == new Rivals.GridRead(12, 1), $"Aufstellung: 12 Fahrer, Platz 1 gelesen als {Lies(s)}"); }
-        using (var s = Schirm(true, 5, null)) { Soll(Lies(s) == new Rivals.GridRead(5, null), $"Aufstellung: ohne Markierung gelesen als {Lies(s)}"); }
-        // Der Ergebnisschirm: dieselbe Tabelle, aber auf der dunklen Rennszene.
-        using (var s = Schirm(false, 9, 2)) { Soll(Lies(s) is null, "Aufstellung: der Ergebnisschirm gilt als Startaufstellung"); }
-        using (var leer = new Bitmap(1920, 1080)) { Soll(Lies(leer) is null, "Aufstellung: ein leeres Bild gilt als Startaufstellung"); }
+        using (var s = Schirm(false, "HHHHHHHHH", 8))
+        {
+            Soll(Lies(s) == new Rivals.GridRead(9, 8, "HHHHHHHHH"), $"Aufstellung: 9 Menschen, Zeiger auf 8 gelesen als {Lies(s)}");
+            Soll(Lies(s, ergebnis: true) is null, "Ergebnis: die Startaufstellung gilt als Ergebnis");
+        }
+        using (var s = Schirm(false, "AAAAAAAAAAAH", 12))
+        {
+            Soll(Lies(s) == new Rivals.GridRead(12, 12, "AAAAAAAAAAAH"), $"Aufstellung: Solo (11 KI, man selbst hinten) gelesen als {Lies(s)}");
+        }
+        using (var s = Schirm(false, "AAAAAAAHHH", 1))
+        {
+            Soll(Lies(s) == new Rivals.GridRead(10, 1, "AAAAAAAHHH"), $"Aufstellung: Koop, Zeiger auf einer KI gelesen als {Lies(s)}");
+        }
+        using (var s = Schirm(false, "HHHHH", null)) { Soll(Lies(s) == new Rivals.GridRead(5, null, "HHHHH"), $"Aufstellung: ohne Markierung gelesen als {Lies(s)}"); }
+        using (var s = Schirm(true, "AAHAHAAAAH", 3))
+        {
+            Soll(Lies(s) is null, "Aufstellung: der Ergebnisschirm gilt als Startaufstellung");
+            Soll(Lies(s, ergebnis: true) == new Rivals.GridRead(10, 3, "AAHAHAAAAH"), $"Ergebnis: gelesen als {Lies(s, ergebnis: true)}");
+        }
+        using (var leer = new Bitmap(1920, 1080))
+        {
+            Soll(Lies(leer) is null && Lies(leer, ergebnis: true) is null, "Aufstellung: ein leeres Bild gilt als Tabelle");
+        }
+
+        // --- SOLO ODER KOOP: allein hinten ist Solo, Menschen als Block hinten sind Koop
+        Soll(Rivals.RaceGrid.Modus("race", "AAAAAAAAAAAH", 12, 12) == "solo", "Modus: Solo nicht erkannt");
+        Soll(Rivals.RaceGrid.Modus("unknown", "AAAAAAAHHH", 9, 10) == "coop", "Modus: Koop nicht erkannt");
+        Soll(Rivals.RaceGrid.Modus("horizon-play", "AAAAAAAHHH", 9, 10) == "horizon-play", "Modus: Horizon Play ueberschrieben");
+        Soll(Rivals.RaceGrid.Modus("unknown", "HHHHHHHHA", 4, 9) == "unknown", "Modus: gemischte Aufstellung als Solo/Koop gelesen");
+        // Tragen die KI-Fahrer doch Abzeichen, gilt beim Anmeldeschirm "race" die Regel des Nutzers.
+        Soll(Rivals.RaceGrid.Modus("race", "HHHHHHHHHHHH", 12, 12) == "solo", "Modus: als Letzter gestartet ist nicht Solo");
+        Soll(Rivals.RaceGrid.Modus("race", "HHHHHHHHHHHH", 10, 12) == "coop", "Modus: weiter vorn gestartet ist nicht Koop");
+        Soll(Rivals.RaceGrid.Modus("unknown", null, 12, 12) == "unknown", "Modus: ohne Aufstellung geraten");
 
         // --- DAS RENNEN AN DEN PAKETEN: Start, Ziel, schlechtester Platz, Neustart
         var w = new Rivals.RaceWatcher();
@@ -2039,6 +2075,16 @@ internal static class EdgeCaseTest
         Soll(alle.Races == 5 && alle.Wins == 1 && alle.StartN == 3, "Statistik: ein abgebrochenes Rennen zaehlt als Platzierung");
         var nurRennen = Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter { Modes = { "race" } }, _ => null).Count();
         Soll(nurRennen == 0, "Statistik: der Modusfilter laesst fremde Rennen durch");
+        // Gegen die Mitspieler: zwei Koop-Rennen, einmal vor beiden, einmal hinter einem von zweien.
+        var koop = new List<Rivals.RaceRecord>
+        {
+            new() { Id = "k1", Start = 9, Finish = 2, Drivers = 10, Highest = 10, Mode = "coop", CoPlayers = 2, CoAhead = 0 },
+            new() { Id = "k2", Start = 8, Finish = 5, Drivers = 10, Highest = 10, Mode = "coop", CoPlayers = 2, CoAhead = 1 },
+            new() { Id = "s1", Start = 12, Finish = 3, Drivers = 12, Highest = 12, Mode = "solo", CoPlayers = 0 },
+        };
+        var ks = Rivals.RaceStats.Summarize(koop, schaetzen: false);
+        Soll(ks.CoRaces == 2 && ks.CoFirst == 1 && Math.Abs(ks.CoBeaten!.Value - 0.75) < 1e-9,
+             $"Mitspieler: {ks.CoRaces} Koop-Rennen, {ks.CoFirst} als erster Mensch, {ks.CoBeaten} geschlagen (erwartet 2, 1, 75 %)");
 
         // --- ELTERE RENNEN AUS DEM RUNDENBESTAND
         var wurzel = Path.Combine(Path.GetTempPath(), $"forza-racestats-test-{Environment.ProcessId}");
@@ -2090,6 +2136,12 @@ internal static class EdgeCaseTest
             File.AppendAllText(log, "{\"id\":\"kaputt\n");
             Rivals.RaceLog.Append(R(1, 2, 3, 3), log);
             Soll(Rivals.RaceLog.LoadLive(log).Count == 2, "races.jsonl: eine abgeschnittene Zeile kostet mehr als sich selbst");
+            // Das Ergebnis wird als ganze Zeile nachgetragen: die spaetere ersetzt die fruehere.
+            a.CoAhead = 1;
+            Rivals.RaceLog.Append(a, log);
+            var geladen = Rivals.RaceLog.LoadLive(log);
+            Soll(geladen.Count == 2 && geladen[0].Id == a.Id && geladen[0].CoAhead == 1,
+                 "races.jsonl: das nachgetragene Ergebnis ersetzt die erste Zeile nicht");
         }
         finally
         {

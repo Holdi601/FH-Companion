@@ -39,6 +39,18 @@ internal sealed class RaceRecord
     [JsonPropertyName("finished")] public bool Finished { get; set; } = true;
     /// <summary>"live" (beim Fahren aufgezeichnet) oder "archive" (aus dem Rundenbestand nachgebaut).</summary>
     [JsonPropertyName("source")] public string Source { get; set; } = "live";
+    /// <summary>Der Modus, wie ihn der Menueschirm nannte -- vor der Unterscheidung Solo/Koop.</summary>
+    [JsonPropertyName("modeScreen")] public string? ModeScreen { get; set; }
+    /// <summary>Die Aufstellung, je Zeile 'H' (Mensch) oder 'A' (KI) -- zum Nachpruefen der Regel.</summary>
+    [JsonPropertyName("gridRows")] public string? GridRows { get; set; }
+    /// <summary>Das Ergebnis, je Zeile in der Reihenfolge des Ziels.</summary>
+    [JsonPropertyName("resultRows")] public string? ResultRows { get; set; }
+    /// <summary>Menschen im Rennen, man selbst eingeschlossen.</summary>
+    [JsonPropertyName("humans")] public int? Humans { get; set; }
+    /// <summary>Mitspieler (Menschen ausser einem selbst).</summary>
+    [JsonPropertyName("coPlayers")] public int? CoPlayers { get; set; }
+    /// <summary>Wie viele Mitspieler vor einem ins Ziel kamen.</summary>
+    [JsonPropertyName("coAhead")] public int? CoAhead { get; set; }
 
     /// <summary>Die Kennung aus Auto und Zeitstempel der letzten Runde.</summary>
     internal static string IdFor(int car, DateTimeOffset at) => $"{car}|{at:yyyy-MM-dd_HH-mm-ss}";
@@ -76,12 +88,18 @@ internal static class RaceLog
             if (!File.Exists(pfad)) { return raus; }
             string[] zeilen;
             lock (Schloss) { zeilen = File.ReadAllLines(pfad); }
+            // Eine spaetere Zeile derselben Kennung ersetzt die fruehere: das Ergebnis nach
+            // dem Rennen wird als vollstaendige Zeile nachgetragen.
+            var stelle = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var z in zeilen)
             {
                 if (string.IsNullOrWhiteSpace(z)) { continue; }
                 try
                 {
-                    if (JsonSerializer.Deserialize<RaceRecord>(z) is { } r) { raus.Add(r); }
+                    if (JsonSerializer.Deserialize<RaceRecord>(z) is not { } r) { continue; }
+                    if (r.Id.Length > 0 && stelle.TryGetValue(r.Id, out var i)) { raus[i] = r; continue; }
+                    if (r.Id.Length > 0) { stelle[r.Id] = raus.Count; }
+                    raus.Add(r);
                 }
                 catch (Exception)
                 {
@@ -110,6 +128,8 @@ internal sealed class RaceWatcher
 
     /// <summary>Der Platz im ersten Paket des Rennens -- nur, wenn es von Anfang an gesehen wurde.</summary>
     public int? Start { get; private set; }
+    /// <summary>Die Rennuhr beim ersten Paket: unter 2 s ist der Startplatz der aus der Aufstellung.</summary>
+    public float StartSeconds { get; private set; }
     public DateTime StartUtc { get; private set; } = DateTime.MinValue;
     public int Last { get; private set; }
     public int Highest { get; private set; }
@@ -124,6 +144,7 @@ internal sealed class RaceWatcher
             _aktiv = true;
             // Spaeter eingestiegen (App mitten im Rennen gestartet): kein Startplatz.
             Start = rennzeit <= 8f ? platz : null;
+            StartSeconds = rennzeit;
             StartUtc = jetztUtc - TimeSpan.FromSeconds(Math.Max(0f, rennzeit));
             Highest = platz;
             Laps = 0;
@@ -144,27 +165,42 @@ internal sealed class RaceWatcher
     }
 }
 
-/// <summary>Was der Startaufstellungs-Schirm vor dem Rennen zeigt.</summary>
-/// <param name="Drivers">Wie viele im Feld.</param>
-/// <param name="OwnSlot">Die markierte Zeile -- der eigene Startplatz, solange niemand den Zeiger bewegt; oder null.</param>
-internal readonly record struct GridRead(int Drivers, int? OwnSlot);
+/// <summary>Was ein Tabellenschirm zeigt: die Startaufstellung vor dem Rennen oder das Ergebnis danach.</summary>
+/// <param name="Drivers">Wie viele Zeilen belegt sind.</param>
+/// <param name="Cursor">Die schwarz markierte Zeile (1-basiert) -- ein Zeiger, den man bewegen kann, NICHT
+/// verlaesslich der eigene Platz; oder null.</param>
+/// <param name="Rows">Je belegter Zeile 'H' (mit Stufenabzeichen: ein Mensch) oder 'A' (ohne: KI).</param>
+internal readonly record struct GridRead(int Drivers, int? Cursor, string Rows)
+{
+    /// <summary>Menschen in der Aufstellung, man selbst eingeschlossen.</summary>
+    public int Humans => Rows.Count(c => c == 'H');
+}
 
 /// <summary>
-/// Der Startaufstellungs-Schirm vor jedem Rennen, nur aus Pixeln gelesen -- in jeder Sprache gleich.
+/// Die Tabellenschirme um ein Rennen, nur aus Pixeln gelesen -- in jeder Sprache gleich.
 /// </summary>
 /// <remarks>
-/// Seit 2026-09-30. Der Schirm: eine limettengruene Kopfzeile (Driver, Car, Class), rechts
-/// daneben ein zweiter limettengruener Kasten (Event 1/3, Karte), darunter zwoelf Zeilen.
-/// Jeder Fahrer eine WEISSE Zeile, der eigene Platz SCHWARZ mit Limettenrahmen, leere
-/// Plaetze dunkel tuerkis; dahinter der tuerkise Hintergrund der Menues.
+/// Seit 2026-09-30. Beide Schirme: eine limettengruene Kopfzeile (Driver, Car, Class ...),
+/// darunter zwoelf Zeilen im Abstand von 54 Punkten (1080p), jeder Fahrer eine WEISSE Zeile,
+/// die markierte SCHWARZ mit Limettenrahmen.
 ///
-/// Geprueft an 1.314 Bildern (alle 2 s aus 44 Minuten Aufnahme): alle vier Aufstellungen
-/// gefunden (5, 9, 9 und 10 Fahrer), kein einziger Fehltreffer. Der Ergebnisschirm nach dem
-/// Rennen hat dieselbe Kopfzeile, liegt aber auf der dunklen Rennszene -- er faellt am
-/// Hintergrund durch (0 von 25 Proben tuerkis).
+/// DIE STARTAUFSTELLUNG vor dem Rennen: rechts ein zweiter Limettenkasten (Event 1/3, Karte),
+/// leere Plaetze dunkel tuerkis, dahinter der tuerkise Hintergrund der Menues. Geprueft an
+/// 1.314 Bildern (alle 2 s aus 44 Minuten Aufnahme): alle vier Aufstellungen gefunden (5, 9,
+/// 9 und 10 Fahrer), kein Fehltreffer.
 ///
-/// Die markierte Zeile ist ein Zeiger, den man bewegen kann; der Startplatz aus der
-/// Telemetrie prueft sie gegen (siehe OverlayController).
+/// DAS ERGEBNIS nach dem Rennen: dieselbe Tabelle, breiter (Best Lap, Time), auf der
+/// dunklen Rennszene; Zeilen in der Reihenfolge des Ziels. Wer das Rennen verlassen hat,
+/// steht dort OHNE Abzeichen -- auf dem Ergebnis heisst "kein Abzeichen" also nicht "KI".
+///
+/// DAS ABZEICHEN (Stern mit Stufe, oder bei niedriger Stufe eine graue Zahl) vor dem Namen
+/// zeigt einen Menschen; eine KI-Zeile hat keines (in einer Horizon-Play-Aufstellung
+/// "giangcc2024": reines Weiss, Helligkeit 253). Gemessen: Stern 84-139, graue Zahl 212-222
+/// mit dunklen Ziffern (Minimum ~130), leer 253/253. Auf der markierten Zeile liegt das
+/// Abzeichen auf Schwarz: mit Abzeichen Mittel ~90, ohne ~0.
+///
+/// DIE MARKIERUNG ist ein Zeiger: in einer Aufstellung stand er auf Platz 1, der Spieler
+/// auf 3. Der Startplatz kommt darum aus der Telemetrie, nicht von hier.
 /// </remarks>
 internal static class RaceGrid
 {
@@ -173,7 +209,13 @@ internal static class RaceGrid
 
     private static readonly float[] KopfY = { 228f / 1080f, 245f / 1080f, 262f / 1080f };
 
-    public static GridRead? Read(Bitmap bild)
+    /// <summary>Die Startaufstellung vor dem Rennen -- oder null.</summary>
+    public static GridRead? Read(Bitmap bild) => Lies(bild, ergebnis: false);
+
+    /// <summary>Das Ergebnis nach dem Rennen -- oder null.</summary>
+    public static GridRead? ReadResults(Bitmap bild) => Lies(bild, ergebnis: true);
+
+    private static GridRead? Lies(Bitmap bild, bool ergebnis)
     {
         if (bild.Width < 64 || bild.Height < 36) { return null; }
         using var klar = bild.PixelFormat == PixelFormat.Format24bppRgb ? null
@@ -195,47 +237,67 @@ internal static class RaceGrid
                 var i = (y * schritt) + (x * 3);
                 return (puffer[i + 2], puffer[i + 1], puffer[i]);
             }
+            (double Hell, double Tint, double Min) Streifen(float y, float fx0, float fx1)
+            {
+                var yy = Math.Clamp((int)(y * h), 0, h - 1);
+                long r = 0, g = 0, b = 0;
+                var n = 0;
+                var min = 255.0;
+                for (var x = (int)(fx0 * w); x < (int)(fx1 * w); x++)
+                {
+                    var i = (yy * schritt) + (x * 3);
+                    b += puffer[i]; g += puffer[i + 1]; r += puffer[i + 2];
+                    min = Math.Min(min, (puffer[i] + puffer[i + 1] + puffer[i + 2]) / 3.0);
+                    n++;
+                }
+                if (n == 0) { return (0, 0, 0); }
+                return ((r + g + b) / (3.0 * n), (g - r) / (double)n, min);
+            }
             static bool Limette((int R, int G, int B) p) => p.R > 150 && p.G > 220 && p.B < 90;
             static bool Tuerkis((int R, int G, int B) p) => p.G - p.R > 50 && p.G > 90 && p.B - p.R > 30;
+            static bool Dunkel((int R, int G, int B) p) => (p.R + p.G + p.B) / 3 < 90 && p.G - p.R < 30;
             // Die schwarze Schrift der Kopfzeile verdeckt einzelne Proben -- darum drei Hoehen je Spalte.
             bool Spalte(float fx) => KopfY.Any(y => Limette(Px(fx, y)));
 
-            var kopf = Enumerable.Range(0, 20).Count(i => Spalte(0.18f + (0.45f * i / 19f)));
-            var kasten = Enumerable.Range(0, 10).Count(i => Spalte(0.66f + (0.16f * i / 9f)));
             var grund = 0;
             for (var i = 0; i < 5; i++)
             {
                 for (var j = 0; j < 5; j++)
                 {
-                    if (Tuerkis(Px(0.02f + (0.10f * i / 4f), 0.35f + (0.30f * j / 4f)))) { grund++; }
+                    var p = Px(0.02f + (0.08f * i / 4f), 0.35f + (0.30f * j / 4f));
+                    if (ergebnis ? Dunkel(p) : Tuerkis(p)) { grund++; }
                 }
             }
-            if (kopf < 17 || kasten < 9 || grund < 18) { return null; }
+            if (grund < 18) { return null; }
+            if (ergebnis)
+            {
+                if (Enumerable.Range(0, 30).Count(i => Spalte(0.19f + (0.62f * i / 29f))) < 26) { return null; }
+            }
+            else
+            {
+                if (Enumerable.Range(0, 20).Count(i => Spalte(0.18f + (0.45f * i / 19f))) < 17) { return null; }
+                if (Enumerable.Range(0, 10).Count(i => Spalte(0.66f + (0.16f * i / 9f))) < 9) { return null; }
+            }
 
-            // Die zwoelf Plaetze: weiss (Fahrer), dunkel neutral (man selbst), dunkel tuerkis (leer).
+            // Die zwoelf Plaetze: weiss (Fahrer), dunkel neutral (markiert), leer.
+            var x0 = ergebnis ? 0.19f : 0.18f;
+            var x1 = ergebnis ? 0.64f : 0.63f;
             var arten = new char[12];
-            var x0 = (int)(0.18f * w);
-            var x1 = (int)(0.63f * w);
             for (var s = 0; s < 12; s++)
             {
-                var y = Math.Clamp((int)((300f + (54f * s)) / 1080f * h), 0, h - 1);
-                long r = 0, g = 0, b = 0;
-                var n = 0;
-                for (var x = x0; x < x1; x++)
-                {
-                    var i = (y * schritt) + (x * 3);
-                    b += puffer[i]; g += puffer[i + 1]; r += puffer[i + 2];
-                    n++;
-                }
-                var mr = r / (double)n;
-                var mg = g / n;
-                var mb = b / n;
-                var hell = (mr + mg + mb) / 3;
-                var tint = mg - mr;
+                var (hell, tint, _) = Streifen((300f + (54f * s)) / 1080f, x0, x1);
                 arten[s] = hell > 150 && Math.Abs(tint) < 25 ? 'w'
-                         : hell < 120 && tint < 20 ? 'b'
-                         : hell < 120 && tint >= 25 ? '-'
-                         : '?';
+                         : ergebnis
+                             ? (hell >= 40 && hell < 120 && Math.Abs(tint) < 25 ? 'b' : hell < 40 ? '-' : '?')
+                             : (hell < 120 && tint < 20 ? 'b' : hell < 120 && tint >= 25 ? '-' : '?');
+            }
+            if (ergebnis)
+            {
+                // Auf dem Ergebnis sind leere Plaetze und die markierte Zeile beide dunkel. Eine
+                // dunkle Zeile VOR einer weissen kann aber kein leerer Platz sein -- die Plaetze
+                // fuellen sich von oben.
+                var letzteWeisse = Array.LastIndexOf(arten, 'w');
+                for (var s = 0; s < letzteWeisse; s++) { if (arten[s] == '-') { arten[s] = 'b'; } }
             }
             var belegt = 0;
             while (belegt < 12 && arten[belegt] is 'w' or 'b') { belegt++; }
@@ -243,12 +305,55 @@ internal static class RaceGrid
             for (var s = belegt; s < 12; s++) { if (arten[s] != '-') { return null; } }
             var schwarz = Enumerable.Range(0, belegt).Where(s => arten[s] == 'b').ToList();
             if (schwarz.Count > 1) { return null; }
-            return new GridRead(belegt, schwarz.Count == 1 ? schwarz[0] + 1 : null);
+
+            // Das Abzeichen vor dem Namen: Mensch oder KI.
+            var bx0 = ergebnis ? 0.186f : 0.174f;
+            var bx1 = ergebnis ? 0.216f : 0.204f;
+            var zeilen = new char[belegt];
+            for (var s = 0; s < belegt; s++)
+            {
+                var (hell, _, min) = Streifen((300f + (54f * s)) / 1080f, bx0, bx1);
+                zeilen[s] = arten[s] == 'b'
+                    ? (hell > 55 ? 'H' : 'A')
+                    : (hell < 245 || min < 200 ? 'H' : 'A');
+            }
+            return new GridRead(belegt, schwarz.Count == 1 ? schwarz[0] + 1 : null, new string(zeilen));
         }
         finally
         {
             quelle.UnlockBits(daten);
         }
+    }
+
+    /// <summary>
+    /// Solo oder Koop, aus der Aufstellung: allein hinten ist Solo, ein Block von Menschen
+    /// hinten ist Koop. Horizon Play (Menschen ueberall) bleibt, was der Schirm sagte.
+    /// </summary>
+    /// <remarks>
+    /// Im Solo startet man immer als Letzter, im Koop stehen die Mitspieler hinten (Hinweis
+    /// des Nutzers, 2026-09-30). Tragen die KI-Fahrer doch Abzeichen, bleibt bei einem als
+    /// Solo/Koop gelesenen Anmeldeschirm ("race") die Regel: als Letzter gestartet ist Solo.
+    /// </remarks>
+    internal static string Modus(string modus, string? zeilen, int? start, int? feld)
+    {
+        if (modus is "horizon-play" or "rivals" or "freeroam") { return modus; }
+        if (!string.IsNullOrEmpty(zeilen))
+        {
+            var menschen = zeilen.Count(c => c == 'H');
+            var ki = zeilen.Length - menschen;
+            if (ki > 0)
+            {
+                var erster = zeilen.IndexOf('H');
+                var hinten = erster >= 0 && zeilen[erster..].All(c => c == 'H');
+                if (menschen <= 1 && (start is null || start == zeilen.Length)) { return "solo"; }
+                if (menschen >= 2 && hinten) { return "coop"; }
+            }
+        }
+        if (modus == "race" && start is { } s && feld is { } f && f >= 2)
+        {
+            return s == f ? "solo" : "coop";
+        }
+        return modus;
     }
 }
 
@@ -541,7 +646,8 @@ internal sealed record RaceSummary(
     double? AvgFinishPct, double? AvgStartPct,
     double? AvgFinish, double? AvgStart, double? AvgField, double? AvgGain,
     int[] StartBins, int[] FinishBins, int StartN, int FinishN,
-    (double Mean, double Sd)? StartFit, (double Mean, double Sd)? FinishFit);
+    (double Mean, double Sd)? StartFit, (double Mean, double Sd)? FinishFit,
+    int CoRaces, int CoFirst, double? CoBeaten);
 
 internal static class RaceStats
 {
@@ -615,6 +721,10 @@ internal static class RaceStats
         }
         double? Schnitt(IEnumerable<double> x) => x.Any() ? x.Average() : null;
 
+        // GEGEN DIE MITSPIELER (Koop): welcher Anteil von ihnen kam hinter einem ins Ziel?
+        var koop = races.Where(r => r.Finished && r.CoPlayers is > 0 && r.CoAhead is not null).ToList();
+        var geschlagen = koop.Select(r => (r.CoPlayers!.Value - Math.Min(r.CoAhead!.Value, r.CoPlayers.Value)) / (double)r.CoPlayers.Value);
+
         return new RaceSummary(
             races.Count, mitGegnern.Count, siege, podium, feld.Count,
             mitGegnern.Count > 0 ? siege / (double)mitGegnern.Count : null,
@@ -625,6 +735,7 @@ internal static class RaceStats
             Schnitt(feld.Select(x => (double)x)),
             Schnitt(gewinn.Select(x => (double)x)),
             Faecher(start), Faecher(ziel), start.Count, ziel.Count,
-            Glocke(start), Glocke(ziel));
+            Glocke(start), Glocke(ziel),
+            koop.Count, koop.Count(r => r.CoAhead == 0), Schnitt(geschlagen));
     }
 }

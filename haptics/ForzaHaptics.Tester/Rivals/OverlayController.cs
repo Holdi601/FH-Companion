@@ -3564,6 +3564,9 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Die zuletzt gelesene Startaufstellung -- ein Verweis, damit Lesen und Schreiben nie zerreissen.</summary>
     private sealed record RasterStand(GridRead Read, DateTime Utc);
     private volatile RasterStand? _raster;
+    /// <summary>Das zuletzt abgelegte Rennen, bis sein Ergebnisschirm gelesen ist (hoechstens eine Minute).</summary>
+    private sealed record OffenesRennen(RaceRecord Race, DateTime Utc);
+    private volatile OffenesRennen? _offen;
     private volatile bool _rasterLesen;
     private int _rasterTakt;
     private DateTime _letztesRennenEnde = DateTime.MinValue;
@@ -3583,7 +3586,10 @@ internal sealed class OverlayController : IDisposable
         {
             if (_rasterLesen || _hudPreview || _disposed) { return; }
             if (++_rasterTakt % 2 != 0) { return; }
-            if (!SpielbildDa() || FaehrtGerade()) { return; }
+            // Die Minute nach dem Ziel: da steht der Ergebnisschirm, auch wenn das Auto dahinter
+            // noch rollt. Sonst nur, wenn nicht gefahren wird.
+            var offen = _offen is { } o && DateTime.UtcNow - o.Utc < TimeSpan.FromSeconds(60) ? o : null;
+            if (!SpielbildDa() || (FaehrtGerade() && offen is null)) { return; }
             var flaeche = GameArea.Find(_settings.ForzaProcess);
             if (flaeche.IsEmpty) { return; }
             _rasterLesen = true;
@@ -3598,8 +3604,13 @@ internal sealed class OverlayController : IDisposable
                         _raster = new RasterStand(g, DateTime.UtcNow);
                         if (vorher is null || vorher.Read != g || DateTime.UtcNow - vorher.Utc > TimeSpan.FromSeconds(30))
                         {
-                            LogLap($"start grid: {g.Drivers} drivers, own slot {g.OwnSlot?.ToString() ?? "?"}");
+                            LogLap($"start grid: {g.Drivers} drivers, {g.Humans} human, rows {g.Rows}, cursor {g.Cursor?.ToString() ?? "-"}");
                         }
+                    }
+                    else if (offen is not null && RaceGrid.ReadResults(bild) is { } e)
+                    {
+                        _offen = null;
+                        ErgebnisNachtragen(offen.Race, e);
                     }
                 }
                 catch (Exception)
@@ -3644,28 +3655,39 @@ internal sealed class OverlayController : IDisposable
                 Seconds = _rennen.RaceSeconds,
                 Finished = !lap.Unfinished,
                 Source = "live",
+                ModeScreen = string.IsNullOrWhiteSpace(lap.Mode) ? "unknown" : lap.Mode,
             };
             // DIE STARTAUFSTELLUNG dieses Rennens: gelesen hoechstens drei Minuten vor dem
             // Start und nach dem Ende des vorigen. Zeigt sie weniger Fahrer, als Plaetze zu
             // sehen waren, gehoert sie zu einem anderen Rennen.
+            GridRead? aufstellung = null;
             if (_raster is { } g
                 && g.Utc > _letztesRennenEnde
                 && g.Utc >= _rennen.StartUtc.AddMinutes(-3) && g.Utc <= _rennen.StartUtc.AddSeconds(15)
                 && g.Read.Drivers >= _rennen.Highest)
             {
+                aufstellung = g.Read;
                 r.Drivers = g.Read.Drivers;
-                if (g.Read.OwnSlot is { } platz)
-                {
-                    r.Start = platz;
-                    r.StartFrom = "grid";
-                }
+                r.GridRows = g.Read.Rows;
+                r.Humans = g.Read.Humans;
+                r.CoPlayers = Math.Max(0, g.Read.Humans - 1);
             }
-            if (r.Start is null && _rennen.Start is { } s)
+            // DER STARTPLATZ aus der Telemetrie: die Markierung der Aufstellung ist ein Zeiger,
+            // den man verschieben kann. Nur wenn die Telemetrie den Start nicht sah, gilt sie.
+            if (_rennen.Start is { } s)
             {
                 r.Start = s;
-                r.StartFrom = "telemetry";
+                r.StartFrom = _rennen.StartSeconds <= 2f ? "telemetry" : "telemetry-late";
             }
+            else if (aufstellung?.Cursor is { } zeiger)
+            {
+                r.Start = zeiger;
+                r.StartFrom = "grid-cursor";
+            }
+            // SOLO ODER KOOP: allein hinten ist Solo, ein Block von Menschen hinten ist Koop.
+            r.Mode = RaceGrid.Modus(r.Mode, aufstellung?.Rows, r.Start, r.Drivers);
             RaceLog.Append(r);
+            _offen = new OffenesRennen(r, DateTime.UtcNow);
             LogLap($"race: finished P{r.Finish?.ToString() ?? "?"} of {r.Drivers?.ToString() ?? "?"}, "
                    + $"started P{r.Start?.ToString() ?? "?"} ({r.StartFrom ?? "-"}), {r.Track ?? kurs}, {r.Mode}"
                    + (r.Finished ? string.Empty : ", not finished"));
@@ -3678,6 +3700,37 @@ internal sealed class OverlayController : IDisposable
         {
             _rennen.End();
             _letztesRennenEnde = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Der Ergebnisschirm nach dem Rennen: wie viele Mitspieler vor einem ins Ziel kamen.
+    /// Die Zeilen stehen in der Reihenfolge des Ziels; ein Mitspieler traegt sein Abzeichen.
+    /// </summary>
+    /// <remarks>
+    /// Das Rennen wird als vollstaendige Zeile noch einmal angehaengt; beim Laden ersetzt sie
+    /// die erste (RaceLog.LoadLive). Wer das Rennen verlassen hat, steht ohne Abzeichen da --
+    /// ein Mitspieler, der aufgab, zaehlt damit nicht als "vor einem", und das ist richtig.
+    /// </remarks>
+    private void ErgebnisNachtragen(RaceRecord r, GridRead e)
+    {
+        try
+        {
+            r.ResultRows = e.Rows;
+            r.Drivers ??= e.Drivers;
+            if (r.Finish is { } ziel && ziel >= 1 && ziel <= e.Rows.Length)
+            {
+                var vorn = e.Rows[..(ziel - 1)].Count(c => c == 'H');
+                r.CoAhead = vorn;
+                // Ohne gelesene Aufstellung: die Menschen auf dem Ergebnis sind eine Untergrenze.
+                r.CoPlayers ??= Math.Max(0, e.Humans - 1);
+                if (r.CoPlayers < vorn) { r.CoPlayers = vorn; }
+            }
+            RaceLog.Append(r);
+            LogLap($"race result: {e.Drivers} drivers, rows {e.Rows}, co-players ahead {r.CoAhead?.ToString() ?? "?"} of {r.CoPlayers?.ToString() ?? "?"}");
+        }
+        catch (Exception)
+        {
         }
     }
 
