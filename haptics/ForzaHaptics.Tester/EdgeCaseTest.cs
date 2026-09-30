@@ -43,6 +43,7 @@ internal static class EdgeCaseTest
         CourseNamesFromLaps();
         CourseFoldersCarryTheName();
         UnfinishedRunsAreSortedOut();
+        RaceStatistics();
         ShapeDisplayTime();
         TuneForLap();
         AppliedTuneForNote();
@@ -1938,6 +1939,164 @@ internal static class EdgeCaseTest
     /// Kursordner mit 34 Runden hiess nach seiner Kennung, also griff die Rivalen-Karte,
     /// und deren Linie war an einer zu kleinen Karte falsch nachgezeichnet.
     /// </remarks>
+    /// <summary>
+    /// Die Rennstatistik: Startaufstellung aus Pixeln, Plaetze aus den Paketen, aeltere Rennen
+    /// aus dem Rundenbestand, Kennzahlen am Feld gemessen.
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-09-30. Die echte Aufstellung (Aufnahme vom 2026-09-28) wurde von Hand gegen
+    /// alle 1.314 Bilder geprueft; hier steht ein gezeichneter Nachbau, weil die echte fremde
+    /// Namen zeigt.
+    /// </remarks>
+    private static void RaceStatistics()
+    {
+        // --- DIE STARTAUFSTELLUNG, gezeichnet wie im Spiel (1080p-Mass, klein aufgenommen)
+        Bitmap Schirm(bool tuerkis, int fahrer, int? eigen)
+        {
+            var b = new Bitmap(1920, 1080);
+            using (var g = Graphics.FromImage(b))
+            {
+                g.Clear(tuerkis ? Color.FromArgb(44, 140, 124) : Color.FromArgb(20, 18, 24));
+                using var limette = new SolidBrush(Color.FromArgb(204, 255, 0));
+                g.FillRectangle(limette, 317, 222, 916, 46);
+                g.FillRectangle(limette, 1240, 222, 363, 46);
+                g.DrawString("Driver    Car    Class", new Font("Segoe UI", 16f), Brushes.Black, 400, 228);
+                for (var s = 0; s < 12; s++)
+                {
+                    var y = 276 + (54 * s);
+                    var farbe = s >= fahrer ? Color.FromArgb(16, 62, 60)
+                        : eigen == s + 1 ? Color.Black : Color.White;
+                    using var pinsel = new SolidBrush(farbe);
+                    g.FillRectangle(pinsel, 317, y, 916, 48);
+                    if (s < fahrer)
+                    {
+                        g.DrawString("Driver" + s + "    Some Car '99", new Font("Segoe UI", 16f),
+                                     farbe == Color.White ? Brushes.Black : Brushes.White, 400, y + 10);
+                    }
+                }
+            }
+            return b;
+        }
+        Rivals.GridRead? Lies(Bitmap gross)
+        {
+            using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height, PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(klein))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+            }
+            return Rivals.RaceGrid.Read(klein);
+        }
+        using (var s = Schirm(true, 9, 8)) { Soll(Lies(s) == new Rivals.GridRead(9, 8), $"Aufstellung: 9 Fahrer, Platz 8 gelesen als {Lies(s)}"); }
+        using (var s = Schirm(true, 12, 1)) { Soll(Lies(s) == new Rivals.GridRead(12, 1), $"Aufstellung: 12 Fahrer, Platz 1 gelesen als {Lies(s)}"); }
+        using (var s = Schirm(true, 5, null)) { Soll(Lies(s) == new Rivals.GridRead(5, null), $"Aufstellung: ohne Markierung gelesen als {Lies(s)}"); }
+        // Der Ergebnisschirm: dieselbe Tabelle, aber auf der dunklen Rennszene.
+        using (var s = Schirm(false, 9, 2)) { Soll(Lies(s) is null, "Aufstellung: der Ergebnisschirm gilt als Startaufstellung"); }
+        using (var leer = new Bitmap(1920, 1080)) { Soll(Lies(leer) is null, "Aufstellung: ein leeres Bild gilt als Startaufstellung"); }
+
+        // --- DAS RENNEN AN DEN PAKETEN: Start, Ziel, schlechtester Platz, Neustart
+        var w = new Rivals.RaceWatcher();
+        var t0 = DateTime.UtcNow;
+        w.Packet(0, 0f, t0);                          // ausserhalb: zaehlt nicht
+        w.Packet(8, 0.2f, t0);
+        w.Packet(9, 10f, t0.AddSeconds(10));
+        w.LapDone();
+        w.Packet(2, 120f, t0.AddSeconds(120));
+        w.LapDone();
+        Soll(w.Start == 8 && w.Last == 2 && w.Highest == 9 && w.Laps == 2,
+             $"Rennen: Start {w.Start}, Ziel {w.Last}, schlechtester {w.Highest}, Runden {w.Laps}");
+        w.Packet(4, 0.3f, t0.AddSeconds(130));        // Neustart: die Uhr springt zurueck
+        Soll(w.Start == 4 && w.Highest == 4 && w.Laps == 0, "Rennen: ein Neustart beginnt kein neues Rennen");
+        w.End();
+        w.Packet(3, 40f, t0.AddSeconds(200));         // mitten im Rennen eingestiegen
+        Soll(w.Start is null, "Rennen: ein spaeter Einstieg nennt einen Startplatz");
+
+        // --- DIE KENNZAHLEN, am Feld gemessen
+        Rivals.RaceRecord R(int? start, int? ziel, int? feld, int hoechster, bool fertig = true, string modus = "horizon-play") => new()
+        {
+            Id = Guid.NewGuid().ToString("N"), Start = start, Finish = ziel, Drivers = feld, Highest = hoechster,
+            Finished = fertig, Mode = modus, Klass = "B", Car = 1,
+        };
+        var rennen = new List<Rivals.RaceRecord>
+        {
+            R(8, 1, 9, 8),       // Sieg von 8 aus 9
+            R(1, 5, 5, 5),       // Letzter von 5
+            R(3, 2, null, 4),    // aelteres Rennen: Feld unbekannt, mindestens 4
+            R(1, 1, null, 1),    // immer vorn, Feld unbekannt: vielleicht ein Zeitfahren -- zaehlt nicht
+            R(2, 6, 9, 9, fertig: false),
+        };
+        var ohne = Rivals.RaceStats.Summarize(Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter(), _ => null).ToList(), schaetzen: false);
+        Soll(ohne.Races == 4 && ohne.Placed == 3 && ohne.Wins == 1, $"Statistik: {ohne.Races} Rennen, {ohne.Placed} gewertet, {ohne.Wins} Siege");
+        Soll(Math.Abs(ohne.WinRate!.Value - (1 / 3.0)) < 1e-9, $"Statistik: Siegquote {ohne.WinRate}");
+        Soll(ohne.FinishN == 2 && Math.Abs(ohne.AvgFinishPct!.Value - 0.5) < 1e-9,
+             $"Statistik: Zielplatz im Feld {ohne.AvgFinishPct} aus {ohne.FinishN} Rennen (erwartet 50 % aus 2)");
+        Soll(ohne.StartN == 2 && Math.Abs(ohne.AvgStartPct!.Value - (0.875 / 2)) < 1e-9, $"Statistik: Startplatz im Feld {ohne.AvgStartPct}");
+        Soll(ohne.FinishBins[0] == 1 && ohne.FinishBins[9] == 1, "Statistik: Sieg und letzter Platz in den falschen Faechern");
+        var mit = Rivals.RaceStats.Summarize(Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter { EstimateField = true }, _ => null).ToList(), schaetzen: true);
+        Soll(mit.FinishN == 3 && Math.Abs(mit.AvgFinishPct!.Value - ((0 + 1 + (1 / 3.0)) / 3)) < 1e-9,
+             $"Statistik: mit geschaetztem Feld {mit.AvgFinishPct} aus {mit.FinishN}");
+        var alle = Rivals.RaceStats.Summarize(Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter { FinishedOnly = false }, _ => null).ToList(), false);
+        Soll(alle.Races == 5 && alle.Wins == 1 && alle.StartN == 3, "Statistik: ein abgebrochenes Rennen zaehlt als Platzierung");
+        var nurRennen = Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter { Modes = { "race" } }, _ => null).Count();
+        Soll(nurRennen == 0, "Statistik: der Modusfilter laesst fremde Rennen durch");
+
+        // --- ELTERE RENNEN AUS DEM RUNDENBESTAND
+        var wurzel = Path.Combine(Path.GetTempPath(), $"forza-racestats-test-{Environment.ProcessId}");
+        try
+        {
+            var tag = Path.Combine(wurzel, "Soni Circuit (course_1_to_1)", "B", "car42", "42-600", "untagged");
+            Directory.CreateDirectory(tag);
+            File.WriteAllText(Path.Combine(wurzel, "Soni Circuit (course_1_to_1)", "course.json"), "{\"Name\":\"Soni Circuit\"}");
+            void Runde(string name, DateTime ende, string modus, (int Pos, int Lap, float Zeit)[] zeilen)
+            {
+                var pfad = Path.Combine(tag, name);
+                File.WriteAllText(pfad, System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    Course = "course_1_to_1",
+                    Lap = new { lapSeconds = 60, lengthMetres = 1900, carOrdinal = 42, performanceIndex = 600,
+                                track = (string?)null, recordedAt = new DateTimeOffset(ende), mode = modus },
+                }));
+                using var datei = File.Create(pfad + Rivals.TelemetryTrack.Suffix);
+                using var gz = new System.IO.Compression.GZipStream(datei, System.IO.Compression.CompressionLevel.Fastest);
+                using var sw = new StreamWriter(gz);
+                sw.Write("{\"version\":1,\"rows\":" + zeilen.Length + ",\"columns\":[\"t\",\"RacePosition\",\"LapNumber\",\"CurrentRaceTime\"],\"data\":[");
+                sw.Write(string.Join(",", zeilen.Select(z => $"[0,{z.Pos},{z.Lap},{z.Zeit.ToString(System.Globalization.CultureInfo.InvariantCulture)}]")));
+                sw.Write("]}");
+            }
+            var t = new DateTime(2026, 9, 28, 12, 16, 0);
+            // Ein Rundkurs: erste Runde aus dem Stand (Start P8), letzte Runde endet auf P2.
+            Runde("2026-09-28_12-17-05_65.130s_standing.json", t.AddSeconds(65), "horizon-play",
+                  new[] { (8, 0, 0.5f), (9, 0, 20f), (6, 0, 64f) });
+            Runde("2026-09-28_12-18-08_63.000s.json", t.AddSeconds(128), "horizon-play", new[] { (6, 1, 66f), (3, 1, 127f) });
+            Runde("2026-09-28_12-19-11_63.290s_sprint.json", t.AddSeconds(191), "horizon-play", new[] { (3, 2, 129f), (2, 2, 190.5f) });
+            // Ein Rivalenlauf zaehlt nie.
+            Runde("2026-09-28_13-00-00_60.000s_standing_sprint.json", t.AddHours(1), "rivals", new[] { (1, 0, 0.2f), (1, 0, 60f) });
+            var stand = Path.Combine(wurzel, "races_archive.json");
+            var alt = Rivals.RaceArchive.Update(wurzel, stand, new HashSet<string>());
+            Soll(alt.Count == 1, $"Bestand: {alt.Count} Rennen nachgebaut (erwartet 1)");
+            var a = alt[0];
+            Soll(a.Start == 8 && a.Finish == 2 && a.Highest == 9 && a.Laps == 3 && a.Course == "course_1_to_1"
+                 && a.Track == "Soni Circuit" && a.Car == 42 && a.Klass == "B" && a.Drivers is null && a.Source == "archive",
+                 $"Bestand: Start {a.Start}, Ziel {a.Finish}, schlechtester {a.Highest}, Runden {a.Laps}, Kurs {a.Course}, Name {a.Track}");
+            Soll(a.Id == Rivals.RaceRecord.IdFor(42, new DateTimeOffset(t.AddSeconds(191))), $"Bestand: Kennung {a.Id}");
+            // Ein zweiter Durchgang liest nichts neu; ein live aufgezeichnetes Rennen wird nie doppelt nachgebaut.
+            Soll(Rivals.RaceArchive.Update(wurzel, stand, new HashSet<string>()).Count == 1, "Bestand: ein zweiter Durchgang baut doppelt");
+            File.Delete(stand);
+            Soll(Rivals.RaceArchive.Update(wurzel, stand, new HashSet<string> { a.Id }).Count == 0, "Bestand: ein live aufgezeichnetes Rennen wurde nachgebaut");
+
+            // --- races.jsonl: Anhaengen und Lesen, eine kaputte Zeile kostet nur sich selbst
+            var log = Path.Combine(wurzel, "races.jsonl");
+            Rivals.RaceLog.Append(a, log);
+            File.AppendAllText(log, "{\"id\":\"kaputt\n");
+            Rivals.RaceLog.Append(R(1, 2, 3, 3), log);
+            Soll(Rivals.RaceLog.LoadLive(log).Count == 2, "races.jsonl: eine abgeschnittene Zeile kostet mehr als sich selbst");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, true); } catch (Exception) { }
+        }
+    }
+
     /// <summary>
     /// Ein Neustart ist keine Strecke: eine Fahrt, die auf dem Weg einer bekannten laengeren
     /// Strecke vor deren Ziel endet, liegt unter "unfinished" -- ohne Namen, ohne Bestzeit.

@@ -183,6 +183,62 @@ internal static class Program
             Environment.Exit(Rivals.FreeRoamReplay.Run(args));
         }
 
+        // Die Startaufstellung aus einem Bild lesen, wie es die App im Menue tut -- zum
+        // Pruefen an Aufnahmen (Bild 1080p oder 4K; verkleinert wird hier wie dort).
+        if (args.Contains("--grid-read", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--grid-read", StringComparison.OrdinalIgnoreCase));
+            var rc = 0;
+            foreach (var datei in args.Skip(i + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)))
+            {
+                try
+                {
+                    using var gross = new Bitmap(datei);
+                    using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height,
+                                                 System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                    using (var g = Graphics.FromImage(klein))
+                    {
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                        g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+                    }
+                    var r = Rivals.RaceGrid.Read(klein);
+                    Console.WriteLine($"{Path.GetFileName(datei)}: "
+                                      + (r is { } g2 ? $"start grid, {g2.Drivers} drivers, own slot {g2.OwnSlot?.ToString() ?? "?"}" : "no start grid"));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"{Path.GetFileName(datei)}: {e.Message}");
+                    rc = 1;
+                }
+            }
+            Environment.Exit(rc);
+        }
+
+        // Die Rennstatistik ohne Fenster: aeltere Rennen nachbauen (in eine eigene Datei,
+        // der Bestand wird nur gelesen) und die Kennzahlen je Modus ausgeben.
+        if (args.Contains("--race-stats", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--race-stats", StringComparison.OrdinalIgnoreCase));
+            var ziel = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)
+                ? Path.GetFullPath(args[i + 1]) : Rivals.RaceLog.ArchivePath;
+            var live = Rivals.RaceLog.LoadLive();
+            var uhr = System.Diagnostics.Stopwatch.StartNew();
+            var alt = Rivals.RaceArchive.Update(Rivals.LapArchive.Root, ziel,
+                new HashSet<string>(live.Select(r => r.Id), StringComparer.Ordinal));
+            Console.WriteLine($"{live.Count} live, {alt.Count} rebuilt in {uhr.Elapsed.TotalSeconds:0.0} s -> {ziel}");
+            foreach (var schaetzen in new[] { false, true })
+            {
+                foreach (var g in live.Concat(alt).GroupBy(r => r.Mode).OrderBy(g => g.Key))
+                {
+                    var s = Rivals.RaceStats.Summarize(g.Where(r => r.Finished).ToList(), schaetzen);
+                    Console.WriteLine($"  {(schaetzen ? "est" : "known")} {g.Key,-13} races {s.Races,4}  placed {s.Placed,4}  wins {s.WinRate:P0}  "
+                                      + $"finish {s.AvgFinishPct:P0} (P{s.AvgFinish:0.0})  start {s.AvgStartPct:P0} (P{s.AvgStart:0.0})  "
+                                      + $"field {s.AvgField:0.0} n={s.WithField}");
+                }
+            }
+            Environment.Exit(0);
+        }
+
         // Den Rundenbestand aufraeumen wie beim Start: Abbrueche verlegen, Namen
         // nachtragen oder berichtigen, Ordner benennen. Mit einem Pfad fuer eine Kopie.
         if (args.Contains("--tidy-laps", StringComparer.OrdinalIgnoreCase))
@@ -1200,6 +1256,16 @@ internal static class Program
                         }
                     }
                     foreach (Control k in c.Controls) { tabs.Push(k); }
+                }
+            }
+            if (Wert("estimate") == "1")
+            {
+                var alle = new Stack<Control>(new Control[] { fenster });
+                while (alle.Count > 0)
+                {
+                    var c = alle.Pop();
+                    if (c is Rivals.RaceStatsTab rs) { rs.SetEstimate(true); }
+                    foreach (Control k in c.Controls) { alle.Push(k); }
                 }
             }
             for (var i = 0; i < 15; i++) { Application.DoEvents(); Thread.Sleep(100); }

@@ -134,6 +134,7 @@ internal sealed class OverlayController : IDisposable
     {
         _recorder.LapCompleted += (_, lap) =>
         {
+            _rennen.LapDone();
             var behalten = _laps.Add(lap);
             // Eine neue Bestzeit macht die gemerkte Referenz ungueltig.
             if (behalten) { _reference = null; _referenceForLength = -1; }
@@ -210,6 +211,9 @@ internal sealed class OverlayController : IDisposable
                 ? LapArchive.Save(lap, _settings.LapTag)
                 : null;
             lap.FullTrack = volleSpur;
+
+            // DIE RENNSTATISTIK: am Ende jedes Rennens (auch eines abgebrochenen) eine Zeile.
+            if (lap.EndedAtFinish) { RennenAblegen(lap); }
 
             if (abgebrochen)
             {
@@ -515,6 +519,7 @@ internal sealed class OverlayController : IDisposable
             PruefeTuneListe();
             PruefeUmrisseZeit();
             AnmeldungOhneOverlay();
+            PruefeStartaufstellung();
             // Was die App kostet, einmal je Minute ins perf.log (siehe Leistung).
             if (_game.Running) { Leistung.Zustand(FaehrtGerade()); }
             Leistung.Protokolliere(_game.Running, _game.Running && _game.IsForeground);
@@ -655,6 +660,7 @@ internal sealed class OverlayController : IDisposable
         // steht immer 1. Ein Platz dahinter widerlegt einen Rivals-Schirm.
         var platz = (int)packet.Get("RacePosition");
         if (platz > _platzMax) { _platzMax = platz; }
+        _rennen.Packet(platz, (float)packet.Get("CurrentRaceTime"), DateTime.UtcNow);
         try { _recorder.OnTelemetry(packet); } catch (Exception) { }
     }
 
@@ -3548,6 +3554,133 @@ internal sealed class OverlayController : IDisposable
     /// (siehe Collect) -- gelesen wird hier nur fuer die Karten. Im selben Takt wie das
     /// Overlay: jeder dritte Schlag des Halbsekunden-Takts.
     /// </remarks>
+    // ------------------------------------------------------------------ //
+    // die Rennstatistik: Startaufstellung lesen, Rennen ablegen (seit 2026-09-30)
+    // ------------------------------------------------------------------ //
+
+    /// <summary>Start, Ziel und schlechtester Platz des laufenden Rennens, an jedem Paket.</summary>
+    private readonly RaceWatcher _rennen = new();
+
+    /// <summary>Die zuletzt gelesene Startaufstellung -- ein Verweis, damit Lesen und Schreiben nie zerreissen.</summary>
+    private sealed record RasterStand(GridRead Read, DateTime Utc);
+    private volatile RasterStand? _raster;
+    private volatile bool _rasterLesen;
+    private int _rasterTakt;
+    private DateTime _letztesRennenEnde = DateTime.MinValue;
+
+    /// <summary>
+    /// Einmal je Sekunde, nur im Menue: ist die Startaufstellung zu sehen? Ein Bild von
+    /// 384 x 216 Punkten, nur Pixelvergleiche, keine Texterkennung.
+    /// </summary>
+    /// <remarks>
+    /// Die Aufstellung steht rund zehn Sekunden vor jedem Rennen und nennt, was die
+    /// Telemetrie nicht kennt: wie viele im Feld sind. Waehrend der Fahrt wird nie
+    /// aufgenommen (FaehrtGerade) -- die Fahrt hat Vorrang.
+    /// </remarks>
+    private void PruefeStartaufstellung()
+    {
+        try
+        {
+            if (_rasterLesen || _hudPreview || _disposed) { return; }
+            if (++_rasterTakt % 2 != 0) { return; }
+            if (!SpielbildDa() || FaehrtGerade()) { return; }
+            var flaeche = GameArea.Find(_settings.ForzaProcess);
+            if (flaeche.IsEmpty) { return; }
+            _rasterLesen = true;
+            Task.Run(() =>
+            {
+                try
+                {
+                    using var bild = GameArea.Capture(flaeche, RaceGrid.Aufnahme);
+                    if (RaceGrid.Read(bild) is { } g)
+                    {
+                        var vorher = _raster;
+                        _raster = new RasterStand(g, DateTime.UtcNow);
+                        if (vorher is null || vorher.Read != g || DateTime.UtcNow - vorher.Utc > TimeSpan.FromSeconds(30))
+                        {
+                            LogLap($"start grid: {g.Drivers} drivers, own slot {g.OwnSlot?.ToString() ?? "?"}");
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Ein misslungener Blick kostet nichts; der naechste kommt in einer Sekunde.
+                }
+                finally
+                {
+                    _rasterLesen = false;
+                }
+            });
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    /// <summary>Ein Rennen ist zu Ende (die letzte Runde, auch ein Abbruch): eine Zeile in races.jsonl.</summary>
+    private void RennenAblegen(RecordedLap lap)
+    {
+        try
+        {
+            // Ein Rivalenlauf hat keine Gegner, eine Freifahrt kein Rennen.
+            if (lap.Mode is "rivals" or "freeroam" || lap.FreeRoam) { return; }
+            var kurs = lap.Unfinished && lap.UnfinishedOf is { } voll ? voll : LapArchive.CourseKey(lap);
+            var strecke = lap.Unfinished
+                ? CourseShape.KursName(LapArchive.Root, kurs)
+                : LapAutoSubmit.RouteName(lap, LapArchive.Root, kurs);
+            var r = new RaceRecord
+            {
+                Id = RaceRecord.IdFor(lap.CarOrdinal, lap.RecordedAt),
+                At = lap.RecordedAt.LocalDateTime,
+                Course = kurs,
+                Track = LapArchive.IstStreckenname(strecke) ? strecke!.Trim() : null,
+                Mode = string.IsNullOrWhiteSpace(lap.Mode) ? "unknown" : lap.Mode,
+                Car = lap.CarOrdinal,
+                Pi = lap.PerformanceIndex,
+                Klass = LapArchive.ClassOf(lap.PerformanceIndex),
+                Finish = _rennen.Last > 0 ? _rennen.Last : null,
+                Highest = _rennen.Highest,
+                Laps = Math.Max(1, _rennen.Laps),
+                Seconds = _rennen.RaceSeconds,
+                Finished = !lap.Unfinished,
+                Source = "live",
+            };
+            // DIE STARTAUFSTELLUNG dieses Rennens: gelesen hoechstens drei Minuten vor dem
+            // Start und nach dem Ende des vorigen. Zeigt sie weniger Fahrer, als Plaetze zu
+            // sehen waren, gehoert sie zu einem anderen Rennen.
+            if (_raster is { } g
+                && g.Utc > _letztesRennenEnde
+                && g.Utc >= _rennen.StartUtc.AddMinutes(-3) && g.Utc <= _rennen.StartUtc.AddSeconds(15)
+                && g.Read.Drivers >= _rennen.Highest)
+            {
+                r.Drivers = g.Read.Drivers;
+                if (g.Read.OwnSlot is { } platz)
+                {
+                    r.Start = platz;
+                    r.StartFrom = "grid";
+                }
+            }
+            if (r.Start is null && _rennen.Start is { } s)
+            {
+                r.Start = s;
+                r.StartFrom = "telemetry";
+            }
+            RaceLog.Append(r);
+            LogLap($"race: finished P{r.Finish?.ToString() ?? "?"} of {r.Drivers?.ToString() ?? "?"}, "
+                   + $"started P{r.Start?.ToString() ?? "?"} ({r.StartFrom ?? "-"}), {r.Track ?? kurs}, {r.Mode}"
+                   + (r.Finished ? string.Empty : ", not finished"));
+        }
+        catch (Exception)
+        {
+            // Die Statistik ist nie den Preis eines Fehlers am Rennende wert.
+        }
+        finally
+        {
+            _rennen.End();
+            _letztesRennenEnde = DateTime.UtcNow;
+        }
+    }
+
     private void AnmeldungOhneOverlay()
     {
         try

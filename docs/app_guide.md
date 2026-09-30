@@ -266,6 +266,25 @@ from then on. The same works on the Xbox.
 Your recorded laps: the best per car and course, and standings by points and by
 total time. Laps are stored on your disk in `%LOCALAPPDATA%\FHCompanion\laps`.
 
+## Race statistics
+
+How you place, per game mode (Horizon Play, solo and co-op races) and per route
+type (road, street, dirt, cross-country, touge): races, win rate, average finish
+and average start, and a chart of where you start and finish. Filter by mode,
+route type, course, car and class.
+
+Places are measured against the field: 0% is first, 100% is last, so a win
+against four and a win against eleven count the same. The telemetry gives your
+position but not how many drive, so the app reads the start grid shown before
+each race (one small screenshot per second, only while you are in a menu, never
+while you drive). Rivals time attacks have no opponents and are left out.
+
+Older races are rebuilt once from your saved laps. They know your start and
+finish, but not the field size. For them, **estimate field size for older races**
+counts the worst position seen in the race as the field. That is a lower bound,
+so percentages from it read worse than they were. The races live in
+`%LOCALAPPDATA%\FHCompanion\races.jsonl`.
+
 ## Free roam
 
 Forza runs no clock outside a race; the app does. Every route you have driven

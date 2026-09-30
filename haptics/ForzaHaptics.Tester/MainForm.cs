@@ -493,6 +493,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             Padding = new Padding(0)
         };
 
+        var raceStatsTab = new TabPage(Loc.T("Race statistics"))
+        {
+            BackColor = PanelColor,
+            ForeColor = Color.WhiteSmoke,
+            Padding = new Padding(0)
+        };
+
         _telemetryInspector = new TelemetryInspector(ForzaPacket.AllDescriptors);
         inspectorTab.Controls.Add(_telemetryInspector);
         _blueprintEditor = new BlueprintEditor(
@@ -596,6 +603,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         // zeigt der Reiter trotzdem alle Zeiten, nur ohne diese Filter.
         var myTimes = new Rivals.OwnTimesTab(() => _rivals.Controller?.Advisor);
         myTimesTab.Controls.Add(myTimes);
+        var raceStats = new Rivals.RaceStatsTab(() => _rivals.Controller?.Advisor);
+        raceStatsTab.Controls.Add(raceStats);
         // Beim Wechsel auf den Reiter nachsehen, ob das Spiel inzwischen laeuft --
         // sonst steht dort "Spiel laeuft nicht", waehrend es laengst laeuft.
         tabs.Selected += (_, e) =>
@@ -608,6 +617,7 @@ internal sealed class MainForm : Form, ITelemetryHost
             if (ReferenceEquals(e.TabPage, carNotesTab)) { carNotes.Refresh(); }
             if (ReferenceEquals(e.TabPage, carCollectionTab)) { carCollection.Zeigen(); }
             if (ReferenceEquals(e.TabPage, myTimesTab)) { myTimes.Reload(); }
+            if (ReferenceEquals(e.TabPage, raceStatsTab)) { raceStats.Reload(); }
         };
 
         if (controllerHier) { tabs.TabPages.Add(blueprintTab); }
@@ -621,6 +631,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         tabs.TabPages.Add(carNotesTab);
         tabs.TabPages.Add(carCollectionTab);
         tabs.TabPages.Add(myTimesTab);
+        tabs.TabPages.Add(raceStatsTab);
         if (Environment.GetCommandLineArgs()
                 .Contains("--overlay", StringComparer.OrdinalIgnoreCase))
         {
