@@ -37,10 +37,35 @@ internal sealed class ForzaPacket
     private const double LockDeadzone = 0.04;
     private readonly Dictionary<string, double> _values;
 
-    private ForzaPacket(Dictionary<string, double> values)
+    private ForzaPacket(Dictionary<string, double> values, byte[] raw)
     {
         _values = values;
+        Raw = raw;
     }
+
+    /// <summary>
+    /// Das Paket, wie es ankam -- jedes Byte (seit 2026-09-30).
+    /// </summary>
+    /// <remarks>
+    /// Fuer die volle Spur einer Runde (TelemetryTrack): sie legt das Paket unveraendert
+    /// ab und liest die Felder erst beim Schreiben, in voller Genauigkeit. So fehlt kein
+    /// Feld, das die Spaltenliste vergessen hat, und kein Byte, das noch keinen Namen hat.
+    /// </remarks>
+    public byte[] Raw { get; }
+
+    /// <summary>Die Felder, die im Paket selbst stehen (ohne die abgeleiteten), in Paketreihenfolge.</summary>
+
+    /// <summary>Ein Feld aus rohen Paketbytes lesen -- dieselbe Regel wie beim Empfang.</summary>
+    internal static double Decode(ReadOnlySpan<byte> packet, TelemetryDescriptor descriptor) =>
+        ReadValue(packet, descriptor);
+
+    /// <summary>Wie viele Bytes ein Feld belegt.</summary>
+    internal static int Size(TelemetryValueType type) => type switch
+    {
+        TelemetryValueType.Unsigned16 => 2,
+        TelemetryValueType.Unsigned8 or TelemetryValueType.Signed8 => 1,
+        _ => 4,
+    };
 
     public static IReadOnlyList<TelemetryDescriptor> Descriptors { get; } =
     [
@@ -160,6 +185,10 @@ internal sealed class ForzaPacket
     public static IReadOnlyList<TelemetryDescriptor> AllDescriptors { get; } =
         Descriptors.Concat(DerivedDescriptors).ToArray();
 
+    /// <summary>Die Felder, die im Paket selbst stehen (ohne die abgeleiteten), in Paketreihenfolge.</summary>
+    public static IReadOnlyList<TelemetryDescriptor> RawDescriptors { get; } =
+        Descriptors.Where(d => d.Offset >= 0).OrderBy(d => d.Offset).ToArray();
+
     public IReadOnlyDictionary<string, double> Values => _values;
 
     public bool IsRaceOn => Get("IsRaceOn") != 0;
@@ -201,7 +230,7 @@ internal sealed class ForzaPacket
         }
 
         AddDerived(values);
-        telemetry = new ForzaPacket(values);
+        telemetry = new ForzaPacket(values, packet.ToArray());
         return true;
     }
 

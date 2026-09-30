@@ -140,13 +140,27 @@ Merkwürdiges gleich wegwirft, verliert genau die Fälle, aus denen sich lernen 
 Die Messpunkte der Runde (`samples`: Zeit, Weg, Ort, Tempo, Eingaben, G, Gang) reichen
 für die Prüfungen oben — nicht aber, um eine verdächtige Zeit wirklich zu beurteilen.
 Darum schickt die App mit **jeder** eingereichten Runde ihre ganze `.tele.gz` mit:
-jedes Paket der Runde, alle 73 Felder (Ort und Lage, Tempo, Eingaben, Motor, je Rad
-Temperatur, Schlupf und Federweg).
+**alles, was das Spiel während der Runde geschickt hat** (Format 2, seit 2026-09-30) —
+jedes Paket (rund 110 je Sekunde), jedes der 88 Felder in voller Genauigkeit
+(Gleitkomma exakt, die Spieluhr `TimestampMS` als ganze Zahl), dazu jedes Byte ohne
+Feld als eigene Spalte (`Byte323`, bei längeren Paketen mehr). Pakete mit derselben
+Spielzeit wie das vorige bleiben drin; der Kopf zählt sie (`repeatedTimestamps`,
+davon Byte für Byte gleich: `identicalRepeats`).
+
+Format 1 (bis 2026-09-30) nahm 73 ausgewählte Felder, rundete auf drei
+Nachkommastellen und verwarf jedes Paket mit wiederholter Spielzeit — in einer echten
+Runde 4 689 von 11 247. Gelesen wird eine Spur darum immer über die Spaltennamen im
+Kopf, nie über die Stelle; beide Formate stehen im Bestand nebeneinander.
 
 ```json
 {"lap": {...}, "gamertag": "...",
- "telemetry": {"encoding": "gzip+base64", "format": "fhc-tele-1", "data": "<Base64>"}}
+ "telemetry": {"encoding": "gzip+base64", "format": "fhc-tele-2", "data": "<Base64>"}}
 ```
+
+Größe: rund 27 KB je Sekunde Runde gepackt — eine 3-Minuten-Runde ~5 MB, die
+18 Minuten, die die App höchstens aufhebt (120 000 Pakete), ~29 MB. Die App gibt einer
+großen Einreichung mehr Zeit (gerechnet mit 64 KB/s), sonst liefe eine lange Runde auf
+einer langsamen Leitung bei jedem Versuch in dieselbe Grenze.
 
 - **Ohne volle Telemetrie reicht die App keine Runde ein.** Der Schalter „volle
   Telemetrie" betrifft nur das Archiv auf der Platte; für die Einreichung wird die
@@ -154,8 +168,9 @@ Temperatur, Schlupf und Federweg).
   (`pending_laps/<schlüssel>.tele.gz`). Gepackt wird abseits des UI-Threads — eine
   lange Runde kostet Zehntelsekunden, und das wäre ein Ruckler an der Ziellinie.
 - **Der Server prüft sie wie die Runde selbst** (`pruefe_telemetrie`): gültiges
-  Base64, gepackt höchstens 12 MB, **entpackt nie über 200 MB** (eine kleine Datei,
-  die zu Gigabytes aufgeht, wird beim Entpacken gestoppt), 10 bis 60 000 Zeilen, jede
+  Base64, gepackt höchstens 32 MB (die ganze Anfrage 48 MB), **entpackt nie über
+  200 MB** (eine kleine Datei, die zu Gigabytes aufgeht, wird beim Entpacken gestoppt),
+  10 bis 150 000 Zeilen, jede
   Zeile gleich breit und nur Zahlen, die Uhr `t` läuft vorwärts und **endet bei der
   Rundenzeit**. Sonst: abgewiesen.
 - **Fehlt sie, wird die Runde angenommen, aber markiert** (`no full telemetry`) —

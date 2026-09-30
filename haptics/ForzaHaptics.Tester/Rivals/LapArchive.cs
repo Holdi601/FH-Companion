@@ -692,7 +692,10 @@ internal static class LapArchive
 
             // Die volle Spur DANEBEN, nicht hinein. Scheitert sie, ist die Runde
             // trotzdem abgelegt -- sie ist das Wichtige, die Spur ein Zusatz.
-            lap.FullTrack?.Save(pfad);
+            // IM HINTERGRUND (seit 2026-09-30): seit die Spur jedes Paket und jedes Feld
+            // traegt, kostet das Packen einer langen Runde eine halbe Sekunde -- und dieser
+            // Aufruf kommt aus dem Paketpfad, bei einem Rundkurs mitten im Rennen.
+            if (lap.FullTrack is { } spur) { Task.Run(() => spur.Save(pfad)); }
 
             return pfad;
         }

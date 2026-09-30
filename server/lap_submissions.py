@@ -79,9 +79,11 @@ LAPS_DIR = WORKSPACE / "data" / "submissions" / "laps"
 
 CLOCK_SKEW = 300
 SECRET_BYTES = 32
-# 16 MB: seit 2026-09-28 reist die volle Telemetrie mit (gepackt, als Base64). Eine
-# 214-s-Runde sind 1,8 MB gepackt, eine Viertelstunde waeren rund 8 MB.
-MAX_BODY = 16 * 1024 * 1024
+# 48 MB: seit 2026-09-28 reist die volle Telemetrie mit (gepackt, als Base64). Seit
+# 2026-09-30 ist sie VOLLSTAENDIG -- jedes Paket (~110 je Sekunde), jedes Feld, volle
+# Genauigkeit: rund 27 KB je Sekunde Runde gepackt, eine 3-Minuten-Runde also ~5 MB,
+# die 18 Minuten, die die App hoechstens aufhebt, ~29 MB -- als Base64 ein Drittel mehr.
+MAX_BODY = 48 * 1024 * 1024
 
 # Mit '#': neuere Xbox-Gamertags tragen eine Nummer ("Name#1234").
 GAMERTAG_RE = re.compile(r"^[\w][\w .'#-]{0,29}$", re.UNICODE)
@@ -152,9 +154,9 @@ MAX_PROBEN = 50_000
 # Die volle Telemetrie (die .tele.gz der App): gepackt hoechstens so gross, und beim
 # Entpacken nie mehr als das -- eine kleine Datei, die zu Gigabytes aufgeht, soll
 # den Server nicht in die Knie zwingen.
-MAX_TELE_GEPACKT = 12 * 1024 * 1024
+MAX_TELE_GEPACKT = 32 * 1024 * 1024
 MAX_TELE_ENTPACKT = 200 * 1024 * 1024
-MAX_TELE_ZEILEN = 60_000     # die App kappt bei 54 000 (TelemetryTrack.MaxRows)
+MAX_TELE_ZEILEN = 150_000    # die App kappt bei 120 000 (TelemetryTrack.MaxRows)
 MAX_TELE_SPALTEN = 256
 
 # Wie viele Runden je Auto, Strecke und Leistungsklasse aufgehoben werden -- und

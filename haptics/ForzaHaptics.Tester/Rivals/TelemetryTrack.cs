@@ -45,93 +45,67 @@ namespace ForzaHaptics.Tester.Rivals;
 /// pessimistisch: echte Telemetrie ist glatt, haelt Gaenge und Radwerte lange
 /// konstant und steht oft auf null -- genau das, wovon ein Packer lebt.
 ///
-/// ## Die Spaltenliste wird gegen das Paket geprueft
+/// ## JEDES Paket, JEDES Feld, JEDES Byte (Fassung 2, seit 2026-09-30)
 ///
-/// `ForzaPacket.Get` gibt fuer einen unbekannten Namen **0** zurueck, nicht einen
-/// Fehler. Ein Tippfehler in der Liste erzeugte also eine Spalte voller Nullen, die
-/// erst beim Auswerten auffiele -- und dann sieht sie aus wie ein Sensor, der nichts
-/// liefert. <see cref="UnknownColumns"/> nennt sie beim Namen, und der Selbsttest
-/// besteht darauf, dass die Liste leer ist.
-/// </remarks>
+/// Fassung 1 nahm 75 ausgewaehlte Felder, rundete auf drei Nachkommastellen, legte sie
+/// als 32-Bit-Zahl ab (die Spieluhr TimestampMS verlor damit nach 4,6 Stunden Spielzeit
+/// ihre Millisekunden) und verwarf jedes Paket, dessen Spielzeit der des vorigen glich.
+/// Das letzte war das Teuerste: das Spiel schickt rund 110 Pakete je Sekunde, seine Uhr
+/// springt aber nur etwa 64-mal -- in einer echten Runde fielen 4.689 von 11.247 Paketen
+/// weg, ohne dass je geprueft war, ob sie wirklich gleich waren. Der Nutzer (2026-09-30):
+/// aufgezeichnet und eingereicht wird ALLES, was vom Spiel kam.
+///
+/// Jetzt: das Paket wird unveraendert aufgehoben (<see cref="ForzaPacket.Raw"/>), und
+/// erst beim Schreiben werden alle Felder gelesen -- jedes aus der Paketbeschreibung, in
+/// voller Genauigkeit (Gleitkomma so kurz wie moeglich und doch exakt, Ganzzahlen genau),
+/// dazu jedes Byte, das noch keinen Namen hat, als eigene Spalte ("Byte323"). Wiederholte
+/// Spielzeiten bleiben drin; der Kopf der Datei zaehlt sie nur.
 internal sealed class TelemetryTrack
 {
     /// <summary>Die Dateiendung der vollen Spur, neben der Rundendatei.</summary>
     public const string Suffix = ".tele.gz";
 
     /// <summary>
-    /// Was je Paket festgehalten wird.
+    /// Die Spalten einer Spur aus Paketen der ueblichen Laenge (324 Bytes).
     /// </summary>
     /// <remarks>
-    /// Die Reihenfolge ist Teil des Formats: die Datei nennt sie einmal im Kopf,
-    /// die Datensaetze sind danach reine Zahlenreihen. Anhaengen ist unbedenklich,
-    /// UMSORTIEREN macht alte Dateien unlesbar -- wer umsortiert, muss `version`
-    /// hochzaehlen.
-    ///
-    /// Aufgenommen ist, was eine Nachsimulation braucht (Ort, Lage, Geschwindigkeit,
-    /// Drehraten) und was eine Auswertung will (Eingaben, Motor, je Rad). Bewusst
-    /// NICHT dabei: die abgeleiteten Groessen aus `Derived.*` -- die lassen sich aus
-    /// diesen hier jederzeit nachrechnen, und ein zweiter Weg zu derselben Zahl ist
-    /// eine Gelegenheit, zwei verschiedene zu bekommen.
+    /// "t" und "metres" vom Aufzeichner (Rundenzeit und Weg), dann jedes Feld des Pakets in
+    /// Paketreihenfolge, dann jedes Byte ohne Feld. Schickt das Spiel laengere Pakete,
+    /// kommen deren Bytes als weitere Spalten dazu (<see cref="SpaltenFuer"/>). Gelesen wird
+    /// eine Spur immer ueber die Namen im Kopf, nie ueber die Stelle.
     /// </remarks>
-    public static readonly string[] Columns =
-    [
-        // Zeit und Weg -- aus dem Aufzeichner, nicht aus dem Paket.
-        "t", "metres",
-        // DIE UHR DES SPIELS. Sie ist zugleich das Mittel gegen Doppelte: dasselbe
-        // Netzwerkpaket zweimal zugestellt traegt denselben Wert, und ein zweiter
-        // Datensatz mit derselben Spielzeit waere keine Messung, sondern eine
-        // Wiederholung -- beim Nachsimulieren ein Standbild mitten in der Fahrt.
-        "TimestampMS",
-        // Ort und Lage. Yaw/Pitch/Roll sind die Ausrichtung des Fahrzeugs; sie
-        // fehlten den 5-Meter-Messpunkten ganz, und ohne sie laesst sich eine
-        // Fahrt nicht nachstellen.
-        "PositionX", "PositionY", "PositionZ", "Yaw", "Pitch", "Roll",
-        // Bewegung.
-        "VelocityX", "VelocityY", "VelocityZ",
-        "AccelerationX", "AccelerationY", "AccelerationZ",
-        "AngularVelocityX", "AngularVelocityY", "AngularVelocityZ",
-        "Speed",
-        // Antrieb.
-        "CurrentEngineRpm", "Gear", "Power", "Torque", "Boost", "Fuel",
-        // Eingaben, roh wie im Paket (0..255 bzw. -127..127). Umgerechnet wird
-        // beim Auswerten; hier soll stehen, was ankam.
-        "Accel", "Brake", "Clutch", "HandBrake", "Steer",
-        // Rennzustand.
-        "IsRaceOn", "LapNumber", "RacePosition", "CurrentRaceTime",
-        "DistanceTraveled", "NormalizedDrivingLine", "NormalizedAIBrakeDifference",
-        // Je Rad: vorn links, vorn rechts, hinten links, hinten rechts.
-        "NormalizedSuspensionTravelFrontLeft", "NormalizedSuspensionTravelFrontRight",
-        "NormalizedSuspensionTravelRearLeft", "NormalizedSuspensionTravelRearRight",
-        "TireSlipRatioFrontLeft", "TireSlipRatioFrontRight",
-        "TireSlipRatioRearLeft", "TireSlipRatioRearRight",
-        "TireSlipAngleFrontLeft", "TireSlipAngleFrontRight",
-        "TireSlipAngleRearLeft", "TireSlipAngleRearRight",
-        "TireCombinedSlipFrontLeft", "TireCombinedSlipFrontRight",
-        "TireCombinedSlipRearLeft", "TireCombinedSlipRearRight",
-        "TireTempFrontLeft", "TireTempFrontRight",
-        "TireTempRearLeft", "TireTempRearRight",
-        "WheelRotationSpeedFrontLeft", "WheelRotationSpeedFrontRight",
-        "WheelRotationSpeedRearLeft", "WheelRotationSpeedRearRight",
-        "WheelInPuddleFrontLeft", "WheelInPuddleFrontRight",
-        "WheelInPuddleRearLeft", "WheelInPuddleRearRight",
-        "WheelOnRumbleStripFrontLeft", "WheelOnRumbleStripFrontRight",
-        "WheelOnRumbleStripRearLeft", "WheelOnRumbleStripRearRight",
-        "SurfaceRumbleFrontLeft", "SurfaceRumbleFrontRight",
-        "SurfaceRumbleRearLeft", "SurfaceRumbleRearRight",
-    ];
+    public static readonly string[] Columns = SpaltenFuer(324);
 
-    /// <summary>Das Format dieser Datei. Hochzaehlen, wenn Spalten umsortiert werden.</summary>
-    public const int Version = 1;
+    /// <summary>Die Spalten fuer Pakete dieser Laenge.</summary>
+    internal static string[] SpaltenFuer(int laenge) =>
+        new[] { "t", "metres" }
+            .Concat(ForzaPacket.RawDescriptors.Select(d => d.Key))
+            .Concat(FreieBytes(laenge).Select(i => "Byte" + i))
+            .ToArray();
+
+    /// <summary>Die Bytes eines Pakets dieser Laenge, die zu keinem Feld gehoeren.</summary>
+    internal static IEnumerable<int> FreieBytes(int laenge)
+    {
+        var belegt = new bool[Math.Max(0, laenge)];
+        foreach (var d in ForzaPacket.RawDescriptors)
+        {
+            for (var i = d.Offset; i < d.Offset + ForzaPacket.Size(d.Type) && i < belegt.Length; i++) { belegt[i] = true; }
+        }
+        return Enumerable.Range(0, belegt.Length).Where(i => !belegt[i]);
+    }
+
+    /// <summary>Das Format dieser Datei. Fassung 2: alle Felder, alle Pakete, volle Genauigkeit.</summary>
+    public const int Version = 2;
 
     /// <summary>
     /// Welche Spaltennamen das Paket NICHT kennt -- sollte leer sein.
     /// </summary>
     /// <remarks>
-    /// "t" und "metres" kommen vom Aufzeichner und stehen darum nicht im Paket;
-    /// sie sind hier ausgenommen.
+    /// "t" und "metres" kommen vom Aufzeichner, "ByteN" sind Bytes ohne Feld; sie sind
+    /// hier ausgenommen. Seit Fassung 2 folgt die Liste aus der Paketbeschreibung selbst.
     /// </remarks>
     public static IReadOnlyList<string> UnknownColumns { get; } = Columns
-        .Where(c => c is not ("t" or "metres"))
+        .Where(c => c is not ("t" or "metres") && !c.StartsWith("Byte", StringComparison.Ordinal))
         .Where(c => !ForzaPacket.AllDescriptors.Any(
             d => string.Equals(d.Key, c, StringComparison.OrdinalIgnoreCase)))
         .ToArray();
@@ -145,28 +119,36 @@ internal sealed class TelemetryTrack
     /// ohne je eine Linie zu kreuzen, schliesst nie eine Runde ab, und dann waechst
     /// die Liste unbegrenzt.
     ///
-    /// Gerechnet am 2026-09-15 mit 72 Spalten, also 312 Byte je Datensatz:
+    /// Seit Fassung 2 je Datensatz das rohe Paket (324 Bytes) und zwei Zahlen, rund
+    /// 370 Byte mit Verwaltung. Das Spiel schickt etwa 110 Pakete je Sekunde:
     ///
-    ///     10 min bei 60 Hz =  36.000 Reihen = 11,2 MB
-    ///     15 min bei 60 Hz =  54.000 Reihen = 16,8 MB
-    ///     60 min bei 60 Hz = 216.000 Reihen = 67,4 MB
+    ///     10 min bei 110 Hz =  66.000 Reihen = 24 MB
+    ///     18 min bei 110 Hz = 120.000 Reihen = 44 MB
     ///
-    /// 15 Minuten sind der Kompromiss: laenger als jede plausible Runde (die
+    /// 18 Minuten sind der Kompromiss: laenger als jede plausible Runde (die
     /// laengste im eigenen Bestand dauerte 187 s), und knapp genug, dass die App
     /// auch nach Stunden freier Fahrt nicht auffaellt.
     ///
     /// BEI UEBERLAUF WIRD VORN GELOESCHT, nicht hinten. Die letzten 15 Minuten
     /// enthalten die laufende Runde immer; die Zeit davor gehoert zu nichts.
     /// </remarks>
-    public const int MaxRows = 54_000;
+    public const int MaxRows = 120_000;
 
-    private readonly List<float[]> _reihen = new();
-    private double _letzteSpielzeit = double.NaN;
+    /// <summary>Ein Paket der Runde: Rundenzeit und Weg beim Empfang, dazu das Paket selbst.</summary>
+    private readonly record struct Reihe(float T, float Metres, byte[] Raw);
+
+    private readonly List<Reihe> _reihen = new();
+    private uint? _letzteSpielzeit;
+    private byte[]? _letztesPaket;
+    private byte[]? _gepackt;
 
     public int Count => _reihen.Count;
 
-    /// <summary>Wie viele Pakete als Wiederholung verworfen wurden.</summary>
-    public int Duplicates { get; private set; }
+    /// <summary>Wie viele Pakete dieselbe Spielzeit trugen wie das vorige -- aufgenommen, nur gezaehlt.</summary>
+    public int RepeatedTimestamps { get; private set; }
+
+    /// <summary>Wie viele davon Byte fuer Byte dem vorigen glichen.</summary>
+    public int IdenticalRepeats { get; private set; }
 
     /// <summary>
     /// Ob am Anfang Datensaetze weggefallen sind, weil die Grenze erreicht war.
@@ -191,7 +173,8 @@ internal sealed class TelemetryTrack
     {
         var abgegeben = new TelemetryTrack();
         abgegeben._reihen.AddRange(_reihen);
-        abgegeben.Duplicates = Duplicates;
+        abgegeben.RepeatedTimestamps = RepeatedTimestamps;
+        abgegeben.IdenticalRepeats = IdenticalRepeats;
         abgegeben.Truncated = Truncated;
         Clear();
         return abgegeben;
@@ -200,51 +183,46 @@ internal sealed class TelemetryTrack
     public void Clear()
     {
         _reihen.Clear();
-        _letzteSpielzeit = double.NaN;
-        Duplicates = 0;
+        _letzteSpielzeit = null;
+        _letztesPaket = null;
+        _gepackt = null;
+        RepeatedTimestamps = 0;
+        IdenticalRepeats = 0;
         Truncated = false;
     }
 
     /// <summary>
-    /// Einen Datensatz aufnehmen -- einen je Paket, und JEDES Paket.
+    /// Ein Paket aufnehmen -- JEDES, unveraendert.
     /// </summary>
     /// <remarks>
-    /// Keine Drosselung: je dichter die Spur, desto besser laesst sich die Fahrt
-    /// nachstellen. Was NICHT hineingehoert, ist dasselbe Paket zweimal --
-    /// zugestellt wird es doppelt, wenn das Spiel es wiederholt oder der Socket es
-    /// mehrfach liefert.
-    ///
-    /// Erkannt wird das an <c>TimestampMS</c>, der Uhr des Spiels selbst: zwei
-    /// Pakete mit derselben Spielzeit sind dasselbe Paket. Nicht an der eigenen
-    /// Uhr und nicht am Inhalt -- ein stehendes Auto schickt vollkommen gleiche
-    /// Pakete, und die sind trotzdem verschiedene Messungen.
+    /// Im Paketpfad, darum nur ein Verweis auf die schon kopierten Bytes und zwei Zahlen.
+    /// Gelesen wird erst beim Schreiben. Eine wiederholte Spielzeit wird gezaehlt, nicht
+    /// verworfen (siehe oben: Fassung 1 verwarf so 42 % der Pakete).
     /// </remarks>
-    /// <returns><c>false</c>, wenn das Paket als Wiederholung verworfen wurde.</returns>
+    /// <returns>Immer <c>true</c> -- aufgenommen wird jedes Paket.</returns>
     public bool Add(ForzaPacket packet, float seconds, float metres)
     {
-        var spielzeit = packet.Get("TimestampMS");
-        if (spielzeit > 0 && spielzeit == _letzteSpielzeit)
+        var roh = packet.Raw;
+        if (roh.Length >= 8)
         {
-            Duplicates++;
-            return false;
+            var spielzeit = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(roh.AsSpan(4, 4));
+            if (_letzteSpielzeit == spielzeit)
+            {
+                RepeatedTimestamps++;
+                if (_letztesPaket is not null && roh.AsSpan().SequenceEqual(_letztesPaket)) { IdenticalRepeats++; }
+            }
+            _letzteSpielzeit = spielzeit;
         }
-        _letzteSpielzeit = spielzeit;
-
-        var reihe = new float[Columns.Length];
-        reihe[0] = seconds;
-        reihe[1] = metres;
-        for (var i = 2; i < Columns.Length; i++)
-        {
-            reihe[i] = (float)packet.Get(Columns[i]);
-        }
+        _letztesPaket = roh;
         if (_reihen.Count >= MaxRows)
         {
             // In einem Block statt bei jedem Datensatz einen: `RemoveRange(0, 1)`
-            // verschiebt 54.000 Verweise, und das sechzigmal je Sekunde.
+            // verschiebt 120.000 Verweise, und das hundertmal je Sekunde.
             _reihen.RemoveRange(0, MaxRows / 10);
             Truncated = true;
         }
-        _reihen.Add(reihe);
+        _reihen.Add(new Reihe(seconds, metres, roh));
+        _gepackt = null;
         return true;
     }
 
@@ -262,7 +240,11 @@ internal sealed class TelemetryTrack
         var ziel = lapPath + Suffix;
         try
         {
-            using (var datei = File.Create(ziel)) { Packen(datei); }
+            // Erst ganz schreiben, dann umbenennen: endet die App mittendrin, liegt keine
+            // halbe Datei da, die wie eine kurze Runde aussaehe.
+            var tmp = ziel + ".tmp";
+            File.WriteAllBytes(tmp, Gepackt()!);
+            File.Move(tmp, ziel, overwrite: true);
             return ziel;
         }
         catch (Exception)
@@ -279,70 +261,103 @@ internal sealed class TelemetryTrack
     /// Fuer die Einreichung (seit 2026-09-28): jede Runde, die an die Seite geht,
     /// traegt ihre volle Telemetrie mit, auch wenn sie nicht archiviert wird.
     /// </remarks>
+    /// <remarks>
+    /// Einmal gepackt und gemerkt: Archiv und Einreichung bekommen dieselben Bytes, und
+    /// das Packen (alle Felder aller Pakete) laeuft nur einmal je Runde.
+    /// </remarks>
     public byte[]? Gepackt()
     {
-        if (_reihen.Count == 0) { return null; }
-        using var speicher = new MemoryStream();
-        Packen(speicher);
-        return speicher.ToArray();
+        // Archiv und Einreichung packen im Hintergrund, womoeglich gleichzeitig -- gepackt
+        // wird trotzdem nur einmal.
+        lock (_packSchloss)
+        {
+            if (_reihen.Count == 0) { return null; }
+            if (_gepackt is { } fertig) { return fertig; }
+            using var speicher = new MemoryStream();
+            Packen(speicher);
+            return _gepackt = speicher.ToArray();
+        }
     }
+
+    private readonly object _packSchloss = new();
 
     private void Packen(Stream ausgabe)
     {
         using var packer = new GZipStream(ausgabe, CompressionLevel.Optimal, leaveOpen: true);
         using var schreiber = new StreamWriter(packer, new UTF8Encoding(false));
 
-        // Von Hand gebaut statt ueber einen Serialisierer: das sind Zehntausende
-        // Zeilen, und die Zahlen sollen mit fester Stellenzahl und PUNKT als
-        // Dezimaltrennzeichen herauskommen, unabhaengig von der
-        // Spracheinstellung. "1,234" in einer Zahlenreihe waere zwei Werte.
+        // Die laengste Paketlaenge dieser Runde bestimmt die Spalten: jedes Byte ohne Feld
+        // bekommt eine. Kuerzere Pakete gibt es nicht (TryParse verlangt 324 Bytes).
+        var laenge = _reihen.Max(r => r.Raw.Length);
+        var spalten = SpaltenFuer(laenge);
+        var felder = ForzaPacket.RawDescriptors;
+        var freie = FreieBytes(laenge).ToArray();
+
+        // Von Hand gebaut statt ueber einen Serialisierer: das sind Zehntausende Zeilen,
+        // und die Zahlen sollen mit PUNKT als Dezimaltrennzeichen herauskommen,
+        // unabhaengig von der Spracheinstellung. "1,234" in einer Zahlenreihe waere zwei Werte.
         schreiber.Write("{\"version\":");
         schreiber.Write(Version);
         schreiber.Write(",\"rows\":");
         schreiber.Write(_reihen.Count);
-        schreiber.Write(",\"duplicatesDropped\":");
-        schreiber.Write(Duplicates);
+        schreiber.Write(",\"packetBytes\":");
+        schreiber.Write(laenge);
+        schreiber.Write(",\"repeatedTimestamps\":");
+        schreiber.Write(RepeatedTimestamps);
+        schreiber.Write(",\"identicalRepeats\":");
+        schreiber.Write(IdenticalRepeats);
         schreiber.Write(",\"truncated\":");
         schreiber.Write(Truncated ? "true" : "false");
         schreiber.Write(",\"columns\":[");
-        for (var i = 0; i < Columns.Length; i++)
+        for (var i = 0; i < spalten.Length; i++)
         {
             if (i > 0) { schreiber.Write(','); }
             schreiber.Write('"');
-            schreiber.Write(Columns[i]);
+            schreiber.Write(spalten[i]);
             schreiber.Write('"');
         }
         schreiber.Write("],\"data\":[");
         for (var r = 0; r < _reihen.Count; r++)
         {
             if (r > 0) { schreiber.Write(','); }
-            schreiber.Write('[');
             var reihe = _reihen[r];
-            for (var c = 0; c < reihe.Length; c++)
+            schreiber.Write('[');
+            schreiber.Write(Gleitkomma(reihe.T));
+            schreiber.Write(',');
+            schreiber.Write(Gleitkomma(reihe.Metres));
+            foreach (var d in felder)
             {
-                if (c > 0) { schreiber.Write(','); }
-                schreiber.Write(Kurz(reihe[c]));
+                schreiber.Write(',');
+                schreiber.Write(Feld(reihe.Raw, d));
+            }
+            foreach (var i in freie)
+            {
+                schreiber.Write(',');
+                schreiber.Write(i < reihe.Raw.Length ? reihe.Raw[i].ToString(CultureInfo.InvariantCulture) : "0");
             }
             schreiber.Write(']');
         }
         schreiber.Write("]}");
     }
 
+    /// <summary>Ein Feld, wie es im Paket steht: Ganzzahlen genau, Gleitkomma exakt.</summary>
+    private static string Feld(byte[] roh, TelemetryDescriptor d)
+    {
+        var wert = ForzaPacket.Decode(roh, d);
+        return d.Type is TelemetryValueType.Float32 or TelemetryValueType.FlagOrFloat32
+            ? Gleitkomma((float)wert)
+            : ((long)wert).ToString(CultureInfo.InvariantCulture);
+    }
+
     /// <summary>
-    /// Eine Zahl so kurz wie moeglich, ohne dass etwas verlorengeht, das zaehlt.
+    /// Eine 32-Bit-Gleitkommazahl so kurz wie moeglich und doch EXAKT: wieder eingelesen
+    /// ergibt sie dieselben Bits. "0" statt "0.0" -- Handbremse, Kupplung und Pfuetzen
+    /// stehen die meiste Zeit auf null.
     /// </summary>
-    /// <remarks>
-    /// Drei Nachkommastellen: ein Millimeter beim Ort, ein Tausendstel Grad bei der
-    /// Lage. "0" statt "0.000" spart in einer Telemetriespur viel -- Handbremse,
-    /// Kupplung und Pfuetzen stehen die meiste Zeit auf null, und das sind bei 56
-    /// Spalten und elftausend Zeilen keine Kleinigkeit.
-    /// </remarks>
-    private static string Kurz(float wert)
+    internal static string Gleitkomma(float wert)
     {
         if (wert == 0f) { return "0"; }
-        var gerundet = MathF.Round(wert, 3);
-        return gerundet == MathF.Round(gerundet)
-            ? ((int)gerundet).ToString(CultureInfo.InvariantCulture)
-            : gerundet.ToString("0.###", CultureInfo.InvariantCulture);
+        if (!float.IsFinite(wert)) { return "0"; }
+        return wert.ToString("R", CultureInfo.InvariantCulture);
     }
 }

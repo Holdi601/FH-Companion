@@ -219,7 +219,10 @@ internal static class LapSubmit
         var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
 
-        using var client = Client(timeout);
+        // DIE ZEIT WAECHST MIT DER RUNDE: seit die volle Telemetrie vollstaendig ist
+        // (2026-09-30), traegt eine lange Runde zweistellige Megabytes. Gerechnet mit einer
+        // langsamen Leitung (64 KB/s); sonst liefe sie bei jedem Versuch in dieselbe Grenze.
+        using var client = Client(TimeSpan.FromSeconds(Math.Max(timeout.TotalSeconds, 10 + rumpf.Length / 65536.0)));
         using var inhalt = new ByteArrayContent(rumpf);
         inhalt.Headers.ContentType = new("application/json") { CharSet = "utf-8" };
         using var anfrage = new HttpRequestMessage(HttpMethod.Post, An(wer.Server!, pfad))

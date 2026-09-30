@@ -1427,49 +1427,54 @@ internal static class SelfTest
                 "Diese Spalten kennt das Paket nicht (sie waeren still 0): "
                 + string.Join(", ", Rivals.TelemetryTrack.UnknownColumns));
         }
+        // JEDES Feld des Pakets ist eine Spalte, und das eine Byte ohne Feld auch.
+        var fehlend = ForzaPacket.RawDescriptors.Select(d => d.Key)
+            .Where(k => !Rivals.TelemetryTrack.Columns.Contains(k)).ToList();
+        if (fehlend.Count > 0 || !Rivals.TelemetryTrack.Columns.Contains("Byte323"))
+        {
+            throw new InvalidOperationException("Die volle Spur laesst Felder aus: " + string.Join(", ", fehlend));
+        }
 
         var spur = new Rivals.TelemetryTrack();
         var paket = new byte[324];
         BitConverter.GetBytes(1).CopyTo(paket, 0);
+        // Werte, die eine Rundung oder eine 32-Bit-Spieluhr verderben wuerde.
+        BitConverter.GetBytes(4_000_000_123u).CopyTo(paket, 4);
+        BitConverter.GetBytes(12.345679f).CopyTo(paket, 256);          // Speed
+        BitConverter.GetBytes(0.00012345f).CopyTo(paket, 196);         // SuspensionTravelMetersFrontLeft
+        BitConverter.GetBytes(-1234.5677f).CopyTo(paket, 244);         // PositionX
+        BitConverter.GetBytes(3456).CopyTo(paket, 212);                // CarOrdinal
+        paket[323] = 7;                                                // das Byte ohne Feld
 
-        // Zwei Pakete mit DERSELBEN Spielzeit sind dasselbe Paket.
-        BitConverter.GetBytes(1000u).CopyTo(paket, 4);
+        // ZWEIMAL DIESELBE SPIELZEIT: beide werden aufgenommen, die Wiederholung gezaehlt.
         if (!ForzaPacket.TryParse(paket, out var a))
         {
             throw new InvalidOperationException("Das Testpaket parste nicht.");
         }
-        if (!spur.Add(a, 1f, 10f))
-        {
-            throw new InvalidOperationException("Der erste Datensatz wurde verworfen.");
-        }
-        if (spur.Add(a, 1.02f, 10.5f))
-        {
-            throw new InvalidOperationException("Dasselbe Paket wurde zweimal aufgenommen.");
-        }
-        if (spur.Duplicates != 1)
+        spur.Add(a, 1f, 10f);
+        if (!ForzaPacket.TryParse(paket, out var a2)) { throw new InvalidOperationException("Das Testpaket parste nicht."); }
+        spur.Add(a2, 1f, 10f);
+        paket[315] = 200;                                              // Gas: anderer Inhalt, gleiche Spielzeit
+        if (!ForzaPacket.TryParse(paket, out var a3)) { throw new InvalidOperationException("Das Testpaket parste nicht."); }
+        spur.Add(a3, 1.009f, 10.2f);
+        if (spur.Count != 3 || spur.RepeatedTimestamps != 2 || spur.IdenticalRepeats != 1)
         {
             throw new InvalidOperationException(
-                $"Doppelte gezaehlt: {spur.Duplicates}, erwartet 1.");
+                $"Wiederholte Spielzeiten: {spur.Count} aufgenommen, {spur.RepeatedTimestamps} gezaehlt, "
+                + $"{spur.IdenticalRepeats} gleich -- erwartet 3, 2, 1.");
         }
-
-        // Eine neue Spielzeit ist eine neue Messung -- auch bei gleichem Inhalt.
-        // Ein stehendes Auto schickt vollkommen gleiche Pakete, und die sind
-        // trotzdem verschiedene Messungen.
-        BitConverter.GetBytes(1016u).CopyTo(paket, 4);
+        BitConverter.GetBytes(4_000_000_139u).CopyTo(paket, 4);
         if (!ForzaPacket.TryParse(paket, out var b))
         {
             throw new InvalidOperationException("Das zweite Testpaket parste nicht.");
         }
-        if (!spur.Add(b, 1.02f, 10.5f))
+        spur.Add(b, 1.02f, 10.5f);
+        if (spur.Count != 4)
         {
-            throw new InvalidOperationException("Ein neues Paket wurde faelschlich verworfen.");
-        }
-        if (spur.Count != 2)
-        {
-            throw new InvalidOperationException($"{spur.Count} Datensaetze, erwartet 2.");
+            throw new InvalidOperationException($"{spur.Count} Datensaetze, erwartet 4.");
         }
 
-        // Schreiben, wieder einlesen, nachsehen ob dasselbe herauskommt.
+        // Schreiben, wieder einlesen, nachsehen ob GENAU dasselbe herauskommt.
         var datei = Path.Combine(Path.GetTempPath(),
                                  "forza-tele-" + Guid.NewGuid().ToString("N")[..8] + ".json");
         var geschrieben = spur.Save(datei);
@@ -1488,18 +1493,43 @@ internal static class SelfTest
                 text = leser.ReadToEnd();
             }
             using var doc = System.Text.Json.JsonDocument.Parse(text);
-            if (doc.RootElement.GetProperty("rows").GetInt32() != 2)
+            var wurzel = doc.RootElement;
+            if (wurzel.GetProperty("version").GetInt32() != 2 || wurzel.GetProperty("rows").GetInt32() != 4
+                || wurzel.GetProperty("repeatedTimestamps").GetInt32() != 2)
             {
-                throw new InvalidOperationException("Die Datei nennt nicht zwei Datensaetze.");
+                throw new InvalidOperationException("Der Kopf nennt nicht Fassung 2, vier Datensaetze und zwei Wiederholungen.");
             }
-            if (doc.RootElement.GetProperty("columns").GetArrayLength()
-                != Rivals.TelemetryTrack.Columns.Length)
+            var spalten = wurzel.GetProperty("columns").EnumerateArray().Select(e => e.GetString()!).ToList();
+            if (!spalten.SequenceEqual(Rivals.TelemetryTrack.Columns))
             {
                 throw new InvalidOperationException("Der Spaltenkopf passt nicht zur Liste.");
             }
-            if (doc.RootElement.GetProperty("data").GetArrayLength() != 2)
+            var zeilen = wurzel.GetProperty("data").EnumerateArray().ToList();
+            if (zeilen.Count != 4)
             {
-                throw new InvalidOperationException("Es stehen nicht zwei Zahlenreihen darin.");
+                throw new InvalidOperationException("Es stehen nicht vier Zahlenreihen darin.");
+            }
+            var erste = zeilen[0].EnumerateArray().ToList();
+            System.Text.Json.JsonElement W(string name) => erste[spalten.IndexOf(name)];
+            if (W("TimestampMS").GetInt64() != 4_000_000_123L)
+            {
+                throw new InvalidOperationException($"Die Spieluhr kam als {W("TimestampMS")} zurueck, nicht 4000000123.");
+            }
+            foreach (var (name, soll) in new[] { ("Speed", 12.345679f), ("SuspensionTravelMetersFrontLeft", 0.00012345f),
+                                                 ("PositionX", -1234.5677f) })
+            {
+                if (W(name).GetSingle() != soll)
+                {
+                    throw new InvalidOperationException($"{name} kam als {W(name)} zurueck, nicht exakt {soll:R}.");
+                }
+            }
+            if (W("CarOrdinal").GetInt32() != 3456 || W("Byte323").GetInt32() != 7)
+            {
+                throw new InvalidOperationException("Auto oder das Byte ohne Feld kamen nicht zurueck.");
+            }
+            if (zeilen[2].EnumerateArray().ElementAt(spalten.IndexOf("Accel")).GetInt32() != 200)
+            {
+                throw new InvalidOperationException("Das Paket mit gleicher Spielzeit, aber anderem Inhalt fehlt.");
             }
             // Punkt als Dezimaltrennzeichen, unabhaengig von der Spracheinstellung:
             // "1,02" waere in einer Zahlenreihe zwei Werte statt einem.
@@ -1515,9 +1545,47 @@ internal static class SelfTest
             catch (Exception) { }
         }
 
+        // Ein LAENGERES Paket: seine zusaetzlichen Bytes werden eigene Spalten.
+        var lang = new byte[331];
+        paket.CopyTo(lang, 0);
+        lang[330] = 99;
+        var spur2 = new Rivals.TelemetryTrack();
+        if (!ForzaPacket.TryParse(lang, out var l)) { throw new InvalidOperationException("Das lange Paket parste nicht."); }
+        spur2.Add(l, 0f, 0f);
+        using (var gz = new System.IO.Compression.GZipStream(new MemoryStream(spur2.Gepackt()!),
+                   System.IO.Compression.CompressionMode.Decompress))
+        using (var doc2 = System.Text.Json.JsonDocument.Parse(gz))
+        {
+            var sp = doc2.RootElement.GetProperty("columns").EnumerateArray().Select(e => e.GetString()).ToList();
+            var z = doc2.RootElement.GetProperty("data")[0].EnumerateArray().ToList();
+            if (!sp.Contains("Byte330") || z[sp.IndexOf("Byte330")].GetInt32() != 99)
+            {
+                throw new InvalidOperationException("Die Bytes eines laengeren Pakets fehlen in der Spur.");
+            }
+        }
+
+        // WIE TEUER IST DAS PACKEN? Es laeuft einmal am Ende jeder Runde. Eine 3-Minuten-Runde
+        // bei 110 Paketen je Sekunde, mit Werten, die sich wie echte aendern.
+        var gross = new Rivals.TelemetryTrack();
+        var zufall = new Random(7);
+        var p3 = new byte[324];
+        for (var i = 0; i < 20_000; i++)
+        {
+            for (var o = 8; o < 312; o += 4) { BitConverter.GetBytes((float)(zufall.NextDouble() * 200 - 100)).CopyTo(p3, o); }
+            BitConverter.GetBytes(1).CopyTo(p3, 0);
+            BitConverter.GetBytes((uint)(1_000_000 + (i * 9))).CopyTo(p3, 4);
+            BitConverter.GetBytes(0).CopyTo(p3, 132); BitConverter.GetBytes(0).CopyTo(p3, 136);
+            BitConverter.GetBytes(0).CopyTo(p3, 140); BitConverter.GetBytes(0).CopyTo(p3, 144);
+            if (ForzaPacket.TryParse(p3, out var z3)) { gross.Add(z3, i / 110f, i * 0.5f); }
+        }
+        var uhr = System.Diagnostics.Stopwatch.StartNew();
+        var gepackt3 = gross.Gepackt();
+        Console.WriteLine($"  Volle Spur: {gross.Count} Pakete x {Rivals.TelemetryTrack.Columns.Length} Spalten "
+                          + $"in {uhr.ElapsedMilliseconds} ms gepackt, {gepackt3?.Length / 1024} KB (Zufallswerte: Obergrenze)");
+
         // Abgeben nimmt alles mit und laesst die Quelle leer zurueck.
         var abgegeben = spur.Detach();
-        if (abgegeben.Count != 2 || spur.Count != 0)
+        if (abgegeben.Count != 4 || spur.Count != 0 || abgegeben.RepeatedTimestamps != 2)
         {
             throw new InvalidOperationException(
                 $"Abgeben stimmt nicht: abgegeben {abgegeben.Count}, zurueck {spur.Count}.");
