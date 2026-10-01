@@ -42,6 +42,24 @@ internal sealed class RaceRecord
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<FieldEntry>? Field { get; set; }
 
+    /// <summary>
+    /// DIE ERWARTETE PLATZIERUNG (seit 2026-10-01): wo man nach der Bestenliste dieser Strecke
+    /// haette ankommen sollen -- unter den Autos des Felds, die auf ihr stehen.
+    /// </summary>
+    [JsonPropertyName("expected")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Expected { get; set; }
+
+    /// <summary>Der tatsaechliche Platz unter denselben Autos.</summary>
+    [JsonPropertyName("expectedActual")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ExpectedActual { get; set; }
+
+    /// <summary>Unter wie vielen Autos verglichen wurde (die auf der Bestenliste stehen, man selbst eingeschlossen).</summary>
+    [JsonPropertyName("expectedOf")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ExpectedOf { get; set; }
+
     /// <summary>Wie viele Autos diese Bestenliste reiht; null: keine Bestenliste bekannt.</summary>
     [JsonPropertyName("metaCars")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -751,7 +769,8 @@ internal sealed record RaceSummary(
     int CoRaces, int CoFirst, double? CoBeaten,
     int PodiumRaces, IReadOnlyList<double> StartShares, IReadOnlyList<double> FinishShares,
     int MetaRaces, int MetaHigh, int MetaLow,
-    int MetaRanked, double? MetaAvgRank, double? MetaAvgTop);
+    int MetaRanked, double? MetaAvgRank, double? MetaAvgTop,
+    int ExpRaces, int ExpBetter, int ExpSame, double? ExpAvgGain);
 
 internal static class RaceStats
 {
@@ -822,6 +841,30 @@ internal static class RaceStats
     /// Platz und Laenge der Bestenliste fuer ein Rennen: beim Rennen festgehalten, sonst aus der
     /// heutigen. (null, null) ohne Liste; (null, n) wenn das Auto nicht darauf steht.
     /// </summary>
+    /// <summary>
+    /// Erwarteter und tatsaechlicher Platz unter den Autos des Felds, die auf der Bestenliste
+    /// dieser Strecke in dieser Klasse stehen. KI zaehlt mit (ihr Auto steht im Rennen), wer
+    /// verlassen hat nicht. Null ohne gelesenes Feld, ohne Liste oder wenn das eigene Auto
+    /// nicht darauf steht.
+    /// </summary>
+    public static (int Erwartet, int Tatsaechlich, int Von)? Erwartung(RivalsAdvisor berater, RaceRecord r,
+                                                                        Func<int, int?> autoIndex)
+    {
+        if (r.Field is not { Count: > 1 } feld || string.IsNullOrWhiteSpace(r.Track)) { return null; }
+        var kategorie = berater.CategoryOf(new[] { r.Track });
+        if (!berater.HasBoard(r.Track, r.Klass, kategorie)) { return null; }
+        var platz = new Dictionary<int, int>();
+        foreach (var zeile in berater.Advise(new[] { r.Track }, r.Klass, kategorie).ByTime) { platz.TryAdd(zeile.Car, zeile.Place); }
+        int? P(FieldEntry f) => f.Car is { } id && autoIndex(id) is { } i && platz.TryGetValue(i, out var p) ? p : null;
+        var eigene = feld.FirstOrDefault(f => f.Self);
+        if (eigene is null || P(eigene) is not { } eigenerPlatz) { return null; }
+        var bekannt = feld.Where(f => f.Kind != "left" && P(f) is not null).ToList();
+        if (bekannt.Count < 2) { return null; }
+        var erwartet = 1 + bekannt.Count(f => !f.Self && P(f) < eigenerPlatz);
+        var tatsaechlich = 1 + bekannt.Count(f => !f.Self && f.Place < eigene.Place);
+        return (erwartet, tatsaechlich, bekannt.Count);
+    }
+
     public static (int? Platz, int? Autos) MetaVon(RaceRecord r, RivalsAdvisor? berater)
     {
         if (r.MetaCars is not null) { return (r.MetaRank, r.MetaCars); }
@@ -883,6 +926,9 @@ internal static class RaceStats
         // DER DURCHSCHNITTLICHE PLATZ des gewaehlten Autos auf der Liste -- nur, wo es darauf steht.
         // Dazu der Anteil der Liste ("Top 9 %"), weil die Listen verschieden lang sind.
         var gereiht = metaWerte.Where(m => m.Platz is not null).ToList();
+        // GEGEN DIE ERWARTUNG: nur Rennen, deren Feld gelesen und verglichen wurde.
+        var erwartung = races.Where(r => r.Expected is not null && r.ExpectedActual is not null)
+                             .Select(r => (Expected: r.Expected!.Value, Actual: r.ExpectedActual!.Value)).ToList();
         var mitGegnern = races.Where(r => r.Finished && r.Finish is not null && HasOpponents(r)).ToList();
         var siege = mitGegnern.Count(r => r.Finish == 1);
         var podiumRennen = mitGegnern.Where(PodiumZaehlt).ToList();
@@ -930,6 +976,8 @@ internal static class RaceStats
             metaArten.Count, metaArten.Count(a => a == MetaArt.Hoch), metaArten.Count(a => a == MetaArt.Niedrig),
             gereiht.Count,
             gereiht.Count > 0 ? gereiht.Average(m => (double)m.Platz!.Value) : null,
-            gereiht.Count > 0 ? gereiht.Average(m => m.Platz!.Value / (double)m.Autos!.Value) : null);
+            gereiht.Count > 0 ? gereiht.Average(m => m.Platz!.Value / (double)m.Autos!.Value) : null,
+            erwartung.Count, erwartung.Count(x => x.Actual < x.Expected), erwartung.Count(x => x.Actual == x.Expected),
+            erwartung.Count > 0 ? erwartung.Average(x => (double)(x.Expected - x.Actual)) : null);
     }
 }

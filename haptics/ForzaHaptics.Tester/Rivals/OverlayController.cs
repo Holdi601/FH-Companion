@@ -3650,6 +3650,14 @@ internal sealed class OverlayController : IDisposable
                                     eigene.CarName = AutoName(offen.Race.Car, uebersetzt: false);
                                 }
                                 offen.Race.Field = feld;
+                                // DIE ERWARTUNG: das eigene Auto gegen die anderen im Feld, nach der Bestenliste.
+                                if (RaceStats.Erwartung(_advisor, offen.Race,
+                                        o => _ordinals.Lookup(o)?.CarIndex ?? _advisor.CarIndexForId(o)) is { } erw)
+                                {
+                                    offen.Race.Expected = erw.Erwartet;
+                                    offen.Race.ExpectedActual = erw.Tatsaechlich;
+                                    offen.Race.ExpectedOf = erw.Von;
+                                }
                             }
                             catch (Exception) { }
                         }

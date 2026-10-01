@@ -351,6 +351,16 @@ internal sealed class RaceStatsTab : UserControl
                     ? string.Format(Loc.T("first of the humans in {0} of {1} race(s)"), s.CoFirst, s.CoRaces)
                     : Loc.T("co-op races only")));
         }
+        // GEGEN DIE ERWARTUNG: wo man nach der Bestenliste haette ankommen sollen, und wo man ankam.
+        if (s.ExpRaces > 0)
+        {
+            var gewinn = s.ExpAvgGain!.Value;
+            _kacheln.Controls.Add(Kachel(Loc.T("Vs expectation"),
+                (gewinn >= 0 ? "+" : "") + gewinn.ToString("0.0"),
+                string.Format(Loc.T("{0} better, {1} as expected, {2} worse than the leaderboard says, in {3} race(s)"),
+                              Prozent(s.ExpBetter / (double)s.ExpRaces), Prozent(s.ExpSame / (double)s.ExpRaces),
+                              Prozent((s.ExpRaces - s.ExpBetter - s.ExpSame) / (double)s.ExpRaces), s.ExpRaces)));
+        }
         // META-WAHL (Horizon Play): wie oft ein Auto unter den ersten 25 der Bestenliste gewaehlt wurde.
         if (_auswahl.Any(r => r.Mode == "horizon-play"))
         {

@@ -315,6 +315,12 @@ as progress) count as disconnected, not as AI, and never as co-players ahead of
 you. If no results screen is recognised after a race, up to three pictures of
 what was on screen are kept, so a missed layout can be found.
 
+**Vs expectation**: once the results screen is read, every car in the race is looked up
+on that route's leaderboard in the class of the race. Where your car stands among them is
+the place you should have finished; the tile shows how many places better or worse you
+actually did, on average, and how often. AI cars count (they are in the race), players who
+left do not, and cars that are not on the leaderboard are left out of both.
+
 From the results screen the app also reads, for every driver, the car, its PI, the
 best lap (circuits) or progress (sprints) and the finishing time. Gamertags are not
 read or stored. Car names on that screen are the game's short forms ("Mit. Evo.

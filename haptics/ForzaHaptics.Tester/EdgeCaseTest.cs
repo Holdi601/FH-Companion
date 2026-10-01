@@ -2485,8 +2485,43 @@ internal static class EdgeCaseTest
                 break;
             }
             Soll(gefunden || daten.Boards.Count == 0, "Meta: keine Bestenliste mit 30 Autos im Datensatz");
+            // Die Erwartung an einem gebauten Feld: man selbst auf Platz 5 der Liste, zwei Autos davor
+            // (Platz 1 und 2), eines dahinter (Platz 20), eines verlassen (zaehlt nicht).
+            foreach (var b in daten.Boards)
+            {
+                var strecke = daten.Tracks[b.Track];
+                var klasse = daten.Classes[b.Klass];
+                var brett = rat.Advise(new[] { strecke }, klasse, rat.CategoryOf(new[] { strecke })).ByTime;
+                if (brett.Count < 30) { continue; }
+                int Id(int platz) => rat.CarIdOf(brett[platz - 1].Car) ?? 0;
+                var feldRennen = new Rivals.RaceRecord
+                {
+                    Track = strecke, Klass = klasse,
+                    Field = new List<Rivals.FieldEntry>
+                    {
+                        new() { Place = 1, Kind = "human", Car = Id(20) },
+                        new() { Place = 2, Kind = "human", Car = Id(5), Self = true },
+                        new() { Place = 3, Kind = "ai", Car = Id(1) },
+                        new() { Place = 4, Kind = "human", Car = Id(2) },
+                        new() { Place = 5, Kind = "left", Car = Id(3) },
+                    },
+                };
+                var e = Rivals.RaceStats.Erwartung(rat, feldRennen, rat.CarIndexForId);
+                Soll(e is { Erwartet: 3, Tatsaechlich: 2, Von: 4 }, $"Erwartung: {e} statt erwartet 3, tatsaechlich 2 von 4");
+                break;
+            }
             Soll(Rivals.RaceStats.MetaPlatz(rat, "Keine Strecke XYZ", "S1", 0) is null, "Meta: eine unbekannte Strecke hat eine Liste");
         }
+        // GEGEN DIE ERWARTUNG: +2 (erwartet 4, Zweiter), 0, -1 -- im Schnitt +0,33.
+        var erw = Rivals.RaceStats.Summarize(new List<Rivals.RaceRecord>
+        {
+            new() { Id = "e1", Expected = 4, ExpectedActual = 2, ExpectedOf = 8 },
+            new() { Id = "e2", Expected = 3, ExpectedActual = 3, ExpectedOf = 8 },
+            new() { Id = "e3", Expected = 1, ExpectedActual = 2, ExpectedOf = 8 },
+            new() { Id = "e4" },
+        }, false);
+        Soll(erw.ExpRaces == 3 && erw.ExpBetter == 1 && erw.ExpSame == 1 && Math.Abs(erw.ExpAvgGain!.Value - (1 / 3.0)) < 1e-9,
+             $"Erwartung: {erw.ExpRaces} Rennen, {erw.ExpBetter} besser, {erw.ExpSame} gleich, Schnitt {erw.ExpAvgGain}");
         var mit = Rivals.RaceStats.Summarize(Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter { EstimateField = true }, _ => null).ToList(), schaetzen: true);
         Soll(mit.FinishN == 3 && Math.Abs(mit.AvgFinishPct!.Value - ((0 + 1 + (1 / 3.0)) / 3)) < 1e-9,
              $"Statistik: mit geschaetztem Feld {mit.AvgFinishPct} aus {mit.FinishN}");
