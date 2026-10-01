@@ -1,6 +1,6 @@
 {
  "source": "Data_Car.str of the game's string tables, model and short name paired by key; model matched to the car list (forza.net, wiki) and the leaderboard dataset",
- "built": "2026-10-01T21:57:02Z",
+ "built": "2026-10-01T21:59:19Z",
  "cars": {
   "#1 Evolution TA": {
    "id": 3554,
@@ -64,6 +64,13 @@
    "name": "Ford #14 Rahal Letterman Lanigan Racing Fiesta",
    "year": 2017,
    "model": "#14 Rahal Letterman Lanigan Racing Fiesta"
+  },
+  "#151 FD Supra": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #151 Toyota GR Supra",
+   "year": 2020,
+   "model": "#151 Toyota GR Supra"
   },
   "#179 Hammerhead": {
    "id": 3604,
@@ -182,6 +189,15 @@
    "year": 1993,
    "model": "#32 Skyline WTAC 'Xtreme GTR'"
   },
+  "#33 H. Integra": {
+   "id": 4254,
+   "ids": [
+    4254
+   ],
+   "name": "Honda #33 Integra WTAC",
+   "year": 2001,
+   "model": "#33 BYP Racing Integra WTAC"
+  },
   "#34 Toyota Supra": {
    "id": 3411,
    "ids": [
@@ -236,6 +252,20 @@
    "year": 2001,
    "model": "#4 Ford Focus RS"
   },
+  "#411 FD Corolla": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #411 Toyota Corolla Hatchback",
+   "year": 2019,
+   "model": "#411 Toyota Corolla Hatchback"
+  },
+  "#43 Dodge Viper": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #43 Dodge Viper SRT-10 ACR",
+   "year": 2006,
+   "model": "#43 Dodge Viper SRT-10 ACR"
+  },
   "#4402 Ultra 4": {
    "id": 3603,
    "ids": [
@@ -263,6 +293,13 @@
    "year": 2004,
    "model": "#52 Evasive Motorsports S2000 WTAC"
   },
+  "#530 HSV Maloo": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #530 HSV Maloo GEN-F",
+   "year": 2016,
+   "model": "#530 HSV Maloo GEN-F"
+  },
   "#55 Mazda 787B": {
    "id": 1335,
    "ids": [
@@ -281,6 +318,13 @@
    "year": 2022,
    "model": "#6165 Trick Truck"
   },
+  "#64 Nissan Z": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #64 Forsberg Racing Nissan Z",
+   "year": 2023,
+   "model": "#64 Forsberg Racing Nissan Z"
+  },
   "#70 Porsche 935": {
    "id": 3214,
    "ids": [
@@ -290,6 +334,13 @@
    "year": 2019,
    "model": "#70 Porsche Motorsport 935"
   },
+  "#777 Corvette": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #777 Chevrolet Corvette",
+   "year": 2013,
+   "model": "#777 Chevrolet Corvette"
+  },
   "#777 Nissan 240": {
    "id": 3000,
    "ids": [
@@ -298,6 +349,20 @@
    "name": "Formula Drift #777 Nissan 240SX",
    "year": 1997,
    "model": "#777 Nissan 240SX"
+  },
+  "#91 BMW M2": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #91 BMW M2",
+   "year": 2020,
+   "model": "#91 BMW M2"
+  },
+  "#98 BMW 325i": {
+   "id": null,
+   "ids": [],
+   "name": "Formula Drift #98 BMW 325i",
+   "year": 1989,
+   "model": "#98 BMW 325i"
   },
   "#99 Mazda RX-8": {
    "id": 3400,
@@ -686,6 +751,13 @@
    "year": 1990,
    "model": "SE 048SP"
   },
+  "Alfa Tipo 33/2": {
+   "id": null,
+   "ids": [],
+   "name": "Alfa Romeo Autodelta Tipo 33/2 Daytona",
+   "year": 1968,
+   "model": "Autodelta Tipo 33/2 Daytona"
+  },
   "Alumi Craft C.10": {
    "id": 2552,
    "ids": [
@@ -811,6 +883,13 @@
    "name": "Audi RS 4",
    "year": 2006,
    "model": "RS 4"
+  },
+  "Audi RS 4 '13": {
+   "id": null,
+   "ids": [],
+   "name": "Audi RS 4 Avant",
+   "year": 2013,
+   "model": "RS 4 Avant"
   },
   "Audi RS 5": {
    "id": 1417,
@@ -1208,6 +1287,13 @@
    "year": 2016,
    "model": "Bentayga"
   },
+  "Bentley C GT '25": {
+   "id": null,
+   "ids": [],
+   "name": "Bentley Continental GT Speed",
+   "year": 2025,
+   "model": "Continental GT Speed"
+  },
   "Bentley Cont GTC": {
    "id": 3728,
    "ids": [
@@ -1324,6 +1410,13 @@
    "name": "Dodge Challenger SRT Super Stock",
    "year": 2022,
    "model": "Challenger SRT Super Stock"
+  },
+  "Challenger '23": {
+   "id": null,
+   "ids": [],
+   "name": "Dodge Challenger SRT Demon 170",
+   "year": 2023,
+   "model": "Challenger SRT Demon 170"
   },
   "Challenger '70": {
    "id": 639,
@@ -1541,13 +1634,18 @@
    "year": 2009,
    "model": "Corvette ZR1"
   },
+  "Corvette '15": {
+   "id": null,
+   "ids": [],
+   "name": "Chevrolet Corvette Z06",
+   "year": 2015,
+   "model": "Corvette Z06"
+  },
   "Corvette '19": {
-   "id": 1069,
-   "ids": [
-    1069
-   ],
+   "id": null,
+   "ids": [],
    "name": "Chevrolet Corvette ZR1",
-   "year": 2009,
+   "year": 2019,
    "model": "Corvette ZR1"
   },
   "Corvette '53": {
@@ -1903,6 +2001,13 @@
    "year": 2009,
    "model": "458 Italia"
   },
+  "Ferrari 458 S": {
+   "id": null,
+   "ids": [],
+   "name": "Ferrari 458 Speciale",
+   "year": 2013,
+   "model": "458 Speciale"
+  },
   "Ferrari 488 GTB": {
    "id": 2467,
    "ids": [
@@ -1911,6 +2016,13 @@
    "name": "Ferrari 488 GTB",
    "year": 2015,
    "model": "488 GTB"
+  },
+  "Ferrari 512 S": {
+   "id": null,
+   "ids": [],
+   "name": "Ferrari 512 S",
+   "year": 1970,
+   "model": "512 S"
   },
   "Ferrari 512TR": {
    "id": 255,
@@ -1930,6 +2042,13 @@
    "name": "Ferrari 599XX",
    "year": 2010,
    "model": "599XX"
+  },
+  "Ferrari 599XX E": {
+   "id": null,
+   "ids": [],
+   "name": "Ferrari 599XX Evolution",
+   "year": 2012,
+   "model": "599XX Evolution"
   },
   "Ferrari 812": {
    "id": 2974,
@@ -1986,6 +2105,13 @@
    "year": 1987,
    "model": "F40"
   },
+  "Ferrari F40 C": {
+   "id": null,
+   "ids": [],
+   "name": "Ferrari F40 Competizione",
+   "year": 1989,
+   "model": "F40 Competizione"
+  },
   "Ferrari F50": {
    "id": 342,
    "ids": [
@@ -2032,6 +2158,13 @@
    "year": 2014,
    "model": "FXX K"
   },
+  "Ferrari FXX-K E": {
+   "id": null,
+   "ids": [],
+   "name": "Ferrari FXX-K Evo",
+   "year": 2018,
+   "model": "FXX-K Evo"
+  },
   "Ferrari FXX-K WP": {
    "id": 4264,
    "ids": [
@@ -2049,6 +2182,13 @@
    "name": "Ferrari J50",
    "year": 2017,
    "model": "J50"
+  },
+  "Ferrari J50 PO": {
+   "id": null,
+   "ids": [],
+   "name": "Ferrari J50 Preorder Car",
+   "year": 2017,
+   "model": "J50 Preorder Car"
   },
   "Ferrari Monza": {
    "id": 3312,
@@ -2347,6 +2487,13 @@
    "year": 2014,
    "model": "Ranger T6 Rally Raid"
   },
+  "Ford Raptor R": {
+   "id": null,
+   "ids": [],
+   "name": "Ford F-150 Raptor R",
+   "year": 2023,
+   "model": "F-150 Raptor R"
+  },
   "Ford Raptor R WP": {
    "id": 4268,
    "ids": [
@@ -2500,6 +2647,22 @@
    "year": 1998,
    "model": "Skyline GT-R 40th Anniversary"
   },
+  "GT-R FE '12": {
+   "id": null,
+   "ids": [],
+   "name": "Nissan GT-R Black Edition (R35) Forza Edition",
+   "year": 2012,
+   "model": "GT-R Black Edition (R35) Forza Edition"
+  },
+  "GT-R ID": {
+   "id": 4094,
+   "ids": [
+    4094
+   ],
+   "name": "Nissan GT-R Nismo",
+   "year": 2024,
+   "model": "GT-R NISMO 'Initial Drive'"
+  },
   "Galant VR-4": {
    "id": 1381,
    "ids": [
@@ -2526,6 +2689,13 @@
    "name": "Koenigsegg Gemera",
    "year": 2024,
    "model": "Gemera"
+  },
+  "Ginetta G40 Jr": {
+   "id": null,
+   "ids": [],
+   "name": "Ginetta G40 Junior",
+   "year": 2019,
+   "model": "G40 Junior"
   },
   "Gloria GT '95": {
    "id": 3918,
@@ -2879,6 +3049,20 @@
    "year": 1964,
    "model": "Lightweight E-Type"
   },
+  "Jaguar XJ-S": {
+   "id": null,
+   "ids": [],
+   "name": "Jaguar XJ-S",
+   "year": 1990,
+   "model": "XJ-S"
+  },
+  "Jaguar XJ-S FE": {
+   "id": null,
+   "ids": [],
+   "name": "Jaguar XJ-S Forza Edition",
+   "year": 1990,
+   "model": "XJ-S Forza Edition"
+  },
   "Jaguar XJ220": {
    "id": 489,
    "ids": [
@@ -2905,6 +3089,13 @@
    "name": "Jaguar Sport XJR-15",
    "year": 1991,
    "model": "Sport XJR-15"
+  },
+  "Jaguar XKR-S '15": {
+   "id": null,
+   "ids": [],
+   "name": "Jaguar XKR-S GT",
+   "year": 2015,
+   "model": "XKR-S GT"
   },
   "Jeep JT": {
    "id": 3255,
@@ -3194,6 +3385,15 @@
    "year": 1974,
    "model": "Stratos HF Stradale"
   },
+  "Legacy Traffic": {
+   "id": 379,
+   "ids": [
+    379
+   ],
+   "name": "Subaru LEGACY B4 2.0 GT",
+   "year": 2005,
+   "model": "LEGACY B4 2.0 GT Traffic"
+  },
   "Lexus LC 500 '21": {
    "id": 3520,
    "ids": [
@@ -3257,6 +3457,13 @@
    "year": 2023,
    "model": "Emira"
   },
+  "Lotus Esprit": {
+   "id": null,
+   "ids": [],
+   "name": "Lotus Esprit V8",
+   "year": 2002,
+   "model": "Esprit V8"
+  },
   "Lotus Evija '20": {
    "id": 3449,
    "ids": [
@@ -3283,6 +3490,20 @@
    "name": "Lotus Exige Cup 430",
    "year": 2018,
    "model": "Exige Cup 430"
+  },
+  "Lucid Air": {
+   "id": null,
+   "ids": [],
+   "name": "Lucid Air Sapphire",
+   "year": 2024,
+   "model": "Air Sapphire"
+  },
+  "Luftauto 911": {
+   "id": null,
+   "ids": [],
+   "name": "Porsche Carrera Coupe 'Luftauto 002'",
+   "year": 1987,
+   "model": "911 Carrera Coupe 'Luftauto 002'"
   },
   "M-AMG GT WP": {
    "id": 4265,
@@ -3338,6 +3559,13 @@
    "name": "Mercedes-Benz A 45 AMG",
    "year": 2013,
    "model": "A 45 AMG"
+  },
+  "M-B AMG C 63 '16": {
+   "id": null,
+   "ids": [],
+   "name": "Mercedes-AMG C 63 S Coupé",
+   "year": 2016,
+   "model": "C 63 S Coupé"
   },
   "M-B AMG GT": {
    "id": 2242,
@@ -3789,6 +4017,13 @@
    "year": 2013,
    "model": "P1"
   },
+  "McLaren W1": {
+   "id": null,
+   "ids": [],
+   "name": "McLaren W1",
+   "year": 2025,
+   "model": "W1"
+  },
   "Megane R.S. '18": {
    "id": 3134,
    "ids": [
@@ -4069,6 +4304,13 @@
    "year": 1973,
    "model": "Skyline H/T 2000GT-R"
   },
+  "Nissan GT-R '87": {
+   "id": null,
+   "ids": [],
+   "name": "Nissan Skyline GTS-R",
+   "year": 1987,
+   "model": "Skyline GTS-R"
+  },
   "Nissan GT-R '95": {
    "id": 2738,
    "ids": [
@@ -4132,6 +4374,15 @@
    "year": 2002,
    "model": "Silvia Spec-R"
   },
+  "Nissan Silvia 89": {
+   "id": 4222,
+   "ids": [
+    4222
+   ],
+   "name": "Nissan Silvia K's",
+   "year": 1989,
+   "model": "Silvia K's"
+  },
   "Noble M600": {
    "id": 1253,
    "ids": [
@@ -4149,6 +4400,24 @@
    "name": "Opel Manta 400",
    "year": 1984,
    "model": "Manta 400"
+  },
+  "P. 911 GT2 ID": {
+   "id": 261,
+   "ids": [
+    261
+   ],
+   "name": "Porsche 911 GT2",
+   "year": 1995,
+   "model": "911 GT2 'Initial Drive'"
+  },
+  "P. 911 GT3 RS 23": {
+   "id": 3781,
+   "ids": [
+    3781
+   ],
+   "name": "Porsche 911 GT3 RS",
+   "year": 2023,
+   "model": "911 GT3 RS"
   },
   "P. 911 Rallye": {
    "id": 3910,
@@ -4176,6 +4445,13 @@
    "name": "Pagani Huayra BC Coupe",
    "year": 2016,
    "model": "Huayra BC Coupe"
+  },
+  "Pagani Zonda C": {
+   "id": null,
+   "ids": [],
+   "name": "Pagani Zonda Cinque Roadster",
+   "year": 2010,
+   "model": "Zonda Cinque Roadster"
   },
   "Pagani Zonda R": {
    "id": 1175,
@@ -4627,6 +4903,15 @@
    "year": 1998,
    "model": "Impreza 22B-STi Version"
   },
+  "SUBARU 22B TG": {
+   "id": 363,
+   "ids": [
+    363
+   ],
+   "name": "Subaru Impreza 22B-STi Version",
+   "year": 1998,
+   "model": "Impreza 22B-STi Version 'Touge Edition'"
+  },
   "SUBARU BRAT": {
    "id": 2140,
    "ids": [
@@ -4834,6 +5119,15 @@
    "year": 1998,
    "model": "Silvia K's Aero"
   },
+  "Skyline GT-R '00": {
+   "id": 4114,
+   "ids": [
+    4114
+   ],
+   "name": "Nissan Skyline GT-R",
+   "year": 1992,
+   "model": "Skyline GT-R V·spec II"
+  },
   "Skyline GT-R '92": {
    "id": 4114,
    "ids": [
@@ -4842,6 +5136,13 @@
    "name": "Nissan Skyline GT-R",
    "year": 1992,
    "model": "Skyline GT-R"
+  },
+  "Skyline T RS '83": {
+   "id": null,
+   "ids": [],
+   "name": "Nissan Skyline 2000 Turbo RS",
+   "year": 1983,
+   "model": "Skyline 2000 Turbo RS"
   },
   "Soarer '97": {
    "id": 3785,
@@ -4861,6 +5162,13 @@
    "year": 2019,
    "model": "Speedtail"
   },
+  "Sport Spider '98": {
+   "id": null,
+   "ids": [],
+   "name": "Renault Sport Spider",
+   "year": 1998,
+   "model": "Sport Spider"
+  },
   "Sports 800 '65": {
    "id": 2469,
    "ids": [
@@ -4879,6 +5187,13 @@
    "year": 1965,
    "model": "Sports 800 Fanta Edition"
   },
+  "Starion ESI-R": {
+   "id": null,
+   "ids": [],
+   "name": "Mitsubishi Starion ESI-R",
+   "year": 1988,
+   "model": "Starion ESI-R"
+  },
   "Sunshine FE": {
    "id": 4163,
    "ids": [
@@ -4896,6 +5211,24 @@
    "name": "Toyota Crown Super Deluxe Taxi",
    "year": 2005,
    "model": "Crown Super Deluxe Taxi"
+  },
+  "T. Crown Traffic": {
+   "id": 4255,
+   "ids": [
+    4255
+   ],
+   "name": "Toyota Crown Super Deluxe Taxi",
+   "year": 2005,
+   "model": "Crown Super Deluxe Taxi Traffic"
+  },
+  "T. Taxi Traffic": {
+   "id": 4257,
+   "ids": [
+    4257
+   ],
+   "name": "Toyota JPN Taxi",
+   "year": 2017,
+   "model": "JPN Taxi Traffic"
   },
   "TVR Griffith": {
    "id": 2993,
@@ -4987,6 +5320,15 @@
    "year": 1985,
    "model": "Sprinter Trueno GT-APEX Forza Edition"
   },
+  "Toyota AE86 TG": {
+   "id": 455,
+   "ids": [
+    455
+   ],
+   "name": "Toyota Sprinter Trueno GT Apex",
+   "year": 1985,
+   "model": "Sprinter Trueno GT Apex 'Touge Edition'"
+  },
   "Toyota AT37": {
    "id": 2743,
    "ids": [
@@ -5004,6 +5346,13 @@
    "name": "Toyota Camry TRD",
    "year": 2023,
    "model": "Camry TRD"
+  },
+  "Toyota Celica 74": {
+   "id": null,
+   "ids": [],
+   "name": "Toyota Celica GT",
+   "year": 1974,
+   "model": "Celica GT"
   },
   "Toyota Celica'03": {
    "id": 295,
@@ -5311,6 +5660,13 @@
    "year": 2019,
    "model": "Valhalla Concept Car"
   },
+  "Vaux Astra '06": {
+   "id": null,
+   "ids": [],
+   "name": "Vauxhall Astra VXR",
+   "year": 2006,
+   "model": "Astra VXR"
+  },
   "VelociRaptor '19": {
    "id": 3189,
    "ids": [
@@ -5364,6 +5720,15 @@
    "name": "Volvo 242 Turbo Evolution",
    "year": 1983,
    "model": "242 Turbo Evolution"
+  },
+  "Wrangler T": {
+   "id": 1522,
+   "ids": [
+    1522
+   ],
+   "name": "Jeep Wrangler Rubicon",
+   "year": 2012,
+   "model": "Wrangler Rubicon Traffic"
   },
   "Wuling Mini EV": {
    "id": 3789,
@@ -5423,6 +5788,7 @@
   "#240 Jɨmco TT": 3605,
   "#25 福特 Bronco": 3128,
   "#32 Skylɨne WTAC": 4212,
+  "#33 H. Ɨntegra": 4254,
   "#34 丰田 Supra": 3411,
   "#34 大众 Beetle": 3007,
   "#36 Sɨlvɨa WTAC": 4213,
@@ -5482,6 +5848,7 @@
   "911 GT3 2021 Г.": 3667,
   "911 GT3 RS 2019": 3072,
   "911 GT3 RS 2019 г.": 3072,
+  "911 GT3 RS 2023": 3781,
   "911 GT3 RS de 2019": 3072,
   "911 GT3 RS ’19": 3072,
   "911 GT3 RS4 2012": 2297,
@@ -5834,8 +6201,6 @@
   "Corvette 2002 г.": 314,
   "Corvette 2009": 1069,
   "Corvette 2009 г.": 1069,
-  "Corvette 2019": 1069,
-  "Corvette 2019 г.": 1069,
   "Corvette C8 2020": 3369,
   "Corvette C8 2020 г.": 3369,
   "Corvette C8 de 2020": 3369,
@@ -5851,10 +6216,8 @@
   "Corvette de 1995": 2006,
   "Corvette de 2002": 314,
   "Corvette de 2009": 1069,
-  "Corvette de 2019": 1069,
   "Corvette ’02": 314,
   "Corvette ’09": 1069,
-  "Corvette ’19": 1069,
   "Corvette ’53": 1564,
   "Corvette ’60": 1093,
   "Corvette ’67": 312,
@@ -6067,6 +6430,7 @@
   "GR Corolla de 2023": 3880,
   "GR Corolla του 2023": 3880,
   "GR Corolla ’23": 3880,
+  "GT-R ƗD": 4094,
   "Ghibli 1997": 1513,
   "Gloria GT 1995": 3918,
   "Gloria GT 1995 г.": 3918,
@@ -6126,6 +6490,7 @@
   "Honda Cɨvɨc ’84": 2119,
   "Honda Cɨvɨc ’86": 1650,
   "Honda Cɨvɨc ’97": 1273,
+  "Honda Integra n°33": 4254,
   "Honda NSX-R 1992": 412,
   "Honda NSX-R 1992 г.": 412,
   "Honda NSX-R 2005": 411,
@@ -6221,6 +6586,15 @@
   "Lancɨa Delta S4": 1661,
   "Lancɨa Stratos": 458,
   "Land Rover Defender 2020": 3414,
+  "Legacy (traffico)": 379,
+  "Legacy (trafik)": 379,
+  "Legacy (verkeer)": 379,
+  "Legacy (wersja uliczna)": 379,
+  "Legacy Traffɨc": 379,
+  "Legacy de Tráfego": 379,
+  "Legacy do Trânsito": 379,
+  "Legacy Πόλης": 379,
+  "Legacy – trafikk": 379,
   "Lexus LC 500 2021": 3520,
   "Lexus LC 500 2021 г.": 3520,
   "Lexus LC 500 de 2021": 3520,
@@ -6465,8 +6839,12 @@
   "Nissan PAO ’89": 3929,
   "Nissan Patrol 1972": 4205,
   "Nissan Silvia '02": 3999,
+  "Nissan Silvia '89": 4222,
+  "Nissan Silvia 1989": 4222,
   "Nissan Silvia 2002": 3999,
+  "Nissan Silvia de 1989": 4222,
   "Nissan Silvia ’02": 3999,
+  "Nissan Silvia ’89": 4222,
   "Nissan Skyline n°11": 2801,
   "Nissan Skyline n°12": 4179,
   "Nissan Stagea 1997": 3858,
@@ -6491,6 +6869,9 @@
   "Nɨssan R390": 567,
   "Nɨssan Safarɨ": 2822,
   "Nɨssan Sɨlvɨa 02": 3999,
+  "Nɨssan Sɨlvɨa 89": 4222,
+  "P. 911 GT2 ƗD": 261,
+  "P. 911 GT3 RS de 2023": 3781,
   "P. 911 Turbo 1993": 2794,
   "P. 911 Turbo 1993 г.": 2794,
   "P. 911 Turbo de 1993": 2794,
@@ -6622,9 +7003,14 @@
   "Silvia ’98": 2659,
   "Skyline GT-R 1992": 4114,
   "Skyline GT-R 1992 г.": 4114,
+  "Skyline GT-R 2000": 4114,
+  "Skyline GT-R 2000 г.": 4114,
   "Skyline GT-R de 1992": 4114,
+  "Skyline GT-R de 2000": 4114,
+  "Skyline GT-R ’00": 4114,
   "Skyline GT-R ’92": 4114,
   "Skyline WTAC n°32": 4212,
+  "Skylɨne GT-R ’00": 4114,
   "Skylɨne GT-R ’92": 4114,
   "Soarer 1997": 3785,
   "Soarer 1997 г.": 3785,
@@ -6640,6 +7026,7 @@
   "Sports 800 de 1965": 2469,
   "Sports 800 ’65": 2469,
   "Subaru 22B 1998": 363,
+  "Subaru 22B TG": 363,
   "Subaru BRAT": 2140,
   "Subaru BRZ 2022": 3735,
   "Subaru BRZ FE": 4164,
@@ -6663,7 +7050,25 @@
   "Sɨlverado DD": 3088,
   "Sɨlvɨa ’94": 440,
   "Sɨlvɨa ’98": 2659,
+  "T. Crown (traffico)": 4255,
+  "T. Crown (trafik)": 4255,
+  "T. Crown (verkeer)": 4255,
+  "T. Crown (wersja uliczna)": 4255,
   "T. Crown Taxɨ": 4255,
+  "T. Crown Traffɨc": 4255,
+  "T. Crown de Tráfego": 4255,
+  "T. Crown do Trânsito": 4255,
+  "T. Crown Πόλης": 4255,
+  "T. Crown – trafikk": 4255,
+  "T. Taxi (traffico)": 4257,
+  "T. Taxi (trafik)": 4257,
+  "T. Taxi (wersja uliczna)": 4257,
+  "T. Taxi de Tráfego": 4257,
+  "T. Taxi Πόλης": 4257,
+  "T. Taxɨ Traffɨc": 4257,
+  "T. Táxi do Trânsito": 4257,
+  "T.-taxi (verkeer)": 4257,
+  "T.-taxi – trafikk": 4257,
   "TVR Grɨffɨth": 2993,
   "TVR Sagarɨs": 433,
   "Toy. Altezza 1999": 4038,
@@ -6825,6 +7230,7 @@
   "丰田 4Runner": 3373,
   "丰田 86": 2007,
   "丰田 AE86 FE": 4162,
+  "丰田 AE86 TG": 455,
   "丰田 AT37": 2743,
   "丰田 Altezza '99": 4038,
   "丰田 Camry '23": 3848,
@@ -6854,6 +7260,8 @@
   "保时捷 718 GTS": 3117,
   "保时捷 911 '19": 3123,
   "保时捷 911 GT1": 641,
+  "保时捷 911 GT2 ID": 261,
+  "保时捷 911 GT3 RS 23": 3781,
   "保时捷 911 Rallye": 3910,
   "保时捷 911 Turbo '93": 2794,
   "保时捷 917 FE": 4313,
@@ -6961,6 +7369,7 @@
   "捷豹 XJ220S": 3293,
   "捷豹 XJR-15": 3287,
   "斯巴鲁 22B '98": 363,
+  "斯巴鲁 22B TG": 363,
   "斯巴鲁 BRAT": 2140,
   "斯巴鲁 BRZ '22": 3735,
   "斯巴鲁 BRZ FE": 4164,
@@ -6995,6 +7404,7 @@
   "日产 R390": 567,
   "日产 Safari": 2822,
   "日产 Silvia 02": 3999,
+  "日产 Silvia 89": 4222,
   "日产 Skyline '97": 4057,
   "日产 Stagea '97": 3858,
   "本田 Acty '94": 3865,
@@ -7226,45 +7636,6 @@
    ]
   },
   {
-   "model": "XJ-S",
-   "short": "Jaguar XJ-S",
-   "key": 2301948286,
-   "candidates": []
-  },
-  {
-   "model": "Celica GT",
-   "short": "Toyota Celica 74",
-   "key": 2302046846,
-   "candidates": []
-  },
-  {
-   "model": "599XX Evolution",
-   "short": "Ferrari 599XX E",
-   "key": 2302048254,
-   "candidates": []
-  },
-  {
-   "model": "RS 4 Avant",
-   "short": "Audi RS 4 '13",
-   "key": 2303996158,
-   "candidates": [
-    {
-     "ids": [
-      2178
-     ],
-     "name": "Audi RS 4 Avant",
-     "year": 2001
-    },
-    {
-     "ids": [
-      3318
-     ],
-     "name": "Audi RS 4 Avant",
-     "year": 2018
-    }
-   ]
-  },
-  {
    "model": "BRZ",
    "short": "SUBARU BRZ",
    "key": 2304078334,
@@ -7286,156 +7657,9 @@
    ]
   },
   {
-   "model": "F40 Competizione",
-   "short": "Ferrari F40 C",
-   "key": 2308223742,
-   "candidates": []
-  },
-  {
    "model": "NULL CAR",
    "short": "NULL CAR",
    "key": 2312401406,
-   "candidates": []
-  },
-  {
-   "model": "Starion ESI-R",
-   "short": "Starion ESI-R",
-   "key": 2312532222,
-   "candidates": []
-  },
-  {
-   "model": "Zonda Cinque Roadster",
-   "short": "Pagani Zonda C",
-   "key": 2314582014,
-   "candidates": []
-  },
-  {
-   "model": "Air Sapphire",
-   "short": "Lucid Air",
-   "key": 2828301310,
-   "candidates": []
-  },
-  {
-   "model": "F-150 Raptor R",
-   "short": "Ford Raptor R",
-   "key": 2828351486,
-   "candidates": []
-  },
-  {
-   "model": "Challenger SRT Demon 170",
-   "short": "Challenger '23",
-   "key": 2830464894,
-   "candidates": []
-  },
-  {
-   "model": "Sport Spider",
-   "short": "Sport Spider '98",
-   "key": 2830513022,
-   "candidates": []
-  },
-  {
-   "model": "G40 Junior",
-   "short": "Ginetta G40 Jr",
-   "key": 2836707326,
-   "candidates": []
-  },
-  {
-   "model": "Wrangler Rubicon Traffic",
-   "short": "Wrangler T",
-   "key": 2836803710,
-   "candidates": []
-  },
-  {
-   "model": "Autodelta Tipo 33/2 Daytona",
-   "short": "Alfa Tipo 33/2",
-   "key": 2836820350,
-   "candidates": []
-  },
-  {
-   "model": "#411 Toyota Corolla Hatchback",
-   "short": "#411 FD Corolla",
-   "key": 2838802814,
-   "candidates": []
-  },
-  {
-   "model": "#151 Toyota GR Supra",
-   "short": "#151 FD Supra",
-   "key": 2838803198,
-   "candidates": []
-  },
-  {
-   "model": "#91 BMW M2",
-   "short": "#91 BMW M2",
-   "key": 2838852606,
-   "candidates": []
-  },
-  {
-   "model": "911 Carrera Coupe 'Luftauto 002'",
-   "short": "Luftauto 911",
-   "key": 2840899966,
-   "candidates": []
-  },
-  {
-   "model": "#64 Forsberg Racing Nissan Z",
-   "short": "#64 Nissan Z",
-   "key": 2843029886,
-   "candidates": []
-  },
-  {
-   "model": "911 GT3 RS",
-   "short": "P. 911 GT3 RS 23",
-   "key": 2843096062,
-   "candidates": [
-    {
-     "ids": [
-      3072
-     ],
-     "name": "Porsche 911 GT3 RS",
-     "year": 2019
-    },
-    {
-     "ids": [
-      3781
-     ],
-     "name": "Porsche 911 GT3 RS",
-     "year": 2023
-    }
-   ]
-  },
-  {
-   "model": "#43 Dodge Viper SRT-10 ACR",
-   "short": "#43 Dodge Viper",
-   "key": 2845061886,
-   "candidates": []
-  },
-  {
-   "model": "#98 BMW 325i",
-   "short": "#98 BMW 325i",
-   "key": 2845110526,
-   "candidates": []
-  },
-  {
-   "model": "512 S",
-   "short": "Ferrari 512 S",
-   "key": 2845160062,
-   "candidates": []
-  },
-  {
-   "model": "#777 Chevrolet Corvette",
-   "short": "#777 Corvette",
-   "key": 2849305214,
-   "candidates": []
-  },
-  {
-   "model": "FXX-K Evo",
-   "short": "Ferrari FXX-K E",
-   "key": 2851369982,
-   "candidates": []
-  },
-  {
-   "model": "W1",
-   "short": "McLaren W1",
-   "key": 3652482942,
    "candidates": []
   },
   {
@@ -7475,84 +7699,30 @@
    "candidates": []
   },
   {
-   "model": "GT-R Black Edition (R35) Forza Edition",
-   "short": "GT-R FE '12",
-   "key": 3652563198,
-   "candidates": []
-  },
-  {
-   "model": "Continental GT Speed",
-   "short": "Bentley C GT '25",
-   "key": 3650466046,
-   "candidates": []
-  },
-  {
    "model": "GT-R Black Edition (R35) 'Touge Edition'",
    "short": "Nissan GT-R TG",
    "key": 3656659710,
-   "candidates": []
-  },
-  {
-   "model": "Crown Super Deluxe Taxi Traffic",
-   "short": "T. Crown Traffic",
-   "key": 3656708734,
-   "candidates": []
-  },
-  {
-   "model": "JPN Taxi Traffic",
-   "short": "T. Taxi Traffic",
-   "key": 3656708862,
-   "candidates": []
-  },
-  {
-   "model": "J50 Preorder Car",
-   "short": "Ferrari J50 PO",
-   "key": 3656725502,
-   "candidates": []
-  },
-  {
-   "model": "XJ-S Forza Edition",
-   "short": "Jaguar XJ-S FE",
-   "key": 3656741246,
-   "candidates": []
+   "candidates": [
+    {
+     "ids": [
+      2002
+     ],
+     "name": "Nissan GT-R Black Edition (R35)",
+     "year": 2012
+    },
+    {
+     "ids": [
+      2618
+     ],
+     "name": "Nissan GT-R (R35)",
+     "year": 2017
+    }
+   ]
   },
   {
    "model": "Acty 'RakuRaku Express'",
    "short": "Acty 'RakuRaku'",
    "key": 3654578302,
-   "candidates": []
-  },
-  {
-   "model": "Silvia K's",
-   "short": "Nissan Silvia 89",
-   "key": 3654595198,
-   "candidates": [
-    {
-     "ids": [
-      4222
-     ],
-     "name": "Nissan Silvia K's",
-     "year": 1989
-    },
-    {
-     "ids": [
-      440
-     ],
-     "name": "Nissan Silvia K's",
-     "year": 1994
-    }
-   ]
-  },
-  {
-   "model": "Skyline GT-R V·spec II",
-   "short": "Skyline GT-R '00",
-   "key": 3654595326,
-   "candidates": []
-  },
-  {
-   "model": "Skyline 2000 Turbo RS",
-   "short": "Skyline T RS '83",
-   "key": 3654612862,
    "candidates": []
   },
   {
@@ -7582,6 +7752,11 @@
      "year": 2007
     },
     {
+     "ids": [],
+     "name": "Honda Civic Type R",
+     "year": 2015
+    },
+    {
      "ids": [
       2870
      ],
@@ -7598,69 +7773,15 @@
    ]
   },
   {
-   "model": "Sprinter Trueno GT Apex 'Touge Edition'",
-   "short": "Toyota AE86 TG",
-   "key": 3654644606,
-   "candidates": []
-  },
-  {
    "model": "S2000 'Touge Edition'",
    "short": "Honda S2000 TG",
    "key": 3654644734,
    "candidates": []
   },
   {
-   "model": "Impreza 22B-STi Version 'Touge Edition'",
-   "short": "SUBARU 22B TG",
-   "key": 3654644350,
-   "candidates": []
-  },
-  {
-   "model": "#33 BYP Racing Integra WTAC",
-   "short": "#33 H. Integra",
-   "key": 3654644094,
-   "candidates": []
-  },
-  {
-   "model": "GT-R NISMO 'Initial Drive'",
-   "short": "GT-R ID",
-   "key": 3654660990,
-   "candidates": []
-  },
-  {
-   "model": "911 GT2 'Initial Drive'",
-   "short": "P. 911 GT2 ID",
-   "key": 3654661118,
-   "candidates": []
-  },
-  {
    "model": "Flatbed",
    "short": "Flatbed Traffic",
    "key": 3098817150,
-   "candidates": []
-  },
-  {
-   "model": "LEGACY B4 2.0 GT Traffic",
-   "short": "Legacy Traffic",
-   "key": 3098817278,
-   "candidates": []
-  },
-  {
-   "model": "#530 HSV Maloo GEN-F",
-   "short": "#530 HSV Maloo",
-   "key": 3098964222,
-   "candidates": []
-  },
-  {
-   "model": "C 63 S Coupé",
-   "short": "M-B AMG C 63 '16",
-   "key": 3105223678,
-   "candidates": []
-  },
-  {
-   "model": "Skyline GTS-R",
-   "short": "Nissan GT-R '87",
-   "key": 3107222142,
    "candidates": []
   },
   {
@@ -7735,6 +7856,11 @@
      "year": 2007
     },
     {
+     "ids": [],
+     "name": "Honda Civic Type R",
+     "year": 2015
+    },
+    {
      "ids": [
       2870
      ],
@@ -7746,27 +7872,6 @@
       3773
      ],
      "name": "Honda Civic Type R",
-     "year": 2023
-    }
-   ]
-  },
-  {
-   "model": "Corvette Z06",
-   "short": "Corvette '15",
-   "key": 3115708670,
-   "candidates": [
-    {
-     "ids": [
-      314
-     ],
-     "name": "Chevrolet Corvette Z06",
-     "year": 2002
-    },
-    {
-     "ids": [
-      3766
-     ],
-     "name": "Chevrolet Corvette Z06",
      "year": 2023
     }
    ]
@@ -7793,24 +7898,6 @@
    ]
   },
   {
-   "model": "458 Speciale",
-   "short": "Ferrari 458 S",
-   "key": 3115725182,
-   "candidates": []
-  },
-  {
-   "model": "XKR-S GT",
-   "short": "Jaguar XKR-S '15",
-   "key": 3117740542,
-   "candidates": []
-  },
-  {
-   "model": "Esprit V8",
-   "short": "Lotus Esprit",
-   "key": 4250135254,
-   "candidates": []
-  },
-  {
    "model": "E-type",
    "short": "Jaguar E-type",
    "key": 4250135382,
@@ -7830,12 +7917,6 @@
      "year": 1964
     }
    ]
-  },
-  {
-   "model": "Astra VXR",
-   "short": "Vaux Astra '06",
-   "key": 4252167254,
-   "candidates": []
   }
  ]
 }

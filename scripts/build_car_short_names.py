@@ -58,7 +58,8 @@ def norm(s: str) -> str:
 
 
 def jahrgang(text: str) -> int | None:
-    m = re.search(r"'(\d\d)\b", text)
+    """Der Jahrgang im Kurznamen: "'08", oder ohne Hochkomma am Ende ("Nissan Silvia 89")."""
+    m = re.search(r"'(\d\d)\b", text) or re.search(r"\s(\d\d)$", text.strip())
     return int(m.group(1)) if m else None
 
 
@@ -84,10 +85,16 @@ def kandidaten_laden() -> list[dict]:
     """Autos mit car_id: Name ohne Jahr, Jahr, id."""
     autos: dict[int, dict] = {}
     try:
+        ohne = 0
         for a in json.loads(AUTOLISTE.read_text(encoding="utf-8"))["cars"]:
-            for i in a.get("ids") or ([a["id"]] if a.get("id") else []):
-                if isinstance(i, int) and i > 0:
-                    autos[i] = {"id": i, "name": a["name"], "year": a.get("year")}
+            ids = [i for i in (a.get("ids") or ([a["id"]] if a.get("id") else [])) if isinstance(i, int) and i > 0]
+            for i in ids:
+                autos[i] = {"id": i, "name": a["name"], "year": a.get("year")}
+            # NEUE AUTOS stehen in der Liste, bevor eine Bestenliste sie benennt (der Porsche
+            # 'Luftauto 002', 2026-10-01): mit Namen, noch ohne id -- der Name hilft schon.
+            if not ids:
+                ohne -= 1
+                autos[ohne] = {"id": None, "name": a["name"], "year": a.get("year")}
     except (OSError, ValueError, KeyError):
         pass
     try:
@@ -109,6 +116,15 @@ def zuordnen(modell: str, kurz: str, autos: list[dict]) -> list[dict]:
     if not m or m == "null car":
         return []
     kand = [a for a in autos if norm(a["name"]).endswith(" " + m) or norm(a["name"]) == m]
+    if not kand:
+        # Ohne passendes Ende: die Woerter. "911 Carrera Coupe 'Luftauto 002'" heisst in der
+        # Autoliste "Porsche Carrera Coupe 'Luftauto 002'" -- ohne die 911. Ein Name, dessen
+        # Woerter (ohne Hersteller) alle im Modell stehen oder umgekehrt, und nur einer.
+        wm = set(m.split())
+        def woerter(a: dict) -> set[str]:
+            teile = norm(a["name"]).split()
+            return set(teile[1:]) if len(teile) > 1 else set(teile)
+        kand = [a for a in autos if len(woerter(a)) >= 2 and (woerter(a) <= wm or wm <= woerter(a))]
     j = jahrgang(kurz)
     if j is not None and kand:
         mit = [a for a in kand if a.get("year") and a["year"] % 100 == j]
@@ -126,7 +142,7 @@ def zuordnen(modell: str, kurz: str, autos: list[dict]) -> list[dict]:
     gruppen: dict[tuple[str, int | None], list[dict]] = {}
     for a in kand:
         gruppen.setdefault((norm(a["name"]), a.get("year")), []).append(a)
-    return [dict(g[0], ids=sorted({x["id"] for x in g})) for g in gruppen.values()]
+    return [dict(g[0], ids=sorted({x["id"] for x in g if x["id"]})) for g in gruppen.values()]
 
 
 def main() -> int:
@@ -166,11 +182,12 @@ def main() -> int:
                           "candidates": [{"ids": x["ids"], "name": x["name"], "year": x.get("year")} for x in kand][:6]})
             continue
         modell, kurz, schl, auto = gefunden
-        eintraege[kurz] = {"id": min(auto["ids"]), "ids": auto["ids"], "name": auto["name"], "year": auto.get("year"),
+        eintraege[kurz] = {"id": min(auto["ids"]) if auto["ids"] else None, "ids": auto["ids"],
+                           "name": auto["name"], "year": auto.get("year"),
                            "model": modell, "key": schl}
 
     # Dieselben Schluessel in den anderen Sprachen.
-    schl_zu_id = {e["key"]: e["id"] for e in eintraege.values()}
+    schl_zu_id = {e["key"]: e["id"] for e in eintraege.values() if e["id"]}
     sprachen = {}
     for z in sorted(ordner.glob("*.zip")):
         if z.stem == "EN":
@@ -196,7 +213,8 @@ def main() -> int:
         "unresolved": offen,
     }
     ZIEL.write_text(json.dumps(raus, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"{len(raus['cars'])} Kurznamen mit car_id, {len(sprachen)} aus anderen Sprachen, "
+    mit_id = sum(1 for v in raus["cars"].values() if v["id"])
+    print(f"{mit_id} Kurznamen mit car_id, {len(raus['cars']) - mit_id} nur mit Namen, {len(sprachen)} aus anderen Sprachen, "
           f"{len(offen)} offen -> {ZIEL.relative_to(WURZEL)}")
     if args.report:
         for o in offen:
