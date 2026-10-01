@@ -1,0 +1,7841 @@
+{
+ "source": "Data_Car.str of the game's string tables, model and short name paired by key; model matched to the car list (forza.net, wiki) and the leaderboard dataset",
+ "built": "2026-10-01T21:57:02Z",
+ "cars": {
+  "#1 Evolution TA": {
+   "id": 3554,
+   "ids": [
+    3554
+   ],
+   "name": "Mitsubishi #1 Sierra Sierra Enterprises Lancer Evolution Time Attack",
+   "year": 2005,
+   "model": "#1 Sierra Sierra Enterprises Lancer Evolution Time Attack"
+  },
+  "#1 Toyota T100": {
+   "id": 2636,
+   "ids": [
+    2636
+   ],
+   "name": "Toyota #1 T100 Baja Truck",
+   "year": 1993,
+   "model": "#1 T100 Baja Truck"
+  },
+  "#11 Ford F-150": {
+   "id": 2517,
+   "ids": [
+    2517
+   ],
+   "name": "Ford #11 Rockstar F-150 Trophy Truck",
+   "year": 2014,
+   "model": "#11 Rockstar F-150 Trophy Truck"
+  },
+  "#12 N. Skyline": {
+   "id": 4179,
+   "ids": [
+    4179
+   ],
+   "name": "Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC",
+   "year": 1990,
+   "model": "#12 Skyline GT-R (BNR32 Gr.A) JTC"
+  },
+  "#122 AC Class 1": {
+   "id": 3549,
+   "ids": [
+    3549
+   ],
+   "name": "Alumicraft #122 Class 1 Buggy",
+   "year": 2021,
+   "model": "#122 Class 1 Buggy"
+  },
+  "#13 Ford Mustang": {
+   "id": 2996,
+   "ids": [
+    2996
+   ],
+   "name": "Formula Drift #13 Ford Mustang",
+   "year": 2015,
+   "model": "#13 Ford Mustang"
+  },
+  "#14 Ford Fiesta": {
+   "id": 2937,
+   "ids": [
+    2937
+   ],
+   "name": "Ford #14 Rahal Letterman Lanigan Racing Fiesta",
+   "year": 2017,
+   "model": "#14 Rahal Letterman Lanigan Racing Fiesta"
+  },
+  "#179 Hammerhead": {
+   "id": 3604,
+   "ids": [
+    3604
+   ],
+   "name": "Jimco #179 Hammerhead Class 1",
+   "year": 2020,
+   "model": "#179 Hammerhead Class 1"
+  },
+  "#185 Porsche 959": {
+   "id": 3031,
+   "ids": [
+    3031
+   ],
+   "name": "Porsche #185 959 Prodrive Rally Raid",
+   "year": 1985,
+   "model": "#185 959 Prodrive Rally Raid"
+  },
+  "#19 CRX WTAC": {
+   "id": 4211,
+   "ids": [
+    4211
+   ],
+   "name": "Honda #19 101 Motorsport CRX WTAC",
+   "year": 1990,
+   "model": "#19 101 Motorsport CRX WTAC"
+  },
+  "#2 Audi S1": {
+   "id": 1478,
+   "ids": [
+    1478
+   ],
+   "name": "Audi #2 Audi Sport quattro S1",
+   "year": 1986,
+   "model": "#2 Audi Sport quattro S1"
+  },
+  "#2 Ford GT40": {
+   "id": 2792,
+   "ids": [
+    2792
+   ],
+   "name": "Ford #2 GT40 Mk II",
+   "year": 1966,
+   "model": "#2 GT40 Mk II"
+  },
+  "#203 Porsche 961": {
+   "id": 3282,
+   "ids": [
+    3282
+   ],
+   "name": "Porsche #203 Porsche AG 961",
+   "year": 1987,
+   "model": "#203 Porsche AG 961"
+  },
+  "#2069 Bronco R": {
+   "id": 3404,
+   "ids": [
+    3404
+   ],
+   "name": "Ford #2069 Ford Performance Bronco R",
+   "year": 2020,
+   "model": "#2069 Ford Performance Bronco R"
+  },
+  "#21 Civic WTAC": {
+   "id": 4277,
+   "ids": [
+    4277
+   ],
+   "name": "Honda #21 Hardrace/JDMYard Civic WTAC",
+   "year": 1992,
+   "model": "#21 Hardrace/JDMYard Civic WTAC"
+  },
+  "#23 SIERRA ALPHA": {
+   "id": 3539,
+   "ids": [
+    3539
+   ],
+   "name": "SIERRA Cars #23 Yokohama ALPHA",
+   "year": 2020,
+   "model": "#23 Yokohama ALPHA"
+  },
+  "#24 Ferrari P4": {
+   "id": 2793,
+   "ids": [
+    2793
+   ],
+   "name": "Ferrari #24 Ferrari Spa 330 P4",
+   "year": 1967,
+   "model": "#24 Ferrari Spa 330 P4"
+  },
+  "#240 Jimco TT": {
+   "id": 3605,
+   "ids": [
+    3605
+   ],
+   "name": "Jimco #240 Fastball Racing Class 6100 Spec Trophy Truck",
+   "year": 2019,
+   "model": "#240 Fastball Racing Class 6100 Spec Trophy Truck"
+  },
+  "#25 Ford Bronco": {
+   "id": 3128,
+   "ids": [
+    3128
+   ],
+   "name": "Ford #25 'Brocky' Ultra4 Bronco RTR",
+   "year": 2017,
+   "model": "#25 'Brocky' Ultra4 Bronco RTR"
+  },
+  "#32 Skyline WTAC": {
+   "id": 4212,
+   "ids": [
+    4212
+   ],
+   "name": "Nissan #32 Skyline WTAC 'Xtreme GTR'",
+   "year": 1993,
+   "model": "#32 Skyline WTAC 'Xtreme GTR'"
+  },
+  "#34 Toyota Supra": {
+   "id": 3411,
+   "ids": [
+    3411
+   ],
+   "name": "Formula Drift #34 Toyota Supra MkIV",
+   "year": 1995,
+   "model": "#34 Toyota Supra MkIV"
+  },
+  "#34 VW Beetle": {
+   "id": 3007,
+   "ids": [
+    3007
+   ],
+   "name": "Volkswagen #34 Andretti Rally Cross Beetle",
+   "year": 2017,
+   "model": "#34 Andretti Rally Cross Beetle"
+  },
+  "#36 Silvia WTAC": {
+   "id": 4213,
+   "ids": [
+    4213
+   ],
+   "name": "Nissan #36 Dream Project S15 Silvia WTAC",
+   "year": 2000,
+   "model": "#36 Dream Project S15 Silvia WTAC"
+  },
+  "#37 Pro 2 Truck": {
+   "id": 2663,
+   "ids": [
+    2663
+   ],
+   "name": "RJ Anderson #37 Polaris RZR Pro 2 Truck",
+   "year": 2016,
+   "model": "#37 Polaris RZR Pro 2 Truck"
+  },
+  "#37 Pro 4 Truck": {
+   "id": 3662,
+   "ids": [
+    3662
+   ],
+   "name": "RJ Anderson #37 Polaris RZR Pro 4 Truck",
+   "year": 2021,
+   "model": "#37 Polaris RZR Pro 4 Truck"
+  },
+  "#4 Ford Focus": {
+   "id": 3670,
+   "ids": [
+    3670
+   ],
+   "name": "Ford #4 Ford Focus RS",
+   "year": 2001,
+   "model": "#4 Ford Focus RS"
+  },
+  "#4402 Ultra 4": {
+   "id": 3603,
+   "ids": [
+    3603
+   ],
+   "name": "Casey Currie Motorsports #4402 Ultra 4 'Trophy Jeep'",
+   "year": 2019,
+   "model": "#4402 Ultra 4 'Trophy Jeep'"
+  },
+  "#5 Escort '77": {
+   "id": 3184,
+   "ids": [
+    3184
+   ],
+   "name": "Ford #5 Escort RS1800 MkII",
+   "year": 1977,
+   "model": "#5 Escort RS1800 MkII"
+  },
+  "#52 S2000 WTAC": {
+   "id": 4231,
+   "ids": [
+    4231
+   ],
+   "name": "Honda #52 Evasive Motorsports S2000 WTAC",
+   "year": 2004,
+   "model": "#52 Evasive Motorsports S2000 WTAC"
+  },
+  "#55 Mazda 787B": {
+   "id": 1335,
+   "ids": [
+    1335
+   ],
+   "name": "Mazda #55 Mazda 787B",
+   "year": 1991,
+   "model": "#55 Mazda 787B"
+  },
+  "#6165 Truck": {
+   "id": 3693,
+   "ids": [
+    3693
+   ],
+   "name": "Alumicraft #6165 Trick Truck",
+   "year": 2022,
+   "model": "#6165 Trick Truck"
+  },
+  "#70 Porsche 935": {
+   "id": 3214,
+   "ids": [
+    3214
+   ],
+   "name": "Porsche #70 Porsche Motorsport 935",
+   "year": 2019,
+   "model": "#70 Porsche Motorsport 935"
+  },
+  "#777 Nissan 240": {
+   "id": 3000,
+   "ids": [
+    3000
+   ],
+   "name": "Formula Drift #777 Nissan 240SX",
+   "year": 1997,
+   "model": "#777 Nissan 240SX"
+  },
+  "#99 Mazda RX-8": {
+   "id": 3400,
+   "ids": [
+    3400
+   ],
+   "name": "Formula Drift #99 Mazda RX-8",
+   "year": 2009,
+   "model": "#99 Mazda RX-8"
+  },
+  "275 GTB4 '67": {
+   "id": 3950,
+   "ids": [
+    3950
+   ],
+   "name": "Ferrari 275 GTB4 Spider",
+   "year": 1967,
+   "model": "275 GTB4 Spider"
+  },
+  "3000 MKIII": {
+   "id": 1481,
+   "ids": [
+    1481
+   ],
+   "name": "Austin-Healey 3000 MkIII",
+   "year": 1965,
+   "model": "3000 MKIII"
+  },
+  "488 Pista '19": {
+   "id": 3227,
+   "ids": [
+    3227
+   ],
+   "name": "Ferrari 488 Pista",
+   "year": 2019,
+   "model": "488 Pista"
+  },
+  "650S Spider": {
+   "id": 3087,
+   "ids": [
+    3087
+   ],
+   "name": "McLaren 650S Spider",
+   "year": 2014,
+   "model": "650S Spider"
+  },
+  "86 Stories": {
+   "id": 4259,
+   "ids": [
+    4259
+   ],
+   "name": "Toyota 86 Stories",
+   "year": 2013,
+   "model": "86 'Stories'"
+  },
+  "911 Carrera '73": {
+   "id": 260,
+   "ids": [
+    260
+   ],
+   "name": "Porsche 911 Carrera RS",
+   "year": 1973,
+   "model": "911 Carrera RS"
+  },
+  "911 GT2 '95": {
+   "id": 261,
+   "ids": [
+    261
+   ],
+   "name": "Porsche 911 GT2",
+   "year": 1995,
+   "model": "911 GT2"
+  },
+  "911 GT2 RS '18": {
+   "id": 2755,
+   "ids": [
+    2755
+   ],
+   "name": "Porsche 911 GT2 RS",
+   "year": 2018,
+   "model": "911 GT2 RS"
+  },
+  "911 GT3 '04": {
+   "id": 262,
+   "ids": [
+    262
+   ],
+   "name": "Porsche 911 GT3",
+   "year": 2004,
+   "model": "911 GT3"
+  },
+  "911 GT3 '21": {
+   "id": 3667,
+   "ids": [
+    3667
+   ],
+   "name": "Porsche 911 GT3",
+   "year": 2021,
+   "model": "911 GT3"
+  },
+  "911 GT3 RS '19": {
+   "id": 3072,
+   "ids": [
+    3072
+   ],
+   "name": "Porsche 911 GT3 RS",
+   "year": 2019,
+   "model": "911 GT3 RS"
+  },
+  "911 GT3 RS4 '12": {
+   "id": 2297,
+   "ids": [
+    2297
+   ],
+   "name": "Porsche 911 GT3 RS 4.0",
+   "year": 2012,
+   "model": "911 GT3 RS 4.0"
+  },
+  "911 Turbo '82": {
+   "id": 265,
+   "ids": [
+    265
+   ],
+   "name": "Porsche 911 Turbo 3.3",
+   "year": 1982,
+   "model": "911 Turbo 3.3"
+  },
+  "911 Turbo S '23": {
+   "id": 3953,
+   "ids": [
+    3953
+   ],
+   "name": "Porsche 911 Turbo S",
+   "year": 2023,
+   "model": "911 Turbo S"
+  },
+  "AM DB11": {
+   "id": 2527,
+   "ids": [
+    2527
+   ],
+   "name": "Aston Martin DB11",
+   "year": 2017,
+   "model": "DB11"
+  },
+  "AM DB5": {
+   "id": 1105,
+   "ids": [
+    1105
+   ],
+   "name": "Aston Martin DB5",
+   "year": 1964,
+   "model": "DB5"
+  },
+  "AM DBS SL '19": {
+   "id": 3185,
+   "ids": [
+    3185
+   ],
+   "name": "Aston Martin DBS Superleggera",
+   "year": 2019,
+   "model": "DBS Superleggera"
+  },
+  "AM DBX '21": {
+   "id": 3580,
+   "ids": [
+    3580
+   ],
+   "name": "Aston Martin DBX",
+   "year": 2021,
+   "model": "DBX"
+  },
+  "AM Valkyrie": {
+   "id": 2968,
+   "ids": [
+    2968
+   ],
+   "name": "Aston Martin Valkyrie",
+   "year": 2023,
+   "model": "Valkyrie"
+  },
+  "AM Valkyrie AMR": {
+   "id": 3631,
+   "ids": [
+    3631
+   ],
+   "name": "Aston Martin Valkyrie AMR Pro",
+   "year": 2022,
+   "model": "Valkyrie AMR Pro"
+  },
+  "AM Vantage '19": {
+   "id": 3091,
+   "ids": [
+    3091
+   ],
+   "name": "Aston Martin Vantage",
+   "year": 2019,
+   "model": "Vantage"
+  },
+  "AM Vulcan": {
+   "id": 2470,
+   "ids": [
+    2470
+   ],
+   "name": "Aston Martin Vulcan",
+   "year": 2016,
+   "model": "Vulcan"
+  },
+  "AM Vulcan AMR": {
+   "id": 3211,
+   "ids": [
+    3211
+   ],
+   "name": "Aston Martin Vulcan AMR Pro",
+   "year": 2017,
+   "model": "Vulcan AMR Pro"
+  },
+  "AMG GT Black": {
+   "id": 3616,
+   "ids": [
+    3616
+   ],
+   "name": "Mercedes-AMG GT Black Series",
+   "year": 2020,
+   "model": "GT Black Series"
+  },
+  "AMG Hammer Coupe": {
+   "id": 3176,
+   "ids": [
+    3176
+   ],
+   "name": "Mercedes-Benz AMG Hammer Coupe",
+   "year": 1987,
+   "model": "AMG Hammer Coupe"
+  },
+  "AR Giulia GTAm": {
+   "id": 4147,
+   "ids": [
+    4147
+   ],
+   "name": "Alfa Romeo Giulia GTAm",
+   "year": 2021,
+   "model": "Giulia GTAm"
+  },
+  "Abarth 124 '17": {
+   "id": 2740,
+   "ids": [
+    2740
+   ],
+   "name": "Abarth 124 Spider",
+   "year": 2017,
+   "model": "124 Spider"
+  },
+  "Abarth 131": {
+   "id": 1124,
+   "ids": [
+    1124
+   ],
+   "name": "Abarth Fiat 131",
+   "year": 1980,
+   "model": "Fiat 131"
+  },
+  "Abarth 595 '68": {
+   "id": 2017,
+   "ids": [
+    2017
+   ],
+   "name": "Abarth 595 esseesse",
+   "year": 1968,
+   "model": "595 esseesse"
+  },
+  "Abarth 695 '16": {
+   "id": 2489,
+   "ids": [
+    2489
+   ],
+   "name": "Abarth 695 Biposto",
+   "year": 2016,
+   "model": "695 Biposto"
+  },
+  "Acura Integra": {
+   "id": 368,
+   "ids": [
+    368
+   ],
+   "name": "Acura Integra Type R",
+   "year": 2001,
+   "model": "Integra Type R"
+  },
+  "Acura NSX '22": {
+   "id": 3767,
+   "ids": [
+    3767
+   ],
+   "name": "Acura NSX Type S",
+   "year": 2022,
+   "model": "NSX Type S"
+  },
+  "Acura RSX": {
+   "id": 422,
+   "ids": [
+    422
+   ],
+   "name": "Acura RSX Type S",
+   "year": 2002,
+   "model": "RSX Type S"
+  },
+  "Agera RS": {
+   "id": 2910,
+   "ids": [
+    2910
+   ],
+   "name": "Koenigsegg Agera RS",
+   "year": 2017,
+   "model": "Agera RS"
+  },
+  "Alfa Giulia '17": {
+   "id": 2542,
+   "ids": [
+    2542
+   ],
+   "name": "Alfa Romeo Giulia Quadrifoglio",
+   "year": 2017,
+   "model": "Giulia Quadrifoglio"
+  },
+  "Alfa Romeo 155": {
+   "id": 1393,
+   "ids": [
+    1393
+   ],
+   "name": "Alfa Romeo 155 Q4",
+   "year": 1992,
+   "model": "155 Q4"
+  },
+  "Alfa Romeo 33S": {
+   "id": 1549,
+   "ids": [
+    1549
+   ],
+   "name": "Alfa Romeo 33 Stradale",
+   "year": 1968,
+   "model": "33 Stradale"
+  },
+  "Alfa Romeo 4C": {
+   "id": 2038,
+   "ids": [
+    2038
+   ],
+   "name": "Alfa Romeo 4C",
+   "year": 2014,
+   "model": "4C"
+  },
+  "Alfa Romeo 8C": {
+   "id": 1032,
+   "ids": [
+    1032
+   ],
+   "name": "Alfa Romeo 8C Competizione",
+   "year": 2007,
+   "model": "8C Competizione"
+  },
+  "Alfa Romeo GTA": {
+   "id": 1150,
+   "ids": [
+    1150
+   ],
+   "name": "Alfa Romeo Giulia Sprint GTA Stradale",
+   "year": 1965,
+   "model": "Giulia Sprint GTA Stradale"
+  },
+  "Alfa Romeo TZ2": {
+   "id": 2161,
+   "ids": [
+    2161
+   ],
+   "name": "Alfa Romeo Giulia TZ2",
+   "year": 1965,
+   "model": "Giulia TZ2"
+  },
+  "Alfa SE 048SP": {
+   "id": 3304,
+   "ids": [
+    3304
+   ],
+   "name": "Alfa Romeo SE 048SP",
+   "year": 1990,
+   "model": "SE 048SP"
+  },
+  "Alumi Craft C.10": {
+   "id": 2552,
+   "ids": [
+    2552
+   ],
+   "name": "Alumicraft Class 10 Race Car",
+   "year": 2015,
+   "model": "Class 10 Race Car"
+  },
+  "Apollo IE '19": {
+   "id": 3141,
+   "ids": [
+    3141
+   ],
+   "name": "Apollo Intensa Emozione",
+   "year": 2019,
+   "model": "Intensa Emozione"
+  },
+  "Ariel Atom": {
+   "id": 1651,
+   "ids": [
+    1651
+   ],
+   "name": "Ariel Atom 500 V8",
+   "year": 2013,
+   "model": "Atom 500 V8"
+  },
+  "Ariel Nomad": {
+   "id": 2430,
+   "ids": [
+    2430
+   ],
+   "name": "Ariel Nomad",
+   "year": 2016,
+   "model": "Nomad"
+  },
+  "Aston DB7 GT": {
+   "id": 3325,
+   "ids": [
+    3325
+   ],
+   "name": "Aston Martin DB7 GT",
+   "year": 2003,
+   "model": "DB7 GT"
+  },
+  "Audi R8 '13": {
+   "id": 2010,
+   "ids": [
+    2010
+   ],
+   "name": "Audi R8 Coupé V10 plus 5.2 FSI quattro",
+   "year": 2013,
+   "model": "R8 Coupé V10 plus 5.2 FSI quattro"
+  },
+  "Audi R8 '20": {
+   "id": 3745,
+   "ids": [
+    3745
+   ],
+   "name": "Audi R8 V10 performance",
+   "year": 2020,
+   "model": "R8 V10 performance"
+  },
+  "Audi R8 GT '23": {
+   "id": 3917,
+   "ids": [
+    3917
+   ],
+   "name": "Audi R8 Coupé V10 GT RWD",
+   "year": 2023,
+   "model": "R8 Coupé V10 GT RWD"
+  },
+  "Audi R8 LMS": {
+   "id": 1200,
+   "ids": [
+    1200
+   ],
+   "name": "Audi R8 LMS",
+   "year": 2009,
+   "model": "R8 LMS"
+  },
+  "Audi R8 V10 plus": {
+   "id": 2473,
+   "ids": [
+    2473
+   ],
+   "name": "Audi R8 V10 plus",
+   "year": 2016,
+   "model": "R8 V10 plus"
+  },
+  "Audi RS 3": {
+   "id": 1216,
+   "ids": [
+    1216
+   ],
+   "name": "Audi RS 3 Sportback",
+   "year": 2011,
+   "model": "RS 3 Sportback"
+  },
+  "Audi RS 3 '20": {
+   "id": 3454,
+   "ids": [
+    3454
+   ],
+   "name": "Audi RS 3 Sedan",
+   "year": 2020,
+   "model": "RS 3 Sedan"
+  },
+  "Audi RS 4 '01": {
+   "id": 2178,
+   "ids": [
+    2178
+   ],
+   "name": "Audi RS 4 Avant",
+   "year": 2001,
+   "model": "RS 4 Avant"
+  },
+  "Audi RS 4 '06": {
+   "id": 419,
+   "ids": [
+    419
+   ],
+   "name": "Audi RS 4",
+   "year": 2006,
+   "model": "RS 4"
+  },
+  "Audi RS 5": {
+   "id": 1417,
+   "ids": [
+    1417
+   ],
+   "name": "Audi RS 5 Coupé",
+   "year": 2011,
+   "model": "RS 5 Coupé"
+  },
+  "Audi RS 6 '03": {
+   "id": 420,
+   "ids": [
+    420
+   ],
+   "name": "Audi RS 6",
+   "year": 2003,
+   "model": "RS 6"
+  },
+  "Audi RS 6 '09": {
+   "id": 1184,
+   "ids": [
+    1184
+   ],
+   "name": "Audi RS 6",
+   "year": 2009,
+   "model": "RS 6"
+  },
+  "Audi RS 6 '15": {
+   "id": 2180,
+   "ids": [
+    2180
+   ],
+   "name": "Audi RS 6 Avant",
+   "year": 2015,
+   "model": "RS 6 Avant"
+  },
+  "Audi RS 6 '21": {
+   "id": 3583,
+   "ids": [
+    3583
+   ],
+   "name": "Audi RS 6 Avant",
+   "year": 2021,
+   "model": "RS 6 Avant"
+  },
+  "Audi RS 7 '21": {
+   "id": 3584,
+   "ids": [
+    3584
+   ],
+   "name": "Audi RS 7 Sportback",
+   "year": 2021,
+   "model": "RS 7 Sportback"
+  },
+  "Audi RS e-tron": {
+   "id": 3359,
+   "ids": [
+    3359
+   ],
+   "name": "Audi RS e-tron GT",
+   "year": 2021,
+   "model": "RS e-tron GT"
+  },
+  "Audi TT RS": {
+   "id": 1220,
+   "ids": [
+    1220
+   ],
+   "name": "Audi TT RS Coupé",
+   "year": 2010,
+   "model": "TT RS Coupé"
+  },
+  "Audi quattro": {
+   "id": 633,
+   "ids": [
+    633
+   ],
+   "name": "Audi Sport quattro",
+   "year": 1984,
+   "model": "Sport quattro"
+  },
+  "Autozam AZ-1 '93": {
+   "id": 3854,
+   "ids": [
+    3854
+   ],
+   "name": "Autozam AZ-1",
+   "year": 1993,
+   "model": "AZ-1"
+  },
+  "Aventador '12": {
+   "id": 1398,
+   "ids": [
+    1398
+   ],
+   "name": "Lamborghini Aventador LP700-4",
+   "year": 2012,
+   "model": "Aventador LP700-4"
+  },
+  "Aventador SVJ": {
+   "id": 3289,
+   "ids": [
+    3289
+   ],
+   "name": "Lamborghini Aventador SVJ",
+   "year": 2018,
+   "model": "Aventador SVJ"
+  },
+  "BAC Mono": {
+   "id": 2040,
+   "ids": [
+    2040
+   ],
+   "name": "BAC Mono",
+   "year": 2014,
+   "model": "Mono"
+  },
+  "BMW 2002 Turbo": {
+   "id": 1269,
+   "ids": [
+    1269
+   ],
+   "name": "BMW 2002 Turbo",
+   "year": 1973,
+   "model": "2002 Turbo"
+  },
+  "BMW 850CSi": {
+   "id": 1493,
+   "ids": [
+    1493
+   ],
+   "name": "BMW 850CSi",
+   "year": 1995,
+   "model": "850CSi"
+  },
+  "BMW E92 M3 GTS": {
+   "id": 1598,
+   "ids": [
+    1598
+   ],
+   "name": "BMW M3 GTS",
+   "year": 2010,
+   "model": "M3 GTS"
+  },
+  "BMW Isetta": {
+   "id": 2412,
+   "ids": [
+    2412
+   ],
+   "name": "BMW Isetta 300 Export",
+   "year": 1957,
+   "model": "Isetta 300 Export"
+  },
+  "BMW M1": {
+   "id": 1040,
+   "ids": [
+    1040
+   ],
+   "name": "BMW M1",
+   "year": 1981,
+   "model": "M1"
+  },
+  "BMW M2 '23": {
+   "id": 3763,
+   "ids": [
+    3763
+   ],
+   "name": "BMW M2",
+   "year": 2023,
+   "model": "M2"
+  },
+  "BMW M2 Comp": {
+   "id": 3434,
+   "ids": [
+    3434
+   ],
+   "name": "BMW M2 Competition Coupé",
+   "year": 2020,
+   "model": "M2 Competition Coupé"
+  },
+  "BMW M2 FE '23": {
+   "id": 4166,
+   "ids": [
+    4166
+   ],
+   "name": "BMW M2 Forza Edition",
+   "year": 2023,
+   "model": "M2 Forza Edition"
+  },
+  "BMW M3 '05": {
+   "id": 383,
+   "ids": [
+    383
+   ],
+   "name": "BMW M3",
+   "year": 2005,
+   "model": "M3"
+  },
+  "BMW M3 '08": {
+   "id": 1011,
+   "ids": [
+    1011
+   ],
+   "name": "BMW M3",
+   "year": 2008,
+   "model": "M3"
+  },
+  "BMW M3 '88": {
+   "id": 4069,
+   "ids": [
+    4069
+   ],
+   "name": "BMW M3",
+   "year": 1988,
+   "model": "M3"
+  },
+  "BMW M3 '97": {
+   "id": 382,
+   "ids": [
+    382
+   ],
+   "name": "BMW M3",
+   "year": 1997,
+   "model": "M3"
+  },
+  "BMW M4 '14": {
+   "id": 2154,
+   "ids": [
+    2154
+   ],
+   "name": "BMW M4 Coupé",
+   "year": 2014,
+   "model": "M4 Coupé"
+  },
+  "BMW M4 '16": {
+   "id": 2628,
+   "ids": [
+    2628
+   ],
+   "name": "BMW M4 GTS",
+   "year": 2016,
+   "model": "M4 GTS"
+  },
+  "BMW M4 '21": {
+   "id": 3645,
+   "ids": [
+    3645
+   ],
+   "name": "BMW M4 Competition Coupé",
+   "year": 2021,
+   "model": "M4 Competition Coupé"
+  },
+  "BMW M4 '21 WP": {
+   "id": 4266,
+   "ids": [
+    4266
+   ],
+   "name": "BMW M4 Competition Coupé Welcome Pack",
+   "year": 2021,
+   "model": "M4 Competition Coupé 'Welcome Pack'"
+  },
+  "BMW M5 '03": {
+   "id": 1367,
+   "ids": [
+    1367
+   ],
+   "name": "BMW M5",
+   "year": 2003,
+   "model": "M5"
+  },
+  "BMW M5 '09": {
+   "id": 1126,
+   "ids": [
+    1126
+   ],
+   "name": "BMW M5",
+   "year": 2009,
+   "model": "M5"
+  },
+  "BMW M5 '12": {
+   "id": 1388,
+   "ids": [
+    1388
+   ],
+   "name": "BMW M5",
+   "year": 2012,
+   "model": "M5"
+  },
+  "BMW M5 '22": {
+   "id": 3764,
+   "ids": [
+    3764
+   ],
+   "name": "BMW M5 CS",
+   "year": 2022,
+   "model": "M5 CS"
+  },
+  "BMW M5 '88": {
+   "id": 1368,
+   "ids": [
+    1368
+   ],
+   "name": "BMW M5",
+   "year": 1988,
+   "model": "M5"
+  },
+  "BMW M5 '95": {
+   "id": 1418,
+   "ids": [
+    1418
+   ],
+   "name": "BMW M5",
+   "year": 1995,
+   "model": "M5"
+  },
+  "BMW M8 Comp": {
+   "id": 3518,
+   "ids": [
+    3518
+   ],
+   "name": "BMW M8 Competition Coupé",
+   "year": 2020,
+   "model": "M8 Competition Coupé"
+  },
+  "BMW X5 M": {
+   "id": 1350,
+   "ids": [
+    1350
+   ],
+   "name": "BMW X5 M",
+   "year": 2011,
+   "model": "X5 M"
+  },
+  "BMW X6 M '24": {
+   "id": 3983,
+   "ids": [
+    3983
+   ],
+   "name": "BMW X6 M Competition",
+   "year": 2024,
+   "model": "X6 M Competition"
+  },
+  "BMW Z4 '08": {
+   "id": 1059,
+   "ids": [
+    1059
+   ],
+   "name": "BMW Z4 M Coupé",
+   "year": 2008,
+   "model": "Z4 M Coupé"
+  },
+  "BMW Z4 '19": {
+   "id": 3173,
+   "ids": [
+    3173
+   ],
+   "name": "BMW Z4 Roadster",
+   "year": 2019,
+   "model": "Z4 Roadster"
+  },
+  "BMW i8": {
+   "id": 2133,
+   "ids": [
+    2133
+   ],
+   "name": "BMW i8",
+   "year": 2015,
+   "model": "i8"
+  },
+  "BMW iX '22": {
+   "id": 3737,
+   "ids": [
+    3737
+   ],
+   "name": "BMW iX xDrive50",
+   "year": 2022,
+   "model": "iX xDrive50"
+  },
+  "Barracuda": {
+   "id": 281,
+   "ids": [
+    281
+   ],
+   "name": "Plymouth Barracuda Formula S",
+   "year": 1968,
+   "model": "Barracuda Formula S"
+  },
+  "Bentley Bentayga": {
+   "id": 2625,
+   "ids": [
+    2625
+   ],
+   "name": "Bentley Bentayga",
+   "year": 2016,
+   "model": "Bentayga"
+  },
+  "Bentley Cont GTC": {
+   "id": 3728,
+   "ids": [
+    3728
+   ],
+   "name": "Bentley Continental GT Convertible",
+   "year": 2021,
+   "model": "Continental GT Convertible"
+  },
+  "Bronco Raptor": {
+   "id": 3736,
+   "ids": [
+    3736
+   ],
+   "name": "Ford Bronco Raptor",
+   "year": 2022,
+   "model": "Bronco Raptor"
+  },
+  "Buick Regal GNX": {
+   "id": 417,
+   "ids": [
+    417
+   ],
+   "name": "Buick Regal GNX",
+   "year": 1987,
+   "model": "Regal GNX"
+  },
+  "Caddy ATS-V": {
+   "id": 2262,
+   "ids": [
+    2262
+   ],
+   "name": "Cadillac ATS-V",
+   "year": 2016,
+   "model": "ATS-V"
+  },
+  "Caddy CTS-V '16": {
+   "id": 2421,
+   "ids": [
+    2421
+   ],
+   "name": "Cadillac CTS-V Sedan",
+   "year": 2016,
+   "model": "CTS-V Sedan"
+  },
+  "Caddy Limo": {
+   "id": 2128,
+   "ids": [
+    2128
+   ],
+   "name": "Cadillac XTS Limousine",
+   "year": 2013,
+   "model": "XTS Limousine"
+  },
+  "Cadillac CT4-V": {
+   "id": 3719,
+   "ids": [
+    3719
+   ],
+   "name": "Cadillac CT4-V Blackwing",
+   "year": 2022,
+   "model": "CT4-V Blackwing"
+  },
+  "Cadillac CT5-V": {
+   "id": 3720,
+   "ids": [
+    3720
+   ],
+   "name": "Cadillac CT5-V Blackwing",
+   "year": 2022,
+   "model": "CT5-V Blackwing"
+  },
+  "Can-Am Maverick": {
+   "id": 2871,
+   "ids": [
+    2871
+   ],
+   "name": "Can-Am Maverick X RS Turbo R",
+   "year": 2018,
+   "model": "Maverick X RS Turbo R"
+  },
+  "Cayman GT4 RS": {
+   "id": 3760,
+   "ids": [
+    3760
+   ],
+   "name": "Porsche 718 Cayman GT4 RS",
+   "year": 2022,
+   "model": "718 Cayman GT4 RS"
+  },
+  "Cayman WTAC": {
+   "id": 4232,
+   "ids": [
+    4232
+   ],
+   "name": "Porsche Cayman GT3 WTAC",
+   "year": 2005,
+   "model": "Cayman GT3 WTAC"
+  },
+  "Challenger '15": {
+   "id": 2263,
+   "ids": [
+    2263
+   ],
+   "name": "Dodge Challenger SRT Hellcat",
+   "year": 2015,
+   "model": "Challenger SRT Hellcat"
+  },
+  "Challenger '22": {
+   "id": 3959,
+   "ids": [
+    3959
+   ],
+   "name": "Dodge Challenger SRT Super Stock",
+   "year": 2022,
+   "model": "Challenger SRT Super Stock"
+  },
+  "Challenger '70": {
+   "id": 639,
+   "ids": [
+    639
+   ],
+   "name": "Dodge Challenger R/T",
+   "year": 1970,
+   "model": "Challenger R/T"
+  },
+  "Charger Daytona": {
+   "id": 1063,
+   "ids": [
+    1063
+   ],
+   "name": "Dodge Charger Daytona HEMI",
+   "year": 1969,
+   "model": "Charger Daytona HEMI"
+  },
+  "Chaser GT TT '91": {
+   "id": 3914,
+   "ids": [
+    3914
+   ],
+   "name": "Toyota Chaser GT Twin Turbo",
+   "year": 1991,
+   "model": "Chaser GT Twin Turbo"
+  },
+  "Chev. Camaro '24": {
+   "id": 3954,
+   "ids": [
+    3954
+   ],
+   "name": "Chevrolet Camaro ZL1",
+   "year": 2024,
+   "model": "Camaro ZL1"
+  },
+  "Chevelle '70": {
+   "id": 299,
+   "ids": [
+    299
+   ],
+   "name": "Chevrolet Chevelle Super Sport 454",
+   "year": 1970,
+   "model": "Chevelle Super Sport 454"
+  },
+  "Chevy 150 Sedan": {
+   "id": 2507,
+   "ids": [
+    2507
+   ],
+   "name": "Chevrolet 150 Utility Sedan",
+   "year": 1955,
+   "model": "150 Utility Sedan"
+  },
+  "Chevy Bel Air": {
+   "id": 1459,
+   "ids": [
+    1459
+   ],
+   "name": "Chevrolet Bel Air",
+   "year": 1957,
+   "model": "Bel Air"
+  },
+  "Chevy Camaro '15": {
+   "id": 2183,
+   "ids": [
+    2183
+   ],
+   "name": "Chevrolet Camaro Z/28",
+   "year": 2015,
+   "model": "Camaro Z/28"
+  },
+  "Chevy Camaro '17": {
+   "id": 2739,
+   "ids": [
+    2739
+   ],
+   "name": "Chevrolet Camaro ZL1",
+   "year": 2017,
+   "model": "Camaro ZL1"
+  },
+  "Chevy Camaro '18": {
+   "id": 3149,
+   "ids": [
+    3149
+   ],
+   "name": "Chevrolet Camaro ZL1 1LE",
+   "year": 2018,
+   "model": "Camaro ZL1 1LE"
+  },
+  "Chevy Camaro '69": {
+   "id": 289,
+   "ids": [
+    289
+   ],
+   "name": "Chevrolet Camaro Super Sport Coupe",
+   "year": 1969,
+   "model": "Camaro Super Sport Coupe"
+  },
+  "Chevy Camaro '70": {
+   "id": 1330,
+   "ids": [
+    1330
+   ],
+   "name": "Chevrolet Camaro Z28",
+   "year": 1970,
+   "model": "Camaro Z28"
+  },
+  "Chevy Camaro '79": {
+   "id": 1064,
+   "ids": [
+    1064
+   ],
+   "name": "Chevrolet Camaro Z28",
+   "year": 1979,
+   "model": "Camaro Z28"
+  },
+  "Chevy El Camino": {
+   "id": 1291,
+   "ids": [
+    1291
+   ],
+   "name": "Chevrolet El Camino Super Sport 454",
+   "year": 1970,
+   "model": "El Camino Super Sport 454"
+  },
+  "Chevy Impala": {
+   "id": 1300,
+   "ids": [
+    1300
+   ],
+   "name": "Chevrolet Impala Super Sport 409",
+   "year": 1964,
+   "model": "Impala Super Sport 409"
+  },
+  "Chevy Impala '96": {
+   "id": 1379,
+   "ids": [
+    1379
+   ],
+   "name": "Chevrolet Impala Super Sport",
+   "year": 1996,
+   "model": "Impala Super Sport"
+  },
+  "Chevy K10 '72": {
+   "id": 3590,
+   "ids": [
+    3590
+   ],
+   "name": "Chevrolet K-10 Custom",
+   "year": 1972,
+   "model": "K-10 Custom"
+  },
+  "Chevy MonteCarlo": {
+   "id": 1575,
+   "ids": [
+    1575
+   ],
+   "name": "Chevrolet Monte Carlo Super Sport",
+   "year": 1988,
+   "model": "Monte Carlo Super Sport"
+  },
+  "Chevy Nova '69": {
+   "id": 1429,
+   "ids": [
+    1429
+   ],
+   "name": "Chevrolet Nova Super Sport 396",
+   "year": 1969,
+   "model": "Nova Super Sport 396"
+  },
+  "Chevy Trail Boss": {
+   "id": 3477,
+   "ids": [
+    3477
+   ],
+   "name": "Chevrolet Silverado LT Trail Boss",
+   "year": 2020,
+   "model": "Silverado LT Trail Boss"
+  },
+  "City E II '84": {
+   "id": 3859,
+   "ids": [
+    3859
+   ],
+   "name": "Honda City E II",
+   "year": 1984,
+   "model": "City E II"
+  },
+  "Continental '62": {
+   "id": 1586,
+   "ids": [
+    1586
+   ],
+   "name": "Lincoln Continental",
+   "year": 1962,
+   "model": "Continental"
+  },
+  "Corvette '02": {
+   "id": 314,
+   "ids": [
+    314
+   ],
+   "name": "Chevrolet Corvette Z06",
+   "year": 2002,
+   "model": "Corvette Z06"
+  },
+  "Corvette '09": {
+   "id": 1069,
+   "ids": [
+    1069
+   ],
+   "name": "Chevrolet Corvette ZR1",
+   "year": 2009,
+   "model": "Corvette ZR1"
+  },
+  "Corvette '19": {
+   "id": 1069,
+   "ids": [
+    1069
+   ],
+   "name": "Chevrolet Corvette ZR1",
+   "year": 2009,
+   "model": "Corvette ZR1"
+  },
+  "Corvette '53": {
+   "id": 1564,
+   "ids": [
+    1564,
+    2177
+   ],
+   "name": "Chevrolet Corvette",
+   "year": 1953,
+   "model": "Corvette"
+  },
+  "Corvette '60": {
+   "id": 1093,
+   "ids": [
+    1093
+   ],
+   "name": "Chevrolet Corvette",
+   "year": 1960,
+   "model": "Corvette"
+  },
+  "Corvette '67": {
+   "id": 312,
+   "ids": [
+    312
+   ],
+   "name": "Chevrolet Corvette Stingray 427",
+   "year": 1967,
+   "model": "Corvette Stingray 427"
+  },
+  "Corvette '70": {
+   "id": 315,
+   "ids": [
+    315
+   ],
+   "name": "Chevrolet Corvette ZR-1",
+   "year": 1970,
+   "model": "Corvette ZR-1"
+  },
+  "Corvette '95": {
+   "id": 2006,
+   "ids": [
+    2006
+   ],
+   "name": "Chevrolet Corvette ZR-1",
+   "year": 1995,
+   "model": "Corvette ZR-1"
+  },
+  "Corvette C8 '20": {
+   "id": 3369,
+   "ids": [
+    3369
+   ],
+   "name": "Chevrolet Corvette Stingray Coupe",
+   "year": 2020,
+   "model": "Corvette Stingray Coupe"
+  },
+  "Corvette E-Ray": {
+   "id": 3771,
+   "ids": [
+    3771
+   ],
+   "name": "Chevrolet Corvette E-Ray",
+   "year": 2024,
+   "model": "Corvette E-Ray"
+  },
+  "Corvette Z06 '23": {
+   "id": 3766,
+   "ids": [
+    3766
+   ],
+   "name": "Chevrolet Corvette Z06",
+   "year": 2023,
+   "model": "Corvette Z06"
+  },
+  "Crown Victoria": {
+   "id": 2649,
+   "ids": [
+    2649
+   ],
+   "name": "Ford Crown Victoria Police Interceptor",
+   "year": 2010,
+   "model": "Crown Victoria Police Interceptor"
+  },
+  "DD Tacoma TRD": {
+   "id": 3441,
+   "ids": [
+    3441
+   ],
+   "name": "DeBerti Toyota Tacoma TRD ‘The Performance Truck’",
+   "year": 2019,
+   "model": "Toyota Tacoma TRD 'The Performance Truck'"
+  },
+  "Datsun #269 240Z": {
+   "id": 4084,
+   "ids": [
+    4084
+   ],
+   "name": "Datsun #269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'",
+   "year": 1972,
+   "model": "#269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'"
+  },
+  "Datsun 2000": {
+   "id": 2272,
+   "ids": [
+    2272
+   ],
+   "name": "Datsun 2000 Roadster",
+   "year": 1969,
+   "model": "2000 Roadster"
+  },
+  "Datsun 510": {
+   "id": 1104,
+   "ids": [
+    1104
+   ],
+   "name": "Datsun 510",
+   "year": 1970,
+   "model": "510"
+  },
+  "DeBerti F-250": {
+   "id": 3439,
+   "ids": [
+    3439
+   ],
+   "name": "DeBerti Ford Super Duty F-250 Lariat 'Transformer'",
+   "year": 2019,
+   "model": "Ford Super Duty F-250 Lariat 'Transformer'"
+  },
+  "DeLorean DMC-12": {
+   "id": 1270,
+   "ids": [
+    1270
+   ],
+   "name": "DeLorean DMC-12",
+   "year": 1982,
+   "model": "DMC-12"
+  },
+  "Diablo GTR": {
+   "id": 324,
+   "ids": [
+    324
+   ],
+   "name": "Lamborghini Diablo GTR",
+   "year": 1999,
+   "model": "Diablo GTR"
+  },
+  "Dodge Charger 15": {
+   "id": 2468,
+   "ids": [
+    2468
+   ],
+   "name": "Dodge Charger SRT Hellcat",
+   "year": 2015,
+   "model": "Charger SRT Hellcat"
+  },
+  "Dodge Charger 69": {
+   "id": 513,
+   "ids": [
+    513
+   ],
+   "name": "Dodge Charger R/T",
+   "year": 1969,
+   "model": "Charger R/T"
+  },
+  "Dodge Dart '68": {
+   "id": 1332,
+   "ids": [
+    1332
+   ],
+   "name": "Dodge Dart HEMI Super Stock",
+   "year": 1968,
+   "model": "Dart HEMI Super Stock"
+  },
+  "Dodge Ram SRT-10": {
+   "id": 1052,
+   "ids": [
+    1052
+   ],
+   "name": "Dodge Ram SRT-10",
+   "year": 2006,
+   "model": "Ram SRT-10"
+  },
+  "Dodge SRT Demon": {
+   "id": 2909,
+   "ids": [
+    2909
+   ],
+   "name": "Dodge Challenger SRT Demon",
+   "year": 2018,
+   "model": "Challenger SRT Demon"
+  },
+  "Dodge Super Bee": {
+   "id": 1352,
+   "ids": [
+    1352
+   ],
+   "name": "Dodge Coronet Super Bee",
+   "year": 1970,
+   "model": "Coronet Super Bee"
+  },
+  "Dodge Viper '08": {
+   "id": 1046,
+   "ids": [
+    1046
+   ],
+   "name": "Dodge Viper SRT-10 ACR",
+   "year": 2008,
+   "model": "Viper SRT-10 ACR"
+  },
+  "Dodge Viper '16": {
+   "id": 2544,
+   "ids": [
+    2544
+   ],
+   "name": "Dodge Viper ACR",
+   "year": 2016,
+   "model": "Viper ACR"
+  },
+  "Dodge Viper '99": {
+   "id": 483,
+   "ids": [
+    483
+   ],
+   "name": "Dodge Viper GTS ACR",
+   "year": 1999,
+   "model": "Viper GTS ACR"
+  },
+  "Eclipse GSX": {
+   "id": 327,
+   "ids": [
+    327
+   ],
+   "name": "Mitsubishi Eclipse GSX",
+   "year": 1995,
+   "model": "Eclipse GSX"
+  },
+  "Exige WTAC": {
+   "id": 4210,
+   "ids": [
+    4210
+   ],
+   "name": "Lotus Scura Motorsports Exige WTAC",
+   "year": 2018,
+   "model": "Scura Motorsports Exige WTAC"
+  },
+  "Exocet '18": {
+   "id": 2866,
+   "ids": [
+    2866
+   ],
+   "name": "Exomotive Exocet Sport V8 XP-5",
+   "year": 2018,
+   "model": "Exocet Sport V8 XP-5"
+  },
+  "F-150 Lightning": {
+   "id": 3692,
+   "ids": [
+    3692
+   ],
+   "name": "Ford F-150 Lightning",
+   "year": 2022,
+   "model": "F-150 Lightning"
+  },
+  "F8 Tributo '19": {
+   "id": 3367,
+   "ids": [
+    3367
+   ],
+   "name": "Ferrari F8 Tributo",
+   "year": 2019,
+   "model": "F8 Tributo"
+  },
+  "Fairlady Z '03": {
+   "id": 344,
+   "ids": [
+    344
+   ],
+   "name": "Nissan Fairlady Z",
+   "year": 2003,
+   "model": "Fairlady Z"
+  },
+  "Fairlady Z '69": {
+   "id": 343,
+   "ids": [
+    343
+   ],
+   "name": "Nissan Fairlady Z 432",
+   "year": 1969,
+   "model": "Fairlady Z 432"
+  },
+  "Fairlady Z '94": {
+   "id": 345,
+   "ids": [
+    345
+   ],
+   "name": "Nissan Fairlady Z Version S Twin Turbo",
+   "year": 1994,
+   "model": "Fairlady Z Version S Twin Turbo"
+  },
+  "Ferrari 250 GT": {
+   "id": 1578,
+   "ids": [
+    1578
+   ],
+   "name": "Ferrari 250 GT Berlinetta Lusso",
+   "year": 1962,
+   "model": "250 GT Berlinetta Lusso"
+  },
+  "Ferrari 250 GTO": {
+   "id": 249,
+   "ids": [
+    249
+   ],
+   "name": "Ferrari 250 GTO",
+   "year": 1962,
+   "model": "250 GTO"
+  },
+  "Ferrari 288 GTO": {
+   "id": 358,
+   "ids": [
+    358
+   ],
+   "name": "Ferrari 288 GTO",
+   "year": 1984,
+   "model": "288 GTO"
+  },
+  "Ferrari 296 GTB": {
+   "id": 3724,
+   "ids": [
+    3724
+   ],
+   "name": "Ferrari 296 GTB",
+   "year": 2022,
+   "model": "296 GTB"
+  },
+  "Ferrari 430 S": {
+   "id": 1022,
+   "ids": [
+    1022
+   ],
+   "name": "Ferrari 430 Scuderia",
+   "year": 2007,
+   "model": "430 Scuderia"
+  },
+  "Ferrari 458": {
+   "id": 1131,
+   "ids": [
+    1131,
+    2184
+   ],
+   "name": "Ferrari 458 Italia",
+   "year": 2009,
+   "model": "458 Italia"
+  },
+  "Ferrari 488 GTB": {
+   "id": 2467,
+   "ids": [
+    2467
+   ],
+   "name": "Ferrari 488 GTB",
+   "year": 2015,
+   "model": "488 GTB"
+  },
+  "Ferrari 512TR": {
+   "id": 255,
+   "ids": [
+    255,
+    3062
+   ],
+   "name": "Ferrari 512 TR",
+   "year": 1992,
+   "model": "512 TR"
+  },
+  "Ferrari 599XX": {
+   "id": 1599,
+   "ids": [
+    1599
+   ],
+   "name": "Ferrari 599XX",
+   "year": 2010,
+   "model": "599XX"
+  },
+  "Ferrari 812": {
+   "id": 2974,
+   "ids": [
+    2974
+   ],
+   "name": "Ferrari 812 Superfast",
+   "year": 2017,
+   "model": "812 Superfast"
+  },
+  "Ferrari Dino": {
+   "id": 326,
+   "ids": [
+    326
+   ],
+   "name": "Ferrari Dino 246 GT",
+   "year": 1969,
+   "model": "Dino 246 GT"
+  },
+  "Ferrari Enzo": {
+   "id": 333,
+   "ids": [
+    333
+   ],
+   "name": "Ferrari Enzo Ferrari",
+   "year": 2002,
+   "model": "Enzo Ferrari"
+  },
+  "Ferrari F12tdf": {
+   "id": 2577,
+   "ids": [
+    2577
+   ],
+   "name": "Ferrari F12tdf",
+   "year": 2015,
+   "model": "F12tdf"
+  },
+  "Ferrari F355": {
+   "id": 253,
+   "ids": [
+    253
+   ],
+   "name": "Ferrari F355 Berlinetta",
+   "year": 1994,
+   "model": "F355 Berlinetta"
+  },
+  "Ferrari F40": {
+   "id": 340,
+   "ids": [
+    340,
+    1023
+   ],
+   "name": "Ferrari F40",
+   "year": 1987,
+   "model": "F40"
+  },
+  "Ferrari F50": {
+   "id": 342,
+   "ids": [
+    342
+   ],
+   "name": "Ferrari F50",
+   "year": 1995,
+   "model": "F50"
+  },
+  "Ferrari F50 GT": {
+   "id": 1020,
+   "ids": [
+    1020
+   ],
+   "name": "Ferrari F50 GT",
+   "year": 1996,
+   "model": "F50 GT"
+  },
+  "Ferrari F80 '24": {
+   "id": 4156,
+   "ids": [
+    4156
+   ],
+   "name": "Ferrari F80",
+   "year": 2025,
+   "model": "F80"
+  },
+  "Ferrari FXX": {
+   "id": 1006,
+   "ids": [
+    1006,
+    2371
+   ],
+   "name": "Ferrari FXX",
+   "year": 2005,
+   "model": "FXX"
+  },
+  "Ferrari FXX K": {
+   "id": 3311,
+   "ids": [
+    3311
+   ],
+   "name": "Ferrari FXX K",
+   "year": 2014,
+   "model": "FXX K"
+  },
+  "Ferrari FXX-K WP": {
+   "id": 4264,
+   "ids": [
+    4264
+   ],
+   "name": "Ferrari FXX-K Evo Welcome Pack",
+   "year": 2018,
+   "model": "FXX-K Evo 'Welcome Pack'"
+  },
+  "Ferrari J50 '17": {
+   "id": 3226,
+   "ids": [
+    3226
+   ],
+   "name": "Ferrari J50",
+   "year": 2017,
+   "model": "J50"
+  },
+  "Ferrari Monza": {
+   "id": 3312,
+   "ids": [
+    3312
+   ],
+   "name": "Ferrari Monza SP2",
+   "year": 2019,
+   "model": "Monza SP2"
+  },
+  "Ferrari Roma": {
+   "id": 3594,
+   "ids": [
+    3594
+   ],
+   "name": "Ferrari Roma",
+   "year": 2020,
+   "model": "Roma"
+  },
+  "Figaro '91": {
+   "id": 3855,
+   "ids": [
+    3855
+   ],
+   "name": "Nissan Figaro",
+   "year": 1991,
+   "model": "Figaro"
+  },
+  "Ford Capri MkI": {
+   "id": 1529,
+   "ids": [
+    1529
+   ],
+   "name": "Ford Capri RS3100",
+   "year": 1973,
+   "model": "Capri RS3100"
+  },
+  "Ford Coupe '32": {
+   "id": 2372,
+   "ids": [
+    2372
+   ],
+   "name": "Ford De Luxe Five-Window Coupe",
+   "year": 1932,
+   "model": "De Luxe Five-Window Coupe"
+  },
+  "Ford Dark Horse": {
+   "id": 3847,
+   "ids": [
+    3847
+   ],
+   "name": "Ford Mustang Dark Horse",
+   "year": 2024,
+   "model": "Mustang Dark Horse"
+  },
+  "Ford Escort '92": {
+   "id": 1272,
+   "ids": [
+    1272
+   ],
+   "name": "Ford Escort RS Cosworth",
+   "year": 1992,
+   "model": "Escort RS Cosworth"
+  },
+  "Ford F-150 '86": {
+   "id": 3597,
+   "ids": [
+    3597
+   ],
+   "name": "Ford F-150 XLT Lariat",
+   "year": 1986,
+   "model": "F-150 XLT Lariat"
+  },
+  "Ford F-150 FE": {
+   "id": 4171,
+   "ids": [
+    4171
+   ],
+   "name": "Ford F-150 XLT Lariat Forza Edition",
+   "year": 1986,
+   "model": "F-150 XLT Lariat Forza Edition"
+  },
+  "Ford F-450 FE": {
+   "id": 4175,
+   "ids": [
+    4175
+   ],
+   "name": "Ford Super Duty F-450 DRW PLATINUM Forza Edition",
+   "year": 2020,
+   "model": "Super Duty F-450 DRW PLATINUM Forza Edition"
+  },
+  "Ford Fiesta '23": {
+   "id": 3903,
+   "ids": [
+    3903
+   ],
+   "name": "Ford Fiesta ST",
+   "year": 2023,
+   "model": "Fiesta ST"
+  },
+  "Ford Fiesta RS": {
+   "id": 3051,
+   "ids": [
+    3051
+   ],
+   "name": "Ford M-Sport Fiesta RS",
+   "year": 2017,
+   "model": "M-Sport Fiesta RS"
+  },
+  "Ford Focus '03": {
+   "id": 2019,
+   "ids": [
+    2019
+   ],
+   "name": "Ford Focus RS",
+   "year": 2003,
+   "model": "Focus RS"
+  },
+  "Ford Focus '09": {
+   "id": 1086,
+   "ids": [
+    1086
+   ],
+   "name": "Ford Focus RS",
+   "year": 2009,
+   "model": "Focus RS"
+  },
+  "Ford Focus '17": {
+   "id": 2357,
+   "ids": [
+    2357
+   ],
+   "name": "Ford Focus RS",
+   "year": 2017,
+   "model": "Focus RS"
+  },
+  "Ford Focus '22": {
+   "id": 3904,
+   "ids": [
+    3904
+   ],
+   "name": "Ford Focus ST",
+   "year": 2022,
+   "model": "Focus ST"
+  },
+  "Ford GT '05": {
+   "id": 348,
+   "ids": [
+    348
+   ],
+   "name": "Ford GT",
+   "year": 2005,
+   "model": "GT"
+  },
+  "Ford GT '17": {
+   "id": 2363,
+   "ids": [
+    2363
+   ],
+   "name": "Ford GT",
+   "year": 2017,
+   "model": "GT"
+  },
+  "Ford GT350R '16": {
+   "id": 2400,
+   "ids": [
+    2400
+   ],
+   "name": "Ford Mustang Shelby GT350R",
+   "year": 2016,
+   "model": "Mustang Shelby GT350R"
+  },
+  "Ford GT500 '20": {
+   "id": 3277,
+   "ids": [
+    3277
+   ],
+   "name": "Ford Mustang Shelby GT500",
+   "year": 2020,
+   "model": "Mustang Shelby GT500"
+  },
+  "Ford Lightning": {
+   "id": 3190,
+   "ids": [
+    3190
+   ],
+   "name": "Ford F-150 SVT Lightning",
+   "year": 2003,
+   "model": "F-150 SVT Lightning"
+  },
+  "Ford Mustang '00": {
+   "id": 405,
+   "ids": [
+    405
+   ],
+   "name": "Ford Mustang SVT Cobra R",
+   "year": 2000,
+   "model": "Mustang SVT Cobra R"
+  },
+  "Ford Mustang '13": {
+   "id": 1654,
+   "ids": [
+    1654
+   ],
+   "name": "Ford Mustang Shelby GT500",
+   "year": 2013,
+   "model": "Mustang Shelby GT500"
+  },
+  "Ford Mustang '24": {
+   "id": 3846,
+   "ids": [
+    3846
+   ],
+   "name": "Ford Mustang GT",
+   "year": 2024,
+   "model": "Mustang GT"
+  },
+  "Ford Mustang '65": {
+   "id": 1355,
+   "ids": [
+    1355
+   ],
+   "name": "Ford Mustang GT Coupe",
+   "year": 1965,
+   "model": "Mustang GT Coupe"
+  },
+  "Ford Mustang '68": {
+   "id": 2614,
+   "ids": [
+    2614
+   ],
+   "name": "Ford Mustang GT 2+2 Fastback",
+   "year": 1968,
+   "model": "Mustang GT 2+2 Fastback"
+  },
+  "Ford Mustang '69": {
+   "id": 1668,
+   "ids": [
+    1668
+   ],
+   "name": "Ford Mustang Boss 302",
+   "year": 1969,
+   "model": "Mustang Boss 302"
+  },
+  "Ford Mustang '93": {
+   "id": 1041,
+   "ids": [
+    1041
+   ],
+   "name": "Ford Mustang SVT Cobra R",
+   "year": 1993,
+   "model": "Mustang SVT Cobra R"
+  },
+  "Ford Mustang S5": {
+   "id": 3108,
+   "ids": [
+    3108
+   ],
+   "name": "Ford Mustang RTR Spec 5",
+   "year": 2018,
+   "model": "Mustang RTR Spec 5"
+  },
+  "Ford RS200": {
+   "id": 1108,
+   "ids": [
+    1108
+   ],
+   "name": "Ford RS200 Evolution",
+   "year": 1985,
+   "model": "RS200 Evolution"
+  },
+  "Ford RS500": {
+   "id": 1293,
+   "ids": [
+    1293
+   ],
+   "name": "Ford Sierra Cosworth RS500",
+   "year": 1987,
+   "model": "Sierra Cosworth RS500"
+  },
+  "Ford Racing Puma": {
+   "id": 3228,
+   "ids": [
+    3228
+   ],
+   "name": "Ford Racing Puma",
+   "year": 1999,
+   "model": "Racing Puma"
+  },
+  "Ford Ranger T6": {
+   "id": 2145,
+   "ids": [
+    2145
+   ],
+   "name": "Ford Ranger T6 Rally Raid",
+   "year": 2014,
+   "model": "Ranger T6 Rally Raid"
+  },
+  "Ford Raptor R WP": {
+   "id": 4268,
+   "ids": [
+    4268
+   ],
+   "name": "Ford F-150 Raptor R Welcome Pack",
+   "year": 2023,
+   "model": "F-150 Raptor R 'Welcome Pack'"
+  },
+  "Ford SD F-450": {
+   "id": 3476,
+   "ids": [
+    3476
+   ],
+   "name": "Ford Super Duty F-450 DRW PLATINUM",
+   "year": 2020,
+   "model": "Super Duty F-450 DRW PLATINUM"
+  },
+  "Ford SuperVan 4": {
+   "id": 3755,
+   "ids": [
+    3755
+   ],
+   "name": "Ford Supervan 4",
+   "year": 2022,
+   "model": "Supervan 4"
+  },
+  "Ford Supervan 3": {
+   "id": 3170,
+   "ids": [
+    3170
+   ],
+   "name": "Ford Supervan 3",
+   "year": 1994,
+   "model": "Supervan 3"
+  },
+  "Ford T-Bird '57": {
+   "id": 1283,
+   "ids": [
+    1283
+   ],
+   "name": "Ford Thunderbird",
+   "year": 1957,
+   "model": "Thunderbird"
+  },
+  "Ford Transit SSV": {
+   "id": 1477,
+   "ids": [
+    1477
+   ],
+   "name": "Ford Transit SuperSportVan",
+   "year": 2011,
+   "model": "Transit SuperSportVan"
+  },
+  "Ford Ute '14": {
+   "id": 2551,
+   "ids": [
+    2551
+   ],
+   "name": "Ford FPV Limited Edition Pursuit Ute",
+   "year": 2014,
+   "model": "FPV Limited Edition Pursuit Ute"
+  },
+  "Ford XB Falcon": {
+   "id": 1278,
+   "ids": [
+    1278
+   ],
+   "name": "Ford XB Falcon GT",
+   "year": 1973,
+   "model": "XB Falcon GT"
+  },
+  "Formula D 599": {
+   "id": 3249,
+   "ids": [
+    3249
+   ],
+   "name": "Formula Drift #117 599 GTB Fiorano",
+   "year": 2007,
+   "model": "#117 599 GTB Fiorano"
+  },
+  "Funco F9": {
+   "id": 2935,
+   "ids": [
+    2935
+   ],
+   "name": "Funco Motorsports F9",
+   "year": 2018,
+   "model": "F9"
+  },
+  "GMA T.50": {
+   "id": 3599,
+   "ids": [
+    3599
+   ],
+   "name": "Gordon Murray Automotive T.50",
+   "year": 2020,
+   "model": "T.50"
+  },
+  "GMC K5 Jimmy": {
+   "id": 2613,
+   "ids": [
+    2613
+   ],
+   "name": "GMC Jimmy",
+   "year": 1970,
+   "model": "Jimmy"
+  },
+  "GMC Syclone": {
+   "id": 1294,
+   "ids": [
+    1294
+   ],
+   "name": "GMC Syclone",
+   "year": 1991,
+   "model": "Syclone"
+  },
+  "GMC Typhoon": {
+   "id": 1394,
+   "ids": [
+    1394
+   ],
+   "name": "GMC Typhoon",
+   "year": 1992,
+   "model": "Typhoon"
+  },
+  "GR Corolla '23": {
+   "id": 3880,
+   "ids": [
+    3880
+   ],
+   "name": "Toyota GR Corolla",
+   "year": 2023,
+   "model": "GR Corolla"
+  },
+  "GR GT Prototype": {
+   "id": 4221,
+   "ids": [
+    4221
+   ],
+   "name": "GR GT Prototype",
+   "year": 2025,
+   "model": "GR GT (Prototype)"
+  },
+  "GT-R 40AE": {
+   "id": 4119,
+   "ids": [
+    4119
+   ],
+   "name": "Nissan Skyline GT-R 40th Anniversary",
+   "year": 1998,
+   "model": "Skyline GT-R 40th Anniversary"
+  },
+  "Galant VR-4": {
+   "id": 1381,
+   "ids": [
+    1381
+   ],
+   "name": "Mitsubishi Galant VR-4",
+   "year": 1992,
+   "model": "Galant VR-4"
+  },
+  "Gallardo Spyder": {
+   "id": 1601,
+   "ids": [
+    1601
+   ],
+   "name": "Lamborghini Gallardo LP570-4 Spyder Performante",
+   "year": 2012,
+   "model": "Gallardo LP570-4 Spyder Performante"
+  },
+  "Gemera": {
+   "id": 4081,
+   "ids": [
+    4081
+   ],
+   "name": "Koenigsegg Gemera",
+   "year": 2024,
+   "model": "Gemera"
+  },
+  "Gloria GT '95": {
+   "id": 3918,
+   "ids": [
+    3918
+   ],
+   "name": "Nissan Gloria Gran Turismo",
+   "year": 1995,
+   "model": "Gloria Gran Turismo"
+  },
+  "HSV GEN-F GTS": {
+   "id": 2131,
+   "ids": [
+    2131
+   ],
+   "name": "HSV GEN-F GTS",
+   "year": 2014,
+   "model": "GEN-F GTS"
+  },
+  "HSV Maloo '14": {
+   "id": 2422,
+   "ids": [
+    2422
+   ],
+   "name": "HSV Limited Edition GEN-F GTS Maloo",
+   "year": 2014,
+   "model": "Limited Edition Gen-F GTS Maloo"
+  },
+  "HUMMER EV Truck": {
+   "id": 3722,
+   "ids": [
+    3722
+   ],
+   "name": "GMC HUMMER EV Pickup",
+   "year": 2022,
+   "model": "HUMMER EV Pickup"
+  },
+  "Holden Torana": {
+   "id": 1533,
+   "ids": [
+    1533
+   ],
+   "name": "Holden Torana A9X",
+   "year": 1977,
+   "model": "Torana A9X"
+  },
+  "Honda Acty '94": {
+   "id": 3865,
+   "ids": [
+    3865
+   ],
+   "name": "Honda Acty",
+   "year": 1994,
+   "model": "Acty"
+  },
+  "Honda Beat '91": {
+   "id": 3852,
+   "ids": [
+    3852
+   ],
+   "name": "Honda Beat",
+   "year": 1991,
+   "model": "Beat"
+  },
+  "Honda CR-X": {
+   "id": 320,
+   "ids": [
+    320
+   ],
+   "name": "Honda CR-X SiR",
+   "year": 1991,
+   "model": "CR-X SiR"
+  },
+  "Honda Civic '04": {
+   "id": 302,
+   "ids": [
+    302
+   ],
+   "name": "Honda Civic Type R",
+   "year": 2004,
+   "model": "Civic Type R"
+  },
+  "Honda Civic '07": {
+   "id": 625,
+   "ids": [
+    625
+   ],
+   "name": "Honda Civic Type R",
+   "year": 2007,
+   "model": "Civic Type R"
+  },
+  "Honda Civic '18": {
+   "id": 2870,
+   "ids": [
+    2870
+   ],
+   "name": "Honda Civic Type R",
+   "year": 2018,
+   "model": "Civic Type R"
+  },
+  "Honda Civic '23": {
+   "id": 3773,
+   "ids": [
+    3773
+   ],
+   "name": "Honda Civic Type R",
+   "year": 2023,
+   "model": "Civic Type R"
+  },
+  "Honda Civic '74": {
+   "id": 1568,
+   "ids": [
+    1568
+   ],
+   "name": "Honda Civic RS",
+   "year": 1974,
+   "model": "Civic RS"
+  },
+  "Honda Civic '84": {
+   "id": 2119,
+   "ids": [
+    2119
+   ],
+   "name": "Honda Civic CRX Mugen",
+   "year": 1984,
+   "model": "Civic CRX Mugen"
+  },
+  "Honda Civic '86": {
+   "id": 1650,
+   "ids": [
+    1650,
+    2163
+   ],
+   "name": "Honda Civic Si",
+   "year": 1986,
+   "model": "Civic Si"
+  },
+  "Honda Civic '97": {
+   "id": 1273,
+   "ids": [
+    1273
+   ],
+   "name": "Honda Civic Type R",
+   "year": 1997,
+   "model": "Civic Type R"
+  },
+  "Honda NSX-R '05": {
+   "id": 411,
+   "ids": [
+    411
+   ],
+   "name": "Honda NSX-R",
+   "year": 2005,
+   "model": "NSX-R"
+  },
+  "Honda NSX-R '92": {
+   "id": 412,
+   "ids": [
+    412
+   ],
+   "name": "Honda NSX-R",
+   "year": 1992,
+   "model": "NSX-R"
+  },
+  "Honda NSX-R GT": {
+   "id": 569,
+   "ids": [
+    569
+   ],
+   "name": "Honda NSX-R GT",
+   "year": 2005,
+   "model": "NSX-R GT"
+  },
+  "Honda Prelude 94": {
+   "id": 2121,
+   "ids": [
+    2121
+   ],
+   "name": "Honda Prelude Si",
+   "year": 1994,
+   "model": "Prelude Si"
+  },
+  "Honda S2000": {
+   "id": 427,
+   "ids": [
+    427
+   ],
+   "name": "Honda S2000",
+   "year": 2003,
+   "model": "S2000"
+  },
+  "Honda S800": {
+   "id": 2205,
+   "ids": [
+    2205
+   ],
+   "name": "Honda S800",
+   "year": 1970,
+   "model": "S800"
+  },
+  "Honda Trophy '15": {
+   "id": 2745,
+   "ids": [
+    2745
+   ],
+   "name": "Honda Ridgeline Baja Trophy Truck",
+   "year": 2015,
+   "model": "Ridgeline Baja Trophy Truck"
+  },
+  "Honda Z '72": {
+   "id": 4034,
+   "ids": [
+    4034
+   ],
+   "name": "Honda Z GT",
+   "year": 1972,
+   "model": "Z GT"
+  },
+  "Honda e '22": {
+   "id": 3908,
+   "ids": [
+    3908
+   ],
+   "name": "Honda e",
+   "year": 2022,
+   "model": "e"
+  },
+  "Huayra R '21": {
+   "id": 3543,
+   "ids": [
+    3543
+   ],
+   "name": "Pagani Huayra R",
+   "year": 2021,
+   "model": "Huayra R"
+  },
+  "Huracán EVO": {
+   "id": 3371,
+   "ids": [
+    3371
+   ],
+   "name": "Lamborghini Huracán EVO",
+   "year": 2020,
+   "model": "Huracán EVO"
+  },
+  "Huracán STO": {
+   "id": 3672,
+   "ids": [
+    3672
+   ],
+   "name": "Lamborghini Huracán STO",
+   "year": 2020,
+   "model": "Huracán STO"
+  },
+  "Huracán Spyder": {
+   "id": 3759,
+   "ids": [
+    3759
+   ],
+   "name": "Lamborghini Huracán EVO Spyder",
+   "year": 2022,
+   "model": "Huracán EVO Spyder"
+  },
+  "Huracán Sterrato": {
+   "id": 3840,
+   "ids": [
+    3840
+   ],
+   "name": "Lamborghini Huracán Sterrato",
+   "year": 2022,
+   "model": "Huracán Sterrato"
+  },
+  "Huracán Tecnica": {
+   "id": 3753,
+   "ids": [
+    3753
+   ],
+   "name": "Lamborghini Huracán Tecnica",
+   "year": 2022,
+   "model": "Huracán Tecnica"
+  },
+  "Hyundai i20 N": {
+   "id": 3928,
+   "ids": [
+    3928
+   ],
+   "name": "Hyundai i20 N",
+   "year": 2021,
+   "model": "i20 N"
+  },
+  "Hyundai i30 N": {
+   "id": 3678,
+   "ids": [
+    3678
+   ],
+   "name": "Hyundai i30 N",
+   "year": 2020,
+   "model": "i30 N"
+  },
+  "IONIQ 5 N '23": {
+   "id": 3827,
+   "ids": [
+    3827
+   ],
+   "name": "Hyundai IONIQ 5 N",
+   "year": 2023,
+   "model": "IONIQ 5 N"
+  },
+  "Integra '23": {
+   "id": 3726,
+   "ids": [
+    3726
+   ],
+   "name": "Acura Integra A-Spec",
+   "year": 2023,
+   "model": "Integra A-Spec"
+  },
+  "JJM Supra WTAC": {
+   "id": 4214,
+   "ids": [
+    4214
+   ],
+   "name": "Toyota J&J Motorsport Supra WTAC",
+   "year": 1995,
+   "model": "J&J Motorsport Supra WTAC"
+  },
+  "Jaguar C-X75": {
+   "id": 3055,
+   "ids": [
+    3055
+   ],
+   "name": "Jaguar C-X75",
+   "year": 2010,
+   "model": "C-X75"
+  },
+  "Jaguar D-Type": {
+   "id": 1301,
+   "ids": [
+    1301
+   ],
+   "name": "Jaguar D-Type",
+   "year": 1956,
+   "model": "D-Type"
+  },
+  "Jaguar LW E-Type": {
+   "id": 2992,
+   "ids": [
+    2992
+   ],
+   "name": "Jaguar Lightweight E-Type",
+   "year": 1964,
+   "model": "Lightweight E-Type"
+  },
+  "Jaguar XJ220": {
+   "id": 489,
+   "ids": [
+    489
+   ],
+   "name": "Jaguar XJ220",
+   "year": 1993,
+   "model": "XJ220"
+  },
+  "Jaguar XJ220S": {
+   "id": 3293,
+   "ids": [
+    3293
+   ],
+   "name": "Jaguar XJ220S TWR",
+   "year": 1993,
+   "model": "XJ220S TWR"
+  },
+  "Jaguar XJR-15": {
+   "id": 3287,
+   "ids": [
+    3287
+   ],
+   "name": "Jaguar Sport XJR-15",
+   "year": 1991,
+   "model": "Sport XJR-15"
+  },
+  "Jeep JT": {
+   "id": 3255,
+   "ids": [
+    3255
+   ],
+   "name": "Jeep JT",
+   "year": 2020,
+   "model": "JT"
+  },
+  "Jeep Trackhawk": {
+   "id": 2841,
+   "ids": [
+    2841
+   ],
+   "name": "Jeep Grand Cherokee Trackhawk",
+   "year": 2018,
+   "model": "Grand Cherokee Trackhawk"
+  },
+  "Jeep Trailcat": {
+   "id": 2742,
+   "ids": [
+    2742
+   ],
+   "name": "Jeep Trailcat",
+   "year": 2016,
+   "model": "Trailcat"
+  },
+  "Jeep Wrangler": {
+   "id": 1522,
+   "ids": [
+    1522
+   ],
+   "name": "Jeep Wrangler Rubicon",
+   "year": 2012,
+   "model": "Wrangler Rubicon"
+  },
+  "Jeep Wrangler DD": {
+   "id": 3110,
+   "ids": [
+    3110
+   ],
+   "name": "DeBerti Jeep Wrangler Unlimited",
+   "year": 2013,
+   "model": "Jeep Wrangler Unlimited"
+  },
+  "KTM X-Bow GT4": {
+   "id": 3035,
+   "ids": [
+    3035
+   ],
+   "name": "KTM X-Bow GT4",
+   "year": 2018,
+   "model": "X-Bow GT4"
+  },
+  "Koenigsegg Agera": {
+   "id": 1397,
+   "ids": [
+    1397
+   ],
+   "name": "Koenigsegg Agera",
+   "year": 2011,
+   "model": "Agera"
+  },
+  "Koenigsegg CCGT": {
+   "id": 1007,
+   "ids": [
+    1007
+   ],
+   "name": "Koenigsegg CCGT",
+   "year": 2008,
+   "model": "CCGT"
+  },
+  "Koenigsegg Jesko": {
+   "id": 3315,
+   "ids": [
+    3315
+   ],
+   "name": "Koenigsegg Jesko",
+   "year": 2020,
+   "model": "Jesko"
+  },
+  "Koenigsegg One": {
+   "id": 2188,
+   "ids": [
+    2188
+   ],
+   "name": "Koenigsegg One:1",
+   "year": 2015,
+   "model": "One:1"
+  },
+  "L. Aventador '21": {
+   "id": 3775,
+   "ids": [
+    3775
+   ],
+   "name": "Lamborghini Aventador LP 780-4 Ultimae",
+   "year": 2022,
+   "model": "Aventador LP 780-4 Ultimae"
+  },
+  "L. Countach '21": {
+   "id": 3774,
+   "ids": [
+    3774
+   ],
+   "name": "Lamborghini Countach LPI 800-4",
+   "year": 2021,
+   "model": "Countach LPI 800-4"
+  },
+  "L. Temerario": {
+   "id": 4002,
+   "ids": [
+    4002
+   ],
+   "name": "Lamborghini Temerario",
+   "year": 2024,
+   "model": "Temerario"
+  },
+  "LR Defender '20": {
+   "id": 3414,
+   "ids": [
+    3414
+   ],
+   "name": "Land Rover Defender 110 X",
+   "year": 2020,
+   "model": "Defender 110 X"
+  },
+  "LaFerrari": {
+   "id": 2034,
+   "ids": [
+    2034
+   ],
+   "name": "Ferrari LaFerrari",
+   "year": 2013,
+   "model": "LaFerrari"
+  },
+  "Lambo Centenario": {
+   "id": 2616,
+   "ids": [
+    2616
+   ],
+   "name": "Lamborghini Centenario LP 770-4",
+   "year": 2016,
+   "model": "Centenario LP 770-4"
+  },
+  "Lambo Countach": {
+   "id": 316,
+   "ids": [
+    316
+   ],
+   "name": "Lamborghini Countach LP5000 QV",
+   "year": 1988,
+   "model": "Countach LP5000 QV"
+  },
+  "Lambo Diablo SV": {
+   "id": 325,
+   "ids": [
+    325
+   ],
+   "name": "Lamborghini Diablo SV",
+   "year": 1997,
+   "model": "Diablo SV"
+  },
+  "Lambo Huracán": {
+   "id": 2164,
+   "ids": [
+    2164
+   ],
+   "name": "Lamborghini Huracán LP 610-4",
+   "year": 2014,
+   "model": "Huracán LP 610-4"
+  },
+  "Lambo Miura": {
+   "id": 637,
+   "ids": [
+    637
+   ],
+   "name": "Lamborghini Miura P400",
+   "year": 1967,
+   "model": "Miura P400"
+  },
+  "Lambo Murciélago": {
+   "id": 1173,
+   "ids": [
+    1173
+   ],
+   "name": "Lamborghini Murciélago LP 670-4 SV",
+   "year": 2010,
+   "model": "Murciélago LP 670-4 SV"
+  },
+  "Lambo SCV12": {
+   "id": 3606,
+   "ids": [
+    3606
+   ],
+   "name": "Lamborghini Essenza SCV12",
+   "year": 2020,
+   "model": "Essenza SCV12"
+  },
+  "Lambo Sesto": {
+   "id": 1392,
+   "ids": [
+    1392
+   ],
+   "name": "Lamborghini Sesto Elemento",
+   "year": 2011,
+   "model": "Sesto Elemento"
+  },
+  "Lambo Sián R": {
+   "id": 3608,
+   "ids": [
+    3608
+   ],
+   "name": "Lamborghini Sián Roadster",
+   "year": 2020,
+   "model": "Sián Roadster"
+  },
+  "Lambo Veneno": {
+   "id": 2042,
+   "ids": [
+    2042
+   ],
+   "name": "Lamborghini Veneno",
+   "year": 2013,
+   "model": "Veneno"
+  },
+  "Lancer GSR '08": {
+   "id": 1009,
+   "ids": [
+    1009
+   ],
+   "name": "Mitsubishi Lancer Evolution X GSR",
+   "year": 2008,
+   "model": "Lancer Evolution X GSR"
+  },
+  "Lancer MR '04": {
+   "id": 378,
+   "ids": [
+    378
+   ],
+   "name": "Mitsubishi Lancer Evolution VIII MR",
+   "year": 2004,
+   "model": "Lancer Evolution VIII MR"
+  },
+  "Lancer MR '06": {
+   "id": 374,
+   "ids": [
+    374
+   ],
+   "name": "Mitsubishi Lancer Evolution IX MR",
+   "year": 2006,
+   "model": "Lancer Evolution IX MR"
+  },
+  "Lancia 037": {
+   "id": 1295,
+   "ids": [
+    1295
+   ],
+   "name": "Lancia 037 Stradale",
+   "year": 1982,
+   "model": "037 Stradale"
+  },
+  "Lancia Delta": {
+   "id": 323,
+   "ids": [
+    323
+   ],
+   "name": "Lancia Delta HF Integrale EVO",
+   "year": 1992,
+   "model": "Delta HF Integrale EVO"
+  },
+  "Lancia Delta S4": {
+   "id": 1661,
+   "ids": [
+    1661
+   ],
+   "name": "Lancia Delta S4",
+   "year": 1986,
+   "model": "Delta S4"
+  },
+  "Lancia Stratos": {
+   "id": 458,
+   "ids": [
+    458
+   ],
+   "name": "Lancia Stratos HF Stradale",
+   "year": 1974,
+   "model": "Stratos HF Stradale"
+  },
+  "Lexus LC 500 '21": {
+   "id": 3520,
+   "ids": [
+    3520
+   ],
+   "name": "Lexus LC 500",
+   "year": 2021,
+   "model": "LC 500"
+  },
+  "Lexus LFA": {
+   "id": 1260,
+   "ids": [
+    1260
+   ],
+   "name": "Lexus LFA",
+   "year": 2010,
+   "model": "LFA"
+  },
+  "Lexus LFA FE": {
+   "id": 4158,
+   "ids": [
+    4158
+   ],
+   "name": "Lexus LFA Forza Edition",
+   "year": 2010,
+   "model": "LFA Forza Edition"
+  },
+  "Lexus RC F": {
+   "id": 2175,
+   "ids": [
+    2175
+   ],
+   "name": "Lexus RC F",
+   "year": 2015,
+   "model": "RC F"
+  },
+  "Lotus Elise '99": {
+   "id": 1376,
+   "ids": [
+    1376
+   ],
+   "name": "Lotus Elise Series 1 Sport 190",
+   "year": 1999,
+   "model": "Elise Series 1 Sport 190"
+  },
+  "Lotus Elise GT1": {
+   "id": 2825,
+   "ids": [
+    2825
+   ],
+   "name": "Lotus Elise GT1",
+   "year": 1997,
+   "model": "Elise GT1"
+  },
+  "Lotus Emira": {
+   "id": 3716,
+   "ids": [
+    3716
+   ],
+   "name": "Lotus Emira",
+   "year": 2023,
+   "model": "Emira"
+  },
+  "Lotus Evija '20": {
+   "id": 3449,
+   "ids": [
+    3449
+   ],
+   "name": "Lotus Evija",
+   "year": 2020,
+   "model": "Evija"
+  },
+  "Lotus Evija FE": {
+   "id": 4200,
+   "ids": [
+    4200
+   ],
+   "name": "Lotus Evija Forza Edition",
+   "year": 2020,
+   "model": "Evija Forza Edition"
+  },
+  "Lotus Exige '18": {
+   "id": 3661,
+   "ids": [
+    3661
+   ],
+   "name": "Lotus Exige Cup 430",
+   "year": 2018,
+   "model": "Exige Cup 430"
+  },
+  "M-AMG GT WP": {
+   "id": 4265,
+   "ids": [
+    4265
+   ],
+   "name": "Mercedes-AMG GT Black Series Welcome Pack",
+   "year": 2020,
+   "model": "GT Black Series 'Welcome Pack'"
+  },
+  "M-AMG SL 63 '21": {
+   "id": 2471,
+   "ids": [
+    2471,
+    3617
+   ],
+   "name": "Mercedes-AMG SL 63",
+   "year": 2021,
+   "model": "SL 63"
+  },
+  "M-AMG SLC 43 '20": {
+   "id": 3895,
+   "ids": [
+    3895
+   ],
+   "name": "Mercedes-AMG SLC 43 Final Edition",
+   "year": 2020,
+   "model": "SLC 43 Final Edition"
+  },
+  "M-B 300 SLR": {
+   "id": 1559,
+   "ids": [
+    1559
+   ],
+   "name": "Mercedes-Benz 300 SLR",
+   "year": 1955,
+   "model": "300 SLR"
+  },
+  "M-B 300SL": {
+   "id": 251,
+   "ids": [
+    251
+   ],
+   "name": "Mercedes-Benz 300 SL Coupé",
+   "year": 1954,
+   "model": "300 SL Coupé"
+  },
+  "M-B A45": {
+   "id": 1658,
+   "ids": [
+    1658
+   ],
+   "name": "Mercedes-Benz A 45 AMG",
+   "year": 2013,
+   "model": "A 45 AMG"
+  },
+  "M-B AMG GT": {
+   "id": 2242,
+   "ids": [
+    2242
+   ],
+   "name": "Mercedes-AMG GT S",
+   "year": 2015,
+   "model": "GT S"
+  },
+  "M-B AMG GTR": {
+   "id": 2654,
+   "ids": [
+    2654
+   ],
+   "name": "Mercedes-AMG GT R",
+   "year": 2017,
+   "model": "GT R"
+  },
+  "M-B C63": {
+   "id": 1500,
+   "ids": [
+    1500
+   ],
+   "name": "Mercedes-Benz C 63 AMG Coupé Black Series",
+   "year": 2012,
+   "model": "C 63 AMG Coupé Black Series"
+  },
+  "M-B CLK-GTR": {
+   "id": 568,
+   "ids": [
+    568
+   ],
+   "name": "Mercedes-Benz AMG CLK GTR",
+   "year": 1998,
+   "model": "AMG CLK GTR"
+  },
+  "M-B G 63 6x6": {
+   "id": 3107,
+   "ids": [
+    3107
+   ],
+   "name": "Mercedes-Benz G 63 AMG 6x6",
+   "year": 2014,
+   "model": "G 63 AMG 6x6"
+  },
+  "M-B G 65": {
+   "id": 1627,
+   "ids": [
+    1627
+   ],
+   "name": "Mercedes-Benz G 65 AMG",
+   "year": 2013,
+   "model": "G 65 AMG"
+  },
+  "M-B GT 4 '18": {
+   "id": 3064,
+   "ids": [
+    3064
+   ],
+   "name": "Mercedes-AMG GT 4-Door Coupé",
+   "year": 2018,
+   "model": "GT 4-Door Coupé"
+  },
+  "M-B SL65": {
+   "id": 1090,
+   "ids": [
+    1090
+   ],
+   "name": "Mercedes-Benz SL 65 AMG Black Series",
+   "year": 2009,
+   "model": "SL 65 AMG Black Series"
+  },
+  "M-B Unimog": {
+   "id": 2986,
+   "ids": [
+    2986
+   ],
+   "name": "Mercedes-Benz Unimog U5023",
+   "year": 2014,
+   "model": "Unimog U5023"
+  },
+  "M-B X-Class": {
+   "id": 3063,
+   "ids": [
+    3063
+   ],
+   "name": "Mercedes-Benz X-Class",
+   "year": 2018,
+   "model": "X-Class"
+  },
+  "M12S Warthog CST": {
+   "id": 2574,
+   "ids": [
+    2574
+   ],
+   "name": "AMG Transport Dynamics M12S Warthog CST",
+   "year": 2554,
+   "model": "M12S Warthog CST"
+  },
+  "MB 190 E '90": {
+   "id": 1296,
+   "ids": [
+    1296
+   ],
+   "name": "Mercedes-Benz 190 E 2.5-16 Evolution II",
+   "year": 1990,
+   "model": "190 E 2.5-16 Evolution II"
+  },
+  "MB 190 E FE": {
+   "id": 4169,
+   "ids": [
+    4169
+   ],
+   "name": "Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition",
+   "year": 1990,
+   "model": "190 E 2.5-16 Evolution II Forza Edition"
+  },
+  "MC12 Corsa '08": {
+   "id": 3082,
+   "ids": [
+    3082
+   ],
+   "name": "Maserati MC12 Versione Corsa",
+   "year": 2008,
+   "model": "MC12 Versione Corsa"
+  },
+  "MG Metro 6R4": {
+   "id": 2147,
+   "ids": [
+    2147
+   ],
+   "name": "MG Metro 6R4",
+   "year": 1986,
+   "model": "Metro 6R4"
+  },
+  "MINI '65": {
+   "id": 1662,
+   "ids": [
+    1662
+   ],
+   "name": "MINI Cooper S",
+   "year": 1965,
+   "model": "Cooper S"
+  },
+  "MINI JCW '12": {
+   "id": 2003,
+   "ids": [
+    2003
+   ],
+   "name": "MINI John Cooper Works GP",
+   "year": 2012,
+   "model": "John Cooper Works GP"
+  },
+  "MINI JCW Buggy": {
+   "id": 3132,
+   "ids": [
+    3132
+   ],
+   "name": "MINI X-Raid John Cooper Works Buggy",
+   "year": 2018,
+   "model": "X-Raid John Cooper Works Buggy"
+  },
+  "MINI JCW GP '21": {
+   "id": 3534,
+   "ids": [
+    3534
+   ],
+   "name": "MINI John Cooper Works GP",
+   "year": 2021,
+   "model": "John Cooper Works GP"
+  },
+  "MINI X-Raid": {
+   "id": 2148,
+   "ids": [
+    2148
+   ],
+   "name": "MINI X-Raid All4 Racing Countryman",
+   "year": 2013,
+   "model": "X-Raid All4 Racing Countryman"
+  },
+  "MM 808 Wagon": {
+   "id": 4145,
+   "ids": [
+    4145
+   ],
+   "name": "Mazda #123 Mad Mike 808 Wagon 'FURSTY'",
+   "year": 1974,
+   "model": "#123 Mad Mike 808 Wagon 'FURSTY'"
+  },
+  "MX-5 Cup '17": {
+   "id": 3798,
+   "ids": [
+    3798
+   ],
+   "name": "Mazda MX-5 Cup",
+   "year": 2017,
+   "model": "MX-5 Cup"
+  },
+  "MX-5 FE '94": {
+   "id": 4197,
+   "ids": [
+    4197
+   ],
+   "name": "Mazda MX-5 Miata Forza Edition",
+   "year": 1994,
+   "model": "MX-5 Miata Forza Edition"
+  },
+  "Mas. Ghibli '97": {
+   "id": 1513,
+   "ids": [
+    1513
+   ],
+   "name": "Maserati Ghibli Cup",
+   "year": 1997,
+   "model": "Ghibli Cup"
+  },
+  "Maserati MC12": {
+   "id": 391,
+   "ids": [
+    391
+   ],
+   "name": "Maserati MC12",
+   "year": 2004,
+   "model": "MC12"
+  },
+  "Maserati MC20": {
+   "id": 3611,
+   "ids": [
+    3611
+   ],
+   "name": "Maserati MC20",
+   "year": 2022,
+   "model": "MC20"
+  },
+  "Mazda 3": {
+   "id": 1221,
+   "ids": [
+    1221
+   ],
+   "name": "Mazda Mazdaspeed 3",
+   "year": 2010,
+   "model": "Mazdaspeed 3"
+  },
+  "Mazda Cosmo": {
+   "id": 1587,
+   "ids": [
+    1587
+   ],
+   "name": "Mazda Cosmo 110S Series II",
+   "year": 1972,
+   "model": "Cosmo 110S Series II"
+  },
+  "Mazda Furai": {
+   "id": 1229,
+   "ids": [
+    1229
+   ],
+   "name": "Mazda Furai",
+   "year": 2008,
+   "model": "Furai"
+  },
+  "Mazda MX-5 '05": {
+   "id": 2171,
+   "ids": [
+    2171
+   ],
+   "name": "Mazda Mazdaspeed MX-5",
+   "year": 2005,
+   "model": "Mazdaspeed MX-5"
+  },
+  "Mazda MX-5 '13": {
+   "id": 2004,
+   "ids": [
+    2004
+   ],
+   "name": "Mazda MX-5",
+   "year": 2013,
+   "model": "MX-5"
+  },
+  "Mazda MX-5 '16": {
+   "id": 2267,
+   "ids": [
+    2267
+   ],
+   "name": "Mazda MX-5",
+   "year": 2016,
+   "model": "MX-5"
+  },
+  "Mazda MX-5 '94": {
+   "id": 1110,
+   "ids": [
+    1110
+   ],
+   "name": "Mazda MX-5 Miata",
+   "year": 1994,
+   "model": "MX-5 Miata"
+  },
+  "Mazda MX-5 RF": {
+   "id": 3823,
+   "ids": [
+    3823
+   ],
+   "name": "Mazda MX-5 Miata RF",
+   "year": 2022,
+   "model": "MX-5 Miata RF"
+  },
+  "Mazda RX-3": {
+   "id": 1514,
+   "ids": [
+    1514
+   ],
+   "name": "Mazda RX-3",
+   "year": 1973,
+   "model": "RX-3"
+  },
+  "Mazda RX-3 FE": {
+   "id": 4165,
+   "ids": [
+    4165
+   ],
+   "name": "Mazda RX-3 Forza Edition",
+   "year": 1973,
+   "model": "RX-3 Forza Edition"
+  },
+  "Mazda RX-7 '85": {
+   "id": 1480,
+   "ids": [
+    1480
+   ],
+   "name": "Mazda RX-7 GSL-SE",
+   "year": 1985,
+   "model": "RX-7 GSL-SE"
+  },
+  "Mazda RX-7 '90": {
+   "id": 423,
+   "ids": [
+    423
+   ],
+   "name": "Mazda Savanna RX-7",
+   "year": 1990,
+   "model": "Savanna RX-7"
+  },
+  "Mazda RX-7 '92": {
+   "id": 4144,
+   "ids": [
+    4144
+   ],
+   "name": "Mazda RX-7 Type R",
+   "year": 1992,
+   "model": "RX-7 Type R"
+  },
+  "Mazda RX-8": {
+   "id": 1426,
+   "ids": [
+    1426
+   ],
+   "name": "Mazda RX-8 R3",
+   "year": 2011,
+   "model": "RX-8 R3"
+  },
+  "McL. 765 '21": {
+   "id": 3482,
+   "ids": [
+    3482
+   ],
+   "name": "McLaren 765LT Coupé",
+   "year": 2021,
+   "model": "765LT Coupé"
+  },
+  "McL. Artura '23": {
+   "id": 3668,
+   "ids": [
+    3668
+   ],
+   "name": "McLaren Artura",
+   "year": 2023,
+   "model": "Artura"
+  },
+  "McL. Sabre '21": {
+   "id": 3700,
+   "ids": [
+    3700
+   ],
+   "name": "McLaren Sabre",
+   "year": 2021,
+   "model": "Sabre"
+  },
+  "McLaren 12C": {
+   "id": 1130,
+   "ids": [
+    1130
+   ],
+   "name": "McLaren 12C Coupé",
+   "year": 2011,
+   "model": "12C Coupé"
+  },
+  "McLaren 570S": {
+   "id": 2472,
+   "ids": [
+    2472
+   ],
+   "name": "McLaren 570S Coupé",
+   "year": 2015,
+   "model": "570S Coupé"
+  },
+  "McLaren 600LT": {
+   "id": 3153,
+   "ids": [
+    3153
+   ],
+   "name": "McLaren 600LT Coupé",
+   "year": 2018,
+   "model": "600LT Coupé"
+  },
+  "McLaren 620R": {
+   "id": 3655,
+   "ids": [
+    3655
+   ],
+   "name": "McLaren 620R",
+   "year": 2021,
+   "model": "620R"
+  },
+  "McLaren F1": {
+   "id": 1314,
+   "ids": [
+    1314
+   ],
+   "name": "McLaren F1",
+   "year": 1993,
+   "model": "F1"
+  },
+  "McLaren F1 GT": {
+   "id": 338,
+   "ids": [
+    338
+   ],
+   "name": "McLaren F1 GT",
+   "year": 1997,
+   "model": "F1 GT"
+  },
+  "McLaren P1": {
+   "id": 1667,
+   "ids": [
+    1667
+   ],
+   "name": "McLaren P1",
+   "year": 2013,
+   "model": "P1"
+  },
+  "Megane R.S. '18": {
+   "id": 3134,
+   "ids": [
+    3134
+   ],
+   "name": "Renault Megane R.S.",
+   "year": 2018,
+   "model": "Megane R.S."
+  },
+  "Megane RS 250": {
+   "id": 1204,
+   "ids": [
+    1204
+   ],
+   "name": "Renault Megane RS 250",
+   "year": 2010,
+   "model": "Megane RS 250"
+  },
+  "Mercedes-AMG E63": {
+   "id": 3250,
+   "ids": [
+    3250
+   ],
+   "name": "Mercedes-AMG E 63 S",
+   "year": 2018,
+   "model": "E 63 S"
+  },
+  "Mercedes-AMG ONE": {
+   "id": 3650,
+   "ids": [
+    3650
+   ],
+   "name": "Mercedes-AMG Mercedes-AMG ONE",
+   "year": 2021,
+   "model": "Mercedes-AMG ONE"
+  },
+  "Meyers Manx": {
+   "id": 2416,
+   "ids": [
+    2416
+   ],
+   "name": "Meyers Manx",
+   "year": 1971,
+   "model": "Manx"
+  },
+  "Meyers Manx 2.0": {
+   "id": 3795,
+   "ids": [
+    3795
+   ],
+   "name": "Meyers Manx 2.0",
+   "year": 2023,
+   "model": "Manx 2.0"
+  },
+  "Mit. Evo III '95": {
+   "id": 3886,
+   "ids": [
+    3886
+   ],
+   "name": "Mitsubishi Lancer Evolution III GSR",
+   "year": 1995,
+   "model": "Lancer Evolution III GSR"
+  },
+  "Mit. Evo VIII WP": {
+   "id": 4267,
+   "ids": [
+    4267
+   ],
+   "name": "Mitsubishi Lancer Evolution VIII MR Welcome Pack",
+   "year": 2004,
+   "model": "Lancer Evolution VIII MR 'Welcome Pack'"
+  },
+  "Mit. Evo. TME": {
+   "id": 4090,
+   "ids": [
+    4090
+   ],
+   "name": "Mitsubishi Lancer Evolution VI GSR TM Edition",
+   "year": 2001,
+   "model": "Lancer Evolution VI GSR TM Edition"
+  },
+  "Mit. Minicab TA": {
+   "id": 4085,
+   "ids": [
+    4085
+   ],
+   "name": "Mitsubishi #269 Attacking the Clock Racing Minicab Time Attack",
+   "year": 1990,
+   "model": "#269 Attacking the Clock Racing Minicab Time Attack"
+  },
+  "Mitsubishi GTO": {
+   "id": 357,
+   "ids": [
+    357
+   ],
+   "name": "Mitsubishi GTO",
+   "year": 1997,
+   "model": "GTO"
+  },
+  "Montero '95": {
+   "id": 3750,
+   "ids": [
+    3750
+   ],
+   "name": "Mitsubishi Montero Exceed 2800 TD",
+   "year": 1995,
+   "model": "Montero Exceed 2800 TD"
+  },
+  "Montero Evo": {
+   "id": 2652,
+   "ids": [
+    2652
+   ],
+   "name": "Mitsubishi Montero Evolution",
+   "year": 1997,
+   "model": "Montero Evolution"
+  },
+  "Mustang FE '68": {
+   "id": 4168,
+   "ids": [
+    4168
+   ],
+   "name": "Ford Mustang GT 2+2 Fastback Forza Edition",
+   "year": 1968,
+   "model": "Mustang GT 2+2 Fastback Forza Edition"
+  },
+  "Mégane R26.R": {
+   "id": 3129,
+   "ids": [
+    3129
+   ],
+   "name": "Renault Mégane R26.R",
+   "year": 2008,
+   "model": "Mégane R26.R"
+  },
+  "N Vision 74 '22": {
+   "id": 3829,
+   "ids": [
+    3829
+   ],
+   "name": "Hyundai N Vision 74",
+   "year": 2022,
+   "model": "N Vision 74"
+  },
+  "N. Stagea '97": {
+   "id": 3858,
+   "ids": [
+    3858
+   ],
+   "name": "Nissan Stagea RS Four V",
+   "year": 1997,
+   "model": "Stagea RS FOUR V"
+  },
+  "N600 '70": {
+   "id": 3937,
+   "ids": [
+    3937
+   ],
+   "name": "Honda N600",
+   "year": 1970,
+   "model": "N600"
+  },
+  "NISMO GT-R '24": {
+   "id": 4094,
+   "ids": [
+    4094
+   ],
+   "name": "Nissan GT-R Nismo",
+   "year": 2024,
+   "model": "GT-R NISMO"
+  },
+  "Nis. #11 Skyline": {
+   "id": 2801,
+   "ids": [
+    2801
+   ],
+   "name": "Nissan #11 Tomica Skyline Turbo Super Silhouette",
+   "year": 1983,
+   "model": "#11 Tomica Skyline Turbo Super Silhouette"
+  },
+  "Nis. #23 GT-R": {
+   "id": 3363,
+   "ids": [
+    3363
+   ],
+   "name": "Nissan #23 Pennzoil NISMO Skyline GT-R",
+   "year": 1998,
+   "model": "#23 Pennzoil NISMO Skyline GT-R"
+  },
+  "Nis. Patrol '72": {
+   "id": 4205,
+   "ids": [
+    4205
+   ],
+   "name": "Nissan Patrol",
+   "year": 1972,
+   "model": "Patrol"
+  },
+  "Nis. Skyline '97": {
+   "id": 4057,
+   "ids": [
+    4057
+   ],
+   "name": "Nissan Skyline GT-R V-Spec",
+   "year": 1997,
+   "model": "Skyline GT-R V-Spec"
+  },
+  "Nissan 240SX '93": {
+   "id": 1282,
+   "ids": [
+    1282
+   ],
+   "name": "Nissan 240SX",
+   "year": 1993,
+   "model": "240SX"
+  },
+  "Nissan 370Z": {
+   "id": 1103,
+   "ids": [
+    1103
+   ],
+   "name": "Nissan 370Z",
+   "year": 2010,
+   "model": "370Z"
+  },
+  "Nissan 370Z '19": {
+   "id": 3307,
+   "ids": [
+    3307
+   ],
+   "name": "Nissan 370Z Nismo",
+   "year": 2019,
+   "model": "370Z Nismo"
+  },
+  "Nissan Be-1 '87": {
+   "id": 2512,
+   "ids": [
+    2512,
+    3856
+   ],
+   "name": "Nissan Be-1",
+   "year": 1987,
+   "model": "Be-1"
+  },
+  "Nissan GT-R '12": {
+   "id": 2002,
+   "ids": [
+    2002
+   ],
+   "name": "Nissan GT-R Black Edition (R35)",
+   "year": 2012,
+   "model": "GT-R Black Edition (R35)"
+  },
+  "Nissan GT-R '17": {
+   "id": 2618,
+   "ids": [
+    2618
+   ],
+   "name": "Nissan GT-R (R35)",
+   "year": 2017,
+   "model": "GT-R (R35)"
+  },
+  "Nissan GT-R '71": {
+   "id": 1042,
+   "ids": [
+    1042
+   ],
+   "name": "Nissan Skyline 2000GT-R",
+   "year": 1971,
+   "model": "Skyline 2000GT-R"
+  },
+  "Nissan GT-R '73": {
+   "id": 2270,
+   "ids": [
+    2270
+   ],
+   "name": "Nissan Skyline H/T 2000GT-R",
+   "year": 1973,
+   "model": "Skyline H/T 2000GT-R"
+  },
+  "Nissan GT-R '95": {
+   "id": 2738,
+   "ids": [
+    2738
+   ],
+   "name": "Nissan NISMO GT-R LM",
+   "year": 1995,
+   "model": "NISMO GT-R LM"
+  },
+  "Nissan GTR '20": {
+   "id": 3622,
+   "ids": [
+    3622
+   ],
+   "name": "Nissan GT-R NISMO (R35)",
+   "year": 2020,
+   "model": "GT-R NISMO (R35)"
+  },
+  "Nissan PAO '89": {
+   "id": 3929,
+   "ids": [
+    3929
+   ],
+   "name": "Nissan PAO",
+   "year": 1989,
+   "model": "PAO"
+  },
+  "Nissan Pulsar": {
+   "id": 3257,
+   "ids": [
+    3257
+   ],
+   "name": "Nissan Pulsar GTI-R",
+   "year": 1990,
+   "model": "Pulsar GTI-R"
+  },
+  "Nissan R390": {
+   "id": 567,
+   "ids": [
+    567
+   ],
+   "name": "Nissan R390 (GT1)",
+   "year": 1998,
+   "model": "R390 (GT1)"
+  },
+  "Nissan Safari": {
+   "id": 2822,
+   "ids": [
+    2822
+   ],
+   "name": "Nissan Safari Turbo",
+   "year": 1985,
+   "model": "Safari Turbo"
+  },
+  "Nissan Silvia 02": {
+   "id": 3999,
+   "ids": [
+    3999
+   ],
+   "name": "Nissan Silvia Spec-R",
+   "year": 2002,
+   "model": "Silvia Spec-R"
+  },
+  "Noble M600": {
+   "id": 1253,
+   "ids": [
+    1253
+   ],
+   "name": "Noble M600",
+   "year": 2010,
+   "model": "M600"
+  },
+  "Opel Manta 400": {
+   "id": 2420,
+   "ids": [
+    2420
+   ],
+   "name": "Opel Manta 400",
+   "year": 1984,
+   "model": "Manta 400"
+  },
+  "P. 911 Rallye": {
+   "id": 3910,
+   "ids": [
+    3910
+   ],
+   "name": "Porsche 911 Rallye",
+   "year": 2023,
+   "model": "911 Rallye"
+  },
+  "P. 911 Turbo '93": {
+   "id": 2794,
+   "ids": [
+    2794
+   ],
+   "name": "Porsche 911 Turbo S Leichtbau",
+   "year": 1993,
+   "model": "911 Turbo S Leichtbau"
+  },
+  "Pagani Huayra BC": {
+   "id": 2647,
+   "ids": [
+    2647
+   ],
+   "name": "Pagani Huayra BC Coupe",
+   "year": 2016,
+   "model": "Huayra BC Coupe"
+  },
+  "Pagani Zonda R": {
+   "id": 1175,
+   "ids": [
+    1175
+   ],
+   "name": "Pagani Zonda R",
+   "year": 2009,
+   "model": "Zonda R"
+  },
+  "Pantera GT5": {
+   "id": 3198,
+   "ids": [
+    3198
+   ],
+   "name": "De Tomaso Pantera GT5",
+   "year": 1984,
+   "model": "Pantera GT5"
+  },
+  "Peel P50": {
+   "id": 2987,
+   "ids": [
+    2987
+   ],
+   "name": "Peel P50",
+   "year": 1962,
+   "model": "P50"
+  },
+  "Peel P50 Trolli": {
+   "id": 4315,
+   "ids": [
+    4315
+   ],
+   "name": "Peel P50 Trolli Edition",
+   "year": 1962,
+   "model": "P50 Trolli Edition"
+  },
+  "Penhall Cholla": {
+   "id": 2515,
+   "ids": [
+    2515
+   ],
+   "name": "Penhall The Cholla",
+   "year": 2011,
+   "model": "The Cholla"
+  },
+  "Peugeot 205 R": {
+   "id": 3180,
+   "ids": [
+    3180
+   ],
+   "name": "Peugeot 205 Rallye",
+   "year": 1991,
+   "model": "205 Rallye"
+  },
+  "Peugeot 205 T16": {
+   "id": 1591,
+   "ids": [
+    1591
+   ],
+   "name": "Peugeot 205 Turbo 16",
+   "year": 1984,
+   "model": "205 Turbo 16"
+  },
+  "Peugeot 207 S": {
+   "id": 615,
+   "ids": [
+    615
+   ],
+   "name": "Peugeot 207 Super 2000",
+   "year": 2007,
+   "model": "207 Super 2000"
+  },
+  "Plymouth Cuda": {
+   "id": 1277,
+   "ids": [
+    1277
+   ],
+   "name": "Plymouth Cuda 426 HEMI",
+   "year": 1971,
+   "model": "Cuda 426 HEMI"
+  },
+  "Plymouth Fury": {
+   "id": 2216,
+   "ids": [
+    2216
+   ],
+   "name": "Plymouth Fury",
+   "year": 1958,
+   "model": "Fury"
+  },
+  "Polaris RZR Pro": {
+   "id": 3687,
+   "ids": [
+    3687
+   ],
+   "name": "Polaris RZR Pro XP Ultimate",
+   "year": 2021,
+   "model": "RZR Pro XP Ultimate"
+  },
+  "Pontiac T/A '77": {
+   "id": 1276,
+   "ids": [
+    1276
+   ],
+   "name": "Pontiac Firebird Trans Am",
+   "year": 1977,
+   "model": "Firebird Trans Am"
+  },
+  "Pontiac T/A '87": {
+   "id": 1045,
+   "ids": [
+    1045
+   ],
+   "name": "Pontiac Firebird Trans Am GTA",
+   "year": 1987,
+   "model": "Firebird Trans Am GTA"
+  },
+  "Porsche 718 GTS": {
+   "id": 3117,
+   "ids": [
+    3117
+   ],
+   "name": "Porsche 718 Cayman GTS",
+   "year": 2018,
+   "model": "718 Cayman GTS"
+  },
+  "Porsche 911 '19": {
+   "id": 3123,
+   "ids": [
+    3123
+   ],
+   "name": "Porsche 911 Carrera S",
+   "year": 2019,
+   "model": "911 Carrera S"
+  },
+  "Porsche 911 GT1": {
+   "id": 641,
+   "ids": [
+    641
+   ],
+   "name": "Porsche 911 GT1 Strassenversion",
+   "year": 1997,
+   "model": "911 GT1 Strassenversion"
+  },
+  "Porsche 917 FE": {
+   "id": 4313,
+   "ids": [
+    4313
+   ],
+   "name": "Porsche #3 917 LH Forza Edition",
+   "year": 1970,
+   "model": "#3 917 LH Forza Edition"
+  },
+  "Porsche 917 LH": {
+   "id": 2549,
+   "ids": [
+    2549
+   ],
+   "name": "Porsche #3 917 LH",
+   "year": 1970,
+   "model": "#3 917 LH"
+  },
+  "Porsche 918": {
+   "id": 2290,
+   "ids": [
+    2290
+   ],
+   "name": "Porsche 918 Spyder",
+   "year": 2014,
+   "model": "918 Spyder"
+  },
+  "Porsche 928 GTS": {
+   "id": 2535,
+   "ids": [
+    2535
+   ],
+   "name": "Porsche 928 GTS",
+   "year": 1993,
+   "model": "928 GTS"
+  },
+  "Porsche 944": {
+   "id": 268,
+   "ids": [
+    268
+   ],
+   "name": "Porsche 944 Turbo",
+   "year": 1989,
+   "model": "944 Turbo"
+  },
+  "Porsche 959": {
+   "id": 269,
+   "ids": [
+    269
+   ],
+   "name": "Porsche 959",
+   "year": 1987,
+   "model": "959"
+  },
+  "Porsche 968": {
+   "id": 2534,
+   "ids": [
+    2534
+   ],
+   "name": "Porsche 968 Turbo S",
+   "year": 1993,
+   "model": "968 Turbo S"
+  },
+  "Porsche Carrera": {
+   "id": 292,
+   "ids": [
+    292
+   ],
+   "name": "Porsche Carrera GT",
+   "year": 2003,
+   "model": "Carrera GT"
+  },
+  "Porsche Cayenne": {
+   "id": 2773,
+   "ids": [
+    2773
+   ],
+   "name": "Porsche Cayenne Turbo",
+   "year": 2018,
+   "model": "Cayenne Turbo"
+  },
+  "Porsche Macan RR": {
+   "id": 3187,
+   "ids": [
+    3187
+   ],
+   "name": "Porsche Macan LPR Rally Raid",
+   "year": 2018,
+   "model": "Macan LPR Rally Raid"
+  },
+  "Porsche MissionR": {
+   "id": 3698,
+   "ids": [
+    3698
+   ],
+   "name": "Porsche Mission R",
+   "year": 2021,
+   "model": "Mission R"
+  },
+  "Porsche Taycan S": {
+   "id": 3445,
+   "ids": [
+    3445
+   ],
+   "name": "Porsche Taycan Turbo S",
+   "year": 2020,
+   "model": "Taycan Turbo S"
+  },
+  "Portofino '18": {
+   "id": 3225,
+   "ids": [
+    3225
+   ],
+   "name": "Ferrari Portofino",
+   "year": 2018,
+   "model": "Portofino"
+  },
+  "RAM TRX '24": {
+   "id": 3955,
+   "ids": [
+    3955
+   ],
+   "name": "Ram 1500 TRX",
+   "year": 2024,
+   "model": "1500 TRX"
+  },
+  "RIVIAN R1T": {
+   "id": 3657,
+   "ids": [
+    3657
+   ],
+   "name": "Rivian R1T",
+   "year": 2022,
+   "model": "R1T"
+  },
+  "RS 4 Avant '18": {
+   "id": 3318,
+   "ids": [
+    3318
+   ],
+   "name": "Audi RS 4 Avant",
+   "year": 2018,
+   "model": "RS 4 Avant"
+  },
+  "RZR Racing": {
+   "id": 3686,
+   "ids": [
+    3686
+   ],
+   "name": "Polaris RZR Pro XP Factory Racing Limited Edition",
+   "year": 2021,
+   "model": "RZR Pro XP Factory Racing Limited Edition"
+  },
+  "Radical RXC": {
+   "id": 2486,
+   "ids": [
+    2486
+   ],
+   "name": "Radical RXC Turbo",
+   "year": 2015,
+   "model": "RXC Turbo"
+  },
+  "Range Rover '15": {
+   "id": 2494,
+   "ids": [
+    2494
+   ],
+   "name": "Land Rover Range Rover Sport SVR",
+   "year": 2015,
+   "model": "Range Rover Sport SVR"
+  },
+  "Regera": {
+   "id": 2526,
+   "ids": [
+    2526
+   ],
+   "name": "Koenigsegg Regera",
+   "year": 2016,
+   "model": "Regera"
+  },
+  "Reliant Supervan": {
+   "id": 2563,
+   "ids": [
+    2563
+   ],
+   "name": "Reliant Supervan III",
+   "year": 1972,
+   "model": "Supervan III"
+  },
+  "Renault 5 Turbo": {
+   "id": 634,
+   "ids": [
+    634
+   ],
+   "name": "Renault 5 Turbo",
+   "year": 1980,
+   "model": "5 Turbo"
+  },
+  "Renault 8": {
+   "id": 3395,
+   "ids": [
+    3395
+   ],
+   "name": "Renault 8 Gordini",
+   "year": 1967,
+   "model": "8 Gordini"
+  },
+  "Renault Clio '93": {
+   "id": 2149,
+   "ids": [
+    2149
+   ],
+   "name": "Renault Clio Williams",
+   "year": 1993,
+   "model": "Clio Williams"
+  },
+  "Revuelto '24": {
+   "id": 3891,
+   "ids": [
+    3891
+   ],
+   "name": "Lamborghini Revuelto",
+   "year": 2024,
+   "model": "Revuelto"
+  },
+  "Rimac Nevera": {
+   "id": 3625,
+   "ids": [
+    3625
+   ],
+   "name": "Rimac Nevera",
+   "year": 2021,
+   "model": "Nevera"
+  },
+  "S-Cargo '89": {
+   "id": 3860,
+   "ids": [
+    3860
+   ],
+   "name": "Nissan S-Cargo",
+   "year": 1989,
+   "model": "S-Cargo"
+  },
+  "S-Cargo FE": {
+   "id": 4160,
+   "ids": [
+    4160
+   ],
+   "name": "Nissan S-Cargo Forza Edition",
+   "year": 1989,
+   "model": "S-Cargo Forza Edition"
+  },
+  "SF90 Stradale": {
+   "id": 3595,
+   "ids": [
+    3595
+   ],
+   "name": "Ferrari SF90 Stradale",
+   "year": 2020,
+   "model": "SF90 Stradale"
+  },
+  "SIERRA 700R": {
+   "id": 3665,
+   "ids": [
+    3665
+   ],
+   "name": "SIERRA Cars 700R",
+   "year": 2021,
+   "model": "700R"
+  },
+  "SIERRA RX3": {
+   "id": 3540,
+   "ids": [
+    3540
+   ],
+   "name": "SIERRA Cars RX3",
+   "year": 2021,
+   "model": "RX3"
+  },
+  "SRT Durango '21": {
+   "id": 3850,
+   "ids": [
+    3850
+   ],
+   "name": "Dodge Durango SRT Hellcat",
+   "year": 2021,
+   "model": "Durango SRT Hellcat"
+  },
+  "SRT Viper '13": {
+   "id": 1562,
+   "ids": [
+    1562
+   ],
+   "name": "SRT Viper GTS",
+   "year": 2013,
+   "model": "Viper GTS"
+  },
+  "SUBARU 22B '98": {
+   "id": 363,
+   "ids": [
+    363
+   ],
+   "name": "Subaru Impreza 22B-STi Version",
+   "year": 1998,
+   "model": "Impreza 22B-STi Version"
+  },
+  "SUBARU BRAT": {
+   "id": 2140,
+   "ids": [
+    2140
+   ],
+   "name": "Subaru BRAT GL",
+   "year": 1980,
+   "model": "BRAT GL"
+  },
+  "SUBARU BRZ '22": {
+   "id": 3735,
+   "ids": [
+    3735
+   ],
+   "name": "Subaru BRZ",
+   "year": 2022,
+   "model": "BRZ"
+  },
+  "SUBARU BRZ FE": {
+   "id": 4164,
+   "ids": [
+    4164
+   ],
+   "name": "Subaru BRZ Forza Edition",
+   "year": 2022,
+   "model": "BRZ Forza Edition"
+  },
+  "SUBARU LEGACY": {
+   "id": 379,
+   "ids": [
+    379
+   ],
+   "name": "Subaru LEGACY B4 2.0 GT",
+   "year": 2005,
+   "model": "LEGACY B4 2.0 GT"
+  },
+  "SUBARU LEGACY RS": {
+   "id": 1382,
+   "ids": [
+    1382
+   ],
+   "name": "Subaru LEGACY RS",
+   "year": 1990,
+   "model": "LEGACY RS"
+  },
+  "SUBARU STI ARX": {
+   "id": 3241,
+   "ids": [
+    3241
+   ],
+   "name": "Subaru WRX STI ARX Supercar",
+   "year": 2018,
+   "model": "WRX STI ARX Supercar"
+  },
+  "SUBARU STI S209": {
+   "id": 3412,
+   "ids": [
+    3412
+   ],
+   "name": "Subaru STI S209",
+   "year": 2019,
+   "model": "STI S209"
+  },
+  "SUBARU SVX": {
+   "id": 2217,
+   "ids": [
+    2217
+   ],
+   "name": "Subaru SVX",
+   "year": 1996,
+   "model": "SVX"
+  },
+  "SUBARU Vivio '94": {
+   "id": 3960,
+   "ids": [
+    3960
+   ],
+   "name": "Subaru Vivio RX-R",
+   "year": 1994,
+   "model": "Vivio RX-R"
+  },
+  "SUBARU Vivio FE": {
+   "id": 4287,
+   "ids": [
+    4287
+   ],
+   "name": "Subaru Vivio RX-R Forza Edition",
+   "year": 1994,
+   "model": "Vivio RX-R Forza Edition"
+  },
+  "SUBARU WRX '04": {
+   "id": 364,
+   "ids": [
+    364
+   ],
+   "name": "Subaru IMPREZA WRX STI",
+   "year": 2004,
+   "model": "IMPREZA WRX STI"
+  },
+  "SUBARU WRX '05": {
+   "id": 365,
+   "ids": [
+    365
+   ],
+   "name": "Subaru IMPREZA WRX STI",
+   "year": 2005,
+   "model": "IMPREZA WRX STI"
+  },
+  "SUBARU WRX '08": {
+   "id": 1060,
+   "ids": [
+    1060
+   ],
+   "name": "Subaru IMPREZA WRX STI",
+   "year": 2008,
+   "model": "IMPREZA WRX STI"
+  },
+  "SUBARU WRX '11": {
+   "id": 1323,
+   "ids": [
+    1323
+   ],
+   "name": "Subaru WRX STI",
+   "year": 2011,
+   "model": "WRX STI"
+  },
+  "SUBARU WRX '15": {
+   "id": 2168,
+   "ids": [
+    2168
+   ],
+   "name": "Subaru WRX STI",
+   "year": 2015,
+   "model": "WRX STI"
+  },
+  "SUBARU WRX '22": {
+   "id": 3819,
+   "ids": [
+    3819
+   ],
+   "name": "Subaru WRX",
+   "year": 2022,
+   "model": "WRX"
+  },
+  "Saleen S7 LM": {
+   "id": 3498,
+   "ids": [
+    3498
+   ],
+   "name": "Saleen S7 LM",
+   "year": 2017,
+   "model": "S7 LM"
+  },
+  "Schuppan 962CR": {
+   "id": 3288,
+   "ids": [
+    3288
+   ],
+   "name": "Schuppan 962CR",
+   "year": 1993,
+   "model": "962CR"
+  },
+  "Shelby Cobra 427": {
+   "id": 306,
+   "ids": [
+    306
+   ],
+   "name": "Shelby Cobra 427 S/C",
+   "year": 1965,
+   "model": "Cobra 427 S/C"
+  },
+  "Shelby Daytona": {
+   "id": 1155,
+   "ids": [
+    1155
+   ],
+   "name": "Shelby Cobra Daytona Coupe",
+   "year": 1965,
+   "model": "Cobra Daytona Coupe"
+  },
+  "Silverado DD": {
+   "id": 3088,
+   "ids": [
+    3088
+   ],
+   "name": "DeBerti Chevrolet Silverado 1500 Drift Truck",
+   "year": 2018,
+   "model": "Chevrolet Silverado 1500 Drift Truck"
+  },
+  "Silvia '94": {
+   "id": 440,
+   "ids": [
+    440
+   ],
+   "name": "Nissan Silvia K's",
+   "year": 1994,
+   "model": "Silvia K's"
+  },
+  "Silvia '98": {
+   "id": 2659,
+   "ids": [
+    2659
+   ],
+   "name": "Nissan Silvia K's Aero",
+   "year": 1998,
+   "model": "Silvia K's Aero"
+  },
+  "Skyline GT-R '92": {
+   "id": 4114,
+   "ids": [
+    4114
+   ],
+   "name": "Nissan Skyline GT-R",
+   "year": 1992,
+   "model": "Skyline GT-R"
+  },
+  "Soarer '97": {
+   "id": 3785,
+   "ids": [
+    3785
+   ],
+   "name": "Toyota Soarer 2.5 GT-T",
+   "year": 1997,
+   "model": "Soarer 2.5 GT-T"
+  },
+  "Speedtail '19": {
+   "id": 3156,
+   "ids": [
+    3156
+   ],
+   "name": "McLaren Speedtail",
+   "year": 2019,
+   "model": "Speedtail"
+  },
+  "Sports 800 '65": {
+   "id": 2469,
+   "ids": [
+    2469
+   ],
+   "name": "Toyota Sports 800",
+   "year": 1965,
+   "model": "Sports 800"
+  },
+  "Sports 800 FE": {
+   "id": 4342,
+   "ids": [
+    4342
+   ],
+   "name": "Toyota Sports 800 Fanta Edition",
+   "year": 1965,
+   "model": "Sports 800 Fanta Edition"
+  },
+  "Sunshine FE": {
+   "id": 4163,
+   "ids": [
+    4163
+   ],
+   "name": "Wuling Sunshine S Forza Edition",
+   "year": 2013,
+   "model": "Sunshine S Forza Edition"
+  },
+  "T. Crown Taxi": {
+   "id": 4255,
+   "ids": [
+    4255
+   ],
+   "name": "Toyota Crown Super Deluxe Taxi",
+   "year": 2005,
+   "model": "Crown Super Deluxe Taxi"
+  },
+  "TVR Griffith": {
+   "id": 2993,
+   "ids": [
+    2993
+   ],
+   "name": "TVR Griffith",
+   "year": 2018,
+   "model": "Griffith"
+  },
+  "TVR Sagaris": {
+   "id": 433,
+   "ids": [
+    433
+   ],
+   "name": "TVR Sagaris",
+   "year": 2005,
+   "model": "Sagaris"
+  },
+  "TVR Speed 12": {
+   "id": 296,
+   "ids": [
+    296
+   ],
+   "name": "TVR Cerbera Speed 12",
+   "year": 1998,
+   "model": "Cerbera Speed 12"
+  },
+  "Tacoma FE": {
+   "id": 4199,
+   "ids": [
+    4199
+   ],
+   "name": "Toyota Tacoma TRD Pro Forza Edition",
+   "year": 2019,
+   "model": "Tacoma TRD Pro Forza Edition"
+  },
+  "Toy. Altezza '99": {
+   "id": 4038,
+   "ids": [
+    4038
+   ],
+   "name": "Toyota Altezza RS200 Z EDITION",
+   "year": 1999,
+   "model": "Altezza RS200 Z EDITION"
+  },
+  "Toy. Starlet '96": {
+   "id": 4055,
+   "ids": [
+    4055
+   ],
+   "name": "Toyota Starlet Glanza V",
+   "year": 1996,
+   "model": "Starlet Glanza V"
+  },
+  "Toyota 2000GT": {
+   "id": 247,
+   "ids": [
+    247
+   ],
+   "name": "Toyota 2000GT",
+   "year": 1969,
+   "model": "2000GT"
+  },
+  "Toyota 4Runner": {
+   "id": 3373,
+   "ids": [
+    3373
+   ],
+   "name": "Toyota 4Runner TRD Pro",
+   "year": 2019,
+   "model": "4Runner TRD Pro"
+  },
+  "Toyota 86": {
+   "id": 2007,
+   "ids": [
+    2007
+   ],
+   "name": "Toyota 86",
+   "year": 2013,
+   "model": "86"
+  },
+  "Toyota AE86 FE": {
+   "id": 4162,
+   "ids": [
+    4162
+   ],
+   "name": "Toyota Sprinter Trueno GT Apex Forza Edition",
+   "year": 1985,
+   "model": "Sprinter Trueno GT-APEX Forza Edition"
+  },
+  "Toyota AT37": {
+   "id": 2743,
+   "ids": [
+    2743
+   ],
+   "name": "Toyota Land Cruiser Arctic Trucks AT37",
+   "year": 2016,
+   "model": "Land Cruiser Arctic Trucks AT37"
+  },
+  "Toyota Camry '23": {
+   "id": 3848,
+   "ids": [
+    3848
+   ],
+   "name": "Toyota Camry TRD",
+   "year": 2023,
+   "model": "Camry TRD"
+  },
+  "Toyota Celica'03": {
+   "id": 295,
+   "ids": [
+    295
+   ],
+   "name": "Toyota Celica Sport Specialty II",
+   "year": 2003,
+   "model": "Celica Sport Specialty II"
+  },
+  "Toyota Celica'92": {
+   "id": 1517,
+   "ids": [
+    1517
+   ],
+   "name": "Toyota Celica GT-Four RC ST185",
+   "year": 1992,
+   "model": "Celica GT-Four RC ST185"
+  },
+  "Toyota Celica'94": {
+   "id": 1034,
+   "ids": [
+    1034
+   ],
+   "name": "Toyota Celica GT-Four ST205",
+   "year": 1994,
+   "model": "Celica GT-Four ST205"
+  },
+  "Toyota Chaser V": {
+   "id": 3933,
+   "ids": [
+    3933
+   ],
+   "name": "Toyota Chaser 2.5 Tourer V",
+   "year": 1997,
+   "model": "Chaser 2.5 Tourer V"
+  },
+  "Toyota Corolla": {
+   "id": 1537,
+   "ids": [
+    1537
+   ],
+   "name": "Toyota Corolla SR5",
+   "year": 1974,
+   "model": "Corolla SR5"
+  },
+  "Toyota FJ40": {
+   "id": 2566,
+   "ids": [
+    2566
+   ],
+   "name": "Toyota FJ40",
+   "year": 1979,
+   "model": "FJ40"
+  },
+  "Toyota GR Yaris": {
+   "id": 3629,
+   "ids": [
+    3629
+   ],
+   "name": "Toyota GR Yaris",
+   "year": 2021,
+   "model": "GR Yaris"
+  },
+  "Toyota GR86 '22": {
+   "id": 3761,
+   "ids": [
+    3761
+   ],
+   "name": "Toyota GR86",
+   "year": 2022,
+   "model": "GR86"
+  },
+  "Toyota JPN Taxi": {
+   "id": 4257,
+   "ids": [
+    4257
+   ],
+   "name": "Toyota JPN Taxi",
+   "year": 2017,
+   "model": "JPN Taxi"
+  },
+  "Toyota LC '25": {
+   "id": 4278,
+   "ids": [
+    4278
+   ],
+   "name": "Toyota Land Cruiser",
+   "year": 2025,
+   "model": "Land Cruiser"
+  },
+  "Toyota MR2 '89": {
+   "id": 1395,
+   "ids": [
+    1395
+   ],
+   "name": "Toyota MR2 SC",
+   "year": 1989,
+   "model": "MR2 SC"
+  },
+  "Toyota MR2 '95": {
+   "id": 398,
+   "ids": [
+    398
+   ],
+   "name": "Toyota MR2 GT",
+   "year": 1995,
+   "model": "MR2 GT"
+  },
+  "Toyota Prius '24": {
+   "id": 3964,
+   "ids": [
+    3964
+   ],
+   "name": "Toyota Prius Prime XSE Premium",
+   "year": 2024,
+   "model": "Prius Prime XSE Premium"
+  },
+  "Toyota Sera '91": {
+   "id": 3851,
+   "ids": [
+    3851
+   ],
+   "name": "Toyota Sera",
+   "year": 1991,
+   "model": "Sera"
+  },
+  "Toyota Supra '20": {
+   "id": 3402,
+   "ids": [
+    3402
+   ],
+   "name": "Toyota GR Supra",
+   "year": 2020,
+   "model": "GR Supra"
+  },
+  "Toyota Supra '92": {
+   "id": 460,
+   "ids": [
+    460
+   ],
+   "name": "Toyota Supra 2.0 GT",
+   "year": 1992,
+   "model": "Supra 2.0 GT"
+  },
+  "Toyota Supra '98": {
+   "id": 461,
+   "ids": [
+    461
+   ],
+   "name": "Toyota Supra RZ",
+   "year": 1998,
+   "model": "Supra RZ"
+  },
+  "Toyota Tacoma": {
+   "id": 3374,
+   "ids": [
+    3374
+   ],
+   "name": "Toyota Tacoma TRD Pro",
+   "year": 2019,
+   "model": "Tacoma TRD Pro"
+  },
+  "Toyota Trueno": {
+   "id": 455,
+   "ids": [
+    455
+   ],
+   "name": "Toyota Sprinter Trueno GT Apex",
+   "year": 1985,
+   "model": "Sprinter Trueno GT Apex"
+  },
+  "Ultima 1020": {
+   "id": 2569,
+   "ids": [
+    2569
+   ],
+   "name": "Ultima Evolution Coupe 1020",
+   "year": 2015,
+   "model": "Evolution Coupe 1020"
+  },
+  "Urus '19": {
+   "id": 3120,
+   "ids": [
+    3120
+   ],
+   "name": "Lamborghini Urus",
+   "year": 2019,
+   "model": "Urus"
+  },
+  "VW Class 5 Bug": {
+   "id": 2568,
+   "ids": [
+    2568
+   ],
+   "name": "Volkswagen Class 5/1600 Baja Bug",
+   "year": 1969,
+   "model": "Class 5/1600 Baja Bug"
+  },
+  "VW Corrado": {
+   "id": 309,
+   "ids": [
+    309
+   ],
+   "name": "Volkswagen Corrado VR6",
+   "year": 1995,
+   "model": "Corrado VR6"
+  },
+  "VW GTi Mk2 '92": {
+   "id": 353,
+   "ids": [
+    353
+   ],
+   "name": "Volkswagen Golf Gti 16v Mk2",
+   "year": 1992,
+   "model": "Golf GTi 16v Mk2"
+  },
+  "VW Golf GTI '83": {
+   "id": 2995,
+   "ids": [
+    2995
+   ],
+   "name": "Volkswagen Golf GTI",
+   "year": 1983,
+   "model": "Golf GTI"
+  },
+  "VW Golf R '10": {
+   "id": 1231,
+   "ids": [
+    1231
+   ],
+   "name": "Volkswagen Golf R",
+   "year": 2010,
+   "model": "Golf R"
+  },
+  "VW Golf R '14": {
+   "id": 2142,
+   "ids": [
+    2142
+   ],
+   "name": "Volkswagen Golf R",
+   "year": 2014,
+   "model": "Golf R"
+  },
+  "VW Golf R '21": {
+   "id": 3413,
+   "ids": [
+    3413
+   ],
+   "name": "Volkswagen Golf R",
+   "year": 2021,
+   "model": "Golf R"
+  },
+  "VW Golf R '22": {
+   "id": 3533,
+   "ids": [
+    3533
+   ],
+   "name": "Volkswagen Golf R",
+   "year": 2022,
+   "model": "Golf R"
+  },
+  "VW Pickup '82": {
+   "id": 3235,
+   "ids": [
+    3235
+   ],
+   "name": "Volkswagen Pickup LX",
+   "year": 1982,
+   "model": "Pickup LX"
+  },
+  "VW Rallye Golf": {
+   "id": 3783,
+   "ids": [
+    3783
+   ],
+   "name": "Volkswagen Rallye Golf",
+   "year": 1989,
+   "model": "Rallye Golf"
+  },
+  "VW Scirocco '11": {
+   "id": 1428,
+   "ids": [
+    1428
+   ],
+   "name": "Volkswagen Scirocco R",
+   "year": 2011,
+   "model": "Scirocco R"
+  },
+  "VW Type 2": {
+   "id": 2151,
+   "ids": [
+    2151
+   ],
+   "name": "Volkswagen Type 2 De Luxe",
+   "year": 1963,
+   "model": "Type 2 De Luxe"
+  },
+  "Valhalla Concept": {
+   "id": 3364,
+   "ids": [
+    3364
+   ],
+   "name": "Aston Martin Valhalla Concept Car",
+   "year": 2019,
+   "model": "Valhalla Concept Car"
+  },
+  "VelociRaptor '19": {
+   "id": 3189,
+   "ids": [
+    3189
+   ],
+   "name": "Hennessey Ford F-150 VelociRaptor 6X6",
+   "year": 2019,
+   "model": "Ford F-150 VelociRaptor 6X6"
+  },
+  "Veloster N": {
+   "id": 2872,
+   "ids": [
+    2872
+   ],
+   "name": "Hyundai Veloster N",
+   "year": 2019,
+   "model": "Veloster N"
+  },
+  "Venom F5": {
+   "id": 3600,
+   "ids": [
+    3600
+   ],
+   "name": "Hennessey Venom F5",
+   "year": 2021,
+   "model": "Venom F5"
+  },
+  "Venom GT": {
+   "id": 1532,
+   "ids": [
+    1532
+   ],
+   "name": "Hennessey Venom GT",
+   "year": 2012,
+   "model": "Venom GT"
+  },
+  "Viper FE '99": {
+   "id": 4198,
+   "ids": [
+    4198
+   ],
+   "name": "Dodge Viper GTS ACR Forza Edition",
+   "year": 1999,
+   "model": "Viper GTS ACR Forza Edition"
+  },
+  "Volvo 242 Turbo": {
+   "id": 1299,
+   "ids": [
+    1299
+   ],
+   "name": "Volvo 242 Turbo Evolution",
+   "year": 1983,
+   "model": "242 Turbo Evolution"
+  },
+  "Wuling Mini EV": {
+   "id": 3789,
+   "ids": [
+    3789
+   ],
+   "name": "Wuling Hongguang Mini EV",
+   "year": 2022,
+   "model": "Hongguang Mini EV"
+  },
+  "Wuling Sunshine": {
+   "id": 3548,
+   "ids": [
+    3548
+   ],
+   "name": "Wuling Sunshine S",
+   "year": 2013,
+   "model": "Sunshine S"
+  },
+  "Z NISMO '24": {
+   "id": 3921,
+   "ids": [
+    3921
+   ],
+   "name": "Nissan Z NISMO",
+   "year": 2024,
+   "model": "Z NISMO"
+  },
+  "Zenvo TSR-S": {
+   "id": 3212,
+   "ids": [
+    3212
+   ],
+   "name": "Zenvo TSR-S",
+   "year": 2019,
+   "model": "TSR-S"
+  }
+ },
+ "otherLanguages": {
+  "#1 Evolutɨon TA": 3554,
+  "#1 丰田 T100": 2636,
+  "#11 福特 F-150": 2517,
+  "#12 N. Skylɨne": 4179,
+  "#12 日产 Skyline": 4179,
+  "#13 福特 Mustang": 2996,
+  "#14 Ford Fɨesta": 2937,
+  "#14 福特 Fiesta": 2937,
+  "#185 保时捷 959": 3031,
+  "#2 Audɨ S1": 1478,
+  "#2 奥迪 S1": 1478,
+  "#2 福特 GT40": 2792,
+  "#203 保时捷 961": 3282,
+  "#21 Cɨvɨc WTAC": 4277,
+  "#23 SƗERRA ALPHA": 3539,
+  "#24 Ferrarɨ P4": 2793,
+  "#24 法拉利 P4": 2793,
+  "#240 Jɨmco TT": 3605,
+  "#25 福特 Bronco": 3128,
+  "#32 Skylɨne WTAC": 4212,
+  "#34 丰田 Supra": 3411,
+  "#34 大众 Beetle": 3007,
+  "#36 Sɨlvɨa WTAC": 4213,
+  "#37 Pro 2-pickup": 2663,
+  "#37 Pro 4-pickup": 3662,
+  "#4 福特 Focus": 3670,
+  "#5 Escort 1977": 3184,
+  "#5 Escort 1977 г.": 3184,
+  "#5 Escort de 1977": 3184,
+  "#5 Escort ’77": 3184,
+  "#55 马自达 787B": 1335,
+  "#70 保时捷 935": 3214,
+  "#777 Nɨssan 240": 3000,
+  "#777 日产 240": 3000,
+  "#99 马自达 RX-8": 3400,
+  "1970er N600": 3937,
+  "1990er MB 190 E": 1296,
+  "1993er P. 911 Turbo": 2794,
+  "1999er Toy. Altezza": 4038,
+  "2023er Audi R8 GT": 3917,
+  "2023er GR Corolla": 3880,
+  "275 GTB4 1967": 3950,
+  "275 GTB4 1967 г.": 3950,
+  "275 GTB4 de 1967": 3950,
+  "275 GTB4 του 1967": 3950,
+  "275 GTB4 ’67": 3950,
+  "3000 MKƗƗƗ": 1481,
+  "3000 Mk III": 1481,
+  "488 Pista 2019": 3227,
+  "488 Pista 2019 г.": 3227,
+  "488 Pista de 2019": 3227,
+  "488 Pista ’19": 3227,
+  "488 Pɨsta ’19": 3227,
+  "650S Spɨder": 3087,
+  "86 'Stories'": 4259,
+  "86 Storɨes": 4259,
+  "86 Verhalen": 4259,
+  "86 historier": 4259,
+  "86 w wersji „Historie”": 4259,
+  "86 «Historias»": 4259,
+  "86 « Histoires »": 4259,
+  "911 Carrera 1973": 260,
+  "911 Carrera 1973 г.": 260,
+  "911 Carrera de 1973": 260,
+  "911 Carrera ’73": 260,
+  "911 GT2 1995": 261,
+  "911 GT2 1995 г.": 261,
+  "911 GT2 RS 2018": 2755,
+  "911 GT2 RS 2018 г.": 2755,
+  "911 GT2 RS de 2018": 2755,
+  "911 GT2 RS ’18": 2755,
+  "911 GT2 de 1995": 261,
+  "911 GT2 ’95": 261,
+  "911 GT3 2004": 262,
+  "911 GT3 2004 г.": 262,
+  "911 GT3 2021": 3667,
+  "911 GT3 2021 Г.": 3667,
+  "911 GT3 RS 2019": 3072,
+  "911 GT3 RS 2019 г.": 3072,
+  "911 GT3 RS de 2019": 3072,
+  "911 GT3 RS ’19": 3072,
+  "911 GT3 RS4 2012": 2297,
+  "911 GT3 RS4 2012 г.": 2297,
+  "911 GT3 RS4 de 2012": 2297,
+  "911 GT3 RS4 ’12": 2297,
+  "911 GT3 de 2004": 262,
+  "911 GT3 de 2021": 3667,
+  "911 GT3 ’04": 262,
+  "911 GT3 ’21": 3667,
+  "911 Turbo 1982": 265,
+  "911 Turbo 1982 г.": 265,
+  "911 Turbo S 2023": 3953,
+  "911 Turbo S 2023 г.": 3953,
+  "911 Turbo S de 2023": 3953,
+  "911 Turbo S ’23": 3953,
+  "911 Turbo de 1982": 265,
+  "911 Turbo ’82": 265,
+  "AM DBS SL 2019": 3185,
+  "AM DBS SL 2019 г.": 3185,
+  "AM DBS SL de 2019": 3185,
+  "AM DBS SL ’19": 3185,
+  "AM DBX 2021": 3580,
+  "AM DBX 2021 г.": 3580,
+  "AM DBX de 2021": 3580,
+  "AM DBX ’21": 3580,
+  "AM Valkyrɨe": 2968,
+  "AM Valkyrɨe AMR": 3631,
+  "AM Vantage 2019": 3091,
+  "AM Vantage 2019 г.": 3091,
+  "AM Vantage de 2019": 3091,
+  "AM Vantage ’19": 3091,
+  "AMG Hammer Coupé": 3176,
+  "AMG Hammer coupé": 3176,
+  "AR Gɨulɨa GTAm": 4147,
+  "Abarth 124 2017": 2740,
+  "Abarth 124 2017 г.": 2740,
+  "Abarth 124 de 2017": 2740,
+  "Abarth 124 του 2017": 2740,
+  "Abarth 124 ’17": 2740,
+  "Abarth 595 1968": 2017,
+  "Abarth 595 1968 г.": 2017,
+  "Abarth 595 de 1968": 2017,
+  "Abarth 595 ’68": 2017,
+  "Abarth 695 2016": 2489,
+  "Abarth 695 2016 г.": 2489,
+  "Abarth 695 de 2016": 2489,
+  "Abarth 695 ’16": 2489,
+  "Acura NSX 2022": 3767,
+  "Acura NSX 2022 г.": 3767,
+  "Acura NSX de 2022": 3767,
+  "Acura NSX ’22": 3767,
+  "Acura Ɨntegra": 368,
+  "Alfa Giulia 2017": 2542,
+  "Alfa Giulia 2017 г.": 2542,
+  "Alfa Giulia de 2017": 2542,
+  "Alfa Giulia ’17": 2542,
+  "Alfa Gɨulɨa ’17": 2542,
+  "Alumicraft Class 10": 2552,
+  "Alumicraft Class 1 n°122": 3549,
+  "Alumɨ Craft C.10": 2552,
+  "Apollo IE 2019": 3141,
+  "Apollo IE 2019 г.": 3141,
+  "Apollo IE de 2019": 3141,
+  "Apollo IE ’19": 3141,
+  "Apollo ƗE ‘19": 3141,
+  "Artura 2023": 3668,
+  "Arɨel Atom": 1651,
+  "Arɨel Nomad": 2430,
+  "Audi R8 2013": 2010,
+  "Audi R8 2013 г.": 2010,
+  "Audi R8 2020": 3745,
+  "Audi R8 2020 г.": 3745,
+  "Audi R8 GT 2023": 3917,
+  "Audi R8 GT 2023 г.": 3917,
+  "Audi R8 GT de 2023": 3917,
+  "Audi R8 GT του 2023": 3917,
+  "Audi R8 GT ’23": 3917,
+  "Audi R8 de 2013": 2010,
+  "Audi R8 de 2020": 3745,
+  "Audi R8 ’13": 2010,
+  "Audi R8 ’20": 3745,
+  "Audi RS 3 2020": 3454,
+  "Audi RS 3 2020 г.": 3454,
+  "Audi RS 3 de 2020": 3454,
+  "Audi RS 3 ’20": 3454,
+  "Audi RS 4 2001": 2178,
+  "Audi RS 4 2001 г.": 2178,
+  "Audi RS 4 2006": 419,
+  "Audi RS 4 2006 г.": 419,
+  "Audi RS 4 de 2001": 2178,
+  "Audi RS 4 de 2006": 419,
+  "Audi RS 4 ’01": 2178,
+  "Audi RS 4 ’06": 419,
+  "Audi RS 6 2003": 420,
+  "Audi RS 6 2003 г.": 420,
+  "Audi RS 6 2009": 1184,
+  "Audi RS 6 2009 г.": 1184,
+  "Audi RS 6 2015": 2180,
+  "Audi RS 6 2015 г.": 2180,
+  "Audi RS 6 2021": 3583,
+  "Audi RS 6 2021 г.": 3583,
+  "Audi RS 6 de 2003": 420,
+  "Audi RS 6 de 2009": 1184,
+  "Audi RS 6 de 2015": 2180,
+  "Audi RS 6 de 2021": 3583,
+  "Audi RS 6 ’03": 420,
+  "Audi RS 6 ’09": 1184,
+  "Audi RS 6 ’15": 2180,
+  "Audi RS 6 ’21": 3583,
+  "Audi RS 7 2021": 3584,
+  "Audi RS 7 2021 г.": 3584,
+  "Audi RS 7 de 2021": 3584,
+  "Audi RS 7 ’21": 3584,
+  "Audi RS 5": 1417,
+  "Audi S1 n°2": 1478,
+  "Audɨ R8 GT ’23": 3917,
+  "Audɨ R8 LMS": 1200,
+  "Audɨ R8 V10 plus": 2473,
+  "Audɨ R8 ’13": 2010,
+  "Audɨ R8 ’20": 3745,
+  "Audɨ RS 3": 1216,
+  "Audɨ RS 3 ’20": 3454,
+  "Audɨ RS 4 ’01": 2178,
+  "Audɨ RS 4 ’06": 419,
+  "Audɨ RS 5": 1417,
+  "Audɨ RS 6 ’03": 420,
+  "Audɨ RS 6 ’09": 1184,
+  "Audɨ RS 6 ’15": 2180,
+  "Audɨ RS 6 ’21": 3583,
+  "Audɨ RS 7 ’21": 3584,
+  "Audɨ RS e-tron": 3359,
+  "Audɨ TT RS": 1220,
+  "Audɨ quattro": 633,
+  "Autozam AZ-1 1993": 3854,
+  "Autozam AZ-1 1993 г.": 3854,
+  "Autozam AZ-1 de 1993": 3854,
+  "Autozam AZ-1 ’93": 3854,
+  "Aventador 2012": 1398,
+  "Aventador 2012 г.": 1398,
+  "Aventador 2021": 3775,
+  "Aventador de 2012": 1398,
+  "Aventador ’12": 1398,
+  "BMW 850CSɨ": 1493,
+  "BMW M2 2023": 3763,
+  "BMW M2 2023 г.": 3763,
+  "BMW M2 FE 2023": 4166,
+  "BMW M2 FE 2023 г.": 4166,
+  "BMW M2 FE de 2023": 4166,
+  "BMW M2 FE ’23": 4166,
+  "BMW M2 de 2023": 3763,
+  "BMW M2 ’23": 3763,
+  "BMW M3 1988": 4069,
+  "BMW M3 1988 г.": 4069,
+  "BMW M3 1997": 382,
+  "BMW M3 1997 г.": 382,
+  "BMW M3 2005": 383,
+  "BMW M3 2005 г.": 383,
+  "BMW M3 2008": 1011,
+  "BMW M3 2008 г.": 1011,
+  "BMW M3 de 1988": 4069,
+  "BMW M3 de 1997": 382,
+  "BMW M3 de 2005": 383,
+  "BMW M3 de 2008": 1011,
+  "BMW M3 ’05": 383,
+  "BMW M3 ’08": 1011,
+  "BMW M3 ’88": 4069,
+  "BMW M3 ’97": 382,
+  "BMW M4 2014": 2154,
+  "BMW M4 2014 г.": 2154,
+  "BMW M4 2016": 2628,
+  "BMW M4 2016 г.": 2628,
+  "BMW M4 2021": 3645,
+  "BMW M4 2021 WP": 4266,
+  "BMW M4 2021 г.": 3645,
+  "BMW M4 WP 2021 г.": 4266,
+  "BMW M4 WP de 2021": 4266,
+  "BMW M4 de 2014": 2154,
+  "BMW M4 de 2016": 2628,
+  "BMW M4 de 2021": 3645,
+  "BMW M4 ’14": 2154,
+  "BMW M4 ’16": 2628,
+  "BMW M4 ’21": 3645,
+  "BMW M4 ’21 WP": 4266,
+  "BMW M5 1988": 1368,
+  "BMW M5 1988 г.": 1368,
+  "BMW M5 1995": 1418,
+  "BMW M5 1995 г.": 1418,
+  "BMW M5 2003": 1367,
+  "BMW M5 2003 г.": 1367,
+  "BMW M5 2009": 1126,
+  "BMW M5 2009 г.": 1126,
+  "BMW M5 2012": 1388,
+  "BMW M5 2012 г.": 1388,
+  "BMW M5 2022": 3764,
+  "BMW M5 2022 г.": 3764,
+  "BMW M5 de 1988": 1368,
+  "BMW M5 de 1995": 1418,
+  "BMW M5 de 2003": 1367,
+  "BMW M5 de 2009": 1126,
+  "BMW M5 de 2012": 1388,
+  "BMW M5 de 2022": 3764,
+  "BMW M5 ’03": 1367,
+  "BMW M5 ’09": 1126,
+  "BMW M5 ’12": 1388,
+  "BMW M5 ’22": 3764,
+  "BMW M5 ’88": 1368,
+  "BMW M5 ’95": 1418,
+  "BMW X6 M 2024": 3983,
+  "BMW X6 M 2024 г.": 3983,
+  "BMW X6 M de 2024": 3983,
+  "BMW X6 M ’24": 3983,
+  "BMW Z4 2008": 1059,
+  "BMW Z4 2008 г.": 1059,
+  "BMW Z4 2019": 3173,
+  "BMW Z4 2019 г.": 3173,
+  "BMW Z4 de 2008": 1059,
+  "BMW Z4 de 2019": 3173,
+  "BMW Z4 ’08": 1059,
+  "BMW Z4 ’19": 3173,
+  "BMW iX 2022": 3737,
+  "BMW iX 2022 г.": 3737,
+  "BMW iX de 2022": 3737,
+  "BMW iX ’22": 3737,
+  "BMW Ɨsetta": 2412,
+  "BMW ɨ8": 2133,
+  "BMW ɨX ’22": 3737,
+  "Bentley Continental GT": 3728,
+  "Bronco R n°2069": 3404,
+  "Buɨck Regal GNX": 417,
+  "CRX WTAC n°19": 4211,
+  "Caddy CTS-V 2016": 2421,
+  "Caddy CTS-V 2016 г.": 2421,
+  "Caddy CTS-V de 2016": 2421,
+  "Caddy CTS-V ’16": 2421,
+  "Caddy Lɨmo": 2128,
+  "Cadillac ATS-V": 2262,
+  "Cadillac CTS-V 2016": 2421,
+  "Cadillac limousine": 2128,
+  "Cadɨllac CT4-V": 3719,
+  "Cadɨllac CT5-V": 3720,
+  "Can-Am Maverɨck": 2871,
+  "Challenger 1970": 639,
+  "Challenger 1970 г.": 639,
+  "Challenger 2015": 2263,
+  "Challenger 2015 г.": 2263,
+  "Challenger 2022": 3959,
+  "Challenger 2022 г.": 3959,
+  "Challenger de 1970": 639,
+  "Challenger de 2015": 2263,
+  "Challenger de 2022": 3959,
+  "Challenger ’15": 2263,
+  "Challenger ’22": 3959,
+  "Challenger ’70": 639,
+  "Chaser GT TT 1991": 3914,
+  "Chaser GT TT 1991 г.": 3914,
+  "Chaser GT TT de 1991": 3914,
+  "Chaser GT TT ’91": 3914,
+  "Chev. Camaro 2024": 3954,
+  "Chev. Camaro 2024 г.": 3954,
+  "Chev. Camaro de 2024": 3954,
+  "Chev. Camaro ’24": 3954,
+  "Cheva Impala '96": 1379,
+  "Chevelle 1970": 299,
+  "Chevelle 1970 г.": 299,
+  "Chevelle de 1970": 299,
+  "Chevelle ’70": 299,
+  "Chevrolet 150 berline": 2507,
+  "Chevrolet Bel Air": 1459,
+  "Chevrolet Camaro 1969": 289,
+  "Chevrolet Camaro 1970": 1330,
+  "Chevrolet Camaro 1979": 1064,
+  "Chevrolet Camaro 2015": 2183,
+  "Chevrolet Camaro 2017": 2739,
+  "Chevrolet Camaro 2018": 3149,
+  "Chevrolet El Camino": 1291,
+  "Chevrolet Impala": 1300,
+  "Chevrolet Impala 1996": 1379,
+  "Chevrolet K10 1972": 3590,
+  "Chevrolet Monte Carlo": 1575,
+  "Chevrolet Nova 1969": 1429,
+  "Chevrolet Trail Boss": 3477,
+  "Chevy 150 Sedán": 2507,
+  "Chevy Bel Aɨr": 1459,
+  "Chevy Camaro 1969": 289,
+  "Chevy Camaro 1969 г.": 289,
+  "Chevy Camaro 1970": 1330,
+  "Chevy Camaro 1970 г.": 1330,
+  "Chevy Camaro 1979": 1064,
+  "Chevy Camaro 1979 г.": 1064,
+  "Chevy Camaro 2015": 2183,
+  "Chevy Camaro 2015 г.": 2183,
+  "Chevy Camaro 2017": 2739,
+  "Chevy Camaro 2017 г.": 2739,
+  "Chevy Camaro 2018": 3149,
+  "Chevy Camaro 2018 г.": 3149,
+  "Chevy Camaro 2024": 3954,
+  "Chevy Camaro de 1969": 289,
+  "Chevy Camaro de 1970": 1330,
+  "Chevy Camaro de 1979": 1064,
+  "Chevy Camaro de 2015": 2183,
+  "Chevy Camaro de 2017": 2739,
+  "Chevy Camaro de 2018": 3149,
+  "Chevy Camaro του 24": 3954,
+  "Chevy Camaro ’15": 2183,
+  "Chevy Camaro ’17": 2739,
+  "Chevy Camaro ’18": 3149,
+  "Chevy Camaro ’69": 289,
+  "Chevy Camaro ’70": 1330,
+  "Chevy Camaro ’79": 1064,
+  "Chevy El Camɨno": 1291,
+  "Chevy Impala 1996": 1379,
+  "Chevy Impala 1996 г.": 1379,
+  "Chevy Impala de 1996": 1379,
+  "Chevy Impala ’96": 1379,
+  "Chevy K10 1972": 3590,
+  "Chevy K10 1972 г.": 3590,
+  "Chevy K10 de 1972": 3590,
+  "Chevy K10 ’72": 3590,
+  "Chevy Monte Carlo": 1575,
+  "Chevy Nova 1969": 1429,
+  "Chevy Nova 1969 г.": 1429,
+  "Chevy Nova de 1969": 1429,
+  "Chevy Nova ’69": 1429,
+  "Chevy Traɨl Boss": 3477,
+  "Chevy Ɨmpala": 1300,
+  "Chevy Ɨmpala ’96": 1379,
+  "City E II 1984": 3859,
+  "City E II 1984 г.": 3859,
+  "City E II de 1984": 3859,
+  "City E II ’84": 3859,
+  "Civic WTAC n°21": 4277,
+  "Continental 1962": 1586,
+  "Continental 1962 г.": 1586,
+  "Continental de 1962": 1586,
+  "Continental ’62": 1586,
+  "Contɨnental ’62": 1586,
+  "Corvette '2": 314,
+  "Corvette 1953": 1564,
+  "Corvette 1953 г.": 1564,
+  "Corvette 1960": 1093,
+  "Corvette 1960 г.": 1093,
+  "Corvette 1967": 312,
+  "Corvette 1967 г.": 312,
+  "Corvette 1970": 315,
+  "Corvette 1970 г.": 315,
+  "Corvette 1995": 2006,
+  "Corvette 1995 г.": 2006,
+  "Corvette 2002": 314,
+  "Corvette 2002 г.": 314,
+  "Corvette 2009": 1069,
+  "Corvette 2009 г.": 1069,
+  "Corvette 2019": 1069,
+  "Corvette 2019 г.": 1069,
+  "Corvette C8 2020": 3369,
+  "Corvette C8 2020 г.": 3369,
+  "Corvette C8 de 2020": 3369,
+  "Corvette C8 ’20": 3369,
+  "Corvette Z06 2023": 3766,
+  "Corvette Z06 2023 г.": 3766,
+  "Corvette Z06 de 2023": 3766,
+  "Corvette Z06 ’23": 3766,
+  "Corvette de 1953": 1564,
+  "Corvette de 1960": 1093,
+  "Corvette de 1967": 312,
+  "Corvette de 1970": 315,
+  "Corvette de 1995": 2006,
+  "Corvette de 2002": 314,
+  "Corvette de 2009": 1069,
+  "Corvette de 2019": 1069,
+  "Corvette ’02": 314,
+  "Corvette ’09": 1069,
+  "Corvette ’19": 1069,
+  "Corvette ’53": 1564,
+  "Corvette ’60": 1093,
+  "Corvette ’67": 312,
+  "Corvette ’70": 315,
+  "Corvette ’95": 2006,
+  "Countach 2021": 3774,
+  "Crown Vɨctorɨa": 2649,
+  "Cɨty E ƗƗ ’84": 3859,
+  "Datsun 240Z n°269": 4084,
+  "DeBertɨ F-250": 3439,
+  "Dodge Charger '69": 513,
+  "Dodge Charger 1969": 513,
+  "Dodge Charger 2015": 2468,
+  "Dodge Charger de 1969": 513,
+  "Dodge Charger de 2015": 2468,
+  "Dodge Dart 1968": 1332,
+  "Dodge Dart 1968 г.": 1332,
+  "Dodge Dart de 1968": 1332,
+  "Dodge Dart ’68": 1332,
+  "Dodge Viper 1999": 483,
+  "Dodge Viper 1999 г.": 483,
+  "Dodge Viper 2008": 1046,
+  "Dodge Viper 2008 г.": 1046,
+  "Dodge Viper 2016": 2544,
+  "Dodge Viper 2016 г.": 2544,
+  "Dodge Viper de 1999": 483,
+  "Dodge Viper de 2008": 1046,
+  "Dodge Viper de 2016": 2544,
+  "Dodge Viper ’08": 1046,
+  "Dodge Viper ’16": 2544,
+  "Dodge Viper ’99": 483,
+  "Dodge Vɨper ’08": 1046,
+  "Dodge Vɨper ’16": 2544,
+  "Dodge Vɨper ’99": 483,
+  "Durango SRT 2021": 3850,
+  "Dɨablo GTR": 324,
+  "Eclɨpse GSX": 327,
+  "Escort n°5 1977": 3184,
+  "Evolution TA n°1": 3554,
+  "Exɨge WTAC": 4210,
+  "F-150 Lɨghtnɨng": 3692,
+  "F-250 DeBerti": 3439,
+  "F8 Tributo 2019": 3367,
+  "F8 Tributo 2019 г.": 3367,
+  "F8 Tributo de 2019": 3367,
+  "F8 Tributo ’19": 3367,
+  "F8 Trɨbuto ’19": 3367,
+  "Fairlady Z 1969": 343,
+  "Fairlady Z 1969 г.": 343,
+  "Fairlady Z 1994": 345,
+  "Fairlady Z 1994 г.": 345,
+  "Fairlady Z 2003": 344,
+  "Fairlady Z 2003 г.": 344,
+  "Fairlady Z de 1969": 343,
+  "Fairlady Z de 1994": 345,
+  "Fairlady Z de 2003": 344,
+  "Fairlady Z ’03": 344,
+  "Fairlady Z ’69": 343,
+  "Fairlady Z ’94": 345,
+  "Fairlady Z 1969": 343,
+  "Fairlady Z 1994": 345,
+  "Fairlady Z 2003": 344,
+  "Faɨrlady Z ’03": 344,
+  "Faɨrlady Z ’69": 343,
+  "Faɨrlady Z ’94": 345,
+  "Ferrari 512 TR": 255,
+  "Ferrari 599 FD": 3249,
+  "Ferrari F80 2024": 4156,
+  "Ferrari J50 2017": 3226,
+  "Ferrari J50 2017 г.": 3226,
+  "Ferrari J50 de 2017": 3226,
+  "Ferrari J50 ’17": 3226,
+  "Ferrari P4 n°24": 2793,
+  "Ferrarɨ 250 GT": 1578,
+  "Ferrarɨ 250 GTO": 249,
+  "Ferrarɨ 288 GTO": 358,
+  "Ferrarɨ 296 GTB": 3724,
+  "Ferrarɨ 430 S": 1022,
+  "Ferrarɨ 458": 1131,
+  "Ferrarɨ 488 GTB": 2467,
+  "Ferrarɨ 512TR": 255,
+  "Ferrarɨ 599XX": 1599,
+  "Ferrarɨ 812": 2974,
+  "Ferrarɨ Dɨno": 326,
+  "Ferrarɨ Enzo": 333,
+  "Ferrarɨ F12tdf": 2577,
+  "Ferrarɨ F355": 253,
+  "Ferrarɨ F40": 340,
+  "Ferrarɨ F50": 342,
+  "Ferrarɨ F50 GT": 1020,
+  "Ferrarɨ FXX": 1006,
+  "Ferrarɨ FXX K": 3311,
+  "Ferrarɨ FXX-K WP": 4264,
+  "Ferrarɨ J50 ’17": 3226,
+  "Ferrarɨ Monza": 3312,
+  "Ferrarɨ Roma": 3594,
+  "Figaro 1991": 3855,
+  "Figaro 1991 г.": 3855,
+  "Figaro de 1991": 3855,
+  "Figaro ’91": 3855,
+  "Ford 1932 coupé": 2372,
+  "Ford Bronco n°25": 3128,
+  "Ford Capri Mk1": 1529,
+  "Ford Caprɨ MkƗ": 1529,
+  "Ford Coupe 1932": 2372,
+  "Ford Coupe 1932 г.": 2372,
+  "Ford Coupe de 1932": 2372,
+  "Ford Coupe ’32": 2372,
+  "Ford Coupé '32": 2372,
+  "Ford Escort 1992": 1272,
+  "Ford Escort 1992 г.": 1272,
+  "Ford Escort de 1992": 1272,
+  "Ford Escort ’92": 1272,
+  "Ford F-150 1986": 3597,
+  "Ford F-150 1986 г.": 3597,
+  "Ford F-150 de 1986": 3597,
+  "Ford F-150 n°11": 2517,
+  "Ford F-150 ’86": 3597,
+  "Ford Falcon XB": 1278,
+  "Ford Fiesta 2023": 3903,
+  "Ford Fiesta 2023 г.": 3903,
+  "Ford Fiesta de 2023": 3903,
+  "Ford Fiesta n°14": 2937,
+  "Ford Fiesta ’23": 3903,
+  "Ford Focus 2003": 2019,
+  "Ford Focus 2003 г.": 2019,
+  "Ford Focus 2009": 1086,
+  "Ford Focus 2009 г.": 1086,
+  "Ford Focus 2017": 2357,
+  "Ford Focus 2017 г.": 2357,
+  "Ford Focus 2022": 3904,
+  "Ford Focus 2022 г.": 3904,
+  "Ford Focus de 2003": 2019,
+  "Ford Focus de 2009": 1086,
+  "Ford Focus de 2017": 2357,
+  "Ford Focus de 2022": 3904,
+  "Ford Focus n°4": 3670,
+  "Ford Focus ’03": 2019,
+  "Ford Focus ’09": 1086,
+  "Ford Focus ’17": 2357,
+  "Ford Focus ’22": 3904,
+  "Ford Fɨesta RS": 3051,
+  "Ford Fɨesta ’23": 3903,
+  "Ford GT 2005": 348,
+  "Ford GT 2005 г.": 348,
+  "Ford GT 2017": 2363,
+  "Ford GT 2017 г.": 2363,
+  "Ford GT de 2005": 348,
+  "Ford GT de 2017": 2363,
+  "Ford GT ’05": 348,
+  "Ford GT ’17": 2363,
+  "Ford GT350R 2016": 2400,
+  "Ford GT350R 2016 г.": 2400,
+  "Ford GT350R de 2016": 2400,
+  "Ford GT350R ’16": 2400,
+  "Ford GT40 n°2": 2792,
+  "Ford GT500 2020": 3277,
+  "Ford GT500 2020 г.": 3277,
+  "Ford GT500 de 2020": 3277,
+  "Ford GT500 ’20": 3277,
+  "Ford Lɨghtnɨng": 3190,
+  "Ford Mustang 1965": 1355,
+  "Ford Mustang 1965 г.": 1355,
+  "Ford Mustang 1968": 2614,
+  "Ford Mustang 1968 г.": 2614,
+  "Ford Mustang 1969": 1668,
+  "Ford Mustang 1969 г.": 1668,
+  "Ford Mustang 1993": 1041,
+  "Ford Mustang 1993 г.": 1041,
+  "Ford Mustang 2000": 405,
+  "Ford Mustang 2000 г.": 405,
+  "Ford Mustang 2013": 1654,
+  "Ford Mustang 2013 г.": 1654,
+  "Ford Mustang 2024": 3846,
+  "Ford Mustang 2024 г.": 3846,
+  "Ford Mustang de 1965": 1355,
+  "Ford Mustang de 1968": 2614,
+  "Ford Mustang de 1969": 1668,
+  "Ford Mustang de 1993": 1041,
+  "Ford Mustang de 2000": 405,
+  "Ford Mustang de 2013": 1654,
+  "Ford Mustang de 2024": 3846,
+  "Ford Mustang n°13": 2996,
+  "Ford Mustang ’00": 405,
+  "Ford Mustang ’13": 1654,
+  "Ford Mustang ’24": 3846,
+  "Ford Mustang ’65": 1355,
+  "Ford Mustang ’68": 2614,
+  "Ford Mustang ’69": 1668,
+  "Ford Mustang ’93": 1041,
+  "Ford Mustang S5": 3108,
+  "Ford Racɨng Puma": 3228,
+  "Ford Super Duty F-450": 3476,
+  "Ford T-Bird 1957": 1283,
+  "Ford T-Bird 1957 г.": 1283,
+  "Ford T-Bird de 1957": 1283,
+  "Ford T-Bird του 1957": 1283,
+  "Ford T-Bird ’57": 1283,
+  "Ford T-Bɨrd ’57": 1283,
+  "Ford Transɨt SSV": 1477,
+  "Ford Ute 2014": 2551,
+  "Ford Ute 2014 г.": 2551,
+  "Ford Ute de 2014": 2551,
+  "Ford Ute ’14": 2551,
+  "Fórmula D 599": 3249,
+  "Fɨgaro ’91": 3855,
+  "GMC K5 Jɨmmy": 2613,
+  "GR Corolla 2023": 3880,
+  "GR Corolla 2023 г.": 3880,
+  "GR Corolla de 2023": 3880,
+  "GR Corolla του 2023": 3880,
+  "GR Corolla ’23": 3880,
+  "Ghibli 1997": 1513,
+  "Gloria GT 1995": 3918,
+  "Gloria GT 1995 г.": 3918,
+  "Gloria GT de 1995": 3918,
+  "Gloria GT ’95": 3918,
+  "Glorɨa GT ’95": 3918,
+  "HSV Maloo 2014": 2422,
+  "HSV Maloo 2014 г.": 2422,
+  "HSV Maloo de 2014": 2422,
+  "HSV Maloo ’14": 2422,
+  "Hammerhead n°179": 3604,
+  "Honda Acty 1994": 3865,
+  "Honda Acty 1994 г.": 3865,
+  "Honda Acty de 1994": 3865,
+  "Honda Acty ’94": 3865,
+  "Honda Beat 1991": 3852,
+  "Honda Beat 1991 г.": 3852,
+  "Honda Beat de 1991": 3852,
+  "Honda Beat ’91": 3852,
+  "Honda Civic 1974": 1568,
+  "Honda Civic 1974 г.": 1568,
+  "Honda Civic 1984": 2119,
+  "Honda Civic 1984 г.": 2119,
+  "Honda Civic 1986": 1650,
+  "Honda Civic 1986 г.": 1650,
+  "Honda Civic 1997": 1273,
+  "Honda Civic 1997 г.": 1273,
+  "Honda Civic 2004": 302,
+  "Honda Civic 2004 г.": 302,
+  "Honda Civic 2007": 625,
+  "Honda Civic 2007 г.": 625,
+  "Honda Civic 2018": 2870,
+  "Honda Civic 2018 г.": 2870,
+  "Honda Civic 2023": 3773,
+  "Honda Civic 2023 г.": 3773,
+  "Honda Civic de 1974": 1568,
+  "Honda Civic de 1984": 2119,
+  "Honda Civic de 1986": 1650,
+  "Honda Civic de 1997": 1273,
+  "Honda Civic de 2004": 302,
+  "Honda Civic de 2007": 625,
+  "Honda Civic de 2018": 2870,
+  "Honda Civic de 2023": 3773,
+  "Honda Civic ’04": 302,
+  "Honda Civic ’07": 625,
+  "Honda Civic ’18": 2870,
+  "Honda Civic ’23": 3773,
+  "Honda Civic ’74": 1568,
+  "Honda Civic ’84": 2119,
+  "Honda Civic ’86": 1650,
+  "Honda Civic ’97": 1273,
+  "Honda Cɨvɨc ’04": 302,
+  "Honda Cɨvɨc ’07": 625,
+  "Honda Cɨvɨc ’18": 2870,
+  "Honda Cɨvɨc ’23": 3773,
+  "Honda Cɨvɨc ’74": 1568,
+  "Honda Cɨvɨc ’84": 2119,
+  "Honda Cɨvɨc ’86": 1650,
+  "Honda Cɨvɨc ’97": 1273,
+  "Honda NSX-R 1992": 412,
+  "Honda NSX-R 1992 г.": 412,
+  "Honda NSX-R 2005": 411,
+  "Honda NSX-R 2005 г.": 411,
+  "Honda NSX-R de 1992": 412,
+  "Honda NSX-R de 2005": 411,
+  "Honda NSX-R ’05": 411,
+  "Honda NSX-R ’92": 412,
+  "Honda Prelude 1994": 2121,
+  "Honda Prelude de 1994": 2121,
+  "Honda Trophy 2015": 2745,
+  "Honda Trophy 2015 г.": 2745,
+  "Honda Trophy de 2015": 2745,
+  "Honda Trophy ’15": 2745,
+  "Honda Z 1972": 4034,
+  "Honda Z 1972 г.": 4034,
+  "Honda Z de 1972": 4034,
+  "Honda Z του 1972": 4034,
+  "Honda Z ’72": 4034,
+  "Honda e 2022": 3908,
+  "Honda e 2022 г.": 3908,
+  "Honda e de 2022": 3908,
+  "Honda e ’22": 3908,
+  "Hoonigan S2000": 427,
+  "Huayra R 2021": 3543,
+  "Huayra R 2021 г.": 3543,
+  "Huayra R de 2021": 3543,
+  "Huayra R ’21": 3543,
+  "Hummer EV Truck": 3722,
+  "Huracán Tecnɨca": 3753,
+  "Hyundaɨ ɨ20 N": 3928,
+  "Hyundaɨ ɨ30 N": 3678,
+  "IONIQ 5 N 2023": 3827,
+  "IONIQ 5 N 2023 г.": 3827,
+  "IONIQ 5 N de 2023": 3827,
+  "IONIQ 5 N ’23": 3827,
+  "Integra 2023": 3726,
+  "Integra 2023 г.": 3726,
+  "Integra de 2023": 3726,
+  "Integra ’23": 3726,
+  "Jaguar Type E LW": 2992,
+  "Jaguar Type D": 1301,
+  "Jeep Traɨlcat": 2742,
+  "Jimco TT n°240": 3605,
+  "Koenɨgsegg Agera": 1397,
+  "Koenɨgsegg CCGT": 1007,
+  "Koenɨgsegg Jesko": 3315,
+  "Koenɨgsegg One": 2188,
+  "L. Aventador 2021": 3775,
+  "L. Aventador 2021 г.": 3775,
+  "L. Aventador de 2021": 3775,
+  "L. Aventador ’21": 3775,
+  "L. Countach 2021": 3774,
+  "L. Countach 2021 г.": 3774,
+  "L. Countach de 2021": 3774,
+  "L. Countach ’21": 3774,
+  "L. Temerarɨo": 4002,
+  "L. Temerario": 4002,
+  "LR Defender 2020": 3414,
+  "LR Defender 2020 г.": 3414,
+  "LR Defender de 2020": 3414,
+  "LR Defender ’20": 3414,
+  "LaFerrarɨ": 2034,
+  "Lambo Centenarɨo": 2616,
+  "Lambo Dɨablo SV": 325,
+  "Lambo Murcɨélago": 1173,
+  "Lambo Mɨura": 637,
+  "Lambo Sɨán R": 3608,
+  "Lamborghini Centenario": 2616,
+  "Lamborghini Countach": 316,
+  "Lamborghini Diablo SV": 325,
+  "Lamborghini Huracán": 2164,
+  "Lamborghini Miura": 637,
+  "Lamborghini Murciélago": 1173,
+  "Lamborghini SCV12": 3606,
+  "Lamborghini Sesto": 1392,
+  "Lamborghini Sián R": 3608,
+  "Lamborghini Veneno": 2042,
+  "Lancer GSR 2008": 1009,
+  "Lancer GSR 2008 г.": 1009,
+  "Lancer GSR de 2008": 1009,
+  "Lancer GSR ’08": 1009,
+  "Lancer MR 2004": 378,
+  "Lancer MR 2004 г.": 378,
+  "Lancer MR 2006": 374,
+  "Lancer MR 2006 г.": 374,
+  "Lancer MR de 2004": 378,
+  "Lancer MR de 2006": 374,
+  "Lancer MR ’04": 378,
+  "Lancer MR ’06": 374,
+  "Lancɨa 037": 1295,
+  "Lancɨa Delta": 323,
+  "Lancɨa Delta S4": 1661,
+  "Lancɨa Stratos": 458,
+  "Land Rover Defender 2020": 3414,
+  "Lexus LC 500 2021": 3520,
+  "Lexus LC 500 2021 г.": 3520,
+  "Lexus LC 500 de 2021": 3520,
+  "Lexus LC 500 ’21": 3520,
+  "Lotus Elise 1999": 1376,
+  "Lotus Elise 1999 г.": 1376,
+  "Lotus Elise de 1999": 1376,
+  "Lotus Elise ’99": 1376,
+  "Lotus Elɨse GT1": 2825,
+  "Lotus Elɨse ’99": 1376,
+  "Lotus Emɨra": 3716,
+  "Lotus Evija 2020": 3449,
+  "Lotus Evija 2020 г.": 3449,
+  "Lotus Evija de 2020": 3449,
+  "Lotus Evija ’20": 3449,
+  "Lotus Evɨja FE": 4200,
+  "Lotus Evɨja ’20": 3449,
+  "Lotus Exige 2018": 3661,
+  "Lotus Exige 2018 г.": 3661,
+  "Lotus Exige de 2018": 3661,
+  "Lotus Exige ’18": 3661,
+  "Lotus Exɨge ’18": 3661,
+  "M-AMG SL 63 2021": 2471,
+  "M-AMG SL 63 2021 г.": 2471,
+  "M-AMG SL 63 de 2021": 2471,
+  "M-AMG SL 63 ’21": 2471,
+  "M-AMG SLC 43 2020": 3895,
+  "M-AMG SLC 43 2020 г.": 3895,
+  "M-AMG SLC 43 de 2020": 3895,
+  "M-AMG SLC 43 ’20": 3895,
+  "M-AMG SLC 43 2020": 3895,
+  "M-AMG SL 63 2021": 2471,
+  "M-B 190 E 1990": 1296,
+  "M-B 190 E FE": 4169,
+  "M-B 300 SL": 251,
+  "M-B A 45": 1658,
+  "M-B CLK GTR": 568,
+  "M-B Classe X": 3063,
+  "M-B C 63": 1500,
+  "M-B GT 4 2018": 3064,
+  "M-B GT 4 2018 г.": 3064,
+  "M-B GT 4 de 2018": 3064,
+  "M-B GT 4 ’18": 3064,
+  "M-B GT4 2018": 3064,
+  "M-B G 63 6x6": 3107,
+  "M-B G 65": 1627,
+  "M-B SL 65": 1090,
+  "M-B Unɨmog": 2986,
+  "MB 190 E 1990": 1296,
+  "MB 190 E 1990 г.": 1296,
+  "MB 190 E de 1990": 1296,
+  "MB 190 E ‘90": 1296,
+  "MB 190 E ’90": 1296,
+  "MC12 Corsa 2008": 3082,
+  "MC12 Corsa 2008 г.": 3082,
+  "MC12 Corsa de 2008": 3082,
+  "MC12 Corsa ’08": 3082,
+  "MINI 1965": 1662,
+  "MINI 1965 г.": 1662,
+  "MINI JCW 2012": 2003,
+  "MINI JCW 2012 г.": 2003,
+  "MINI JCW GP 2021": 3534,
+  "MINI JCW GP 2021 г.": 3534,
+  "MINI JCW GP de 2021": 3534,
+  "MINI JCW GP ’21": 3534,
+  "MINI JCW de 2012": 2003,
+  "MINI JCW ’12": 2003,
+  "MINI de 1965": 1662,
+  "MINI ’65": 1662,
+  "MX-5 Cup 2017": 3798,
+  "MX-5 Cup 2017 г.": 3798,
+  "MX-5 Cup de 2017": 3798,
+  "MX-5 Cup ’17": 3798,
+  "MX-5 FE 1994": 4197,
+  "MX-5 FE 1994 г.": 4197,
+  "MX-5 FE de 1994": 4197,
+  "MX-5 FE ’94": 4197,
+  "Mas. Ghibli 1997": 1513,
+  "Mas. Ghibli 1997 г.": 1513,
+  "Mas. Ghibli de 1997": 1513,
+  "Mas. Ghibli ’97": 1513,
+  "Mas. Ghɨblɨ ’97": 1513,
+  "Maseratɨ MC12": 391,
+  "Maseratɨ MC20": 3611,
+  "Mazda 787B n°55": 1335,
+  "Mazda Furaɨ": 1229,
+  "Mazda MX-5 1994": 1110,
+  "Mazda MX-5 1994 г.": 1110,
+  "Mazda MX-5 2005": 2171,
+  "Mazda MX-5 2005 г.": 2171,
+  "Mazda MX-5 2013": 2004,
+  "Mazda MX-5 2013 г.": 2004,
+  "Mazda MX-5 2016": 2267,
+  "Mazda MX-5 2016 г.": 2267,
+  "Mazda MX-5 de 1994": 1110,
+  "Mazda MX-5 de 2005": 2171,
+  "Mazda MX-5 de 2013": 2004,
+  "Mazda MX-5 de 2016": 2267,
+  "Mazda MX-5 ’05": 2171,
+  "Mazda MX-5 ’13": 2004,
+  "Mazda MX-5 ’16": 2267,
+  "Mazda MX-5 ’94": 1110,
+  "Mazda RX-7 1985": 1480,
+  "Mazda RX-7 1985 г.": 1480,
+  "Mazda RX-7 1990": 423,
+  "Mazda RX-7 1990 г.": 423,
+  "Mazda RX-7 1992": 4144,
+  "Mazda RX-7 1992 г.": 4144,
+  "Mazda RX-7 de 1985": 1480,
+  "Mazda RX-7 de 1990": 423,
+  "Mazda RX-7 de 1992": 4144,
+  "Mazda RX-7 ’85": 1480,
+  "Mazda RX-7 ’90": 423,
+  "Mazda RX-7 ’92": 4144,
+  "Mazda RX-8 n°99": 3400,
+  "McL. 765 2021": 3482,
+  "McL. 765 2021 г.": 3482,
+  "McL. 765 de 2021": 3482,
+  "McL. 765 ’21": 3482,
+  "McL. Artura 2023": 3668,
+  "McL. Artura 2023 г.": 3668,
+  "McL. Artura de 2023": 3668,
+  "McL. Artura ’23": 3668,
+  "McL. Sabre 2021": 3700,
+  "McL. Sabre 2021 г.": 3700,
+  "McL. Sabre de 2021": 3700,
+  "McL. Sabre ’21": 3700,
+  "McLaren 765 '21": 3482,
+  "McLaren Artura '23": 3668,
+  "McLaren Sabre '21": 3700,
+  "Megane R.S. 2018": 3134,
+  "Megane R.S. ’18": 3134,
+  "Megane R26.R": 3129,
+  "Mercedes-AMG E 63": 3250,
+  "Mini 1965": 1662,
+  "Mini JCW 2012": 2003,
+  "Mini JCW Buggy": 3132,
+  "Mini JCW GP 2021": 3534,
+  "Mini X-Raid": 2148,
+  "Mit. Evo III 1995": 3886,
+  "Mit. Evo III 1995 г.": 3886,
+  "Mit. Evo III de 1995": 3886,
+  "Mit. Evo III ’95": 3886,
+  "Mitsubishi Evo III 1995": 3886,
+  "Mitsubishi Evo VIII WP": 4267,
+  "Mitsubishi Minicab TA": 4085,
+  "Montero 1995": 3750,
+  "Montero 1995 г.": 3750,
+  "Montero de 1995": 3750,
+  "Montero ’95": 3750,
+  "Mustang FE 1968": 4168,
+  "Mustang FE 1968 г.": 4168,
+  "Mustang FE de 1968": 4168,
+  "Mustang FE ’68": 4168,
+  "Mégane R.S. '18": 3134,
+  "Mégane R.S. 2018 г.": 3134,
+  "Mégane R.S. 250": 1204,
+  "Mégane R.S. de 2018": 3134,
+  "Mégane R.S. ’18": 3134,
+  "Mégane RS 250": 1204,
+  "MƗNƗ JCW Buggy": 3132,
+  "MƗNƗ JCW GP ’21": 3534,
+  "MƗNƗ JCW ’12": 2003,
+  "MƗNƗ X-Raɨd": 2148,
+  "MƗNƗ ’65": 1662,
+  "Mɨt. Evo VƗƗƗ WP": 4267,
+  "Mɨt. Evo ƗƗƗ ’95": 3886,
+  "Mɨt. Evo. TME": 4090,
+  "Mɨt. Mɨnɨcab TA": 4085,
+  "Mɨtsubɨshɨ GTO": 357,
+  "N Vision 74 2022": 3829,
+  "N Vision 74 2022 г.": 3829,
+  "N Vision 74 de 2022": 3829,
+  "N Vision 74 ’22": 3829,
+  "N Vɨsɨon 74 ’22": 3829,
+  "N. Stagea 1997": 3858,
+  "N. Stagea 1997 г.": 3858,
+  "N. Stagea de 1997": 3858,
+  "N. Stagea ’97": 3858,
+  "N600 1970": 3937,
+  "N600 1970 г.": 3937,
+  "N600 de 1970": 3937,
+  "N600 uit 1970": 3937,
+  "N600 του 1970": 3937,
+  "N600 ‘70": 3937,
+  "N600 ’70": 3937,
+  "NISMO GT-R 2024": 4094,
+  "NISMO GT-R 2024 г.": 4094,
+  "NISMO GT-R de 2024": 4094,
+  "NISMO GT-R ’24": 4094,
+  "Nis. Patrol 1972": 4205,
+  "Nis. Patrol 1972 г.": 4205,
+  "Nis. Patrol de 1972": 4205,
+  "Nis. Patrol uit 1972": 4205,
+  "Nis. Patrol ’72": 4205,
+  "Nis. Skyline 1997": 4057,
+  "Nis. Skyline 1997 г.": 4057,
+  "Nis. Skyline de 1997": 4057,
+  "Nis. Skyline ’97": 4057,
+  "Nissan 240 n°777": 3000,
+  "Nissan 240SX 1993": 1282,
+  "Nissan 240SX 1993 г.": 1282,
+  "Nissan 240SX de 1993": 1282,
+  "Nissan 240SX ’93": 1282,
+  "Nissan 370Z 2019": 3307,
+  "Nissan 370Z 2019 г.": 3307,
+  "Nissan 370Z de 2019": 3307,
+  "Nissan 370Z ’19": 3307,
+  "Nissan Be-1 1987": 2512,
+  "Nissan Be-1 1987 г.": 2512,
+  "Nissan Be-1 de 1987": 2512,
+  "Nissan Be-1 ’87": 2512,
+  "Nissan GT-R 1971": 1042,
+  "Nissan GT-R 1971 г.": 1042,
+  "Nissan GT-R 1973": 2270,
+  "Nissan GT-R 1973 г.": 2270,
+  "Nissan GT-R 1995": 2738,
+  "Nissan GT-R 1995 г.": 2738,
+  "Nissan GT-R 2012": 2002,
+  "Nissan GT-R 2012 г.": 2002,
+  "Nissan GT-R 2017": 2618,
+  "Nissan GT-R 2017 г.": 2618,
+  "Nissan GT-R 2020": 3622,
+  "Nissan GT-R de 1971": 1042,
+  "Nissan GT-R de 1973": 2270,
+  "Nissan GT-R de 1995": 2738,
+  "Nissan GT-R de 2012": 2002,
+  "Nissan GT-R de 2017": 2618,
+  "Nissan GT-R n°23": 3363,
+  "Nissan GT-R ’12": 2002,
+  "Nissan GT-R ’17": 2618,
+  "Nissan GT-R ’71": 1042,
+  "Nissan GT-R ’73": 2270,
+  "Nissan GT-R ’95": 2738,
+  "Nissan GTR 2020": 3622,
+  "Nissan GTR 2020 г.": 3622,
+  "Nissan GTR de 2020": 3622,
+  "Nissan GTR ’20": 3622,
+  "Nissan PAO 1989": 3929,
+  "Nissan PAO 1989 г.": 3929,
+  "Nissan PAO de 1989": 3929,
+  "Nissan PAO ’89": 3929,
+  "Nissan Patrol 1972": 4205,
+  "Nissan Silvia '02": 3999,
+  "Nissan Silvia 2002": 3999,
+  "Nissan Silvia ’02": 3999,
+  "Nissan Skyline n°11": 2801,
+  "Nissan Skyline n°12": 4179,
+  "Nissan Stagea 1997": 3858,
+  "N Vision 74 2022": 3829,
+  "NƗSMO GT-R ’24": 4094,
+  "Nɨs. #11 Skylɨne": 2801,
+  "Nɨs. #23 GT-R": 3363,
+  "Nɨs. Patrol '72": 4205,
+  "Nɨs. Skylɨne ’97": 4057,
+  "Nɨssan 240SX ’93": 1282,
+  "Nɨssan 370Z": 1103,
+  "Nɨssan 370Z ’19": 3307,
+  "Nɨssan Be-1 ’87": 2512,
+  "Nɨssan GT-R ’12": 2002,
+  "Nɨssan GT-R ’17": 2618,
+  "Nɨssan GT-R ’71": 1042,
+  "Nɨssan GT-R ’73": 2270,
+  "Nɨssan GT-R ’95": 2738,
+  "Nɨssan GTR ’20": 3622,
+  "Nɨssan PAO ’89": 3929,
+  "Nɨssan Pulsar": 3257,
+  "Nɨssan R390": 567,
+  "Nɨssan Safarɨ": 2822,
+  "Nɨssan Sɨlvɨa 02": 3999,
+  "P. 911 Turbo 1993": 2794,
+  "P. 911 Turbo 1993 г.": 2794,
+  "P. 911 Turbo de 1993": 2794,
+  "P. 911 Turbo του 1993": 2794,
+  "P. 911 Turbo ’93": 2794,
+  "Paganɨ Huayra BC": 2647,
+  "Paganɨ Zonda R": 1175,
+  "Peel P50 Trollɨ": 4315,
+  "Plymouth Barracuda": 1277,
+  "Polarɨs RZR Pro": 3687,
+  "Pontiac T/A 1977": 1276,
+  "Pontiac T/A 1977 г.": 1276,
+  "Pontiac T/A 1987": 1045,
+  "Pontiac T/A 1987 г.": 1045,
+  "Pontiac T/A de 1977": 1276,
+  "Pontiac T/A de 1987": 1045,
+  "Pontiac T/A ’77": 1276,
+  "Pontiac T/A ’87": 1045,
+  "Pontiac Trans Am 1987": 1045,
+  "Pontiac Trans Am 1977": 1276,
+  "Pontɨac T/A ’77": 1276,
+  "Pontɨac T/A ’87": 1045,
+  "Porsche 911 2019": 3123,
+  "Porsche 911 2019 г.": 3123,
+  "Porsche 911 Rallye": 3910,
+  "Porsche 911 de 2019": 3123,
+  "Porsche 911 ’19": 3123,
+  "Porsche 935 n°70": 3214,
+  "Porsche 959 n°185": 3031,
+  "Porsche 961 n°203": 3282,
+  "Porsche Mission R": 3698,
+  "Porsche MɨssɨonR": 3698,
+  "Portofino 2018": 3225,
+  "Portofino 2018 г.": 3225,
+  "Portofino de 2018": 3225,
+  "Portofino ’18": 3225,
+  "Portofɨno ’18": 3225,
+  "Pro 2 Truck n°37": 2663,
+  "Pro 4 Truck n°37": 3662,
+  "Prototype GR GT": 4221,
+  "RAM TRX 2024": 3955,
+  "RAM TRX 2024 г.": 3955,
+  "RAM TRX de 2024": 3955,
+  "RAM TRX ’24": 3955,
+  "RS 4 Avant 2018": 3318,
+  "RS 4 Avant 2018 г.": 3318,
+  "RS 4 Avant de 2018": 3318,
+  "RS 4 Avant ’18": 3318,
+  "RS 4 Avant 2018": 3318,
+  "RZR Racɨng": 3686,
+  "Radɨcal RXC": 2486,
+  "Range Rover 2015": 2494,
+  "Range Rover 2015 г.": 2494,
+  "Range Rover de 2015": 2494,
+  "Range Rover ’15": 2494,
+  "Relɨant Supervan": 2563,
+  "Renault Clio 1993": 2149,
+  "Renault Clio 1993 г.": 2149,
+  "Renault Clio de 1993": 2149,
+  "Renault Clio ’93": 2149,
+  "Renault Clɨo ’93": 2149,
+  "Revuelto ' 24": 3891,
+  "Revuelto 2024": 3891,
+  "Revuelto 2024 г.": 3891,
+  "Revuelto de 2024": 3891,
+  "Revuelto ’24": 3891,
+  "Rivian R1T": 3657,
+  "RƗVƗAN R1T": 3657,
+  "Rɨmac Nevera": 3625,
+  "S-Cargo 1989": 3860,
+  "S-Cargo 1989 г.": 3860,
+  "S-Cargo de 1989": 3860,
+  "S-Cargo ’89": 3860,
+  "S2000 WTAC n°52": 4231,
+  "SIERRA RX3": 3540,
+  "SRT Durango 2021": 3850,
+  "SRT Durango 2021 г.": 3850,
+  "SRT Durango de 2021": 3850,
+  "SRT Durango ’21": 3850,
+  "SRT Viper 2013": 1562,
+  "SRT Viper 2013 г.": 1562,
+  "SRT Viper de 2013": 1562,
+  "SRT Viper ’13": 1562,
+  "SRT Vɨper ’13": 1562,
+  "SUBARU 22B 1998 г.": 363,
+  "SUBARU 22B de 1998": 363,
+  "SUBARU 22B ’98": 363,
+  "SUBARU BRZ 2022 г.": 3735,
+  "SUBARU BRZ de 2022": 3735,
+  "SUBARU BRZ ’22": 3735,
+  "SUBARU STƗ ARX": 3241,
+  "SUBARU STƗ S209": 3412,
+  "SUBARU Vivio 1994": 3960,
+  "SUBARU Vivio 1994 г.": 3960,
+  "SUBARU Vivio de 1994": 3960,
+  "SUBARU Vivio ’94": 3960,
+  "SUBARU Vɨvɨo FE": 4287,
+  "SUBARU Vɨvɨo ’94": 3960,
+  "SUBARU WRX 2004 г.": 364,
+  "SUBARU WRX 2005 г.": 365,
+  "SUBARU WRX 2008 г.": 1060,
+  "SUBARU WRX 2011 г.": 1323,
+  "SUBARU WRX 2015": 2168,
+  "SUBARU WRX 2015 г.": 2168,
+  "SUBARU WRX 2022": 3819,
+  "SUBARU WRX 2022 г.": 3819,
+  "SUBARU WRX de 2004": 364,
+  "SUBARU WRX de 2005": 365,
+  "SUBARU WRX de 2008": 1060,
+  "SUBARU WRX de 2011": 1323,
+  "SUBARU WRX de 2015": 2168,
+  "SUBARU WRX de 2022": 3819,
+  "SUBARU WRX ’04": 364,
+  "SUBARU WRX ’05": 365,
+  "SUBARU WRX ’08": 1060,
+  "SUBARU WRX ’11": 1323,
+  "SUBARU WRX ’15": 2168,
+  "SUBARU WRX ’22": 3819,
+  "Sierra Alpha n°23": 3539,
+  "Sierra 700R": 3665,
+  "Silvia 1994": 440,
+  "Silvia 1994 г.": 440,
+  "Silvia 1998": 2659,
+  "Silvia 1998 г.": 2659,
+  "Silvia WTAC n°36": 4213,
+  "Silvia de 1994": 440,
+  "Silvia de 1998": 2659,
+  "Silvia ’94": 440,
+  "Silvia ’98": 2659,
+  "Skyline GT-R 1992": 4114,
+  "Skyline GT-R 1992 г.": 4114,
+  "Skyline GT-R de 1992": 4114,
+  "Skyline GT-R ’92": 4114,
+  "Skyline WTAC n°32": 4212,
+  "Skylɨne GT-R ’92": 4114,
+  "Soarer 1997": 3785,
+  "Soarer 1997 г.": 3785,
+  "Soarer de 1997": 3785,
+  "Soarer ’97": 3785,
+  "Speedtail 2019": 3156,
+  "Speedtail 2019 г.": 3156,
+  "Speedtail de 2019": 3156,
+  "Speedtail ’19": 3156,
+  "Speedtaɨl ’19": 3156,
+  "Sports 800 1965": 2469,
+  "Sports 800 1965 г.": 2469,
+  "Sports 800 de 1965": 2469,
+  "Sports 800 ’65": 2469,
+  "Subaru 22B 1998": 363,
+  "Subaru BRAT": 2140,
+  "Subaru BRZ 2022": 3735,
+  "Subaru BRZ FE": 4164,
+  "Subaru Legacy": 379,
+  "Subaru Legacy RS": 1382,
+  "Subaru STI ARX": 3241,
+  "Subaru STI S209": 3412,
+  "Subaru SVX": 2217,
+  "Subaru Vivio 1994": 3960,
+  "Subaru Vivio FE": 4287,
+  "Subaru WRX 2004": 364,
+  "Subaru WRX 2005": 365,
+  "Subaru WRX 2008": 1060,
+  "Subaru WRX 2011": 1323,
+  "Subaru WRX 2015": 2168,
+  "Subaru WRX 2022": 3819,
+  "Sunshɨne FE": 4163,
+  "Supra JJM WTAC": 4214,
+  "SƗERRA 700R": 3665,
+  "SƗERRA RX3": 3540,
+  "Sɨlverado DD": 3088,
+  "Sɨlvɨa ’94": 440,
+  "Sɨlvɨa ’98": 2659,
+  "T. Crown Taxɨ": 4255,
+  "TVR Grɨffɨth": 2993,
+  "TVR Sagarɨs": 433,
+  "Toy. Altezza 1999": 4038,
+  "Toy. Altezza 1999 г.": 4038,
+  "Toy. Altezza de 1999": 4038,
+  "Toy. Altezza του 1999": 4038,
+  "Toy. Altezza ’99": 4038,
+  "Toy. Starlet 1996 г.": 4055,
+  "Toy. Starlet de 1996": 4055,
+  "Toy. Starlet του 1996": 4055,
+  "Toy. Starlet ’96": 4055,
+  "Toyota Altezza '99": 4038,
+  "Toyota Camry 2023": 3848,
+  "Toyota Camry 2023 г.": 3848,
+  "Toyota Camry de 2023": 3848,
+  "Toyota Camry ’23": 3848,
+  "Toyota Celica '03": 295,
+  "Toyota Celica '92": 1517,
+  "Toyota Celica '94": 1034,
+  "Toyota Celica 1992": 1517,
+  "Toyota Celica 1992 г.": 1517,
+  "Toyota Celica 1994": 1034,
+  "Toyota Celica 1994 г.": 1034,
+  "Toyota Celica 2003": 295,
+  "Toyota Celica 2003 г.": 295,
+  "Toyota Celica de 1992": 1517,
+  "Toyota Celica de 1994": 1034,
+  "Toyota Celica de 2003": 295,
+  "Toyota Celica ’03": 295,
+  "Toyota Celica ’92": 1517,
+  "Toyota Celica ’94": 1034,
+  "Toyota Celica’03": 295,
+  "Toyota Celica’92": 1517,
+  "Toyota Celica’94": 1034,
+  "Toyota Celɨca’03": 295,
+  "Toyota Celɨca’92": 1517,
+  "Toyota Celɨca’94": 1034,
+  "Toyota Crown Taxi": 4255,
+  "Toyota GR Yarɨs": 3629,
+  "Toyota GR86 2022": 3761,
+  "Toyota GR86 2022 г.": 3761,
+  "Toyota GR86 de 2022": 3761,
+  "Toyota GR86 ’22": 3761,
+  "Toyota JPN TAXI": 4257,
+  "Toyota JPN Taxɨ": 4257,
+  "Toyota LC 2025": 4278,
+  "Toyota LC 2025 г.": 4278,
+  "Toyota LC de 2025": 4278,
+  "Toyota LC ’25": 4278,
+  "Toyota MR2 1989": 1395,
+  "Toyota MR2 1989 г.": 1395,
+  "Toyota MR2 1995": 398,
+  "Toyota MR2 1995 г.": 398,
+  "Toyota MR2 de 1989": 1395,
+  "Toyota MR2 de 1995": 398,
+  "Toyota MR2 ’89": 1395,
+  "Toyota MR2 ’95": 398,
+  "Toyota Prius 2024": 3964,
+  "Toyota Prius 2024 г.": 3964,
+  "Toyota Prius de 2024": 3964,
+  "Toyota Prius uit 2024": 3964,
+  "Toyota Prius ’24": 3964,
+  "Toyota Prɨus ‘24": 3964,
+  "Toyota Sera 1991": 3851,
+  "Toyota Sera 1991 г.": 3851,
+  "Toyota Sera de 1991": 3851,
+  "Toyota Sera ’91": 3851,
+  "Toyota Starlet '96": 4055,
+  "Toyota Starlet 1996": 4055,
+  "Toyota Supra 1992": 460,
+  "Toyota Supra 1992 г.": 460,
+  "Toyota Supra 1998": 461,
+  "Toyota Supra 1998 г.": 461,
+  "Toyota Supra 2020": 3402,
+  "Toyota Supra 2020 г.": 3402,
+  "Toyota Supra de 1992": 460,
+  "Toyota Supra de 1998": 461,
+  "Toyota Supra de 2020": 3402,
+  "Toyota Supra n°34": 3411,
+  "Toyota Supra ’20": 3402,
+  "Toyota Supra ’92": 460,
+  "Toyota Supra ’98": 461,
+  "Toyota T100 n°1": 2636,
+  "Truck n°6165": 3693,
+  "Ultra 4 n°4402": 3603,
+  "Ultɨma 1020": 2569,
+  "Urus 2019": 3120,
+  "Urus 2019 г.": 3120,
+  "Urus de 2019": 3120,
+  "Urus ’19": 3120,
+  "VW Beetle n°34": 3007,
+  "VW Class 5 Kever": 2568,
+  "VW GTI Mk2 '92": 353,
+  "VW GTI Mk2 ’92": 353,
+  "VW GTi Mk2 1992": 353,
+  "VW GTi Mk2 1992 г.": 353,
+  "VW GTi Mk2 de 1992": 353,
+  "VW GTi Mk2 του 1992": 353,
+  "VW GTi Mk2 ’92": 353,
+  "VW GTɨ Mk2 ’92": 353,
+  "VW Golf GTI 1983": 2995,
+  "VW Golf GTI 1983 г.": 2995,
+  "VW Golf GTI de 1983": 2995,
+  "VW Golf GTI ’83": 2995,
+  "VW Golf GTƗ ’83": 2995,
+  "VW Golf R 2010": 1231,
+  "VW Golf R 2010 г.": 1231,
+  "VW Golf R 2014": 2142,
+  "VW Golf R 2014 г.": 2142,
+  "VW Golf R 2021": 3413,
+  "VW Golf R 2021 г.": 3413,
+  "VW Golf R 2022": 3533,
+  "VW Golf R 2022 г.": 3533,
+  "VW Golf R de 2010": 1231,
+  "VW Golf R de 2014": 2142,
+  "VW Golf R de 2021": 3413,
+  "VW Golf R de 2022": 3533,
+  "VW Golf R ’10": 1231,
+  "VW Golf R ’14": 2142,
+  "VW Golf R ’21": 3413,
+  "VW Golf R ’22": 3533,
+  "VW Golf Rallye": 3783,
+  "VW Pickup 1982": 3235,
+  "VW Pickup 1982 г.": 3235,
+  "VW Pickup de 1982": 3235,
+  "VW Pickup ’82": 3235,
+  "VW Pɨckup ’82": 3235,
+  "VW Scirocco 2011": 1428,
+  "VW Scirocco 2011 г.": 1428,
+  "VW Scirocco de 2011": 1428,
+  "VW Scirocco ’11": 1428,
+  "VW Scɨrocco ’11": 1428,
+  "VelociRaptor 2019": 3189,
+  "VelociRaptor 2019 г.": 3189,
+  "VelociRaptor de 2019": 3189,
+  "VelociRaptor ’19": 3189,
+  "VelocɨRaptor ’19": 3189,
+  "Viper FE 1999": 4198,
+  "Viper FE 1999 г.": 4198,
+  "Viper FE de 1999": 4198,
+  "Viper FE ’99": 4198,
+  "Viper SRT 2013": 1562,
+  "Vɨper FE ’99": 4198,
+  "Wulɨng Mɨnɨ EV": 3789,
+  "Wulɨng Sunshɨne": 3548,
+  "Z NISMO 2024": 3921,
+  "Z NISMO 2024 г.": 3921,
+  "Z NISMO de 2024": 3921,
+  "Z NISMO ’24": 3921,
+  "Z NƗSMO ’24": 3921,
+  "ƗONƗQ 5 N ’23": 3827,
+  "Ɨntegra ’23": 3726,
+  "三菱 Evo III '95": 3886,
+  "三菱 Evo VIII WP": 4267,
+  "三菱 Evo. TME": 4090,
+  "三菱 GTO": 357,
+  "三菱 Minicab TA": 4085,
+  "丰田 2000GT": 247,
+  "丰田 4Runner": 3373,
+  "丰田 86": 2007,
+  "丰田 AE86 FE": 4162,
+  "丰田 AT37": 2743,
+  "丰田 Altezza '99": 4038,
+  "丰田 Camry '23": 3848,
+  "丰田 Celica '03": 295,
+  "丰田 Celica '94": 1034,
+  "丰田 Celica'92": 1517,
+  "丰田 Chaser V": 3933,
+  "丰田 Corolla": 1537,
+  "丰田 Crown Taxi": 4255,
+  "丰田 FJ40": 2566,
+  "丰田 GR Yaris": 3629,
+  "丰田 GR86 '22": 3761,
+  "丰田 JPN Taxi": 4257,
+  "丰田 LC '25": 4278,
+  "丰田 MR2 '89": 1395,
+  "丰田 MR2 '95": 398,
+  "丰田 Prius '24": 3964,
+  "丰田 Sera '91": 3851,
+  "丰田 Starlet '96": 4055,
+  "丰田 Supra '20": 3402,
+  "丰田 Supra '92": 460,
+  "丰田 Supra '98": 461,
+  "丰田 Tacoma": 3374,
+  "丰田 Trueno": 455,
+  "五菱 Mini EV": 3789,
+  "五菱 Sunshine": 3548,
+  "保时捷 718 GTS": 3117,
+  "保时捷 911 '19": 3123,
+  "保时捷 911 GT1": 641,
+  "保时捷 911 Rallye": 3910,
+  "保时捷 911 Turbo '93": 2794,
+  "保时捷 917 FE": 4313,
+  "保时捷 917 LH": 2549,
+  "保时捷 918": 2290,
+  "保时捷 928 GTS": 2535,
+  "保时捷 944": 268,
+  "保时捷 959": 269,
+  "保时捷 968": 2534,
+  "保时捷 Carrera": 292,
+  "保时捷 Cayenne": 2773,
+  "保时捷 Macan RR": 3187,
+  "保时捷 MissionR": 3698,
+  "保时捷 Taycan S": 3445,
+  "兰博基尼 Aventador '21": 3775,
+  "兰博基尼 Centenario": 2616,
+  "兰博基尼 Countach": 316,
+  "兰博基尼 Countach '21": 3774,
+  "兰博基尼 Diablo SV": 325,
+  "兰博基尼 Huracán": 2164,
+  "兰博基尼 Miura": 637,
+  "兰博基尼 Murciélago": 1173,
+  "兰博基尼 SCV12": 3606,
+  "兰博基尼 Sesto": 1392,
+  "兰博基尼 Sián R": 3608,
+  "兰博基尼 Temerario": 4002,
+  "兰博基尼 Veneno": 2042,
+  "凯迪拉克 ATS-V": 2262,
+  "凯迪拉克 CT4-V": 3719,
+  "凯迪拉克 CT5-V": 3720,
+  "凯迪拉克 CTS-V '16": 2421,
+  "凯迪拉克 Limo": 2128,
+  "别克 Regal GNX": 417,
+  "北极星 RZR Pro": 3687,
+  "大众 Class 5 Bug": 2568,
+  "大众 Corrado": 309,
+  "大众 GTi Mk2 '92": 353,
+  "大众 Golf GTI '83": 2995,
+  "大众 Golf R '10": 1231,
+  "大众 Golf R '14": 2142,
+  "大众 Golf R '21": 3413,
+  "大众 Golf R '22": 3533,
+  "大众 Pickup '82": 3235,
+  "大众 Rallye Golf": 3783,
+  "大众 Scirocco '11": 1428,
+  "大众 Type 2": 2151,
+  "奥迪 R8 '13": 2010,
+  "奥迪 R8 '20": 3745,
+  "奥迪 R8 GT '23": 3917,
+  "奥迪 R8 LMS": 1200,
+  "奥迪 R8 V10 plus": 2473,
+  "奥迪 RS 3": 1216,
+  "奥迪 RS 3 '20": 3454,
+  "奥迪 RS 4 '01": 2178,
+  "奥迪 RS 4 '06": 419,
+  "奥迪 RS 5": 1417,
+  "奥迪 RS 6 '03": 420,
+  "奥迪 RS 6 '09": 1184,
+  "奥迪 RS 6 '15": 2180,
+  "奥迪 RS 6 '21": 3583,
+  "奥迪 RS 7 '21": 3584,
+  "奥迪 RS e-tron": 3359,
+  "奥迪 TT RS": 1220,
+  "奥迪 quattro": 633,
+  "宝马 2002 Turbo": 1269,
+  "宝马 850CSi": 1493,
+  "宝马 E92 M3 GTS": 1598,
+  "宝马 Isetta": 2412,
+  "宝马 M1": 1040,
+  "宝马 M2 '23": 3763,
+  "宝马 M2 Comp": 3434,
+  "宝马 M2 FE '23": 4166,
+  "宝马 M3 '05": 383,
+  "宝马 M3 '08": 1011,
+  "宝马 M3 '88": 4069,
+  "宝马 M3 '97": 382,
+  "宝马 M4 '14": 2154,
+  "宝马 M4 '16": 2628,
+  "宝马 M4 '21": 3645,
+  "宝马 M4 '21 WP": 4266,
+  "宝马 M5 '03": 1367,
+  "宝马 M5 '09": 1126,
+  "宝马 M5 '12": 1388,
+  "宝马 M5 '22": 3764,
+  "宝马 M5 '88": 1368,
+  "宝马 M5 '95": 1418,
+  "宝马 M8 Comp": 3518,
+  "宝马 X5 M": 1350,
+  "宝马 X6 M '24": 3983,
+  "宝马 Z4 '08": 1059,
+  "宝马 Z4 '19": 3173,
+  "宝马 i8": 2133,
+  "宝马 iX '22": 3737,
+  "宾利 Bentayga": 2625,
+  "宾利 Cont GTC": 3728,
+  "帕加尼 Huayra BC": 2647,
+  "帕加尼 Zonda R": 1175,
+  "庞蒂亚克 T/A '77": 1276,
+  "庞蒂亚克 T/A '87": 1045,
+  "悍马 EV Truck": 3722,
+  "捷豹 C-X75": 3055,
+  "捷豹 D-Type": 1301,
+  "捷豹 LW E-Type": 2992,
+  "捷豹 XJ220": 489,
+  "捷豹 XJ220S": 3293,
+  "捷豹 XJR-15": 3287,
+  "斯巴鲁 22B '98": 363,
+  "斯巴鲁 BRAT": 2140,
+  "斯巴鲁 BRZ '22": 3735,
+  "斯巴鲁 BRZ FE": 4164,
+  "斯巴鲁 LEGACY": 379,
+  "斯巴鲁 LEGACY RS": 1382,
+  "斯巴鲁 STI ARX": 3241,
+  "斯巴鲁 STI S209": 3412,
+  "斯巴鲁 SVX": 2217,
+  "斯巴鲁 Vivio '94": 3960,
+  "斯巴鲁 Vivio FE": 4287,
+  "斯巴鲁 WRX '04": 364,
+  "斯巴鲁 WRX '05": 365,
+  "斯巴鲁 WRX '08": 1060,
+  "斯巴鲁 WRX '11": 1323,
+  "斯巴鲁 WRX '15": 2168,
+  "斯巴鲁 WRX '22": 3819,
+  "日产 #11 Skyline": 2801,
+  "日产 #23 GT-R": 3363,
+  "日产 240SX '93": 1282,
+  "日产 370Z": 1103,
+  "日产 370Z '19": 3307,
+  "日产 Be-1 '87": 2512,
+  "日产 GT-R '12": 2002,
+  "日产 GT-R '17": 2618,
+  "日产 GT-R '71": 1042,
+  "日产 GT-R '73": 2270,
+  "日产 GT-R '95": 2738,
+  "日产 GTR '20": 3622,
+  "日产 PAO '89": 3929,
+  "日产 Patrol '72": 4205,
+  "日产 Pulsar": 3257,
+  "日产 R390": 567,
+  "日产 Safari": 2822,
+  "日产 Silvia 02": 3999,
+  "日产 Skyline '97": 4057,
+  "日产 Stagea '97": 3858,
+  "本田 Acty '94": 3865,
+  "本田 Beat '91": 3852,
+  "本田 CR-X": 320,
+  "本田 Civic '04": 302,
+  "本田 Civic '07": 625,
+  "本田 Civic '18": 2870,
+  "本田 Civic '23": 3773,
+  "本田 Civic '74": 1568,
+  "本田 Civic '84": 2119,
+  "本田 Civic '86": 1650,
+  "本田 Civic '97": 1273,
+  "本田 NSX-R '05": 411,
+  "本田 NSX-R '92": 412,
+  "本田 NSX-R GT": 569,
+  "本田 Prelude 94": 2121,
+  "本田 S2000": 427,
+  "本田 S800": 2205,
+  "本田 Trophy '15": 2745,
+  "本田 Z '72": 4034,
+  "本田 e '22": 3908,
+  "标致 205 R": 3180,
+  "标致 205 T16": 1591,
+  "标致 207 S": 615,
+  "梅赛德斯-AMG E63": 3250,
+  "梅赛德斯-AMG GT WP": 4265,
+  "梅赛德斯-AMG ONE": 3650,
+  "梅赛德斯-AMG SL 63 '21": 2471,
+  "梅赛德斯-AMG SLC 43 '20": 3895,
+  "梅赛德斯-奔驰 190 E '90": 1296,
+  "梅赛德斯-奔驰 190 E FE": 4169,
+  "梅赛德斯-奔驰 300 SLR": 1559,
+  "梅赛德斯-奔驰 300SL": 251,
+  "梅赛德斯-奔驰 A45": 1658,
+  "梅赛德斯-奔驰 AMG GT": 2242,
+  "梅赛德斯-奔驰 AMG GTR": 2654,
+  "梅赛德斯-奔驰 C63": 1500,
+  "梅赛德斯-奔驰 CLK-GTR": 568,
+  "梅赛德斯-奔驰 G 63 6x6": 3107,
+  "梅赛德斯-奔驰 G 65": 1627,
+  "梅赛德斯-奔驰 GT 4 '18": 3064,
+  "梅赛德斯-奔驰 SL65": 1090,
+  "梅赛德斯-奔驰 Unimog": 2986,
+  "梅赛德斯-奔驰 X-Class": 3063,
+  "欧宝 Manta 400": 2420,
+  "沃尔沃 242 Turbo": 1299,
+  "法拉利 250 GT": 1578,
+  "法拉利 250 GTO": 249,
+  "法拉利 288 GTO": 358,
+  "法拉利 296 GTB": 3724,
+  "法拉利 430 S": 1022,
+  "法拉利 458": 1131,
+  "法拉利 488 GTB": 2467,
+  "法拉利 512TR": 255,
+  "法拉利 599XX": 1599,
+  "法拉利 812": 2974,
+  "法拉利 Dino": 326,
+  "法拉利 Enzo": 333,
+  "法拉利 F12tdf": 2577,
+  "法拉利 F355": 253,
+  "法拉利 F40": 340,
+  "法拉利 F50": 342,
+  "法拉利 F50 GT": 1020,
+  "法拉利 FXX": 1006,
+  "法拉利 FXX K": 3311,
+  "法拉利 FXX-K WP": 4264,
+  "法拉利 J50 '17": 3226,
+  "法拉利 Monza": 3312,
+  "法拉利 Roma": 3594,
+  "玛莎拉蒂 Ghibli '97": 1513,
+  "玛莎拉蒂 MC12": 391,
+  "玛莎拉蒂 MC20": 3611,
+  "现代 i20 N": 3928,
+  "现代 i30 N": 3678,
+  "福特 Capri MkI": 1529,
+  "福特 Coupe '32": 2372,
+  "福特 Dark Horse": 3847,
+  "福特 Escort '92": 1272,
+  "福特 F-150 '86": 3597,
+  "福特 F-150 FE": 4171,
+  "福特 F-450 FE": 4175,
+  "福特 Fiesta '23": 3903,
+  "福特 Fiesta RS": 3051,
+  "福特 Focus '03": 2019,
+  "福特 Focus '09": 1086,
+  "福特 Focus '17": 2357,
+  "福特 Focus '22": 3904,
+  "福特 GT '05": 348,
+  "福特 GT '17": 2363,
+  "福特 GT350R '16": 2400,
+  "福特 GT500 '20": 3277,
+  "福特 Lightning": 3190,
+  "福特 Mustang '00": 405,
+  "福特 Mustang '13": 1654,
+  "福特 Mustang '24": 3846,
+  "福特 Mustang '65": 1355,
+  "福特 Mustang '68": 2614,
+  "福特 Mustang '69": 1668,
+  "福特 Mustang '93": 1041,
+  "福特 Mustang S5": 3108,
+  "福特 RS200": 1108,
+  "福特 RS500": 1293,
+  "福特 Racing Puma": 3228,
+  "福特 Ranger T6": 2145,
+  "福特 Raptor R WP": 4268,
+  "福特 SD F-450": 3476,
+  "福特 SuperVan 4": 3755,
+  "福特 Supervan 3": 3170,
+  "福特 T-Bird '57": 1283,
+  "福特 Transit SSV": 1477,
+  "福特 Ute '14": 2551,
+  "福特 XB Falcon": 1278,
+  "科尼塞格 Agera": 1397,
+  "科尼塞格 CCGT": 1007,
+  "科尼塞格 Jesko": 3315,
+  "科尼塞格 One": 2188,
+  "莲花 Elise '99": 1376,
+  "莲花 Elise GT1": 2825,
+  "莲花 Emira": 3716,
+  "莲花 Evija '20": 3449,
+  "莲花 Evija FE": 4200,
+  "莲花 Exige '18": 3661,
+  "蓝旗亚 037": 1295,
+  "蓝旗亚 Delta": 323,
+  "蓝旗亚 Delta S4": 1661,
+  "蓝旗亚 Stratos": 458,
+  "讴歌 Integra": 368,
+  "讴歌 NSX '22": 3767,
+  "讴歌 RSX": 422,
+  "路虎 Defender '20": 3414,
+  "达特桑 #269 240Z": 4084,
+  "达特桑 2000": 2272,
+  "达特桑 510": 1104,
+  "迈凯伦 12C": 1130,
+  "迈凯伦 570S": 2472,
+  "迈凯伦 600LT": 3153,
+  "迈凯伦 620R": 3655,
+  "迈凯伦 765 '21": 3482,
+  "迈凯伦 Artura '23": 3668,
+  "迈凯伦 F1": 1314,
+  "迈凯伦 F1 GT": 338,
+  "迈凯伦 P1": 1667,
+  "迈凯伦 Sabre '21": 3700,
+  "道奇 Charger 15": 2468,
+  "道奇 Charger 69": 513,
+  "道奇 Dart '68": 1332,
+  "道奇 Ram SRT-10": 1052,
+  "道奇 SRT Demon": 2909,
+  "道奇 Super Bee": 1352,
+  "道奇 Viper '08": 1046,
+  "道奇 Viper '16": 2544,
+  "道奇 Viper '99": 483,
+  "阿尔法 SE 048SP": 3304,
+  "阿尔法·罗密欧 155": 1393,
+  "阿尔法·罗密欧 33S": 1549,
+  "阿尔法·罗密欧 4C": 2038,
+  "阿尔法·罗密欧 8C": 1032,
+  "阿尔法·罗密欧 GTA": 1150,
+  "阿尔法·罗密欧 Giulia '17": 2542,
+  "阿尔法·罗密欧 TZ2": 2161,
+  "阿斯顿·马丁 DB11": 2527,
+  "阿斯顿·马丁 DB5": 1105,
+  "阿斯顿·马丁 DBS SL '19": 3185,
+  "阿斯顿·马丁 DBX '21": 3580,
+  "阿斯顿·马丁 Valkyrie": 2968,
+  "阿斯顿·马丁 Valkyrie AMR": 3631,
+  "阿斯顿·马丁 Vantage '19": 3091,
+  "阿斯顿·马丁 Vulcan": 2470,
+  "阿斯顿·马丁 Vulcan AMR": 3211,
+  "雪佛兰 150 Sedan": 2507,
+  "雪佛兰 Bel Air": 1459,
+  "雪佛兰 Camaro '15": 2183,
+  "雪佛兰 Camaro '17": 2739,
+  "雪佛兰 Camaro '18": 3149,
+  "雪佛兰 Camaro '24": 3954,
+  "雪佛兰 Camaro '69": 289,
+  "雪佛兰 Camaro '70": 1330,
+  "雪佛兰 Camaro '79": 1064,
+  "雪佛兰 El Camino": 1291,
+  "雪佛兰 Impala": 1300,
+  "雪佛兰 Impala '96": 1379,
+  "雪佛兰 K10 '72": 3590,
+  "雪佛兰 MonteCarlo": 1575,
+  "雪佛兰 Nova '69": 1429,
+  "雪佛兰 Trail Boss": 3477,
+  "雷克萨斯 LC 500 '21": 3520,
+  "雷克萨斯 LFA": 1260,
+  "雷克萨斯 LFA FE": 4158,
+  "雷克萨斯 RC F": 2175,
+  "雷诺 5 Turbo": 634,
+  "雷诺 8": 3395,
+  "雷诺 Clio '93": 2149,
+  "马自达 3": 1221,
+  "马自达 Cosmo": 1587,
+  "马自达 Furai": 1229,
+  "马自达 MX-5 '05": 2171,
+  "马自达 MX-5 '13": 2004,
+  "马自达 MX-5 '16": 2267,
+  "马自达 MX-5 '94": 1110,
+  "马自达 MX-5 RF": 3823,
+  "马自达 RX-3": 1514,
+  "马自达 RX-3 FE": 4165,
+  "马自达 RX-7 '85": 1480,
+  "马自达 RX-7 '90": 423,
+  "马自达 RX-7 '92": 4144,
+  "马自达 RX-8": 1426
+ },
+ "unresolved": [
+  {
+   "model": "Beetle",
+   "short": "VW Beetle",
+   "key": 2299851262,
+   "candidates": [
+    {
+     "ids": [
+      1435
+     ],
+     "name": "Volkswagen Beetle",
+     "year": 1963
+    },
+    {
+     "ids": [
+      3007
+     ],
+     "name": "Volkswagen #34 Andretti Rally Cross Beetle",
+     "year": 2017
+    }
+   ]
+  },
+  {
+   "model": "XJ-S",
+   "short": "Jaguar XJ-S",
+   "key": 2301948286,
+   "candidates": []
+  },
+  {
+   "model": "Celica GT",
+   "short": "Toyota Celica 74",
+   "key": 2302046846,
+   "candidates": []
+  },
+  {
+   "model": "599XX Evolution",
+   "short": "Ferrari 599XX E",
+   "key": 2302048254,
+   "candidates": []
+  },
+  {
+   "model": "RS 4 Avant",
+   "short": "Audi RS 4 '13",
+   "key": 2303996158,
+   "candidates": [
+    {
+     "ids": [
+      2178
+     ],
+     "name": "Audi RS 4 Avant",
+     "year": 2001
+    },
+    {
+     "ids": [
+      3318
+     ],
+     "name": "Audi RS 4 Avant",
+     "year": 2018
+    }
+   ]
+  },
+  {
+   "model": "BRZ",
+   "short": "SUBARU BRZ",
+   "key": 2304078334,
+   "candidates": [
+    {
+     "ids": [
+      1655
+     ],
+     "name": "Subaru BRZ",
+     "year": 2013
+    },
+    {
+     "ids": [
+      3735
+     ],
+     "name": "Subaru BRZ",
+     "year": 2022
+    }
+   ]
+  },
+  {
+   "model": "F40 Competizione",
+   "short": "Ferrari F40 C",
+   "key": 2308223742,
+   "candidates": []
+  },
+  {
+   "model": "NULL CAR",
+   "short": "NULL CAR",
+   "key": 2312401406,
+   "candidates": []
+  },
+  {
+   "model": "Starion ESI-R",
+   "short": "Starion ESI-R",
+   "key": 2312532222,
+   "candidates": []
+  },
+  {
+   "model": "Zonda Cinque Roadster",
+   "short": "Pagani Zonda C",
+   "key": 2314582014,
+   "candidates": []
+  },
+  {
+   "model": "Air Sapphire",
+   "short": "Lucid Air",
+   "key": 2828301310,
+   "candidates": []
+  },
+  {
+   "model": "F-150 Raptor R",
+   "short": "Ford Raptor R",
+   "key": 2828351486,
+   "candidates": []
+  },
+  {
+   "model": "Challenger SRT Demon 170",
+   "short": "Challenger '23",
+   "key": 2830464894,
+   "candidates": []
+  },
+  {
+   "model": "Sport Spider",
+   "short": "Sport Spider '98",
+   "key": 2830513022,
+   "candidates": []
+  },
+  {
+   "model": "G40 Junior",
+   "short": "Ginetta G40 Jr",
+   "key": 2836707326,
+   "candidates": []
+  },
+  {
+   "model": "Wrangler Rubicon Traffic",
+   "short": "Wrangler T",
+   "key": 2836803710,
+   "candidates": []
+  },
+  {
+   "model": "Autodelta Tipo 33/2 Daytona",
+   "short": "Alfa Tipo 33/2",
+   "key": 2836820350,
+   "candidates": []
+  },
+  {
+   "model": "#411 Toyota Corolla Hatchback",
+   "short": "#411 FD Corolla",
+   "key": 2838802814,
+   "candidates": []
+  },
+  {
+   "model": "#151 Toyota GR Supra",
+   "short": "#151 FD Supra",
+   "key": 2838803198,
+   "candidates": []
+  },
+  {
+   "model": "#91 BMW M2",
+   "short": "#91 BMW M2",
+   "key": 2838852606,
+   "candidates": []
+  },
+  {
+   "model": "911 Carrera Coupe 'Luftauto 002'",
+   "short": "Luftauto 911",
+   "key": 2840899966,
+   "candidates": []
+  },
+  {
+   "model": "#64 Forsberg Racing Nissan Z",
+   "short": "#64 Nissan Z",
+   "key": 2843029886,
+   "candidates": []
+  },
+  {
+   "model": "911 GT3 RS",
+   "short": "P. 911 GT3 RS 23",
+   "key": 2843096062,
+   "candidates": [
+    {
+     "ids": [
+      3072
+     ],
+     "name": "Porsche 911 GT3 RS",
+     "year": 2019
+    },
+    {
+     "ids": [
+      3781
+     ],
+     "name": "Porsche 911 GT3 RS",
+     "year": 2023
+    }
+   ]
+  },
+  {
+   "model": "#43 Dodge Viper SRT-10 ACR",
+   "short": "#43 Dodge Viper",
+   "key": 2845061886,
+   "candidates": []
+  },
+  {
+   "model": "#98 BMW 325i",
+   "short": "#98 BMW 325i",
+   "key": 2845110526,
+   "candidates": []
+  },
+  {
+   "model": "512 S",
+   "short": "Ferrari 512 S",
+   "key": 2845160062,
+   "candidates": []
+  },
+  {
+   "model": "#777 Chevrolet Corvette",
+   "short": "#777 Corvette",
+   "key": 2849305214,
+   "candidates": []
+  },
+  {
+   "model": "FXX-K Evo",
+   "short": "Ferrari FXX-K E",
+   "key": 2851369982,
+   "candidates": []
+  },
+  {
+   "model": "W1",
+   "short": "McLaren W1",
+   "key": 3652482942,
+   "candidates": []
+  },
+  {
+   "model": "WRX Traffic",
+   "short": "WRX Traffic",
+   "key": 3652499326,
+   "candidates": []
+  },
+  {
+   "model": "Stagea Traffic",
+   "short": "Stagea Traffic",
+   "key": 3652499454,
+   "candidates": []
+  },
+  {
+   "model": "G 65 Traffic",
+   "short": "G 65 Traffic",
+   "key": 3652497790,
+   "candidates": []
+  },
+  {
+   "model": "Acty Traffic",
+   "short": "Acty Traffic",
+   "key": 3652497918,
+   "candidates": []
+  },
+  {
+   "model": "e Traffic",
+   "short": "e Traffic",
+   "key": 3652497534,
+   "candidates": []
+  },
+  {
+   "model": "Montero Traffic",
+   "short": "Montero Traffic",
+   "key": 3652497662,
+   "candidates": []
+  },
+  {
+   "model": "GT-R Black Edition (R35) Forza Edition",
+   "short": "GT-R FE '12",
+   "key": 3652563198,
+   "candidates": []
+  },
+  {
+   "model": "Continental GT Speed",
+   "short": "Bentley C GT '25",
+   "key": 3650466046,
+   "candidates": []
+  },
+  {
+   "model": "GT-R Black Edition (R35) 'Touge Edition'",
+   "short": "Nissan GT-R TG",
+   "key": 3656659710,
+   "candidates": []
+  },
+  {
+   "model": "Crown Super Deluxe Taxi Traffic",
+   "short": "T. Crown Traffic",
+   "key": 3656708734,
+   "candidates": []
+  },
+  {
+   "model": "JPN Taxi Traffic",
+   "short": "T. Taxi Traffic",
+   "key": 3656708862,
+   "candidates": []
+  },
+  {
+   "model": "J50 Preorder Car",
+   "short": "Ferrari J50 PO",
+   "key": 3656725502,
+   "candidates": []
+  },
+  {
+   "model": "XJ-S Forza Edition",
+   "short": "Jaguar XJ-S FE",
+   "key": 3656741246,
+   "candidates": []
+  },
+  {
+   "model": "Acty 'RakuRaku Express'",
+   "short": "Acty 'RakuRaku'",
+   "key": 3654578302,
+   "candidates": []
+  },
+  {
+   "model": "Silvia K's",
+   "short": "Nissan Silvia 89",
+   "key": 3654595198,
+   "candidates": [
+    {
+     "ids": [
+      4222
+     ],
+     "name": "Nissan Silvia K's",
+     "year": 1989
+    },
+    {
+     "ids": [
+      440
+     ],
+     "name": "Nissan Silvia K's",
+     "year": 1994
+    }
+   ]
+  },
+  {
+   "model": "Skyline GT-R V·spec II",
+   "short": "Skyline GT-R '00",
+   "key": 3654595326,
+   "candidates": []
+  },
+  {
+   "model": "Skyline 2000 Turbo RS",
+   "short": "Skyline T RS '83",
+   "key": 3654612862,
+   "candidates": []
+  },
+  {
+   "model": "Civic Type R",
+   "short": "Honda Civic '08",
+   "key": 3654611326,
+   "candidates": [
+    {
+     "ids": [
+      1273
+     ],
+     "name": "Honda Civic Type R",
+     "year": 1997
+    },
+    {
+     "ids": [
+      302
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2004
+    },
+    {
+     "ids": [
+      625
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2007
+    },
+    {
+     "ids": [
+      2870
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2018
+    },
+    {
+     "ids": [
+      3773
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2023
+    }
+   ]
+  },
+  {
+   "model": "Sprinter Trueno GT Apex 'Touge Edition'",
+   "short": "Toyota AE86 TG",
+   "key": 3654644606,
+   "candidates": []
+  },
+  {
+   "model": "S2000 'Touge Edition'",
+   "short": "Honda S2000 TG",
+   "key": 3654644734,
+   "candidates": []
+  },
+  {
+   "model": "Impreza 22B-STi Version 'Touge Edition'",
+   "short": "SUBARU 22B TG",
+   "key": 3654644350,
+   "candidates": []
+  },
+  {
+   "model": "#33 BYP Racing Integra WTAC",
+   "short": "#33 H. Integra",
+   "key": 3654644094,
+   "candidates": []
+  },
+  {
+   "model": "GT-R NISMO 'Initial Drive'",
+   "short": "GT-R ID",
+   "key": 3654660990,
+   "candidates": []
+  },
+  {
+   "model": "911 GT2 'Initial Drive'",
+   "short": "P. 911 GT2 ID",
+   "key": 3654661118,
+   "candidates": []
+  },
+  {
+   "model": "Flatbed",
+   "short": "Flatbed Traffic",
+   "key": 3098817150,
+   "candidates": []
+  },
+  {
+   "model": "LEGACY B4 2.0 GT Traffic",
+   "short": "Legacy Traffic",
+   "key": 3098817278,
+   "candidates": []
+  },
+  {
+   "model": "#530 HSV Maloo GEN-F",
+   "short": "#530 HSV Maloo",
+   "key": 3098964222,
+   "candidates": []
+  },
+  {
+   "model": "C 63 S Coupé",
+   "short": "M-B AMG C 63 '16",
+   "key": 3105223678,
+   "candidates": []
+  },
+  {
+   "model": "Skyline GTS-R",
+   "short": "Nissan GT-R '87",
+   "key": 3107222142,
+   "candidates": []
+  },
+  {
+   "model": "Bus",
+   "short": "Bus Traffic",
+   "key": 3111416190,
+   "candidates": []
+  },
+  {
+   "model": "Galant Traffic",
+   "short": "Galant Traffic",
+   "key": 3111416446,
+   "candidates": []
+  },
+  {
+   "model": "Box Truck",
+   "short": "Box Traffic",
+   "key": 3111416574,
+   "candidates": []
+  },
+  {
+   "model": "3 Traffic",
+   "short": "Mazda Traffic",
+   "key": 3111416830,
+   "candidates": []
+  },
+  {
+   "model": "RS 7 Sportback",
+   "short": "Audi RS 7",
+   "key": 3113498622,
+   "candidates": [
+    {
+     "ids": [
+      2009
+     ],
+     "name": "Audi RS 7 Sportback",
+     "year": 2013
+    },
+    {
+     "ids": [
+      3584
+     ],
+     "name": "Audi RS 7 Sportback",
+     "year": 2021
+    }
+   ]
+  },
+  {
+   "model": "Civic Type R",
+   "short": "Honda Civic '16",
+   "key": 3115692798,
+   "candidates": [
+    {
+     "ids": [
+      1273
+     ],
+     "name": "Honda Civic Type R",
+     "year": 1997
+    },
+    {
+     "ids": [
+      302
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2004
+    },
+    {
+     "ids": [
+      625
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2007
+    },
+    {
+     "ids": [
+      2870
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2018
+    },
+    {
+     "ids": [
+      3773
+     ],
+     "name": "Honda Civic Type R",
+     "year": 2023
+    }
+   ]
+  },
+  {
+   "model": "Corvette Z06",
+   "short": "Corvette '15",
+   "key": 3115708670,
+   "candidates": [
+    {
+     "ids": [
+      314
+     ],
+     "name": "Chevrolet Corvette Z06",
+     "year": 2002
+    },
+    {
+     "ids": [
+      3766
+     ],
+     "name": "Chevrolet Corvette Z06",
+     "year": 2023
+    }
+   ]
+  },
+  {
+   "model": "S1",
+   "short": "Audi S1",
+   "key": 3115710462,
+   "candidates": [
+    {
+     "ids": [
+      1478
+     ],
+     "name": "Audi #2 Audi Sport quattro S1",
+     "year": 1986
+    },
+    {
+     "ids": [
+      2179
+     ],
+     "name": "Audi S1",
+     "year": 2015
+    }
+   ]
+  },
+  {
+   "model": "458 Speciale",
+   "short": "Ferrari 458 S",
+   "key": 3115725182,
+   "candidates": []
+  },
+  {
+   "model": "XKR-S GT",
+   "short": "Jaguar XKR-S '15",
+   "key": 3117740542,
+   "candidates": []
+  },
+  {
+   "model": "Esprit V8",
+   "short": "Lotus Esprit",
+   "key": 4250135254,
+   "candidates": []
+  },
+  {
+   "model": "E-type",
+   "short": "Jaguar E-type",
+   "key": 4250135382,
+   "candidates": [
+    {
+     "ids": [
+      336
+     ],
+     "name": "Jaguar E-type",
+     "year": 1961
+    },
+    {
+     "ids": [
+      2992
+     ],
+     "name": "Jaguar Lightweight E-Type",
+     "year": 1964
+    }
+   ]
+  },
+  {
+   "model": "Astra VXR",
+   "short": "Vaux Astra '06",
+   "key": 4252167254,
+   "candidates": []
+  }
+ ]
+}
