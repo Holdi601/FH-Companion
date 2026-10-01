@@ -268,7 +268,7 @@ Your recorded laps: the best per car and course, and standings by points and by
 total time. Laps are stored on your disk in `%LOCALAPPDATA%\FHCompanion\laps`.
 
 - **Open lap folder** shows that folder in Explorer: one folder per course,
-  then class, car, tune and tag. Each lap is a `.json` file with its full
+  then class, car (named like `BMW 2002 Turbo '73 (car1269)`), tune and tag. Each lap is a `.json` file with its full
   telemetry beside it as `.json.tele.gz`.
 - **Delete slower laps** keeps your fastest lap per course, PI class and car
   and deletes the rest, after showing how many laps and how much space. Standing
@@ -291,7 +291,21 @@ often you were the first human over the line. It comes from the results screen
 after the race, whose rows are in finishing order.
 
 Places are measured against the field: 0% is first, 100% is last, so a win
-against four and a win against eleven count the same. The telemetry gives your
+against four and a win against eleven count the same. The chart says so at both
+ends of its axis. **Bars in the chart** sets how many bars it draws; on **auto**
+there are more the more races you have (the square root of their number, never
+finer than the average field, because twelve drivers only have twelve places).
+
+**Podium rate** counts only races with at least 5 drivers: a top 3 out of four is
+not a podium worth counting. A race whose field size was not read counts only if
+a place of 5 or lower was seen in it.
+
+**Meta picks** (Horizon Play): where your car stood on that route's leaderboard in
+the class of the race, ranked by time as in the Rivals panel. Places 1-15 are a
+high meta pick, 16-25 a low one. **Avg car rank** is the average of those places,
+with the share of the leaderboard ("top 30 %") because leaderboards differ in
+length. The place is stored with each race when it ends, because leaderboards
+change; older races are ranked against today's leaderboards. The telemetry gives your
 position but not how many drive, so the app reads the start grid shown before
 each race (one small screenshot per second, only while you are in a menu, never
 while you drive). Rivals time attacks have no opponents and are left out.

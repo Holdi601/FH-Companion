@@ -22,7 +22,6 @@ K = {
     "plaetze": "places from start to finish",
     "titel": "Where you start and finish, in % of the field",
     "leer": "No races with a known field size for these filters yet. It is read from the start grid before each race; for older races, switch on the estimate above.",
-    "achse": "0% = first place, 100% = last place",
     "startplatz": "Starting position",
     "zielplatz": "Finishing position",
     "tipp": "{0}–{1}% of the field\nStarting position: {2} ({3} race(s))\nFinishing position: {4} ({5} race(s))",
@@ -42,7 +41,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} Rennen mit bekanntem Feld", "feldgeschaetzt": "{0} Rennen, davon {1} geschätzt",
   "plaetze": "Plätze vom Start bis ins Ziel", "titel": "Wo du startest und ankommst, in % des Felds",
   "leer": "Für diese Filter gibt es noch keine Rennen mit bekannter Feldgröße. Sie wird vor jedem Rennen aus der Startaufstellung gelesen; für ältere Rennen oben die Schätzung einschalten.",
-  "achse": "0 % = erster Platz, 100 % = letzter Platz", "startplatz": "Startplatz", "zielplatz": "Zielplatz",
+  "startplatz": "Startplatz", "zielplatz": "Zielplatz",
   "tipp": "{0}–{1} % des Felds\nStartplatz: {2} ({3} Rennen)\nZielplatz: {4} ({5} Rennen)", "gegenmit": "Gegen Mitspieler", "ersterMensch": "erster Mensch in {0} von {1} Rennen", "nurkoop": "nur Koop-Rennen"},
  "fr": {
   "tab": "Statistiques de course", "nurfertig": "courses terminées uniquement", "schaetzen": "estimer la taille du plateau des anciennes courses",
@@ -54,7 +53,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} course(s) avec plateau connu", "feldgeschaetzt": "{0} course(s), dont {1} estimée(s)",
   "plaetze": "places du départ à l'arrivée", "titel": "Où tu pars et où tu arrives, en % du plateau",
   "leer": "Aucune course avec une taille de plateau connue pour ces filtres. Elle est lue sur la grille de départ avant chaque course ; pour les anciennes courses, active l'estimation ci-dessus.",
-  "achse": "0 % = première place, 100 % = dernière place", "startplatz": "Position de départ", "zielplatz": "Position à l'arrivée",
+  "startplatz": "Position de départ", "zielplatz": "Position à l'arrivée",
   "tipp": "{0}–{1} % du plateau\nPosition de départ : {2} ({3} course(s))\nPosition à l'arrivée : {4} ({5} course(s))", "gegenmit": "Face aux coéquipiers", "ersterMensch": "premier des humains dans {0} course(s) sur {1}", "nurkoop": "courses en coop uniquement"},
  "es": {
   "tab": "Estadísticas de carrera", "nurfertig": "solo carreras terminadas", "schaetzen": "estimar el tamaño de la parrilla en carreras antiguas",
@@ -66,7 +65,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} carrera(s) con parrilla conocida", "feldgeschaetzt": "{0} carrera(s), {1} estimada(s)",
   "plaetze": "puestos de la salida a la meta", "titel": "Dónde sales y dónde llegas, en % de la parrilla",
   "leer": "Todavía no hay carreras con tamaño de parrilla conocido para estos filtros. Se lee en la parrilla de salida antes de cada carrera; para carreras antiguas, activa la estimación de arriba.",
-  "achse": "0 % = primer puesto, 100 % = último puesto", "startplatz": "Posición de salida", "zielplatz": "Posición final",
+  "startplatz": "Posición de salida", "zielplatz": "Posición final",
   "tipp": "{0}–{1} % de la parrilla\nPosición de salida: {2} ({3} carrera(s))\nPosición final: {4} ({5} carrera(s))", "gegenmit": "Frente a compañeros", "ersterMensch": "primero de los humanos en {0} de {1} carrera(s)", "nurkoop": "solo carreras cooperativas"},
  "it": {
   "tab": "Statistiche gare", "nurfertig": "solo gare concluse", "schaetzen": "stima la griglia nelle gare più vecchie",
@@ -78,7 +77,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} gara/e con griglia nota", "feldgeschaetzt": "{0} gara/e, di cui {1} stimata/e",
   "plaetze": "posizioni dalla partenza all'arrivo", "titel": "Dove parti e dove arrivi, in % della griglia",
   "leer": "Ancora nessuna gara con griglia nota per questi filtri. Si legge dalla griglia di partenza prima di ogni gara; per le gare più vecchie attiva la stima qui sopra.",
-  "achse": "0 % = primo posto, 100 % = ultimo posto", "startplatz": "Posizione di partenza", "zielplatz": "Posizione d'arrivo",
+  "startplatz": "Posizione di partenza", "zielplatz": "Posizione d'arrivo",
   "tipp": "{0}–{1} % della griglia\nPosizione di partenza: {2} ({3} gara/e)\nPosizione d'arrivo: {4} ({5} gara/e)", "gegenmit": "Contro i compagni", "ersterMensch": "primo tra gli umani in {0} gara/e su {1}", "nurkoop": "solo gare cooperative"},
  "pt": {
   "tab": "Estatísticas de corrida", "nurfertig": "só corridas terminadas", "schaetzen": "estimar a grelha nas corridas antigas",
@@ -90,7 +89,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} corrida(s) com grelha conhecida", "feldgeschaetzt": "{0} corrida(s), {1} estimada(s)",
   "plaetze": "posições da partida à chegada", "titel": "Onde partes e onde chegas, em % da grelha",
   "leer": "Ainda não há corridas com tamanho de grelha conhecido para estes filtros. É lido na grelha de partida antes de cada corrida; para corridas antigas, ativa a estimativa acima.",
-  "achse": "0 % = primeiro lugar, 100 % = último lugar", "startplatz": "Posição de partida", "zielplatz": "Posição final",
+  "startplatz": "Posição de partida", "zielplatz": "Posição final",
   "tipp": "{0}–{1} % da grelha\nPosição de partida: {2} ({3} corrida(s))\nPosição final: {4} ({5} corrida(s))", "gegenmit": "Contra os colegas", "ersterMensch": "primeiro dos humanos em {0} de {1} corrida(s)", "nurkoop": "só corridas cooperativas"},
  "nl": {
   "tab": "Racestatistieken", "nurfertig": "alleen uitgereden races", "schaetzen": "veldgrootte schatten bij oudere races",
@@ -102,7 +101,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} race(s) met bekend veld", "feldgeschaetzt": "{0} race(s), waarvan {1} geschat",
   "plaetze": "plaatsen van start tot finish", "titel": "Waar je start en finisht, in % van het veld",
   "leer": "Nog geen races met bekende veldgrootte voor deze filters. Die wordt voor elke race van de startopstelling gelezen; zet voor oudere races hierboven de schatting aan.",
-  "achse": "0% = eerste plaats, 100% = laatste plaats", "startplatz": "Startpositie", "zielplatz": "Eindpositie",
+  "startplatz": "Startpositie", "zielplatz": "Eindpositie",
   "tipp": "{0}–{1}% van het veld\nStartpositie: {2} ({3} race(s))\nEindpositie: {4} ({5} race(s))", "gegenmit": "Tegen medespelers", "ersterMensch": "eerste van de mensen in {0} van {1} race(s)", "nurkoop": "alleen co-op-races"},
  "pl": {
   "tab": "Statystyki wyścigów", "nurfertig": "tylko ukończone wyścigi", "schaetzen": "szacuj liczbę kierowców w starszych wyścigach",
@@ -114,7 +113,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} wyścigów ze znaną stawką", "feldgeschaetzt": "{0} wyścigów, w tym {1} szacowanych",
   "plaetze": "pozycji od startu do mety", "titel": "Gdzie startujesz i kończysz, w % stawki",
   "leer": "Brak jeszcze wyścigów ze znaną liczbą kierowców dla tych filtrów. Jest odczytywana z pól startowych przed każdym wyścigiem; dla starszych wyścigów włącz szacowanie powyżej.",
-  "achse": "0% = pierwsze miejsce, 100% = ostatnie miejsce", "startplatz": "Pozycja startowa", "zielplatz": "Pozycja na mecie",
+  "startplatz": "Pozycja startowa", "zielplatz": "Pozycja na mecie",
   "tipp": "{0}–{1}% stawki\nPozycja startowa: {2} ({3} wyścigów)\nPozycja na mecie: {4} ({5} wyścigów)", "gegenmit": "Przeciw współgraczom", "ersterMensch": "pierwszy z ludzi w {0} z {1} wyścigów", "nurkoop": "tylko wyścigi w kooperacji"},
  "cs": {
   "tab": "Statistiky závodů", "nurfertig": "jen dokončené závody", "schaetzen": "odhadnout velikost pole u starších závodů",
@@ -126,7 +125,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} závodů se známým polem", "feldgeschaetzt": "{0} závodů, z toho {1} odhadnuto",
   "plaetze": "míst od startu do cíle", "titel": "Kde startuješ a dojíždíš, v % pole",
   "leer": "Pro tyto filtry zatím nejsou závody se známou velikostí pole. Čte se ze startovního roštu před každým závodem; u starších závodů zapni odhad nahoře.",
-  "achse": "0 % = první místo, 100 % = poslední místo", "startplatz": "Startovní pozice", "zielplatz": "Pozice v cíli",
+  "startplatz": "Startovní pozice", "zielplatz": "Pozice v cíli",
   "tipp": "{0}–{1} % pole\nStartovní pozice: {2} ({3} závodů)\nPozice v cíli: {4} ({5} závodů)", "gegenmit": "Proti spoluhráčům", "ersterMensch": "první z lidí v {0} z {1} závodů", "nurkoop": "jen kooperativní závody"},
  "da": {
   "tab": "Løbsstatistik", "nurfertig": "kun gennemførte løb", "schaetzen": "anslå feltets størrelse i ældre løb",
@@ -138,7 +137,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} løb med kendt felt", "feldgeschaetzt": "{0} løb, heraf {1} anslået",
   "plaetze": "pladser fra start til mål", "titel": "Hvor du starter og slutter, i % af feltet",
   "leer": "Endnu ingen løb med kendt feltstørrelse for disse filtre. Den aflæses fra startgitteret før hvert løb; slå anslåelsen til ovenfor for ældre løb.",
-  "achse": "0 % = førsteplads, 100 % = sidsteplads", "startplatz": "Startplacering", "zielplatz": "Slutplacering",
+  "startplatz": "Startplacering", "zielplatz": "Slutplacering",
   "tipp": "{0}–{1} % af feltet\nStartplacering: {2} ({3} løb)\nSlutplacering: {4} ({5} løb)", "gegenmit": "Mod medspillere", "ersterMensch": "først af menneskerne i {0} af {1} løb", "nurkoop": "kun co-op-løb"},
  "sv": {
   "tab": "Tävlingsstatistik", "nurfertig": "bara fullföljda lopp", "schaetzen": "uppskatta fältets storlek i äldre lopp",
@@ -150,7 +149,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} lopp med känt fält", "feldgeschaetzt": "{0} lopp, varav {1} uppskattade",
   "plaetze": "placeringar från start till mål", "titel": "Var du startar och går i mål, i % av fältet",
   "leer": "Inga lopp med känd fältstorlek för dessa filter än. Den läses från startgridden före varje lopp; för äldre lopp, slå på uppskattningen ovan.",
-  "achse": "0 % = förstaplats, 100 % = sistaplats", "startplatz": "Startplacering", "zielplatz": "Slutplacering",
+  "startplatz": "Startplacering", "zielplatz": "Slutplacering",
   "tipp": "{0}–{1} % av fältet\nStartplacering: {2} ({3} lopp)\nSlutplacering: {4} ({5} lopp)", "gegenmit": "Mot medspelare", "ersterMensch": "först av människorna i {0} av {1} lopp", "nurkoop": "bara co-op-lopp"},
  "fi": {
   "tab": "Kilpailutilastot", "nurfertig": "vain loppuun ajetut kilpailut", "schaetzen": "arvioi kentän koko vanhemmissa kilpailuissa",
@@ -162,7 +161,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} kilpailua tunnetulla kentällä", "feldgeschaetzt": "{0} kilpailua, niistä {1} arvioitu",
   "plaetze": "sijaa lähdöstä maaliin", "titel": "Mistä lähdet ja mihin tulet maaliin, % kentästä",
   "leer": "Näillä suodattimilla ei vielä ole kilpailuja, joiden kentän koko tunnetaan. Se luetaan lähtöruudukosta ennen jokaista kilpailua; vanhemmille kilpailuille ota arvio käyttöön yllä.",
-  "achse": "0 % = ensimmäinen sija, 100 % = viimeinen sija", "startplatz": "Lähtösija", "zielplatz": "Maalisija",
+  "startplatz": "Lähtösija", "zielplatz": "Maalisija",
   "tipp": "{0}–{1} % kentästä\nLähtösija: {2} ({3} kilpailua)\nMaalisija: {4} ({5} kilpailua)", "gegenmit": "Kanssapelaajia vastaan", "ersterMensch": "ensimmäinen ihmisistä {0}/{1} kilpailussa", "nurkoop": "vain yhteistyökilpailut"},
  "hu": {
   "tab": "Versenystatisztika", "nurfertig": "csak befejezett versenyek", "schaetzen": "mezőnyméret becslése régebbi versenyeknél",
@@ -174,7 +173,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} verseny ismert mezőnnyel", "feldgeschaetzt": "{0} verseny, ebből {1} becsült",
   "plaetze": "hely a rajttól a célig", "titel": "Hol rajtolsz és hol érsz célba, a mezőny %-ában",
   "leer": "Ezekkel a szűrőkkel még nincs ismert mezőnyméretű verseny. Minden verseny előtt a rajtfelállásból olvassuk; régebbi versenyekhez kapcsold be fent a becslést.",
-  "achse": "0% = első hely, 100% = utolsó hely", "startplatz": "Rajthely", "zielplatz": "Célhely",
+  "startplatz": "Rajthely", "zielplatz": "Célhely",
   "tipp": "A mezőny {0}–{1}%-a\nRajthely: {2} ({3} verseny)\nCélhely: {4} ({5} verseny)", "gegenmit": "Csapattársak ellen", "ersterMensch": "első az emberek közül {0} / {1} versenyben", "nurkoop": "csak kooperatív versenyek"},
  "ro": {
   "tab": "Statistici curse", "nurfertig": "doar curse terminate", "schaetzen": "estimează mărimea grilei la cursele mai vechi",
@@ -186,7 +185,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} cursă/curse cu grilă cunoscută", "feldgeschaetzt": "{0} cursă/curse, dintre care {1} estimate",
   "plaetze": "locuri de la start la sosire", "titel": "Unde pleci și unde ajungi, în % din grilă",
   "leer": "Încă nu există curse cu mărimea grilei cunoscută pentru aceste filtre. Se citește de pe grila de start înainte de fiecare cursă; pentru cursele mai vechi, pornește estimarea de mai sus.",
-  "achse": "0% = primul loc, 100% = ultimul loc", "startplatz": "Poziție de start", "zielplatz": "Poziție la sosire",
+  "startplatz": "Poziție de start", "zielplatz": "Poziție la sosire",
   "tipp": "{0}–{1}% din grilă\nPoziție de start: {2} ({3} cursă/curse)\nPoziție la sosire: {4} ({5} cursă/curse)", "gegenmit": "Față de coechipieri", "ersterMensch": "primul dintre oameni în {0} din {1} cursă/curse", "nurkoop": "doar curse cooperative"},
  "el": {
   "tab": "Στατιστικά αγώνων", "nurfertig": "μόνο ολοκληρωμένοι αγώνες", "schaetzen": "εκτίμηση μεγέθους πεδίου σε παλαιότερους αγώνες",
@@ -198,7 +197,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} αγώνες με γνωστό πεδίο", "feldgeschaetzt": "{0} αγώνες, εκ των οποίων {1} κατ' εκτίμηση",
   "plaetze": "θέσεις από την εκκίνηση ως τον τερματισμό", "titel": "Πού ξεκινάς και πού τερματίζεις, σε % του πεδίου",
   "leer": "Δεν υπάρχουν ακόμη αγώνες με γνωστό μέγεθος πεδίου για αυτά τα φίλτρα. Διαβάζεται από τη σχάρα εκκίνησης πριν από κάθε αγώνα· για παλαιότερους αγώνες ενεργοποίησε την εκτίμηση παραπάνω.",
-  "achse": "0% = πρώτη θέση, 100% = τελευταία θέση", "startplatz": "Θέση εκκίνησης", "zielplatz": "Θέση τερματισμού",
+  "startplatz": "Θέση εκκίνησης", "zielplatz": "Θέση τερματισμού",
   "tipp": "{0}–{1}% του πεδίου\nΘέση εκκίνησης: {2} ({3} αγώνες)\nΘέση τερματισμού: {4} ({5} αγώνες)", "gegenmit": "Έναντι συμπαικτών", "ersterMensch": "πρώτος από τους ανθρώπους σε {0} από {1} αγώνες", "nurkoop": "μόνο συνεργατικοί αγώνες"},
  "tr": {
   "tab": "Yarış istatistikleri", "nurfertig": "yalnızca bitirilen yarışlar", "schaetzen": "eski yarışlarda grid boyutunu tahmin et",
@@ -210,7 +209,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} yarış bilinen gridle", "feldgeschaetzt": "{0} yarış, {1} tanesi tahmini",
   "plaetze": "başlangıçtan bitişe kazanılan sıra", "titel": "Nereden başlayıp nerede bitirdiğin, gridin %'si olarak",
   "leer": "Bu filtreler için henüz grid boyutu bilinen yarış yok. Her yarıştan önce başlangıç gridinden okunur; eski yarışlar için yukarıdaki tahmini aç.",
-  "achse": "%0 = birinci sıra, %100 = son sıra", "startplatz": "Başlangıç sırası", "zielplatz": "Bitiş sırası",
+  "startplatz": "Başlangıç sırası", "zielplatz": "Bitiş sırası",
   "tipp": "Gridin %{0}–{1}'i\nBaşlangıç sırası: {2} ({3} yarış)\nBitiş sırası: {4} ({5} yarış)", "gegenmit": "Takım arkadaşlarına karşı", "ersterMensch": "{1} yarışın {0} tanesinde insanların birincisi", "nurkoop": "yalnızca co-op yarışlar"},
  "ru": {
   "tab": "Статистика гонок", "nurfertig": "только завершённые гонки", "schaetzen": "оценивать число участников в старых гонках",
@@ -222,7 +221,7 @@ _UEBERSETZT = {
   "feldbekannt": "гонок с известным числом участников: {0}", "feldgeschaetzt": "гонок: {0}, из них оценено: {1}",
   "plaetze": "мест от старта до финиша", "titel": "Где ты стартуешь и финишируешь, в % от числа участников",
   "leer": "Для этих фильтров пока нет гонок с известным числом участников. Оно считывается со стартовой решётки перед каждой гонкой; для старых гонок включи оценку выше.",
-  "achse": "0% = первое место, 100% = последнее место", "startplatz": "Стартовая позиция", "zielplatz": "Финишная позиция",
+  "startplatz": "Стартовая позиция", "zielplatz": "Финишная позиция",
   "tipp": "{0}–{1}% участников\nСтартовая позиция: {2} (гонок: {3})\nФинишная позиция: {4} (гонок: {5})", "gegenmit": "Против напарников", "ersterMensch": "первый среди людей в {0} из {1} гонок", "nurkoop": "только кооперативные гонки"},
  "ja": {
   "tab": "レース統計", "nurfertig": "完走したレースのみ", "schaetzen": "過去のレースは出走台数を推定",
@@ -234,7 +233,7 @@ _UEBERSETZT = {
   "feldbekannt": "出走台数が判明しているレース {0} 件", "feldgeschaetzt": "{0} 件（うち推定 {1} 件）",
   "plaetze": "スタートからフィニッシュまでの順位変動", "titel": "スタートとフィニッシュの位置（出走台数に対する %）",
   "leer": "このフィルターでは出走台数が判明しているレースがまだありません。各レース前のスターティンググリッドから読み取ります。過去のレースは上の推定をオンにしてください。",
-  "achse": "0% = 1位、100% = 最下位", "startplatz": "スタート順位", "zielplatz": "フィニッシュ順位",
+  "startplatz": "スタート順位", "zielplatz": "フィニッシュ順位",
   "tipp": "出走台数の {0}–{1}%\nスタート順位: {2}（{3} レース）\nフィニッシュ順位: {4}（{5} レース）", "gegenmit": "協力プレイヤーとの比較", "ersterMensch": "{1} レース中 {0} 回、人間の中で1位", "nurkoop": "協力レースのみ"},
  "ko": {
   "tab": "레이스 통계", "nurfertig": "완주한 레이스만", "schaetzen": "이전 레이스의 참가 인원 추정",
@@ -246,7 +245,7 @@ _UEBERSETZT = {
   "feldbekannt": "참가 인원이 알려진 레이스 {0}개", "feldgeschaetzt": "레이스 {0}개, 그중 {1}개 추정",
   "plaetze": "출발부터 결승까지 오른 순위", "titel": "출발 위치와 결승 위치 (참가 인원 대비 %)",
   "leer": "이 필터에는 아직 참가 인원이 알려진 레이스가 없습니다. 매 레이스 전 출발 그리드에서 읽습니다. 이전 레이스는 위에서 추정을 켜세요.",
-  "achse": "0% = 1위, 100% = 꼴찌", "startplatz": "출발 순위", "zielplatz": "결승 순위",
+  "startplatz": "출발 순위", "zielplatz": "결승 순위",
   "tipp": "참가 인원의 {0}–{1}%\n출발 순위: {2} (레이스 {3}개)\n결승 순위: {4} (레이스 {5}개)", "gegenmit": "협동 플레이어 대비", "ersterMensch": "{1}개 레이스 중 {0}개에서 사람 중 1위", "nurkoop": "협동 레이스만"},
  "zh-Hans": {
   "tab": "比赛统计", "nurfertig": "仅已完成的比赛", "schaetzen": "估算较早比赛的参赛人数",
@@ -258,7 +257,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} 场已知参赛人数", "feldgeschaetzt": "{0} 场，其中 {1} 场为估算",
   "plaetze": "从发车到完赛提升的名次", "titel": "你的发车位与完赛名次（占参赛人数的百分比）",
   "leer": "当前筛选下还没有已知参赛人数的比赛。它会在每场比赛前从发车格读取；较早的比赛请打开上方的估算。",
-  "achse": "0% = 第一名，100% = 最后一名", "startplatz": "发车位", "zielplatz": "完赛名次",
+  "startplatz": "发车位", "zielplatz": "完赛名次",
   "tipp": "参赛人数的 {0}–{1}%\n发车位：{2}（{3} 场）\n完赛名次：{4}（{5} 场）", "gegenmit": "对比队友", "ersterMensch": "{1} 场中有 {0} 场在人类玩家中第一", "nurkoop": "仅合作比赛"},
  "zh-Hant": {
   "tab": "比賽統計", "nurfertig": "僅已完賽的比賽", "schaetzen": "估算較早比賽的參賽人數",
@@ -270,7 +269,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} 場已知參賽人數", "feldgeschaetzt": "{0} 場，其中 {1} 場為估算",
   "plaetze": "從起跑到完賽提升的名次", "titel": "你的起跑位置與完賽名次（佔參賽人數的百分比）",
   "leer": "目前篩選下還沒有已知參賽人數的比賽。它會在每場比賽前從起跑排位讀取；較早的比賽請開啟上方的估算。",
-  "achse": "0% = 第一名，100% = 最後一名", "startplatz": "起跑位置", "zielplatz": "完賽名次",
+  "startplatz": "起跑位置", "zielplatz": "完賽名次",
   "tipp": "參賽人數的 {0}–{1}%\n起跑位置：{2}（{3} 場）\n完賽名次：{4}（{5} 場）", "gegenmit": "對比隊友", "ersterMensch": "{1} 場中有 {0} 場在人類玩家中第一", "nurkoop": "僅合作比賽"},
  "th": {
   "tab": "สถิติการแข่ง", "nurfertig": "เฉพาะการแข่งที่จบ", "schaetzen": "ประมาณจำนวนผู้แข่งในการแข่งเก่า",
@@ -282,7 +281,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} การแข่งที่ทราบจำนวนผู้แข่ง", "feldgeschaetzt": "{0} การแข่ง ประมาณ {1}",
   "plaetze": "อันดับที่ขยับจากออกตัวถึงเส้นชัย", "titel": "ตำแหน่งออกตัวและเข้าเส้นชัย เป็น % ของผู้แข่ง",
   "leer": "ยังไม่มีการแข่งที่ทราบจำนวนผู้แข่งสำหรับตัวกรองนี้ จำนวนจะอ่านจากกริดออกตัวก่อนการแข่งแต่ละครั้ง สำหรับการแข่งเก่า ให้เปิดการประมาณด้านบน",
-  "achse": "0% = อันดับหนึ่ง, 100% = อันดับสุดท้าย", "startplatz": "ตำแหน่งออกตัว", "zielplatz": "ตำแหน่งเข้าเส้นชัย",
+  "startplatz": "ตำแหน่งออกตัว", "zielplatz": "ตำแหน่งเข้าเส้นชัย",
   "tipp": "{0}–{1}% ของผู้แข่ง\nตำแหน่งออกตัว: {2} ({3} การแข่ง)\nตำแหน่งเข้าเส้นชัย: {4} ({5} การแข่ง)", "gegenmit": "เทียบกับเพื่อนร่วมทีม", "ersterMensch": "เป็นที่หนึ่งในหมู่ผู้เล่นจริง {0} จาก {1} การแข่ง", "nurkoop": "เฉพาะการแข่งแบบร่วมมือ"},
  "vi": {
   "tab": "Thống kê cuộc đua", "nurfertig": "chỉ cuộc đua đã hoàn thành", "schaetzen": "ước tính số tay đua ở các cuộc đua cũ",
@@ -294,7 +293,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} cuộc đua biết số tay đua", "feldgeschaetzt": "{0} cuộc đua, {1} ước tính",
   "plaetze": "bậc tăng từ xuất phát đến đích", "titel": "Bạn xuất phát và về đích ở đâu, theo % số tay đua",
   "leer": "Chưa có cuộc đua nào biết số tay đua với bộ lọc này. Số này được đọc từ lưới xuất phát trước mỗi cuộc đua; với cuộc đua cũ, hãy bật ước tính ở trên.",
-  "achse": "0% = hạng nhất, 100% = hạng bét", "startplatz": "Vị trí xuất phát", "zielplatz": "Vị trí về đích",
+  "startplatz": "Vị trí xuất phát", "zielplatz": "Vị trí về đích",
   "tipp": "{0}–{1}% số tay đua\nVị trí xuất phát: {2} ({3} cuộc đua)\nVị trí về đích: {4} ({5} cuộc đua)", "gegenmit": "So với đồng đội", "ersterMensch": "dẫn đầu người chơi trong {0} / {1} cuộc đua", "nurkoop": "chỉ cuộc đua co-op"},
  "id": {
   "tab": "Statistik balapan", "nurfertig": "hanya balapan yang selesai", "schaetzen": "perkirakan jumlah pembalap di balapan lama",
@@ -306,7 +305,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} balapan dengan jumlah pembalap diketahui", "feldgeschaetzt": "{0} balapan, {1} di antaranya perkiraan",
   "plaetze": "posisi naik dari start ke finis", "titel": "Posisi start dan finismu, dalam % jumlah pembalap",
   "leer": "Belum ada balapan dengan jumlah pembalap diketahui untuk filter ini. Jumlahnya dibaca dari grid start sebelum setiap balapan; untuk balapan lama, aktifkan perkiraan di atas.",
-  "achse": "0% = posisi pertama, 100% = posisi terakhir", "startplatz": "Posisi start", "zielplatz": "Posisi finis",
+  "startplatz": "Posisi start", "zielplatz": "Posisi finis",
   "tipp": "{0}–{1}% pembalap\nPosisi start: {2} ({3} balapan)\nPosisi finis: {4} ({5} balapan)", "gegenmit": "Lawan rekan main", "ersterMensch": "pertama di antara manusia dalam {0} dari {1} balapan", "nurkoop": "hanya balapan co-op"},
  "ms": {
   "tab": "Statistik perlumbaan", "nurfertig": "hanya perlumbaan yang tamat", "schaetzen": "anggar bilangan pelumba bagi perlumbaan lama",
@@ -318,7 +317,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} perlumbaan dengan bilangan pelumba diketahui", "feldgeschaetzt": "{0} perlumbaan, {1} daripadanya anggaran",
   "plaetze": "kedudukan naik dari permulaan ke penamat", "titel": "Di mana anda bermula dan menamat, dalam % bilangan pelumba",
   "leer": "Belum ada perlumbaan dengan bilangan pelumba diketahui untuk penapis ini. Ia dibaca daripada grid permulaan sebelum setiap perlumbaan; bagi perlumbaan lama, hidupkan anggaran di atas.",
-  "achse": "0% = tempat pertama, 100% = tempat terakhir", "startplatz": "Kedudukan permulaan", "zielplatz": "Kedudukan penamat",
+  "startplatz": "Kedudukan permulaan", "zielplatz": "Kedudukan penamat",
   "tipp": "{0}–{1}% pelumba\nKedudukan permulaan: {2} ({3} perlumbaan)\nKedudukan penamat: {4} ({5} perlumbaan)", "gegenmit": "Lawan rakan main", "ersterMensch": "pertama dalam kalangan manusia dalam {0} daripada {1} perlumbaan", "nurkoop": "hanya perlumbaan co-op"},
  "nb": {
   "tab": "Løpsstatistikk", "nurfertig": "bare fullførte løp", "schaetzen": "anslå feltets størrelse i eldre løp",
@@ -330,7 +329,7 @@ _UEBERSETZT = {
   "feldbekannt": "{0} løp med kjent felt", "feldgeschaetzt": "{0} løp, hvorav {1} anslått",
   "plaetze": "plasser fra start til mål", "titel": "Hvor du starter og kommer i mål, i % av feltet",
   "leer": "Ingen løp med kjent feltstørrelse for disse filtrene ennå. Den leses fra startgridden før hvert løp; for eldre løp, slå på anslaget ovenfor.",
-  "achse": "0 % = førsteplass, 100 % = sisteplass", "startplatz": "Startplassering", "zielplatz": "Sluttplassering",
+  "startplatz": "Startplassering", "zielplatz": "Sluttplassering",
   "tipp": "{0}–{1} % av feltet\nStartplassering: {2} ({3} løp)\nSluttplassering: {4} ({5} løp)", "gegenmit": "Mot medspillere", "ersterMensch": "først av menneskene i {0} av {1} løp", "nurkoop": "bare co-op-løp"},
 }
 

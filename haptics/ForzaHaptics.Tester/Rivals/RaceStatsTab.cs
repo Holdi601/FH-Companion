@@ -35,6 +35,9 @@ internal sealed class RaceStatsTab : UserControl
     private CancellationTokenSource? _nachbau;
     private string _nachbauText = string.Empty;
     private bool _still;
+    private readonly ComboBox _balken = new();
+    private bool _balkenStill;
+    private static readonly int[] BalkenZahlen = { 4, 5, 6, 8, 10, 12, 15, 20, 25 };
 
     private static readonly Color Grund = Color.FromArgb(24, 26, 31);
     private static readonly Color Feld = Color.FromArgb(18, 20, 24);
@@ -91,6 +94,30 @@ internal sealed class RaceStatsTab : UserControl
             c.CheckedChanged += (_, _) => Anwenden();
             oben.Controls.Add(c);
         }
+        // WIE VIELE BALKEN (seit 2026-10-01): von selbst mehr, je mehr Rennen es gibt; waehlbar.
+        // Beschriftung und Auswahl in EINER Gruppe: frei im Umbruch stand die Beschriftung am
+        // Ende der einen Zeile und die Auswahl am Anfang der naechsten.
+        var balkenGruppe = new FlowLayoutPanel
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false,
+            Margin = new Padding(0),
+        };
+        balkenGruppe.Controls.Add(Beschriftung(Loc.T("Bars in the chart")));
+        _balken.DropDownStyle = ComboBoxStyle.DropDownList;
+        // So breit wie der laengste Eintrag: "automatisch (25)" wurde abgeschnitten.
+        _balken.Width = Math.Max(90, TextRenderer.MeasureText(string.Format(Loc.T("auto ({0})"), 25), _balken.Font).Width + 30);
+        _balken.Items.Add(string.Format(Loc.T("auto ({0})"), RaceStats.Bins));
+        foreach (var n in BalkenZahlen) { _balken.Items.Add(n.ToString()); }
+        _balken.SelectedIndex = 0;
+        _balken.SelectedIndexChanged += (_, _) =>
+        {
+            if (_balkenStill) { return; }
+            _glocke.Waehle(_balken.SelectedIndex <= 0 ? null : BalkenZahlen[_balken.SelectedIndex - 1]);
+            BalkenText();
+        };
+        balkenGruppe.Controls.Add(_balken);
+        oben.Controls.Add(balkenGruppe);
+
         var zurueck = Knopf(Loc.T("Reset"));
         zurueck.Click += (_, _) => Zuruecksetzen();
         oben.Controls.Add(zurueck);
@@ -112,10 +139,10 @@ internal sealed class RaceStatsTab : UserControl
         foreach (var (text, breite, rechts) in new[]
                  {
                      (Loc.T("Mode"), 150, false), (Loc.T("Category"), 130, false),
-                     (Loc.T("Races"), 60, true), (Loc.T("Wins"), 70, true),
+                     (Loc.T("Races"), 60, true), (Loc.T("Wins"), 70, true), (Loc.T("Podiums"), 80, true),
                      (Loc.T("Avg finish"), 90, true), (Loc.T("Avg start"), 90, true),
                      (Loc.T("Avg field"), 80, true), (Loc.T("Gained"), 70, true),
-                     (Loc.T("Vs co-players"), 110, true),
+                     (Loc.T("Vs co-players"), 110, true), (Loc.T("Meta picks"), 90, true), (Loc.T("Avg car rank"), 110, true),
                  })
         {
             // Nie schmaler als die Ueberschrift: "Gewonnen" passte nicht in die Breite von "Gained".
@@ -144,6 +171,7 @@ internal sealed class RaceStatsTab : UserControl
         var live = RaceLog.LoadLive();
         var ids = new HashSet<string>(live.Select(r => r.Id), StringComparer.Ordinal);
         _kategorien.Clear();
+        _meta.Clear();
         _rennen = Zusammen(live, _alt);
         Anwenden();
         if (_nachbau is not null) { return; }
@@ -202,6 +230,17 @@ internal sealed class RaceStatsTab : UserControl
         return raus;
     }
 
+    private readonly Dictionary<(string?, string, int), (int? Platz, int? Autos)> _meta = new();
+
+    /// <summary>Platz des Autos auf der Bestenliste -- festgehalten oder, bei aelteren, aus der heutigen Liste.</summary>
+    private (int? Platz, int? Autos) MetaVon(RaceRecord r)
+    {
+        if (r.MetaCars is not null) { return (r.MetaRank, r.MetaCars); }
+        var schluessel = (r.Track, r.Klass, r.Car);
+        if (_meta.TryGetValue(schluessel, out var wert)) { return wert; }
+        return _meta[schluessel] = RaceStats.MetaVon(r, _advisor());
+    }
+
     private string? KategorieVon(RaceRecord r)
     {
         if (r.Track is not { Length: > 0 } t) { return null; }
@@ -231,11 +270,30 @@ internal sealed class RaceStatsTab : UserControl
         _f.FinishedOnly = _nurFertig.Checked;
         _f.EstimateField = _schaetzen.Checked;
         _auswahl = RaceStats.Apply(_rennen, _f, KategorieVon).ToList();
-        var s = RaceStats.Summarize(_auswahl, _f.EstimateField);
+        var s = RaceStats.Summarize(_auswahl, _f.EstimateField, MetaVon);
         Kacheln(s);
         _glocke.Show(s);
+        BalkenText();
         Tabelle();
         Status(Zeile());
+    }
+
+    /// <summary>"auto (8)": was die Automatik gerade waehlt, sichtbar im ersten Eintrag.</summary>
+    private void BalkenText()
+    {
+        var text = string.Format(Loc.T("auto ({0})"), _glocke.AutoFaecher());
+        if (_balken.Items.Count == 0 || _balken.Items[0] as string == text) { return; }
+        _balkenStill = true;
+        try
+        {
+            var gewaehlt = _balken.SelectedIndex;
+            _balken.Items[0] = text;
+            _balken.SelectedIndex = gewaehlt;
+        }
+        finally
+        {
+            _balkenStill = false;
+        }
     }
 
     private string Zeile()
@@ -268,6 +326,9 @@ internal sealed class RaceStatsTab : UserControl
             string.Format(Loc.T("{0} with opponents"), s.Placed)));
         _kacheln.Controls.Add(Kachel(Loc.T("Win rate"), Prozent(s.WinRate),
             string.Format(Loc.T("{0} wins, {1} podiums"), s.Wins, s.Podiums)));
+        // PODIUM, nur in Feldern ab fuenf Fahrern (RaceStats.PodiumAb).
+        _kacheln.Controls.Add(Kachel(Loc.T("Podium rate"), Prozent(s.PodiumRate),
+            string.Format(Loc.T("top 3 in {0} of {1} race(s) with 5 or more drivers"), s.Podiums, s.PodiumRaces)));
         _kacheln.Controls.Add(Kachel(Loc.T("Avg finish"), Prozent(s.AvgFinishPct),
             string.Format(Loc.T("P{0} on average"), Zahl(s.AvgFinish))));
         _kacheln.Controls.Add(Kachel(Loc.T("Avg start"), Prozent(s.AvgStartPct),
@@ -289,6 +350,24 @@ internal sealed class RaceStatsTab : UserControl
                 s.CoRaces > 0
                     ? string.Format(Loc.T("first of the humans in {0} of {1} race(s)"), s.CoFirst, s.CoRaces)
                     : Loc.T("co-op races only")));
+        }
+        // META-WAHL (Horizon Play): wie oft ein Auto unter den ersten 25 der Bestenliste gewaehlt wurde.
+        if (_auswahl.Any(r => r.Mode == "horizon-play"))
+        {
+            _kacheln.Controls.Add(Kachel(Loc.T("Meta picks"),
+                s.MetaRaces > 0 ? Prozent((s.MetaHigh + s.MetaLow) / (double)s.MetaRaces) : "–",
+                s.MetaRaces > 0
+                    ? string.Format(Loc.T("{0} high (top 15), {1} low (16–25) of {2} Horizon Play race(s)"),
+                                    Prozent(s.MetaHigh / (double)s.MetaRaces), Prozent(s.MetaLow / (double)s.MetaRaces), s.MetaRaces)
+                    : Loc.T("Horizon Play races on a route with a leaderboard only")));
+            // DER DURCHSCHNITTLICHE PLATZ der gewaehlten Autos auf den Bestenlisten.
+            var ohneListe = s.MetaRaces - s.MetaRanked;
+            _kacheln.Controls.Add(Kachel(Loc.T("Avg car rank"),
+                s.MetaAvgRank is { } platz ? "#" + platz.ToString("0") : "–",
+                s.MetaRanked > 0
+                    ? string.Format(Loc.T("top {0} of the leaderboard in {1} Horizon Play race(s)"), Prozent(s.MetaAvgTop), s.MetaRanked)
+                      + (ohneListe > 0 ? "\n" + string.Format(Loc.T("{0} more with a car not on the leaderboard"), ohneListe) : string.Empty)
+                    : Loc.T("Horizon Play races on a route with a leaderboard only")));
         }
         _kacheln.ResumeLayout();
         Hoehen();
@@ -338,16 +417,19 @@ internal sealed class RaceStatsTab : UserControl
         _tabelle.Items.Clear();
         foreach (var g in gruppen)
         {
-            var s = RaceStats.Summarize(g.ToList(), _f.EstimateField);
+            var s = RaceStats.Summarize(g.ToList(), _f.EstimateField, MetaVon);
             var z = new ListViewItem(OwnTimes.ModeText(g.Key.Modus));
             z.SubItems.Add(g.Key.Kat.Length > 0 ? g.Key.Kat : Loc.T("unknown"));
             z.SubItems.Add(s.Races.ToString());
             z.SubItems.Add(Prozent(s.WinRate));
+            z.SubItems.Add(Prozent(s.PodiumRate));
             z.SubItems.Add(Prozent(s.AvgFinishPct));
             z.SubItems.Add(Prozent(s.AvgStartPct));
             z.SubItems.Add(Zahl(s.AvgField));
             z.SubItems.Add(s.AvgGain is { } a ? (a >= 0 ? "+" : "") + a.ToString("0.0") : "–");
             z.SubItems.Add(s.CoRaces > 0 ? $"{Prozent(s.CoBeaten)} ({s.CoFirst}/{s.CoRaces})" : "–");
+            z.SubItems.Add(s.MetaRaces > 0 ? Prozent((s.MetaHigh + s.MetaLow) / (double)s.MetaRaces) : "–");
+            z.SubItems.Add(s.MetaAvgRank is { } schnitt ? $"#{schnitt:0} ({Prozent(s.MetaAvgTop)})" : "–");
             _tabelle.Items.Add(z);
         }
         _tabelle.EndUpdate();
@@ -419,6 +501,7 @@ internal sealed class RaceStatsTab : UserControl
 
     private void Zuruecksetzen()
     {
+        _balken.SelectedIndex = 0;
         _still = true;
         _f.Modes.Clear(); _f.Categories.Clear(); _f.Courses.Clear(); _f.Cars.Clear(); _f.Classes.Clear();
         foreach (Control c in _klassen.Controls) { if (c is CheckBox cb) { cb.Checked = false; } }
@@ -462,6 +545,15 @@ internal sealed class BellChart : Control
 
     private RaceSummary? _s;
     private int _ueber = -1;
+    // Die Faecher des Bilds: gewaehlt oder von selbst (RaceStats.AutoBins).
+    private int? _wahl;
+    private int _faecher = RaceStats.Bins;
+    private int[] _startB = new int[RaceStats.Bins];
+    private int[] _zielB = new int[RaceStats.Bins];
+
+    /// <summary>Wie viele Balken die Automatik fuer die gezeigten Rennen waehlt.</summary>
+    internal int AutoFaecher() => _autoFaecher;
+    private int _autoFaecher = RaceStats.Bins;
     private readonly ToolTip _tipp = new() { InitialDelay = 0, ReshowDelay = 0 };
 
     public BellChart()
@@ -477,15 +569,35 @@ internal sealed class BellChart : Control
     {
         _s = s;
         _ueber = -1;
+        Faecher();
         Invalidate();
+    }
+
+    /// <summary>Die Zahl der Balken: eine feste, oder null fuer die Automatik.</summary>
+    public void Waehle(int? faecher)
+    {
+        _wahl = faecher;
+        _ueber = -1;
+        Faecher();
+        Invalidate();
+    }
+
+    private void Faecher()
+    {
+        if (_s is null) { return; }
+        _autoFaecher = RaceStats.AutoBins(Math.Max(_s.StartN, _s.FinishN), _s.AvgField);
+        _faecher = _wahl ?? _autoFaecher;
+        _startB = RaceStats.Faecher(_s.StartShares, _faecher);
+        _zielB = RaceStats.Faecher(_s.FinishShares, _faecher);
     }
 
     private Rectangle Plot => new(52, 34, Math.Max(10, Width - 52 - 20), Math.Max(10, Height - 34 - 48));
 
     private static double Anteil(int[] faecher, int n, int i) => n > 0 ? faecher[i] / (double)n : 0;
 
-    private static double Glocke((double Mean, double Sd) fit, double x) =>
-        Math.Exp(-0.5 * Math.Pow((x - fit.Mean) / fit.Sd, 2)) / (fit.Sd * Math.Sqrt(2 * Math.PI)) / RaceStats.Bins;
+    // Die Dichte auf die Breite eines Fachs gerechnet -- so steht die Glocke auf derselben Skala wie die Balken.
+    private double Glocke((double Mean, double Sd) fit, double x) =>
+        Math.Exp(-0.5 * Math.Pow((x - fit.Mean) / fit.Sd, 2)) / (fit.Sd * Math.Sqrt(2 * Math.PI)) / _faecher;
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -507,9 +619,9 @@ internal sealed class BellChart : Control
 
         // Hoechster Wert: Balken und Kurven, auf 5 % aufgerundet.
         var max = 0.05;
-        for (var i = 0; i < RaceStats.Bins; i++)
+        for (var i = 0; i < _faecher; i++)
         {
-            max = Math.Max(max, Math.Max(Anteil(_s.StartBins, _s.StartN, i), Anteil(_s.FinishBins, _s.FinishN, i)));
+            max = Math.Max(max, Math.Max(Anteil(_startB, _s.StartN, i), Anteil(_zielB, _s.FinishN, i)));
         }
         foreach (var fit in new[] { _s.StartFit, _s.FinishFit })
         {
@@ -535,18 +647,23 @@ internal sealed class BellChart : Control
             var sz = g.MeasureString(label, Font);
             g.DrawString(label, Font, leise, x - (sz.Width / 2), p.Bottom + 4);
         }
-        var achse = Loc.T("0% = first place, 100% = last place");
-        var az = g.MeasureString(achse, Font);
-        g.DrawString(achse, Font, leise, p.Left + ((p.Width - az.Width) / 2), p.Bottom + 22);
+        // WELCHES ENDE VORN IST, an den Enden selbst (seit 2026-10-01): eine Zeile in der Mitte
+        // las der Nutzer nicht -- "heisst nah an 0 Erster oder Letzter?". Fuer Start und Ziel gleich.
+        var links = Loc.T("← 0 % = first place (pole, win)");
+        var rechts = Loc.T("100 % = last place →");
+        g.DrawString(links, Font, text, p.Left, p.Bottom + 22);
+        var rz = g.MeasureString(rechts, Font);
+        g.DrawString(rechts, Font, text, p.Right - rz.Width, p.Bottom + 22);
 
-        // Balkenpaare je Zehntel, 2 Punkte Luft zwischen den Balken.
-        var fach = p.Width / (float)RaceStats.Bins;
-        var balken = Math.Max(2f, (fach - 10f) / 2f);
-        for (var i = 0; i < RaceStats.Bins; i++)
+        // Balkenpaare je Fach, 2 Punkte Luft zwischen den Balken.
+        var fach = p.Width / (float)_faecher;
+        var rand = Math.Min(4f, fach / 8f);
+        var balken = Math.Max(1f, (fach - (2 * rand) - 2f) / 2f);
+        for (var i = 0; i < _faecher; i++)
         {
-            var x0 = p.Left + (fach * i) + 4f;
-            Balken(g, StartFarbe, x0, balken, Anteil(_s.StartBins, _s.StartN, i), max, p, i == _ueber);
-            Balken(g, ZielFarbe, x0 + balken + 2f, balken, Anteil(_s.FinishBins, _s.FinishN, i), max, p, i == _ueber);
+            var x0 = p.Left + (fach * i) + rand;
+            Balken(g, StartFarbe, x0, balken, Anteil(_startB, _s.StartN, i), max, p, i == _ueber);
+            Balken(g, ZielFarbe, x0 + balken + 2f, balken, Anteil(_zielB, _s.FinishN, i), max, p, i == _ueber);
         }
 
         // Die Glocken, 2 Punkte stark.
@@ -602,17 +719,17 @@ internal sealed class BellChart : Control
         base.OnMouseMove(e);
         var p = Plot;
         var i = _s is null || e.X < p.Left || e.X > p.Right || e.Y < p.Top - 10 || e.Y > p.Bottom + 10
-            ? -1 : Math.Clamp((int)((e.X - p.Left) / (p.Width / (float)RaceStats.Bins)), 0, RaceStats.Bins - 1);
+            ? -1 : Math.Clamp((int)((e.X - p.Left) / (p.Width / (float)_faecher)), 0, _faecher - 1);
         if (i == _ueber) { return; }
         _ueber = i;
         Invalidate();
         if (i < 0 || _s is null) { _tipp.Hide(this); return; }
-        var von = i * 100 / RaceStats.Bins;
-        var bis = (i + 1) * 100 / RaceStats.Bins;
+        var von = (int)Math.Round(i * 100.0 / _faecher);
+        var bis = (int)Math.Round((i + 1) * 100.0 / _faecher);
         var tipp = string.Format(Loc.T("{0}–{1}% of the field\nStarting position: {2} ({3} race(s))\nFinishing position: {4} ({5} race(s))"),
             von, bis,
-            (Anteil(_s.StartBins, _s.StartN, i) * 100).ToString("0") + " %", _s.StartBins[i],
-            (Anteil(_s.FinishBins, _s.FinishN, i) * 100).ToString("0") + " %", _s.FinishBins[i]);
+            (Anteil(_startB, _s.StartN, i) * 100).ToString("0") + " %", _startB[i],
+            (Anteil(_zielB, _s.FinishN, i) * 100).ToString("0") + " %", _zielB[i]);
         _tipp.Show(tipp, this, e.X + 14, e.Y + 14);
     }
 

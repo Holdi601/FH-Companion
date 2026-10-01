@@ -7,6 +7,10 @@ Server. Wer vom Ordner zur Kennung will, nimmt kennung(); wer von der Kennung
 zum Ordner, kurs_pfad(). Alte Ordner, die nur "course_..." heissen, gelten
 weiter.
 
+Seit 2026-10-01 heisst auch der Autoordner nach dem Auto: "BMW 2002 Turbo '73
+(car1269)". Die NUMMER bleibt die Identitaet (carOrdinal in jeder Runde); vom
+Ordnernamen zur Nummer geht es ueber auto_nummer().
+
 Abgebrochene Fahrten (Neustart, Pause, Rennen verlassen) liegen seit demselben Tag
 unter "unfinished" neben den Kursen -- kurs_ordner() zaehlt sie nicht mit, und wer
 alle Runden per rglob einsammelt, sollte sie mit ist_unfertig() auslassen.
@@ -18,6 +22,7 @@ import re
 from pathlib import Path
 
 _AM_ENDE = re.compile(r"\((course_[^()\s]+)\)\s*$")
+_AUTO_AM_ENDE = re.compile(r"\(car(\d+)\)\s*$", re.IGNORECASE)
 
 UNFERTIG = "unfinished"
 
@@ -37,6 +42,15 @@ def kennung(ordner_name: str) -> str | None:
         return n
     m = _AM_ENDE.search(n)
     return m.group(1) if m else None
+
+
+def auto_nummer(ordner_name: str) -> int | None:
+    """Die Autonummer zu einem Ordnernamen: "BMW 2002 Turbo '73 (car1269)" oder "car1269"; sonst None."""
+    n = (ordner_name or "").strip()
+    if n.lower().startswith("car") and n[3:].isdigit():
+        return int(n[3:])
+    m = _AUTO_AM_ENDE.search(n)
+    return int(m.group(1)) if m else None
 
 
 def kurs_ordner(wurzel: Path) -> list[Path]:

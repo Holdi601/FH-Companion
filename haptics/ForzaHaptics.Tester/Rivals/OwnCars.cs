@@ -435,13 +435,8 @@ internal static class OwnCars
         // Die Kennung, nicht der Ordnername: der heisst inzwischen "Soni Circuit (course_…)".
         var kurs = LapArchive.KennungAus(rel[0]) ?? rel[0];
         var klasse = rel[1];
-        var auto = rel[2];
-        if (!auto.StartsWith("car", StringComparison.OrdinalIgnoreCase)
-            || !int.TryParse(auto.AsSpan(3), NumberStyles.Integer,
-                             CultureInfo.InvariantCulture, out var ordinal))
-        {
-            return null;
-        }
+        // Ebenso beim Auto: "BMW 2002 Turbo '73 (car1269)" oder "car1269".
+        if (LapArchive.AutoNummerAus(rel[2]) is not { } ordinal) { return null; }
 
         // <zeit>_<sekunden>s[_flags].json -- die Sekunden stehen zwischen dem
         // LETZTEN Unterstrich vor dem 's' und diesem 's'. Mit Punkt als

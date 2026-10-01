@@ -23,6 +23,20 @@ internal sealed class RaceRecord
     [JsonPropertyName("track")] public string? Track { get; set; }
     [JsonPropertyName("mode")] public string Mode { get; set; } = "unknown";
     [JsonPropertyName("car")] public int Car { get; set; }
+
+    /// <summary>
+    /// Der Platz des Autos auf der Bestenliste dieser Strecke in dieser Klasse, ZUM ZEITPUNKT des
+    /// Rennens (seit 2026-10-01) -- die Liste aendert sich, die Wahl war gegen die damalige.
+    /// null mit <see cref="MetaCars"/>: das Auto steht nicht darauf.
+    /// </summary>
+    [JsonPropertyName("metaRank")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MetaRank { get; set; }
+
+    /// <summary>Wie viele Autos diese Bestenliste reiht; null: keine Bestenliste bekannt.</summary>
+    [JsonPropertyName("metaCars")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MetaCars { get; set; }
     [JsonPropertyName("pi")] public int Pi { get; set; }
     [JsonPropertyName("class")] public string Klass { get; set; } = string.Empty;
     [JsonPropertyName("start")] public int? Start { get; set; }
@@ -444,14 +458,17 @@ internal static class RaceArchive
     }
 
     /// <summary>"Auto|Zeitstempel" aus dem Pfad: …/carN/tune/tag/yyyy-MM-dd_HH-mm-ss_….json.</summary>
+    /// <remarks>
+    /// Der Autoordner heisst seit 2026-10-01 "Name (carN)"; die Kennung bleibt "N|…" -- sonst
+    /// baute die Rennstatistik jedes schon gesehene Rennen ein zweites Mal nach.
+    /// </remarks>
     internal static string? IdAus(string pfad)
     {
         var name = Path.GetFileName(pfad);
         if (name.Length < 19) { return null; }
         var teile = pfad.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var auto = teile.Reverse().Skip(1).FirstOrDefault(t => t.StartsWith("car", StringComparison.OrdinalIgnoreCase)
-                                                             && int.TryParse(t.AsSpan(3), out _));
-        return auto is null ? null : $"{auto[3..]}|{name[..19]}";
+        var auto = teile.Reverse().Skip(1).Select(LapArchive.AutoNummerAus).FirstOrDefault(z => z is not null);
+        return auto is null ? null : $"{auto}|{name[..19]}";
     }
 
     private static RaceRecord? Nachbauen(string wurzel, string pfad, string id)
@@ -647,11 +664,95 @@ internal sealed record RaceSummary(
     double? AvgFinish, double? AvgStart, double? AvgField, double? AvgGain,
     int[] StartBins, int[] FinishBins, int StartN, int FinishN,
     (double Mean, double Sd)? StartFit, (double Mean, double Sd)? FinishFit,
-    int CoRaces, int CoFirst, double? CoBeaten);
+    int CoRaces, int CoFirst, double? CoBeaten,
+    int PodiumRaces, IReadOnlyList<double> StartShares, IReadOnlyList<double> FinishShares,
+    int MetaRaces, int MetaHigh, int MetaLow,
+    int MetaRanked, double? MetaAvgRank, double? MetaAvgTop);
 
 internal static class RaceStats
 {
+    /// <summary>Die festen Faecher der Kennzahlen (StartBins, FinishBins); das Bild waehlt seine eigenen.</summary>
     public const int Bins = 10;
+
+    /// <summary>
+    /// Ab wie vielen Fahrern ein Podium zaehlt (seit 2026-10-01, auf Wunsch des Nutzers): unter
+    /// fuenf ist ein Platz unter den ersten drei kaum etwas -- von vieren standen drei drauf.
+    /// </summary>
+    public const int PodiumAb = 5;
+
+    /// <summary>
+    /// Zaehlt das Rennen fuer die Podiumsquote? Die bekannte Feldgroesse entscheidet; ohne sie
+    /// genuegt jeder gesehene Platz ab fuenf als Beweis. Ein Feld, das nur unbekannt ist, wird nie
+    /// gross geschaetzt -- die Quote waere sonst um genau die leichten Rennen geschoent.
+    /// </summary>
+    public static bool PodiumZaehlt(RaceRecord r) =>
+        r.Drivers is { } d ? d >= PodiumAb : Math.Max(r.Highest, Math.Max(r.Start ?? 0, r.Finish ?? 0)) >= PodiumAb;
+
+    /// <summary>
+    /// Wie viele Balken das Bild von sich aus zeigt: die Wurzel aus der Zahl der Rennen, also
+    /// mehr, je mehr Rennen es gibt (4 bei wenigen, 10 bei hundert, 20 ab vierhundert).
+    /// </summary>
+    /// <remarks>
+    /// Nie feiner als das Feld: bei zwoelf Fahrern gibt es nur zwoelf moegliche Plaetze, und mehr
+    /// Faecher haetten leere Luecken zwischen den Balken, die nichts bedeuten.
+    /// </remarks>
+    public static int AutoBins(int n, double? feld)
+    {
+        var b = (int)Math.Round(Math.Sqrt(Math.Max(1, n)));
+        var grenze = feld is { } f ? (int)Math.Round(f) : 20;
+        return Math.Clamp(b, 4, Math.Clamp(grenze, 4, 20));
+    }
+
+    // ------------------------------------------------------------------ Meta-Wahl
+    //
+    // WIE "META" DAS AUTO WAR (seit 2026-10-01, auf Wunsch des Nutzers): sein Platz auf der
+    // Bestenliste der Strecke in der Klasse des Rennens, nach Zeit gereiht wie im Rivalen-Panel.
+    // Unter den ersten 15 ist es eine hohe Meta-Wahl, 16 bis 25 eine niedrige, darunter -- oder
+    // gar nicht auf der Liste -- keine. Ohne Streckennamen oder ohne Bestenliste: unbekannt, und
+    // dann zaehlt das Rennen nicht mit.
+
+    public enum MetaArt { Unbekannt, Hoch, Niedrig, Keine }
+
+    public const int MetaHochBis = 15;
+    public const int MetaNiedrigBis = 25;
+
+    public static MetaArt Meta(int? platz, int? autos) =>
+        autos is null or <= 0 ? MetaArt.Unbekannt
+        : platz is { } p && p <= MetaHochBis ? MetaArt.Hoch
+        : platz is { } q && q <= MetaNiedrigBis ? MetaArt.Niedrig
+        : MetaArt.Keine;
+
+    /// <summary>Platz des Autos (Index im Datensatz) auf der Bestenliste der Strecke in der Klasse; null ohne Liste.</summary>
+    public static (int? Platz, int Autos)? MetaPlatz(RivalsAdvisor berater, string? strecke, string? klasse, int? autoIndex)
+    {
+        if (string.IsNullOrWhiteSpace(strecke) || string.IsNullOrWhiteSpace(klasse)) { return null; }
+        var kategorie = berater.CategoryOf(new[] { strecke });
+        if (!berater.HasBoard(strecke, klasse, kategorie)) { return null; }
+        var reihe = berater.Advise(new[] { strecke }, klasse, kategorie).ByTime;
+        if (reihe.Count == 0) { return null; }
+        var platz = autoIndex is { } i ? reihe.FirstOrDefault(r => r.Car == i)?.Place : null;
+        return (platz, reihe.Count);
+    }
+
+    /// <summary>
+    /// Platz und Laenge der Bestenliste fuer ein Rennen: beim Rennen festgehalten, sonst aus der
+    /// heutigen. (null, null) ohne Liste; (null, n) wenn das Auto nicht darauf steht.
+    /// </summary>
+    public static (int? Platz, int? Autos) MetaVon(RaceRecord r, RivalsAdvisor? berater)
+    {
+        if (r.MetaCars is not null) { return (r.MetaRank, r.MetaCars); }
+        if (berater is null) { return (null, null); }
+        return MetaPlatz(berater, r.Track, r.Klass, berater.CarIndexForId(r.Car)) is { } m
+            ? (m.Platz, m.Autos) : (null, null);
+    }
+
+    /// <summary>Anteile (0 = Erster, 1 = Letzter) auf gleich breite Faecher verteilen.</summary>
+    public static int[] Faecher(IEnumerable<double> werte, int faecher)
+    {
+        var b = new int[Math.Max(1, faecher)];
+        foreach (var w in werte) { b[Math.Clamp((int)Math.Floor(w * b.Length), 0, b.Length - 1)]++; }
+        return b;
+    }
 
     /// <summary>Die Feldgroesse eines Rennens -- oder null, wenn sie nicht bekannt ist.</summary>
     public static int? Field(RaceRecord r, bool schaetzen)
@@ -687,11 +788,21 @@ internal static class RaceStats
         }
     }
 
-    public static RaceSummary Summarize(IReadOnlyCollection<RaceRecord> races, bool schaetzen)
+    /// <param name="meta">Platz und Listenlaenge je Rennen (MetaVon); gezaehlt nur in Horizon Play, ohne sie gar nicht.</param>
+    public static RaceSummary Summarize(IReadOnlyCollection<RaceRecord> races, bool schaetzen,
+                                        Func<RaceRecord, (int? Platz, int? Autos)>? meta = null)
     {
+        var metaWerte = meta is null
+            ? new List<(int? Platz, int? Autos)>()
+            : races.Where(r => r.Mode == "horizon-play").Select(meta).Where(m => m.Autos is > 0).ToList();
+        var metaArten = metaWerte.Select(m => Meta(m.Platz, m.Autos)).ToList();
+        // DER DURCHSCHNITTLICHE PLATZ des gewaehlten Autos auf der Liste -- nur, wo es darauf steht.
+        // Dazu der Anteil der Liste ("Top 9 %"), weil die Listen verschieden lang sind.
+        var gereiht = metaWerte.Where(m => m.Platz is not null).ToList();
         var mitGegnern = races.Where(r => r.Finished && r.Finish is not null && HasOpponents(r)).ToList();
         var siege = mitGegnern.Count(r => r.Finish == 1);
-        var podium = mitGegnern.Count(r => r.Finish <= 3);
+        var podiumRennen = mitGegnern.Where(PodiumZaehlt).ToList();
+        var podium = podiumRennen.Count(r => r.Finish <= 3);
         var ziel = new List<double>();
         var start = new List<double>();
         var feld = new List<int>();
@@ -706,12 +817,6 @@ internal static class RaceStats
         }
         foreach (var r in mitGegnern.Where(r => r.Start is not null)) { gewinn.Add(r.Start!.Value - r.Finish!.Value); }
 
-        static int[] Faecher(List<double> werte)
-        {
-            var b = new int[Bins];
-            foreach (var w in werte) { b[Math.Min(Bins - 1, (int)Math.Floor(w * Bins))]++; }
-            return b;
-        }
         static (double, double)? Glocke(List<double> werte)
         {
             if (werte.Count < 2) { return null; }
@@ -728,14 +833,19 @@ internal static class RaceStats
         return new RaceSummary(
             races.Count, mitGegnern.Count, siege, podium, feld.Count,
             mitGegnern.Count > 0 ? siege / (double)mitGegnern.Count : null,
-            mitGegnern.Count > 0 ? podium / (double)mitGegnern.Count : null,
+            podiumRennen.Count > 0 ? podium / (double)podiumRennen.Count : null,
             Schnitt(ziel), Schnitt(start),
             Schnitt(mitGegnern.Select(r => (double)r.Finish!.Value)),
             Schnitt(races.Where(r => r.Start is not null && HasOpponents(r)).Select(r => (double)r.Start!.Value)),
             Schnitt(feld.Select(x => (double)x)),
             Schnitt(gewinn.Select(x => (double)x)),
-            Faecher(start), Faecher(ziel), start.Count, ziel.Count,
+            Faecher(start, Bins), Faecher(ziel, Bins), start.Count, ziel.Count,
             Glocke(start), Glocke(ziel),
-            koop.Count, koop.Count(r => r.CoAhead == 0), Schnitt(geschlagen));
+            koop.Count, koop.Count(r => r.CoAhead == 0), Schnitt(geschlagen),
+            podiumRennen.Count, start, ziel,
+            metaArten.Count, metaArten.Count(a => a == MetaArt.Hoch), metaArten.Count(a => a == MetaArt.Niedrig),
+            gereiht.Count,
+            gereiht.Count > 0 ? gereiht.Average(m => (double)m.Platz!.Value) : null,
+            gereiht.Count > 0 ? gereiht.Average(m => m.Platz!.Value / (double)m.Autos!.Value) : null);
     }
 }

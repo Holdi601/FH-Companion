@@ -556,6 +556,11 @@ internal sealed class OverlayController : IDisposable
                 // Danach die Ordner nach ihren Strecken benennen: "Soni Circuit (course_…)".
                 var u = LapArchive.OrdnerBenennen();
                 if (u > 0) { WriteDiagnostic($"Kursordner nach Strecken benannt: {u}"); }
+                // Und die Autoordner nach ihren Autos: "BMW 2002 Turbo '73 (car1269)".
+                var autoliste = CarCollection.Laden();
+                var paare = new OrdinalMap();
+                var autos = LapArchive.AutoOrdnerBenennen(o => AutoNamen.Fuer(o, _advisor, autoliste, paare));
+                if (autos > 0) { WriteDiagnostic($"Autoordner nach Autos benannt: {autos}"); }
                 // AUTONAMEN NACHTRAGEN, in aelteren Rundendateien. Leise: eigener Faden mit
                 // niedriger Prioritaet und Pausen, denn das Spiel laeuft vielleicht schon.
                 new Thread(() =>
@@ -3704,6 +3709,17 @@ internal sealed class OverlayController : IDisposable
             }
             // SOLO ODER KOOP: allein hinten ist Solo, ein Block von Menschen hinten ist Koop.
             r.Mode = RaceGrid.Modus(r.Mode, aufstellung?.Rows, r.Start, r.Drivers);
+            // DIE META-WAHL: wo das Auto JETZT auf der Bestenliste dieser Strecke steht.
+            try
+            {
+                var index = _ordinals.Lookup(lap.CarOrdinal)?.CarIndex ?? _advisor.CarIndexForId(lap.CarOrdinal);
+                if (RaceStats.MetaPlatz(_advisor, r.Track, r.Klass, index) is { } meta)
+                {
+                    r.MetaRank = meta.Platz;
+                    r.MetaCars = meta.Autos;
+                }
+            }
+            catch (Exception) { }
             RaceLog.Append(r);
             _offen = new OffenesRennen(r, DateTime.UtcNow);
             LogLap($"race: finished P{r.Finish?.ToString() ?? "?"} of {r.Drivers?.ToString() ?? "?"}, "

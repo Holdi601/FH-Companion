@@ -131,6 +131,170 @@ internal static class LapArchive
         return n;
     }
 
+    // ------------------------------------------------------------------ Autoordner
+    //
+    // DER ORDNER TRAEGT DEN NAMEN DES AUTOS (seit 2026-10-01): "BMW 2002 Turbo '73 (car1269)".
+    // Auf Wunsch des Nutzers -- "car1269" sagt im Explorer niemandem etwas. Wie beim Kurs
+    // bleibt die NUMMER die Identitaet: in jeder Rundendatei (carOrdinal), in der Kennung
+    // eines Rennens (RaceArchive.IdAus), auf dem Server. Wer vom Ordner zur Nummer will,
+    // geht ueber AutoNummerAus, wer von der Nummer zum Ordner, ueber AutoPfad.
+
+    private static readonly Regex AutoAmEnde = new(@"\(car(\d+)\)\s*$",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex Jahrgang = new(@"\s'\d{2}$", RegexOptions.CultureInvariant);
+    // "Ferrari F40 '87 (#1023)": so unterscheidet der Datensatz gleichnamige Autos. Im
+    // Ordner steht die Nummer ohnehin dahinter -- zweimal waere sie nur laenger.
+    private static readonly Regex Unterscheidung = new(@"\s*\(#\d+\)\s*$", RegexOptions.CultureInvariant);
+
+    /// <summary>Wie lang der Autoname im Ordner hoechstens ist -- der ganze Pfad soll unter 260 Zeichen bleiben.</summary>
+    internal const int AutoNameLaenge = 40;
+
+    /// <summary>Die Autonummer zu einem Ordnernamen: "BMW 2002 Turbo '73 (car1269)" oder "car1269"; sonst null.</summary>
+    internal static int? AutoNummerAus(string? ordnerName)
+    {
+        var n = (ordnerName ?? string.Empty).Trim();
+        if (n.StartsWith("car", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(n.AsSpan(3), System.Globalization.NumberStyles.None,
+                            System.Globalization.CultureInfo.InvariantCulture, out var direkt))
+        {
+            return direkt;
+        }
+        var m = AutoAmEnde.Match(n);
+        return m.Success && int.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.None,
+                                         System.Globalization.CultureInfo.InvariantCulture, out var z)
+            ? z : null;
+    }
+
+    /// <summary>Wie der Ordner eines Autos heissen soll: "Name (carN)", ohne Namen nur "carN".</summary>
+    /// <remarks>
+    /// Ein zu langer Name wird an einer Wortgrenze gekuerzt, der Jahrgang bleibt: aus
+    /// "Datsun #269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast' '72"
+    /// wird "Datsun #269 Attacking the Clock '72". Der volle Name steht in jeder
+    /// Rundendatei (carName).
+    /// </remarks>
+    internal static string AutoOrdnerName(int ordinal, string? name)
+    {
+        var nummer = $"car{ordinal}";
+        if (!RivalsAdvisor.IsRealCarName(name)) { return nummer; }
+        var sauber = Clean(Unterscheidung.Replace(name!.Trim(), string.Empty));
+        if (sauber.Length > AutoNameLaenge)
+        {
+            var jahr = Jahrgang.Match(sauber);
+            var kopf = jahr.Success ? sauber[..jahr.Index] : sauber;
+            var platz = AutoNameLaenge - (jahr.Success ? jahr.Length : 0);
+            if (kopf.Length > platz)
+            {
+                kopf = kopf[..platz];
+                var wort = kopf.LastIndexOf(' ');
+                if (wort > platz / 2) { kopf = kopf[..wort]; }
+            }
+            sauber = kopf.TrimEnd(' ', '.', '-', '\'', '#') + (jahr.Success ? jahr.Value : string.Empty);
+        }
+        return $"{sauber} ({nummer})";
+    }
+
+    /// <summary>Der Ordner eines Autos in einem Klassenordner, so wie er heute heisst; sonst "carN".</summary>
+    internal static string AutoPfad(string klassenOrdner, int ordinal)
+    {
+        var direkt = Path.Combine(klassenOrdner, $"car{ordinal}");
+        if (Directory.Exists(direkt)) { return direkt; }
+        try
+        {
+            if (Directory.Exists(klassenOrdner))
+            {
+                foreach (var d in Directory.EnumerateDirectories(klassenOrdner))
+                {
+                    if (AutoNummerAus(Path.GetFileName(d)) == ordinal) { return d; }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Nicht lesbar: dann der Ordner, den ein neues Auto bekaeme.
+        }
+        return direkt;
+    }
+
+    /// <summary>
+    /// Die Autoordner nach ihren Autos benennen: einmal beim Start, wie die Kursordner.
+    /// </summary>
+    /// <remarks>
+    /// Kennt keine Quelle das Auto, bleibt ein schon benannter Ordner, wie er heisst -- ein
+    /// Name verschwindet nicht, nur weil eine Liste ihn heute nicht hat. Ein Ordner, in dem
+    /// gerade etwas offen ist, bleibt bis zum naechsten Start.
+    /// </remarks>
+    /// <returns>Wie viele Ordner umbenannt wurden.</returns>
+    public static int AutoOrdnerBenennen(Func<int, string?> name, string? wurzel = null)
+    {
+        wurzel ??= Root;
+        var n = 0;
+        lock (OrdnerSchloss)
+        {
+            foreach (var basis in new[] { wurzel, Path.Combine(wurzel, UnfertigOrdner) })
+            {
+                foreach (var kurs in KursOrdner(basis).ToList())
+                {
+                    foreach (var klasse in Unterordner(kurs))
+                    {
+                        foreach (var auto in Unterordner(klasse))
+                        {
+                            try
+                            {
+                                var alt = Path.GetFileName(auto);
+                                if (AutoNummerAus(alt) is not { } nummer) { continue; }
+                                var soll = AutoOrdnerName(nummer, name(nummer));
+                                if (string.Equals(alt, soll, StringComparison.Ordinal)) { continue; }
+                                if (soll == $"car{nummer}") { continue; }
+                                var ziel = Path.Combine(klasse, soll);
+                                // ZWEI ORDNER FUER EIN AUTO ("car289" und "Name (car289)", etwa weil
+                                // eine aeltere Fassung der App dazwischen ablegte): zusammenlegen.
+                                // Uebersprungen blieben sie getrennt, fuer immer.
+                                if (Directory.Exists(ziel) && !string.Equals(alt, soll, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    Zusammenlegen(auto, ziel);
+                                }
+                                else
+                                {
+                                    Directory.Move(auto, ziel);
+                                }
+                                n++;
+                            }
+                            catch (Exception)
+                            {
+                                // Gesperrt oder unlesbar: der Ordner bleibt, wie er heisst.
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (n > 0) { OwnTimes.Vergessen(); }
+        return n;
+    }
+
+    /// <summary>Den Inhalt eines Ordners in einen anderen schieben; was dort schon liegt, bleibt, wo es ist.</summary>
+    private static void Zusammenlegen(string von, string nach)
+    {
+        foreach (var datei in Directory.EnumerateFiles(von, "*", SearchOption.AllDirectories).ToList())
+        {
+            var ziel = Path.Combine(nach, Path.GetRelativePath(von, datei));
+            if (File.Exists(ziel)) { continue; }
+            Directory.CreateDirectory(Path.GetDirectoryName(ziel)!);
+            File.Move(datei, ziel);
+        }
+        foreach (var d in Directory.EnumerateDirectories(von, "*", SearchOption.AllDirectories)
+                     .OrderByDescending(d => d.Length).Append(von).ToList())
+        {
+            if (!Directory.EnumerateFileSystemEntries(d).Any()) { Directory.Delete(d); }
+        }
+    }
+
+    private static List<string> Unterordner(string ordner)
+    {
+        try { return Directory.EnumerateDirectories(ordner).ToList(); }
+        catch (Exception) { return new List<string>(); }
+    }
+
     /// <summary>
     /// Die Leistungsklasse aus dem PI.
     /// </summary>
@@ -662,10 +826,16 @@ internal static class LapArchive
             {
                 kursOrdner = Path.Combine(basis, OrdnerName(kurs, ordnerName));
             }
+            // Der Autoordner, wie er heute heisst. Ein NEUES Auto traegt seinen Namen gleich
+            // mit; ein alter Ordner bekommt ihn beim naechsten Start (AutoOrdnerBenennen).
+            var klassenOrdner = Path.Combine(kursOrdner, Clean(ClassOf(lap.PerformanceIndex)));
+            var autoOrdner = AutoPfad(klassenOrdner, lap.CarOrdinal);
+            if (!Directory.Exists(autoOrdner) && RivalsAdvisor.IsRealCarName(lap.CarName))
+            {
+                autoOrdner = Path.Combine(klassenOrdner, AutoOrdnerName(lap.CarOrdinal, lap.CarName));
+            }
             var ordner = Path.Combine(
-                kursOrdner,
-                Clean(ClassOf(lap.PerformanceIndex)),
-                Clean($"car{lap.CarOrdinal}"),
+                autoOrdner,
                 Clean(lap.TuneKey.Replace('/', '-')),
                 Clean(string.IsNullOrWhiteSpace(tag) ? "untagged" : tag!));
             Directory.CreateDirectory(ordner);

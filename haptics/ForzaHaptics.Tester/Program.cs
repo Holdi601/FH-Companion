@@ -229,14 +229,26 @@ internal static class Program
             var alt = Rivals.RaceArchive.Update(Rivals.LapArchive.Root, ziel,
                 new HashSet<string>(live.Select(r => r.Id), StringComparer.Ordinal));
             Console.WriteLine($"{live.Count} live, {alt.Count} rebuilt in {uhr.Elapsed.TotalSeconds:0.0} s -> {ziel}");
+            Rivals.RivalsAdvisor? berater = null;
+            try
+            {
+                if (Rivals.DatasetSync.LocalBest().Path is { } datensatz && File.Exists(datensatz))
+                {
+                    berater = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz));
+                }
+            }
+            catch (Exception) { }
             foreach (var schaetzen in new[] { false, true })
             {
                 foreach (var g in live.Concat(alt).GroupBy(r => r.Mode).OrderBy(g => g.Key))
                 {
-                    var s = Rivals.RaceStats.Summarize(g.Where(r => r.Finished).ToList(), schaetzen);
+                    var s = Rivals.RaceStats.Summarize(g.Where(r => r.Finished).ToList(), schaetzen,
+                                                        r => Rivals.RaceStats.MetaVon(r, berater));
                     Console.WriteLine($"  {(schaetzen ? "est" : "known")} {g.Key,-13} races {s.Races,4}  placed {s.Placed,4}  wins {s.WinRate:P0}  "
                                       + $"finish {s.AvgFinishPct:P0} (P{s.AvgFinish:0.0})  start {s.AvgStartPct:P0} (P{s.AvgStart:0.0})  "
-                                      + $"field {s.AvgField:0.0} n={s.WithField}");
+                                      + $"field {s.AvgField:0.0} n={s.WithField}  podium {s.PodiumRate:P0} of {s.PodiumRaces}"
+                                      + (s.MetaRaces > 0 ? $"  meta high {s.MetaHigh} low {s.MetaLow} of {s.MetaRaces}" : string.Empty)
+                                      + (s.MetaAvgRank is { } ar ? $"  car rank #{ar:0.0} top {s.MetaAvgTop:P0} n={s.MetaRanked}" : string.Empty));
                 }
             }
             Environment.Exit(0);
@@ -266,6 +278,8 @@ internal static class Program
             var gelernt = new Rivals.OrdinalMap();
             Console.WriteLine("  Autonamen nachgetragen: " + Rivals.AutoNamen.Nachtragen(
                 wurzel, o => Rivals.AutoNamen.Fuer(o, berater, autoliste, gelernt), pauseMs: 0));
+            Console.WriteLine("  Autoordner benannt: " + Rivals.LapArchive.AutoOrdnerBenennen(
+                o => Rivals.AutoNamen.Fuer(o, berater, autoliste, gelernt), wurzel));
             Environment.Exit(0);
         }
 

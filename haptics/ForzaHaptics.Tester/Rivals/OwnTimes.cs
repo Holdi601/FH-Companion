@@ -144,12 +144,8 @@ internal static class OwnTimes
         // Die Kennung, nicht der Ordnername: der heisst inzwischen "Soni Circuit (course_…)".
         var kurs = LapArchive.KennungAus(teile[0]) ?? teile[0];
         var klasse = teile[1];
-        if (!teile[2].StartsWith("car", StringComparison.OrdinalIgnoreCase)
-            || !int.TryParse(teile[2].AsSpan(3), NumberStyles.Integer,
-                             CultureInfo.InvariantCulture, out var ordinal))
-        {
-            return null;
-        }
+        // Ebenso beim Auto: "BMW 2002 Turbo '73 (car1269)" oder "car1269".
+        if (LapArchive.AutoNummerAus(teile[2]) is not { } ordinal) { return null; }
         var tune = teile[3];
         var m = Datei.Match(name);
         if (!m.Success

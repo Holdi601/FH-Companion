@@ -67,6 +67,7 @@ internal static class EdgeCaseTest
         FullTelemetryTravelsWithTheLap();
         CarNameTravelsWithTheLap();
         LapCleanupKeepsTheBest();
+        CarFoldersCarryTheName();
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
         XboxAndMemoryOptions();
@@ -800,6 +801,89 @@ internal static class EdgeCaseTest
         {
             try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
             try { File.Delete(stand); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// DER AUTOORDNER TRAEGT DEN NAMEN (2026-10-01): "BMW 2002 Turbo '73 (car1269)" -- die
+    /// Nummer bleibt die Identitaet fuer jeden Leser.
+    /// </summary>
+    private static void CarFoldersCarryTheName()
+    {
+        Soll(Rivals.LapArchive.AutoNummerAus("car1269") == 1269
+             && Rivals.LapArchive.AutoNummerAus("BMW 2002 Turbo '73 (car1269)") == 1269
+             && Rivals.LapArchive.AutoNummerAus("car") is null
+             && Rivals.LapArchive.AutoNummerAus("Cars (2006)") is null
+             && Rivals.LapArchive.AutoNummerAus("untagged") is null,
+             "Autoordner: die Nummer wird nicht richtig gelesen");
+        Soll(Rivals.LapArchive.AutoOrdnerName(1269, "BMW 2002 Turbo '73") == "BMW 2002 Turbo '73 (car1269)",
+             "Autoordner: " + Rivals.LapArchive.AutoOrdnerName(1269, "BMW 2002 Turbo '73"));
+        Soll(Rivals.LapArchive.AutoOrdnerName(1023, "Ferrari F40 '87 (#1023)") == "Ferrari F40 '87 (car1023)",
+             "Autoordner: die Unterscheidung (#N) blieb im Namen");
+        Soll(Rivals.LapArchive.AutoOrdnerName(77, null) == "car77" && Rivals.LapArchive.AutoOrdnerName(77, "Car #77") == "car77",
+             "Autoordner: ohne Namen nicht nur die Nummer");
+        var lang = Rivals.LapArchive.AutoOrdnerName(4084, "Datsun #269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast' '72");
+        Soll(lang == "Datsun #269 Attacking the Clock '72 (car4084)", "Autoordner: gekuerzt zu " + lang);
+        Soll(Rivals.LapArchive.AutoOrdnerName(5, "A/B: C? '20") == "A-B- C- '20 (car5)", "Autoordner: verbotene Zeichen blieben");
+
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-edge-autoordner-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Rivals.RecordedLap Runde(int auto, string? name, float s)
+            {
+                var lap = new Rivals.RecordedLap
+                {
+                    CarOrdinal = auto, CarName = name, LapSeconds = s, LengthMetres = 1000f, PerformanceIndex = 700,
+                    Track = "Soni Circuit", RecordedAt = new DateTimeOffset(2026, 9, 1, 10, 0, (int)s % 60, TimeSpan.Zero),
+                };
+                for (var i = 0; i < 5; i++) { lap.Samples.Add(new Rivals.LapSample(i * 250f, i * s / 4f, 100f + i * 250f, 0f, 200f)); }
+                return lap;
+            }
+            // Ein neues Auto mit Namen: der Ordner heisst gleich danach.
+            var benannt = Rivals.LapArchive.Save(Runde(1269, "BMW 2002 Turbo '73", 61f), null, wurzel);
+            Soll(benannt is not null && benannt.Contains(Path.DirectorySeparatorChar + "BMW 2002 Turbo '73 (car1269)" + Path.DirectorySeparatorChar),
+                 "Autoordner: eine neue Runde liegt unter " + benannt);
+            // Ein Auto ohne Namen: "car77"; die naechste Runde desselben Autos findet den Ordner wieder.
+            var ohne = Rivals.LapArchive.Save(Runde(77, null, 62f), null, wurzel);
+            Soll(ohne is not null && ohne.Contains(Path.DirectorySeparatorChar + "car77" + Path.DirectorySeparatorChar),
+                 "Autoordner: ohne Namen liegt die Runde unter " + ohne);
+            var zweite = Rivals.LapArchive.Save(Runde(1269, null, 63f), null, wurzel);
+            Soll(zweite is not null && Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(zweite)))
+                     == Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(benannt))),
+                 "Autoordner: die zweite Runde desselben Autos liegt woanders: " + zweite);
+            var idVorher = Rivals.RaceArchive.IdAus(ohne!);
+
+            // Beim Start: der unbenannte Ordner bekommt seinen Namen, sobald eine Quelle ihn kennt.
+            string? Namen(int o) => o == 77 ? "Lancia Stratos HF Stradale '74" : null;
+            Soll(Rivals.LapArchive.AutoOrdnerBenennen(Namen, wurzel) == 1, "Autoordner: nicht genau ein Ordner umbenannt");
+            Soll(Rivals.LapArchive.AutoOrdnerBenennen(Namen, wurzel) == 0, "Autoordner: ein zweiter Start benennt noch einmal");
+            var umbenannt = Directory.GetFiles(wurzel, "*.json", SearchOption.AllDirectories)
+                .Single(f => f.Contains("(car77)", StringComparison.Ordinal));
+            Soll(umbenannt.Contains("Lancia Stratos HF Stradale '74 (car77)"), "Autoordner: umbenannt zu " + umbenannt);
+            Soll(Rivals.RaceArchive.IdAus(umbenannt) == idVorher, "Autoordner: die Kennung des Rennens aenderte sich mit dem Ordner");
+            // Ohne bekannten Namen bleibt ein benannter Ordner benannt.
+            Soll(Rivals.LapArchive.AutoOrdnerBenennen(_ => null, wurzel) == 0
+                 && Directory.GetFiles(wurzel, "*.json", SearchOption.AllDirectories).Any(f => f.Contains("BMW 2002 Turbo '73 (car1269)")),
+                 "Autoordner: ein Name ging verloren, weil keine Quelle ihn kannte");
+
+            // Zwei Ordner fuer ein Auto -- eine aeltere Fassung legte unter "car1269" ab: zusammenlegen.
+            var klassenOrdner = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(benannt!))))!;
+            var alterOrdner = Directory.CreateDirectory(Path.Combine(klassenOrdner, "car1269", "1269-700-x", "untagged")).FullName;
+            var alteRunde = Path.Combine(alterOrdner, "2026-09-02_10-00-00_64.000s.json");
+            File.Copy(zweite!, alteRunde);
+            Soll(Rivals.LapArchive.AutoOrdnerBenennen(o => o == 1269 ? "BMW 2002 Turbo '73" : null, wurzel) == 1
+                 && !Directory.Exists(Path.Combine(klassenOrdner, "car1269"))
+                 && File.Exists(Path.Combine(klassenOrdner, "BMW 2002 Turbo '73 (car1269)", "1269-700-x", "untagged", Path.GetFileName(alteRunde))),
+                 "Autoordner: zwei Ordner desselben Autos wurden nicht zusammengelegt");
+
+            // Jeder Leser findet die Nummer im benannten Ordner.
+            var eigene = Rivals.OwnTimes.Einlesen(wurzel);
+            Soll(eigene.Count == 4 && eigene.Count(l => l.Ordinal == 1269) == 3 && eigene.Count(l => l.Ordinal == 77) == 1,
+                 $"Autoordner: eigene Zeiten lesen {eigene.Count} Runden, Autos {string.Join(",", eigene.Select(l => l.Ordinal))}");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
         }
     }
 
@@ -2231,6 +2315,70 @@ internal static class EdgeCaseTest
              $"Statistik: Zielplatz im Feld {ohne.AvgFinishPct} aus {ohne.FinishN} Rennen (erwartet 50 % aus 2)");
         Soll(ohne.StartN == 2 && Math.Abs(ohne.AvgStartPct!.Value - (0.875 / 2)) < 1e-9, $"Statistik: Startplatz im Feld {ohne.AvgStartPct}");
         Soll(ohne.FinishBins[0] == 1 && ohne.FinishBins[9] == 1, "Statistik: Sieg und letzter Platz in den falschen Faechern");
+        // Podium nur ab fuenf Fahrern: der Sieg im Feld von 9 zaehlt, Platz 5 von 5 zaehlt (kein Podium),
+        // das unbekannte Feld mit hoechstens Platz 4 zaehlt nicht.
+        Soll(ohne.PodiumRaces == 2 && ohne.Podiums == 1 && Math.Abs(ohne.PodiumRate!.Value - 0.5) < 1e-9,
+             $"Statistik: Podium {ohne.Podiums} aus {ohne.PodiumRaces}, Quote {ohne.PodiumRate} (erwartet 1 aus 2)");
+        Soll(Rivals.RaceStats.PodiumZaehlt(R(1, 3, 4, 4)) == false && Rivals.RaceStats.PodiumZaehlt(R(6, 3, null, 6)),
+             "Statistik: Podium zaehlt bei vier Fahrern oder nicht beim bewiesenen Feld von sechs");
+        // Die Balken: mehr, je mehr Rennen; nie feiner als das Feld.
+        Soll(Rivals.RaceStats.AutoBins(3, 10) == 4 && Rivals.RaceStats.AutoBins(100, 12) == 10
+             && Rivals.RaceStats.AutoBins(400, 30) == 20 && Rivals.RaceStats.AutoBins(400, 8) == 8
+             && Rivals.RaceStats.AutoBins(100, null) == 10,
+             "Statistik: die Zahl der Balken waechst nicht richtig mit");
+        var f8 = Rivals.RaceStats.Faecher(new[] { 0.0, 0.5, 1.0, 0.124 }, 8);
+        Soll(f8.Length == 8 && f8[0] == 2 && f8[4] == 1 && f8[7] == 1, "Statistik: Faecher verteilen falsch");
+        Soll(ohne.FinishShares.Count == ohne.FinishN && ohne.StartShares.Count == ohne.StartN,
+             "Statistik: die Rohwerte fehlen dem Bild");
+        // META-WAHL: Platz 1-15 hoch, 16-25 niedrig, darunter oder nicht auf der Liste keine;
+        // ohne Liste unbekannt. Gezaehlt nur in Horizon Play.
+        Soll(Rivals.RaceStats.Meta(1, 300) == Rivals.RaceStats.MetaArt.Hoch && Rivals.RaceStats.Meta(15, 300) == Rivals.RaceStats.MetaArt.Hoch
+             && Rivals.RaceStats.Meta(16, 300) == Rivals.RaceStats.MetaArt.Niedrig && Rivals.RaceStats.Meta(25, 300) == Rivals.RaceStats.MetaArt.Niedrig
+             && Rivals.RaceStats.Meta(26, 300) == Rivals.RaceStats.MetaArt.Keine && Rivals.RaceStats.Meta(null, 300) == Rivals.RaceStats.MetaArt.Keine
+             && Rivals.RaceStats.Meta(null, null) == Rivals.RaceStats.MetaArt.Unbekannt,
+             "Meta: die Grenzen 15 und 25 stimmen nicht");
+        var hp = new List<Rivals.RaceRecord>
+        {
+            new() { Id = "m1", Mode = "horizon-play", Finish = 3, Highest = 8, MetaRank = 4, MetaCars = 200 },
+            new() { Id = "m2", Mode = "horizon-play", Finish = 3, Highest = 8, MetaRank = 20, MetaCars = 200 },
+            new() { Id = "m3", Mode = "horizon-play", Finish = 3, Highest = 8, MetaRank = null, MetaCars = 200 },
+            new() { Id = "m4", Mode = "horizon-play", Finish = 3, Highest = 8 },
+            new() { Id = "m5", Mode = "solo", Finish = 3, Highest = 8, MetaRank = 1, MetaCars = 200 },
+        };
+        var ms = Rivals.RaceStats.Summarize(hp, false, r => Rivals.RaceStats.MetaVon(r, null));
+        Soll(ms.MetaRaces == 3 && ms.MetaHigh == 1 && ms.MetaLow == 1,
+             $"Meta: {ms.MetaHigh} hoch, {ms.MetaLow} niedrig von {ms.MetaRaces} (erwartet 1, 1 von 3 -- nur Horizon Play, ohne Liste nicht)");
+        // Der durchschnittliche Platz: nur wo das Auto auf der Liste steht -- (4 + 20) / 2, Top (2 % + 10 %) / 2.
+        Soll(ms.MetaRanked == 2 && Math.Abs(ms.MetaAvgRank!.Value - 12) < 1e-9 && Math.Abs(ms.MetaAvgTop!.Value - 0.06) < 1e-9,
+             $"Meta: Schnitt #{ms.MetaAvgRank} Top {ms.MetaAvgTop} aus {ms.MetaRanked} (erwartet #12, 6 %, 2)");
+        var json = System.Text.Json.JsonSerializer.Serialize(hp[0]);
+        Soll(json.Contains("\"metaRank\":4") && !System.Text.Json.JsonSerializer.Serialize(hp[3]).Contains("meta"),
+             "Meta: der Platz wird nicht oder ohne Liste trotzdem gespeichert");
+        if (Rivals.RivalsDataset.FindDefaultPath() is { } metaPfad)
+        {
+            var daten = Rivals.RivalsDataset.Load(metaPfad);
+            var rat = new Rivals.RivalsAdvisor(daten);
+            // Eine echte Strecke mit einer tiefen Liste: die erste mit mindestens 30 Autos.
+            var gefunden = false;
+            foreach (var b in daten.Boards)
+            {
+                var strecke = daten.Tracks[b.Track];
+                var klasse = daten.Classes[b.Klass];
+                var kategorie = rat.CategoryOf(new[] { strecke });
+                var brett = rat.Advise(new[] { strecke }, klasse, kategorie).ByTime;
+                if (brett.Count < 30 || rat.CarIdOf(brett[0].Car) is not { } erster
+                    || rat.CarIdOf(brett[19].Car) is not { } zwanzigster) { continue; }
+                Soll(Rivals.RaceStats.MetaPlatz(rat, strecke, klasse, rat.CarIndexForId(erster)) is { Platz: 1 } m1 && m1.Autos == brett.Count,
+                     $"Meta: das schnellste Auto auf {strecke} {klasse} steht nicht auf Platz 1");
+                var z20 = Rivals.RaceStats.MetaVon(new Rivals.RaceRecord { Track = strecke, Klass = klasse, Car = zwanzigster }, rat);
+                Soll(z20.Platz == 20 && Rivals.RaceStats.Meta(z20.Platz, z20.Autos) == Rivals.RaceStats.MetaArt.Niedrig,
+                     $"Meta: Platz 20 auf {strecke} {klasse} ist keine niedrige Meta-Wahl ({z20.Platz})");
+                gefunden = true;
+                break;
+            }
+            Soll(gefunden || daten.Boards.Count == 0, "Meta: keine Bestenliste mit 30 Autos im Datensatz");
+            Soll(Rivals.RaceStats.MetaPlatz(rat, "Keine Strecke XYZ", "S1", 0) is null, "Meta: eine unbekannte Strecke hat eine Liste");
+        }
         var mit = Rivals.RaceStats.Summarize(Rivals.RaceStats.Apply(rennen, new Rivals.RaceFilter { EstimateField = true }, _ => null).ToList(), schaetzen: true);
         Soll(mit.FinishN == 3 && Math.Abs(mit.AvgFinishPct!.Value - ((0 + 1 + (1 / 3.0)) / 3)) < 1e-9,
              $"Statistik: mit geschaetztem Feld {mit.AvgFinishPct} aus {mit.FinishN}");
