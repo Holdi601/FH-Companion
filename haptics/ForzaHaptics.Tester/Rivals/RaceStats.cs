@@ -33,6 +33,15 @@ internal sealed class RaceRecord
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? MetaRank { get; set; }
 
+    /// <summary>
+    /// Das Feld vom Ergebnisschirm (seit 2026-10-01): je Fahrer Platz, Mensch/KI/verlassen,
+    /// Auto, PI, Fortschritt, Zeit -- ohne Gamertags. Grundlage fuer die erwartete Platzierung
+    /// und fuer Horizon-Play-Zeiten.
+    /// </summary>
+    [JsonPropertyName("field")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<FieldEntry>? Field { get; set; }
+
     /// <summary>Wie viele Autos diese Bestenliste reiht; null: keine Bestenliste bekannt.</summary>
     [JsonPropertyName("metaCars")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

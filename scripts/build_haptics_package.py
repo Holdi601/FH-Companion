@@ -504,6 +504,13 @@ def copy_config(root: Path, server: str) -> None:
     # App Strecken, Horizon Play, My Cars und die Tune-Liste nur auf Englisch -- ein
     # Spieler mit spanischem Spiel sah weder Streckenvorschau noch Autowahl.
     spieltext = WORKSPACE / "config" / "game_text.json"
+    # Die Kurznamen der Autos (Ergebnisschirm) auf car_ids -- aus denselben Stringtabellen.
+    kurznamen = WORKSPACE / "config" / "fh6_car_short_names.json"
+    if kurznamen.exists():
+        shutil.copy2(kurznamen, root / "config" / kurznamen.name)
+    else:
+        say("  HINWEIS: config/fh6_car_short_names.json fehlt -- die Autos der anderen Fahrer "
+            "bleiben ohne Kennung. `python scripts/build_car_short_names.py`.")
     if spieltext.exists():
         shutil.copy2(spieltext, root / "config" / spieltext.name)
     else:

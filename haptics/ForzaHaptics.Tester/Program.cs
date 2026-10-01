@@ -185,6 +185,44 @@ internal static class Program
 
         // Die Startaufstellung aus einem Bild lesen, wie es die App im Menue tut -- zum
         // Pruefen an Aufnahmen (Bild 1080p oder 4K; verkleinert wird hier wie dort).
+        // Das Feld vom Ergebnisschirm, an gespeicherten Bildern: Auto, PI, Fortschritt, Zeit je Zeile.
+        if (args.Contains("--results-read", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--results-read", StringComparison.OrdinalIgnoreCase));
+            var ablage = Array.FindIndex(args, a => string.Equals(a, "--dump", StringComparison.OrdinalIgnoreCase));
+            if (ablage >= 0 && ablage + 1 < args.Length) { Rivals.RaceResultsReader.Ablage = args[ablage + 1]; }
+            foreach (var datei in args.Skip(i + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)))
+            {
+                using var gross = new Bitmap(datei);
+                using var hd = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                using (var g = Graphics.FromImage(hd)) { g.DrawImage(gross, new Rectangle(0, 0, 1920, 1080)); }
+                using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height,
+                                             System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                using (var g = Graphics.FromImage(klein))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                    g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+                }
+                if (Rivals.RaceGrid.ReadResults(klein) is not { } roh)
+                {
+                    Console.WriteLine($"{Path.GetFileName(datei)}: kein Ergebnisschirm");
+                    continue;
+                }
+                var e = Rivals.RaceGrid.MitAbbruechen(hd, roh);
+                var uhr = System.Diagnostics.Stopwatch.StartNew();
+                var feld = Rivals.RaceResultsReader.Lies(hd, e);
+                Console.WriteLine($"{Path.GetFileName(datei)}: {feld.Count} Zeilen in {uhr.ElapsedMilliseconds} ms");
+                foreach (var f in feld)
+                {
+                    Console.WriteLine($"  {f.Place,2} {f.Kind,-5}{(f.Self ? "*" : " ")} {f.CarShort ?? "?",-22} -> "
+                                      + $"{(f.CarName ?? "?"),-40} id {f.Car?.ToString() ?? "-",-5} PI {f.Pi?.ToString() ?? "-",-4} "
+                                      + $"{(f.Progress is { } p ? p + "%" : "-"),-5} best {(f.BestLapMs is { } bl ? TimeSpan.FromMilliseconds(bl).ToString(@"m\:ss\.fff") : "-"),-9} "
+                                      + $"time {(f.Ms is { } ms ? TimeSpan.FromMilliseconds(ms).ToString(@"m\:ss\.fff") : "-")}");
+                }
+            }
+            Environment.Exit(0);
+        }
+
         if (args.Contains("--grid-read", StringComparer.OrdinalIgnoreCase))
         {
             var i = Array.FindIndex(args, a => string.Equals(a, "--grid-read", StringComparison.OrdinalIgnoreCase));

@@ -3636,7 +3636,23 @@ internal sealed class OverlayController : IDisposable
                         _offen = null;
                         // Das grosse Bild: wer verlassen hat, steht dort lesbar -- und es ist der Beleg.
                         using var voll = Vollbild(flaeche);
-                        if (voll is not null) { e = RaceGrid.MitAbbruechen(voll, e); }
+                        if (voll is not null)
+                        {
+                            e = RaceGrid.MitAbbruechen(voll, e);
+                            // WAS JEDER FUHR UND WIE SCHNELL -- gelesen, nicht geraten.
+                            try
+                            {
+                                var feld = RaceResultsReader.Lies(voll, e);
+                                // Die eigene Zeile: das Auto steht in der Telemetrie, genauer als gelesen.
+                                foreach (var eigene in feld.Where(f => f.Self))
+                                {
+                                    eigene.Car = offen.Race.Car;
+                                    eigene.CarName = AutoName(offen.Race.Car, uebersetzt: false);
+                                }
+                                offen.Race.Field = feld;
+                            }
+                            catch (Exception) { }
+                        }
                         ErgebnisNachtragen(offen.Race, e);
                         if (voll is not null) { RennbildSpeichern(voll, "results", offen.Race.Id); }
                     }

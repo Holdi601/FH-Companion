@@ -315,6 +315,12 @@ as progress) count as disconnected, not as AI, and never as co-players ahead of
 you. If no results screen is recognised after a race, up to three pictures of
 what was on screen are kept, so a missed layout can be found.
 
+From the results screen the app also reads, for every driver, the car, its PI, the
+best lap (circuits) or progress (sprints) and the finishing time. Gamertags are not
+read or stored. Car names on that screen are the game's short forms ("Mit. Evo.
+TME"); they are matched to cars from the game's own text tables
+(`config/fh6_car_short_names.json`).
+
 The start grid and the results screen are also kept as pictures (1080p, the
 latest 60) in `%LOCALAPPDATA%\FHCompanion\race_screens`, only on your disk. They
 are the groundwork for reading which car every driver uses and their times.

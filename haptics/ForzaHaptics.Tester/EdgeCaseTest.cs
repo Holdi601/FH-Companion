@@ -68,6 +68,7 @@ internal static class EdgeCaseTest
         CarNameTravelsWithTheLap();
         LapCleanupKeepsTheBest();
         CarFoldersCarryTheName();
+        RaceFieldIsRead();
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
         XboxAndMemoryOptions();
@@ -884,6 +885,92 @@ internal static class EdgeCaseTest
         finally
         {
             try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// DAS FELD VOM ERGEBNISSCHIRM (2026-10-01): Kurznamen auf Autos -- auch wenn die
+    /// Texterkennung "Sl" statt "S1" liest oder ein "#5" verliert --, und die Zeilen eines
+    /// gezeichneten Schirms: Auto, PI, Bestzeit/Fortschritt, Zeit, verlassen.
+    /// </summary>
+    private static void RaceFieldIsRead()
+    {
+        var datei = Path.Combine(Path.GetTempPath(), "fhc-edge-kurznamen-" + Guid.NewGuid().ToString("N")[..8] + ".json");
+        try
+        {
+            File.WriteAllText(datei, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                cars = new Dictionary<string, object>
+                {
+                    ["Honda Beat '91"] = new { id = 3852, name = "Honda Beat", year = 1991 },
+                    ["Honda Beat '92"] = new { id = 9999, name = "Honda Beat", year = 1992 },
+                    ["#5 Escort '77"] = new { id = 3184, name = "Ford #5 Escort RS1800 MkII", year = 1977 },
+                    ["#2 Audi S1"] = new { id = 1478, name = "Audi #2 Audi Sport quattro S1", year = 1986 },
+                    ["Luftauto 911"] = new { id = (int?)null, name = "Porsche Carrera Coupe 'Luftauto 002'", year = 1987 },
+                },
+                otherLanguages = new Dictionary<string, int> { ["Honda Beat ’91"] = 3852 },
+            }));
+            Rivals.CarShortNames.Pfad = datei;
+            Rivals.CarShortNames.Vergessen();
+            Soll(Rivals.CarShortNames.Finde("Honda Beat '91")?.Id == 3852, "Kurzname: genau nicht gefunden");
+            Soll(Rivals.CarShortNames.Finde("Honda Beat 191")?.Id == 3852, "Kurzname: Hochkomma als 1 gelesen nicht gefunden");
+            Soll(Rivals.CarShortNames.Finde("Escort '77")?.Id == 3184, "Kurzname: verlorenes #5 vorn nicht gefunden");
+            Soll(Rivals.CarShortNames.Finde("Audi Sl")?.Id == 1478, "Kurzname: Sl statt S1 nicht gefunden");
+            Soll(Rivals.CarShortNames.Finde("Honda Beat '9")?.Id is null, "Kurzname: zwei gleich nahe Autos ergaben eines");
+            Soll(Rivals.CarShortNames.Finde("Luftauto 911") is { Id: null } l && l.Name.Contains("Luftauto"),
+                 "Kurzname: ein neues Auto ohne Kennung verliert seinen Namen");
+            Soll(Rivals.CarShortNames.Finde("Gibt es nicht") is null, "Kurzname: Unsinn ergab ein Auto");
+
+            // Ein gezeichneter Ergebnisschirm, Rundkurs: Bestzeit in der vierten Spalte.
+            using var b = new Bitmap(1920, 1080, PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(b))
+            {
+                g.Clear(Color.FromArgb(20, 18, 24));
+                var schrift = new Font("Arial", 19f, GraphicsUnit.Pixel);
+                var zeilen = new[]
+                {
+                    ("Honda Beat '91", "600", "00:47.939", "02:33.409", false),
+                    // Weiss gezeichnet: die schwarze eigene Zeile liest die Texterkennung am echten
+                    // Schirm (2:38.170, 2:42.789, 2:33.409 am 2026-10-01), an gezeichneter Arial nicht.
+                    ("#5 Escort '77", "599", "00:49.177", "02:35.653", false),
+                    ("Luftauto 911", "600", "-", "--:--.---", false),
+                };
+                for (var s = 0; s < zeilen.Length; s++)
+                {
+                    var y = 276 + (54 * s);
+                    var (auto, pi, vierte, zeit, eigene) = zeilen[s];
+                    var grund = eigene ? Brushes.Black : Brushes.White;
+                    var tinte = eigene ? Brushes.White : Brushes.Black;
+                    g.FillRectangle(grund, 341, y, 1239, 48);
+                    g.DrawString(auto, schrift, tinte, 721, y + 12);
+                    g.FillRectangle(Brushes.Black, 1122, y + 6, 58, 36);
+                    g.DrawString(pi, schrift, Brushes.White, 1130, y + 12);
+                    g.DrawString(vierte, schrift, tinte, 1262, y + 12);
+                    g.DrawString(zeit, schrift, tinte, 1414, y + 12);
+                }
+            }
+            var feld = Rivals.RaceResultsReader.Lies(b, new Rivals.GridRead(3, 2, "HHD"));
+            if (feld.Count > 0)
+            {
+                Soll(feld.Count == 3 && feld[0].Car == 3852 && feld[1].Car == 3184 && feld[1].Self && feld[2].Kind == "left",
+                     "Feld: Autos oder Zeilenarten falsch: " + string.Join(" | ", feld.Select(f => $"{f.CarShort}/{f.Car}/{f.Kind}")));
+                Soll(feld[0].Pi == 600 && feld[1].Pi == 599, $"Feld: PI {feld[0].Pi}/{feld[1].Pi}");
+                // Gelesen wird an gezeichneter Schrift nicht jede Zelle -- aber was gelesen wird, muss
+                // stimmen, und die meisten muessen es sein (am echten Schirm: alle, 2026-10-01).
+                var zeiten = new (long? Gelesen, long Soll)[]
+                {
+                    (feld[0].BestLapMs, 47_939), (feld[0].Ms, 153_409), (feld[1].BestLapMs, 49_177), (feld[1].Ms, 155_653),
+                };
+                Soll(zeiten.All(z => z.Gelesen is null || z.Gelesen == z.Soll) && zeiten.Count(z => z.Gelesen is not null) >= 3,
+                     "Feld: Zeiten " + string.Join("/", zeiten.Select(z => z.Gelesen?.ToString() ?? "-")));
+                Soll(feld[2].Ms is null && feld[2].BestLapMs is null, "Feld: wer nicht ankam, hat eine Zeit");
+            }
+        }
+        finally
+        {
+            Rivals.CarShortNames.Pfad = null;
+            Rivals.CarShortNames.Vergessen();
+            try { File.Delete(datei); } catch (Exception) { }
         }
     }
 
