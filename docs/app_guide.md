@@ -310,6 +310,10 @@ position but not how many drive, so the app reads the start grid shown before
 each race (one small screenshot per second, only while you are in a menu, never
 while you drive). Rivals time attacks have no opponents and are left out.
 
+The start grid and the results screen are also kept as pictures (1080p, the
+latest 60) in `%LOCALAPPDATA%\FHCompanion\race_screens`, only on your disk. They
+are the groundwork for reading which car every driver uses and their times.
+
 Older races are rebuilt once from your saved laps. They know your start and
 finish, but not the field size. For them, **estimate field size for older races**
 counts the worst position seen in the race as the field. That is a lower bound,

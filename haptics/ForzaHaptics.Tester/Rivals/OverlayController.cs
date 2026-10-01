@@ -3628,12 +3628,14 @@ internal sealed class OverlayController : IDisposable
                         if (vorher is null || vorher.Read != g || DateTime.UtcNow - vorher.Utc > TimeSpan.FromSeconds(30))
                         {
                             LogLap($"start grid: {g.Drivers} drivers, {g.Humans} human, rows {g.Rows}, cursor {g.Cursor?.ToString() ?? "-"}");
+                            RennbildMerken(flaeche, "grid");
                         }
                     }
                     else if (offen is not null && RaceGrid.ReadResults(bild) is { } e)
                     {
                         _offen = null;
                         ErgebnisNachtragen(offen.Race, e);
+                        RennbildMerken(flaeche, "results", offen.Race.Id);
                     }
                 }
                 catch (Exception)
@@ -3648,6 +3650,51 @@ internal sealed class OverlayController : IDisposable
         }
         catch (Exception)
         {
+        }
+    }
+
+    // ------------------------------------------------------------------ Rennschirme in voller Groesse
+    //
+    // DIE AUFSTELLUNG UND DAS ERGEBNIS ALS BILD (seit 2026-10-01). Gelesen werden sie bisher
+    // nur klein (384x216, RaceGrid): wie viele Fahrer, wer davon Mensch ist. Fuer die naechsten
+    // Schritte -- welches Auto jeder faehrt, welche Zeit er fuhr, und ein Beleg fuer das
+    // Ergebnis -- braucht es die Schirme lesbar. Gespeichert wird nur, was RaceGrid schon als
+    // einen dieser beiden Schirme erkannt hat, auf 1080p gebracht (darauf sind die Leser
+    // geeicht), hoechstens 60 Bilder; nur auf dieser Platte.
+
+    private DateTime _rennbildZuletzt = DateTime.MinValue;
+
+    internal static string RennbildOrdner => Path.Combine(AppInfo.DataFolder, "race_screens");
+
+    private const int RennbilderHoechstens = 60;
+
+    private void RennbildMerken(Rectangle flaeche, string art, string? rennen = null)
+    {
+        try
+        {
+            // Die Aufstellung fuellt sich, waehrend Spieler beitreten: nicht jede Aenderung, hoechstens alle 10 s.
+            if (art == "grid" && DateTime.UtcNow - _rennbildZuletzt < TimeSpan.FromSeconds(10)) { return; }
+            if (art == "grid") { _rennbildZuletzt = DateTime.UtcNow; }
+            var hoehe = (int)Math.Round(1920.0 * flaeche.Height / Math.Max(1, flaeche.Width));
+            using var voll = GameArea.Capture(flaeche, new Size(1920, Math.Clamp(hoehe, 200, 2400)));
+            Directory.CreateDirectory(RennbildOrdner);
+            var kennung = rennen is null ? string.Empty : "_" + string.Concat(rennen.Where(char.IsLetterOrDigit));
+            var pfad = Path.Combine(RennbildOrdner, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{art}{kennung}.jpg");
+            var jpeg = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders().First(c => c.MimeType == "image/jpeg");
+            using (var guete = new System.Drawing.Imaging.EncoderParameters(1))
+            {
+                guete.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 90L);
+                voll.Save(pfad, jpeg, guete);
+            }
+            foreach (var alt in new DirectoryInfo(RennbildOrdner).GetFiles("*.jpg")
+                         .OrderByDescending(f => f.Name, StringComparer.Ordinal).Skip(RennbilderHoechstens))
+            {
+                alt.Delete();
+            }
+        }
+        catch (Exception)
+        {
+            // Ein Bild ist nie den Preis eines Fehlers im Menue wert.
         }
     }
 
