@@ -2199,28 +2199,34 @@ internal static class EdgeCaseTest
     {
         // --- DIE STARTAUFSTELLUNG UND DAS ERGEBNIS, gezeichnet wie im Spiel (1080p-Mass, klein aufgenommen)
         // zeilen: je Fahrer 'H' (Mensch, mit Abzeichen) oder 'A' (KI, ohne); markiert: die schwarze Zeile.
-        Bitmap Schirm(bool ergebnis, string zeilen, int? markiert)
+        Bitmap Schirm(bool ergebnis, string zeilen, int? markiert, int tiefer = 0)
         {
-            var b = new Bitmap(1920, 1080);
+            var b = new Bitmap(1920, 1080, PixelFormat.Format24bppRgb);
             using (var g = Graphics.FromImage(b))
             {
                 g.Clear(ergebnis ? Color.FromArgb(20, 18, 24) : Color.FromArgb(44, 140, 124));
                 using var limette = new SolidBrush(Color.FromArgb(204, 255, 0));
                 var x0 = ergebnis ? 341 : 317;
                 var breite = ergebnis ? 1239 : 916;
-                g.FillRectangle(limette, x0, 222, breite, 46);
+                g.FillRectangle(limette, x0, 222 + tiefer, breite, 46);
                 if (!ergebnis) { g.FillRectangle(limette, 1240, 222, 363, 46); }
-                g.DrawString("Driver    Car    Class", new Font("Segoe UI", 16f), Brushes.Black, x0 + 80, 228);
+                g.DrawString("Driver    Car    Class", new Font("Segoe UI", 16f), Brushes.Black, x0 + 80, 228 + tiefer);
                 var abzeichenX = ergebnis ? 353 : 330;
                 for (var s = 0; s < 12; s++)
                 {
-                    var y = 276 + (54 * s);
+                    var y = 276 + tiefer + (54 * s);
                     var belegt = s < zeilen.Length;
                     var farbe = !belegt ? (ergebnis ? Color.FromArgb(24, 24, 28) : Color.FromArgb(16, 62, 60))
                         : markiert == s + 1 ? Color.Black : Color.White;
                     using var pinsel = new SolidBrush(farbe);
                     g.FillRectangle(pinsel, x0, y, breite, 48);
                     if (!belegt) { continue; }
+                    // Der Fortschritt: ein Strich bei dem, der verlassen hat, sonst eine Prozentzahl.
+                    if (ergebnis)
+                    {
+                        g.DrawString(zeilen[s] == 'D' ? "-" : "100%", new Font("Segoe UI", 18f),
+                                     farbe == Color.White ? Brushes.Black : Brushes.White, 1262, y + 8);
+                    }
                     if (zeilen[s] == 'H')
                     {
                         using var abzeichen = new SolidBrush(Color.FromArgb(230, 60, 90));
@@ -2265,6 +2271,21 @@ internal static class EdgeCaseTest
         using (var leer = new Bitmap(1920, 1080))
         {
             Soll(Lies(leer) is null && Lies(leer, ergebnis: true) is null, "Aufstellung: ein leeres Bild gilt als Tabelle");
+        }
+        // Eine tiefer stehende Tabelle (kleines Feld) wird gefunden, und wer verlassen hat, ist kein Bot.
+        using (var s = Schirm(true, "HHAHDD", 4, tiefer: 160))
+        {
+            var e = Lies(s, ergebnis: true);
+            Soll(e is { Drivers: 6, Cursor: 4 } && e.Value.Rows == "HHAHAA" && Math.Abs((e.Value.Versatz * 1080f) - 160) < 8,
+                 $"Ergebnis: tiefer stehende Tabelle gelesen als {e}");
+            var verlassen = Rivals.RaceGrid.MitAbbruechen(s, e!.Value);
+            Soll(verlassen.Rows == "HHAHDD" && verlassen.Humans == 3, $"Ergebnis: verlassen und KI nicht getrennt: {verlassen.Rows}");
+        }
+        using (var s = Schirm(true, "HHHHHHHHHHDD", 2))
+        {
+            var e = Lies(s, ergebnis: true);
+            Soll(e is { Drivers: 12 } && Rivals.RaceGrid.MitAbbruechen(s, e.Value).Rows == "HHHHHHHHHHDD",
+                 $"Ergebnis: volles Feld mit zwei Abbruechen gelesen als {e}");
         }
 
         // --- SOLO ODER KOOP: allein hinten ist Solo, Menschen als Block hinten sind Koop

@@ -203,6 +203,12 @@ internal static class Program
                     }
                     var r = Rivals.RaceGrid.Read(klein);
                     var e = r is null ? Rivals.RaceGrid.ReadResults(klein) : null;
+                    if (e is { } roh)
+                    {
+                        using var hd = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                        using (var g = Graphics.FromImage(hd)) { g.DrawImage(gross, new Rectangle(0, 0, 1920, 1080)); }
+                        e = Rivals.RaceGrid.MitAbbruechen(hd, roh);
+                    }
                     Console.WriteLine($"{Path.GetFileName(datei)}: "
                                       + (r is { } g2 ? $"START GRID, {g2.Drivers} drivers, rows {g2.Rows}, cursor {g2.Cursor?.ToString() ?? "-"}"
                                          : e is { } e2 ? $"RESULTS, {e2.Drivers} drivers, rows {e2.Rows}, cursor {e2.Cursor?.ToString() ?? "-"}"

@@ -183,11 +183,15 @@ internal sealed class RaceWatcher
 /// <param name="Drivers">Wie viele Zeilen belegt sind.</param>
 /// <param name="Cursor">Die schwarz markierte Zeile (1-basiert) -- ein Zeiger, den man bewegen kann, NICHT
 /// verlaesslich der eigene Platz; oder null.</param>
-/// <param name="Rows">Je belegter Zeile 'H' (mit Stufenabzeichen: ein Mensch) oder 'A' (ohne: KI).</param>
+/// <param name="Rows">Je belegter Zeile 'H' (mit Stufenabzeichen: ein Mensch), 'A' (ohne: KI) oder, nur auf
+/// dem Ergebnis, 'D' (hat das Rennen verlassen -- ein Mensch ohne Abzeichen, ohne Fortschritt).</param>
 internal readonly record struct GridRead(int Drivers, int? Cursor, string Rows)
 {
     /// <summary>Menschen in der Aufstellung, man selbst eingeschlossen.</summary>
     public int Humans => Rows.Count(c => c == 'H');
+
+    /// <summary>Um wie viel (Anteil der Bildhoehe) die Tabelle tiefer steht als ueblich; 0 auf der Aufstellung.</summary>
+    public float Versatz { get; init; }
 }
 
 /// <summary>
@@ -225,6 +229,58 @@ internal static class RaceGrid
 
     /// <summary>Die Startaufstellung vor dem Rennen -- oder null.</summary>
     public static GridRead? Read(Bitmap bild) => Lies(bild, ergebnis: false);
+
+    /// <summary>
+    /// Wer das Rennen VERLASSEN hat (seit 2026-10-01): auf dem Ergebnis steht er ohne Abzeichen da,
+    /// genau wie eine KI -- aber mit einem Kreuz vorn und einem Strich als Fortschritt. Der
+    /// Nutzer: "make sure they are not bots". Gelesen am grossen Bild, wo der Strich (3 Punkte
+    /// hoch) und eine Prozentzahl (20 Punkte hoch) sicher auseinanderzuhalten sind.
+    /// </summary>
+    public static GridRead MitAbbruechen(Bitmap voll, GridRead e)
+    {
+        if (!e.Rows.Contains('A')) { return e; }
+        var zeilen = e.Rows.ToCharArray();
+        var sx = voll.Width / 1920f;
+        var sy = voll.Height / 1080f;
+        for (var s = 0; s < zeilen.Length; s++)
+        {
+            if (zeilen[s] != 'A') { continue; }
+            var mitte = 300f + (54f * s) + (e.Versatz * 1080f);
+            var hoehe = DunkleHoehe(voll, (int)(1235 * sx), (int)(1350 * sx), (int)((mitte - 16) * sy), (int)((mitte + 16) * sy));
+            if (hoehe <= 6 * sy) { zeilen[s] = 'D'; }
+        }
+        return e with { Rows = new string(zeilen) };
+    }
+
+    /// <summary>Wie viele Bildzeilen im Kasten mindestens zwei dunkle Punkte tragen (Schrift auf weiss).</summary>
+    private static int DunkleHoehe(Bitmap bild, int x0, int x1, int y0, int y1)
+    {
+        x0 = Math.Clamp(x0, 0, bild.Width - 1); x1 = Math.Clamp(x1, x0 + 1, bild.Width);
+        y0 = Math.Clamp(y0, 0, bild.Height - 1); y1 = Math.Clamp(y1, y0 + 1, bild.Height);
+        var kasten = new Rectangle(x0, y0, x1 - x0, y1 - y0);
+        var daten = bild.LockBits(kasten, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+        try
+        {
+            var puffer = new byte[daten.Stride * kasten.Height];
+            System.Runtime.InteropServices.Marshal.Copy(daten.Scan0, puffer, 0, puffer.Length);
+            var zeilen = 0;
+            for (var y = 0; y < kasten.Height; y++)
+            {
+                var dunkel = 0;
+                for (var x = 0; x < kasten.Width; x++)
+                {
+                    var i = (y * daten.Stride) + (x * 3);
+                    if (puffer[i] + puffer[i + 1] + puffer[i + 2] < 330) { dunkel++; }
+                }
+                if (dunkel >= 2) { zeilen++; }
+            }
+            return zeilen;
+        }
+        finally
+        {
+            bild.UnlockBits(daten);
+        }
+    }
 
     /// <summary>Das Ergebnis nach dem Rennen -- oder null.</summary>
     public static GridRead? ReadResults(Bitmap bild) => Lies(bild, ergebnis: true);
@@ -268,10 +324,29 @@ internal static class RaceGrid
                 return ((r + g + b) / (3.0 * n), (g - r) / (double)n, min);
             }
             static bool Limette((int R, int G, int B) p) => p.R > 150 && p.G > 220 && p.B < 90;
+            // DIE KOPFZEILE SUCHEN (Ergebnis, seit 2026-10-01): bei vollen Feldern stand sie immer auf
+            // derselben Hoehe; jedes Ergebnis eines kleineren Felds (5, 6, 8, 10 Fahrer) blieb ungelesen.
+            // Steht die Tabelle dort tiefer, wird sie so trotzdem gefunden.
+            var dy = 0f;
+            if (ergebnis)
+            {
+                int? anfang = null, ende = null;
+                for (var py = (int)(0.10f * h); py < (int)(0.72f * h); py++)
+                {
+                    var fy = (py + 0.5f) / h;
+                    var voll = Enumerable.Range(0, 30).Count(i => Limette(Px(0.19f + (0.62f * i / 29f), fy))) >= 20;
+                    if (voll) { anfang ??= py; ende = py; }
+                    else if (anfang is not null) { break; }
+                }
+                if (anfang is null) { return null; }
+                dy = (((anfang.Value + ende!.Value + 1) / 2f) / h) - (245f / 1080f);
+                // Ein, zwei Punkte Abweichung sind Rundung der kleinen Aufnahme, kein Versatz.
+                if (Math.Abs(dy * 1080f) < 8f) { dy = 0f; }
+            }
             static bool Tuerkis((int R, int G, int B) p) => p.G - p.R > 50 && p.G > 90 && p.B - p.R > 30;
             static bool Dunkel((int R, int G, int B) p) => (p.R + p.G + p.B) / 3 < 90 && p.G - p.R < 30;
             // Die schwarze Schrift der Kopfzeile verdeckt einzelne Proben -- darum drei Hoehen je Spalte.
-            bool Spalte(float fx) => KopfY.Any(y => Limette(Px(fx, y)));
+            bool Spalte(float fx) => KopfY.Any(y => Limette(Px(fx, y + dy)));
 
             var grund = 0;
             for (var i = 0; i < 5; i++)
@@ -299,7 +374,7 @@ internal static class RaceGrid
             var arten = new char[12];
             for (var s = 0; s < 12; s++)
             {
-                var (hell, tint, _) = Streifen((300f + (54f * s)) / 1080f, x0, x1);
+                var (hell, tint, _) = Streifen(((300f + (54f * s)) / 1080f) + dy, x0, x1);
                 arten[s] = hell > 150 && Math.Abs(tint) < 25 ? 'w'
                          : ergebnis
                              ? (hell >= 40 && hell < 120 && Math.Abs(tint) < 25 ? 'b' : hell < 40 ? '-' : '?')
@@ -326,12 +401,12 @@ internal static class RaceGrid
             var zeilen = new char[belegt];
             for (var s = 0; s < belegt; s++)
             {
-                var (hell, _, min) = Streifen((300f + (54f * s)) / 1080f, bx0, bx1);
+                var (hell, _, min) = Streifen(((300f + (54f * s)) / 1080f) + dy, bx0, bx1);
                 zeilen[s] = arten[s] == 'b'
                     ? (hell > 55 ? 'H' : 'A')
                     : (hell < 245 || min < 200 ? 'H' : 'A');
             }
-            return new GridRead(belegt, schwarz.Count == 1 ? schwarz[0] + 1 : null, new string(zeilen));
+            return new GridRead(belegt, schwarz.Count == 1 ? schwarz[0] + 1 : null, new string(zeilen)) { Versatz = dy };
         }
         finally
         {

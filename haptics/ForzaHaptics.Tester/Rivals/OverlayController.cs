@@ -3634,8 +3634,15 @@ internal sealed class OverlayController : IDisposable
                     else if (offen is not null && RaceGrid.ReadResults(bild) is { } e)
                     {
                         _offen = null;
+                        // Das grosse Bild: wer verlassen hat, steht dort lesbar -- und es ist der Beleg.
+                        using var voll = Vollbild(flaeche);
+                        if (voll is not null) { e = RaceGrid.MitAbbruechen(voll, e); }
                         ErgebnisNachtragen(offen.Race, e);
-                        RennbildMerken(flaeche, "results", offen.Race.Id);
+                        if (voll is not null) { RennbildSpeichern(voll, "results", offen.Race.Id); }
+                    }
+                    else if (offen is not null)
+                    {
+                        Ungelesen(flaeche, offen);
                     }
                 }
                 catch (Exception)
@@ -3670,13 +3677,53 @@ internal sealed class OverlayController : IDisposable
 
     private void RennbildMerken(Rectangle flaeche, string art, string? rennen = null)
     {
+        // Die Aufstellung fuellt sich, waehrend Spieler beitreten: nicht jede Aenderung, hoechstens alle 10 s.
+        if (art == "grid" && DateTime.UtcNow - _rennbildZuletzt < TimeSpan.FromSeconds(10)) { return; }
+        if (art == "grid") { _rennbildZuletzt = DateTime.UtcNow; }
+        using var voll = Vollbild(flaeche);
+        if (voll is not null) { RennbildSpeichern(voll, art, rennen); }
+    }
+
+    /// <summary>Der Spielbereich auf 1080p gebracht -- darauf sind die Leser geeicht.</summary>
+    private static Bitmap? Vollbild(Rectangle flaeche)
+    {
         try
         {
-            // Die Aufstellung fuellt sich, waehrend Spieler beitreten: nicht jede Aenderung, hoechstens alle 10 s.
-            if (art == "grid" && DateTime.UtcNow - _rennbildZuletzt < TimeSpan.FromSeconds(10)) { return; }
-            if (art == "grid") { _rennbildZuletzt = DateTime.UtcNow; }
             var hoehe = (int)Math.Round(1920.0 * flaeche.Height / Math.Max(1, flaeche.Width));
-            using var voll = GameArea.Capture(flaeche, new Size(1920, Math.Clamp(hoehe, 200, 2400)));
+            return GameArea.Capture(flaeche, new Size(1920, Math.Clamp(hoehe, 200, 2400)));
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    // UNGELESEN: lief ein Rennen zu Ende, und kein Ergebnisschirm wurde erkannt, bis zu drei
+    // Bilder aus der Minute danach -- damit sich zeigen laesst, WAS dort stand. (Alle kleinen
+    // Felder blieben bis zum 2026-10-01 ohne Ergebnis, und ohne Bild war nicht zu sehen, warum.)
+    private string? _ungelesenRennen;
+    private int _ungelesenZahl;
+    private DateTime _ungelesenZuletzt = DateTime.MinValue;
+
+    private void Ungelesen(Rectangle flaeche, OffenesRennen offen)
+    {
+        if (_ungelesenRennen != offen.Race.Id)
+        {
+            _ungelesenRennen = offen.Race.Id;
+            _ungelesenZahl = 0;
+        }
+        if (_ungelesenZahl >= 3 || DateTime.UtcNow - offen.Utc < TimeSpan.FromSeconds(5)
+            || DateTime.UtcNow - _ungelesenZuletzt < TimeSpan.FromSeconds(12)) { return; }
+        _ungelesenZahl++;
+        _ungelesenZuletzt = DateTime.UtcNow;
+        using var voll = Vollbild(flaeche);
+        if (voll is not null) { RennbildSpeichern(voll, "unread", offen.Race.Id); }
+    }
+
+    private static void RennbildSpeichern(Bitmap voll, string art, string? rennen)
+    {
+        try
+        {
             Directory.CreateDirectory(RennbildOrdner);
             var kennung = rennen is null ? string.Empty : "_" + string.Concat(rennen.Where(char.IsLetterOrDigit));
             var pfad = Path.Combine(RennbildOrdner, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{art}{kennung}.jpg");

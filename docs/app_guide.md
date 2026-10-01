@@ -310,6 +310,11 @@ position but not how many drive, so the app reads the start grid shown before
 each race (one small screenshot per second, only while you are in a menu, never
 while you drive). Rivals time attacks have no opponents and are left out.
 
+Players who left the race (a cross on the results screen, no level badge, a dash
+as progress) count as disconnected, not as AI, and never as co-players ahead of
+you. If no results screen is recognised after a race, up to three pictures of
+what was on screen are kept, so a missed layout can be found.
+
 The start grid and the results screen are also kept as pictures (1080p, the
 latest 60) in `%LOCALAPPDATA%\FHCompanion\race_screens`, only on your disk. They
 are the groundwork for reading which car every driver uses and their times.
