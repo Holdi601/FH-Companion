@@ -209,20 +209,10 @@ internal sealed class OverlayController : IDisposable
             }
             catch (Exception) { }
 
-            // Die volle Spur nur, wenn sie gewollt ist -- sie kostet rund
-            // 1,5 MB je Runde. Weggeworfen wird sie hier und nicht im Aufzeichner:
-            // dort wird sie ohnehin gesammelt, und ein zweiter Schalter mitten im
-            // Paketpfad waere eine zweite Stelle, an der man ihn vergessen kann.
-            // Die Einreichung braucht sie trotzdem (seit 2026-09-28): jede Runde, die
-            // an die Seite geht, traegt ihre volle Telemetrie. Der Schalter betrifft
-            // nur das Archiv auf dieser Platte.
-            var volleSpur = lap.FullTrack;
-            if (!_settings.FullTelemetry) { lap.FullTrack = null; }
-
-            var abgelegt = _settings.ArchiveLaps
-                ? LapArchive.Save(lap, _settings.LapTag)
-                : null;
-            lap.FullTrack = volleSpur;
+            // JEDE RUNDE wird abgelegt, mit ihrer vollen Spur -- seit 2026-10-01 ohne
+            // Schalter, auf Wunsch des Nutzers. Platz schafft der Knopf "Delete slower
+            // laps" im Reiter My times: auf Knopfdruck, nie von selbst.
+            var abgelegt = LapArchive.Save(lap, _settings.LapTag);
 
             // DIE RENNSTATISTIK: am Ende jedes Rennens (auch eines abgebrochenen) eine Zeile.
             if (lap.EndedAtFinish) { RennenAblegen(lap); }
@@ -3766,9 +3756,9 @@ internal sealed class OverlayController : IDisposable
     {
         try
         {
-            // Gelesen wird auch ohne Karten, solange Runden aufgezeichnet werden: der
+            // Gelesen wird auch ohne Karten -- Runden werden immer aufgezeichnet, und der
             // Schirm belegt ihren Modus (Rivals, Horizon Play, Rennen) und ihre Strecke.
-            if (Running || _hudPreview || (!_settings.CourseShapes && !_settings.ArchiveLaps)) { return; }
+            if (Running || _hudPreview) { return; }
             // SPIEL NICHT VORNE: die Karten weg. Mit gestartetem Overlay erledigt das
             // GameIsUp; ohne bliebe sonst ein Fenster ueber dem Desktop stehen, immer
             // im Vordergrund und nicht wegzuklicken.

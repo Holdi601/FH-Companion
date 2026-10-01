@@ -46,6 +46,7 @@ internal sealed class OwnTimesTab : UserControl
     private int _sortSpalte = 0;
     private bool _sortAb;
     private bool _still;
+    private Button? _aufraeumen;
 
     private static readonly Color Grund = Color.FromArgb(24, 26, 31);
     private static readonly Color Feld = Color.FromArgb(18, 20, 24);
@@ -183,6 +184,14 @@ internal sealed class OwnTimesTab : UserControl
         zurueck.Click += (_, _) => Zuruecksetzen();
         oben.Controls.Add(zurueck);
 
+        // DER RUNDENBESTAND (seit 2026-10-01): wo die Runden liegen, und Platz schaffen.
+        var ordner = Knopf(Loc.T("Open lap folder"));
+        ordner.Click += (_, _) => OrdnerOeffnen();
+        oben.Controls.Add(ordner);
+        _aufraeumen = Knopf(Loc.T("Delete slower laps…"));
+        _aufraeumen.Click += (_, _) => Aufraeumen();
+        oben.Controls.Add(_aufraeumen);
+
         _zahl.Dock = DockStyle.Bottom;
         _zahl.Height = 24;
         // Breiter oder schmaler: der Satz bricht anders um, die Zeile muss mitwachsen.
@@ -206,6 +215,82 @@ internal sealed class OwnTimesTab : UserControl
         Controls.Add(_tabelle);
         Controls.Add(_zahl);
         Controls.Add(oben);
+    }
+
+    /// <summary>Den Ordner der Runden im Explorer zeigen.</summary>
+    private static void OrdnerOeffnen()
+    {
+        try
+        {
+            var wurzel = LapArchive.Root;
+            Directory.CreateDirectory(wurzel);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(wurzel)
+            {
+                UseShellExecute = true,
+            })?.Dispose();
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    /// <summary>Langsamere Runden loeschen -- erst zeigen, was weg ginge, dann nur auf Ja.</summary>
+    private async void Aufraeumen()
+    {
+        if (_aufraeumen is not { Enabled: true } knopf) { return; }
+        knopf.Enabled = false;
+        var titel = Loc.T("Delete slower laps");
+        try
+        {
+            var wurzel = LapArchive.Root;
+            var plan = await Leise(() => LapCleanup.Planen(wurzel));
+            if (IsDisposed) { return; }
+            if (plan.Dateien == 0)
+            {
+                MessageBox.Show(this, Loc.T("Nothing to delete: every lap is already the fastest of its car, course and class."),
+                                titel, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            var frage = string.Format(Loc.T(
+                "{0} slower laps and {1} unfinished runs will be deleted, {2} in total.\n\nKept: your fastest lap per course, PI class and car -- standing and flying starts and each game mode on their own, as your records count them. Race statistics stay complete.\n\nThis cannot be undone."),
+                plan.Langsamere.Count, plan.Unfertige.Count, LapCleanup.Anzeige(plan.Bytes));
+            if (MessageBox.Show(this, frage, titel, MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                                MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            {
+                return;
+            }
+            var e = await Leise(() => LapCleanup.Ausfuehren(wurzel, plan, RaceLog.ArchivePath));
+            if (IsDisposed) { return; }
+            var text = string.Format(Loc.T("Deleted: {0} laps. Freed: {1}."), e.Geloescht, LapCleanup.Anzeige(e.Bytes));
+            if (e.Fehlgeschlagen > 0)
+            {
+                text += "\n\n" + string.Format(Loc.T(
+                    "{0} file(s) could not be deleted -- another program may have them open. Try again later."),
+                    e.Fehlgeschlagen);
+            }
+            MessageBox.Show(this, text, titel, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Reload();
+        }
+        catch (Exception)
+        {
+        }
+        finally
+        {
+            if (!knopf.IsDisposed) { knopf.Enabled = true; }
+        }
+    }
+
+    /// <summary>Im Hintergrund, mit niedriger Prioritaet -- das Spiel laeuft vielleicht.</summary>
+    private static Task<T> Leise<T>(Func<T> arbeit)
+    {
+        var fertig = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        new Thread(() =>
+        {
+            try { fertig.SetResult(arbeit()); }
+            catch (Exception e) { fertig.SetException(e); }
+        })
+        { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "Rundenbestand" }.Start();
+        return fertig.Task;
     }
 
     /// <summary>Fuer --mytimes-preview: 0 Runden, 1 Wertung nach Punkten, 2 nach Zeitsumme.</summary>

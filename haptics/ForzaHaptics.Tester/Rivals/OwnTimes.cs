@@ -104,6 +104,10 @@ internal static class OwnTimes
         return raus;
     }
 
+    /// <summary>Den Zwischenspeicher verwerfen -- nach dem Aufraeumen.</summary>
+    /// <remarks>Er gilt nach der Schreibzeit der Wurzel, und die aendert sich nicht, wenn tief darin Runden verschwinden.</remarks>
+    internal static void Vergessen() => _speicher = null;
+
     /// <summary>Alle eigenen Runden, frisch gelesen -- ohne den Zwischenspeicher.</summary>
     /// <remarks>Fuer die eigenen Rekorde, die im Hintergrund laden (PersonalRecords).</remarks>
     internal static List<Lap> Einlesen(string wurzel)

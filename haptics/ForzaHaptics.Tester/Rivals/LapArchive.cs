@@ -463,6 +463,12 @@ internal static class LapArchive
     }
 
     /// <summary>Der Weg der laengsten Fahrt eines Kursordners.</summary>
+    /// <summary>Die gemerkten Bezugsrunden verwerfen -- nach dem Aufraeumen.</summary>
+    internal static void ReferenzenVergessen()
+    {
+        lock (Referenzen) { Referenzen.Clear(); }
+    }
+
     private static Referenz? ReferenzVon(string ordner, int laps)
     {
         lock (Referenzen)

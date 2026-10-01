@@ -99,8 +99,6 @@ _NB = {
         "App: {0}",
     "Apply":
         "Bruk",
-    "Archive every lap for heatmaps":
-        "Arkiver hver runde for varmekart",
     "Area":
         "Område",
     "Auction House":

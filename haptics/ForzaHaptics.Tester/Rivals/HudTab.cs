@@ -1303,21 +1303,10 @@ internal sealed class HudPartPanel : Panel
 
         // ---- AUFZEICHNUNG -------------------------------------------------------------
         Abschnitt(Loc.T("Recording"));
-        var merken = new CheckBox
-        {
-            Text = Loc.T("Archive every lap for heatmaps"),
-            ForeColor = Color.Gainsboro, AutoSize = false, Width = 232,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Checked = settings.ArchiveLaps,
-        };
-        UmbruchHoehe(merken);
-        merken.CheckedChanged += (_, _) =>
-        {
-            if (_quiet) { return; }
-            _settings.ArchiveLaps = merken.Checked;
-            Changed?.Invoke();
-        };
-        Rein(merken);
+        // Kein Schalter mehr (seit 2026-10-01): jede Runde wird abgelegt.
+        Rein(Note(string.Format(Loc.T(
+            "Every lap is saved, with its full telemetry. The tab \"{0}\" opens their folder and deletes slower laps when you ask."),
+            Loc.T("My times"))));
         var zettel = new TextBox { Width = 232, Text = settings.LapTag };
         zettel.TextChanged += (_, _) =>
         {

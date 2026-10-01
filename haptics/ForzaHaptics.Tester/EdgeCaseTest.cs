@@ -66,6 +66,7 @@ internal static class EdgeCaseTest
         ConsoleModeReadsItsSource();
         FullTelemetryTravelsWithTheLap();
         CarNameTravelsWithTheLap();
+        LapCleanupKeepsTheBest();
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
         XboxAndMemoryOptions();
@@ -722,6 +723,83 @@ internal static class EdgeCaseTest
         finally
         {
             try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// AUFRAEUMEN (2026-10-01): je Kurs, Klasse und Auto bleibt die schnellste Runde -- stehend
+    /// und fliegend, Runde und Sprint, jeder Modus fuer sich; Abbrueche gehen; die
+    /// Rennstatistik hat die Rennen vorher gesehen.
+    /// </summary>
+    private static void LapCleanupKeepsTheBest()
+    {
+        var kennung = Guid.NewGuid().ToString("N")[..8];
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-edge-aufraeumen-" + kennung);
+        var stand = Path.Combine(Path.GetTempPath(), "fhc-edge-aufraeumen-stand-" + kennung + ".json");
+        try
+        {
+            string Runde(string kurs, string klasse, int auto, string tune, string tag, string zeit, double s,
+                         string flags = "", string modus = "rivals")
+            {
+                var ordner = Directory.CreateDirectory(Path.Combine(wurzel, kurs, klasse, "car" + auto, tune, tag)).FullName;
+                var sek = s.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture);
+                var datei = Path.Combine(ordner, $"2026-09-01_{zeit}_{sek}s{flags}.json");
+                File.WriteAllText(datei, "{\"Lap\":{\"lapSeconds\":" + sek + ",\"mode\":\"" + modus + "\"}}");
+                File.WriteAllBytes(datei + Rivals.TelemetryTrack.Suffix, new byte[1000]);
+                return datei;
+            }
+            const string K = "Soni Circuit (course_1_2_to_3_4)";
+            var beste = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-00-00", 61.0);
+            var langsamer = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-01-00", 62.0);
+            var andererTune = Runde(K, "A", 1269, "1269-700-b", "wet", "10-02-00", 61.5);
+            var gleichSpaeter = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-03-00", 61.0);
+            var stehend = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-04-00", 64.0, "_standing");
+            var klasse = Runde(K, "S1", 1269, "1269-800-a", "untagged", "10-05-00", 58.0);
+            var auto = Runde(K, "A", 77, "77-700-a", "untagged", "10-06-00", 70.0);
+            var modus = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-07-00", 66.0, modus: "horizon-play");
+            var sprint = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-08-00", 90.0, "_sprint", "solo");
+            var sprintLangsam = Runde(K, "A", 1269, "1269-700-a", "untagged", "10-09-00", 95.0, "_sprint", "solo");
+            var abbruch = Runde(Path.Combine(Rivals.LapArchive.UnfertigOrdner, K), "A", 1269, "1269-700-a", "untagged",
+                                "10-10-00", 20.0, "_sprint", "solo");
+            var notiz = Path.Combine(wurzel, K, "course.json");
+            File.WriteAllText(notiz, "{}");
+
+            var plan = Rivals.LapCleanup.Planen(wurzel);
+            var erwartet = new[] { langsamer, andererTune, gleichSpaeter, sprintLangsam }.OrderBy(p => p).ToList();
+            Soll(plan.Langsamere.OrderBy(p => p).SequenceEqual(erwartet),
+                 "Aufraeumen: geplant " + string.Join(", ", plan.Langsamere.Select(Path.GetFileName)));
+            Soll(plan.Unfertige.Count == 1 && plan.Unfertige[0] == abbruch, "Aufraeumen: der Abbruch steht nicht im Plan");
+            Soll(plan.Behalten == 6, $"Aufraeumen: {plan.Behalten} statt 6 Gruppen behalten");
+            Soll(plan.Bytes >= 5 * 1000, "Aufraeumen: die Groesse zaehlt die Spuren nicht mit");
+
+            var e = Rivals.LapCleanup.Ausfuehren(wurzel, plan, stand, new HashSet<string>());
+            Soll(e.Geloescht == 5 && e.Fehlgeschlagen == 0, $"Aufraeumen: {e.Geloescht} geloescht, {e.Fehlgeschlagen} Fehler");
+            foreach (var bleibt in new[] { beste, stehend, klasse, auto, modus, sprint })
+            {
+                Soll(File.Exists(bleibt) && File.Exists(bleibt + Rivals.TelemetryTrack.Suffix),
+                     "Aufraeumen: eine beste Runde ist weg: " + Path.GetFileName(bleibt));
+            }
+            foreach (var weg in erwartet.Append(abbruch))
+            {
+                Soll(!File.Exists(weg) && !File.Exists(weg + Rivals.TelemetryTrack.Suffix),
+                     "Aufraeumen: Runde oder Spur blieb: " + Path.GetFileName(weg));
+            }
+            Soll(!Directory.Exists(Path.GetDirectoryName(andererTune)) && !Directory.Exists(Path.Combine(wurzel, Rivals.LapArchive.UnfertigOrdner)),
+                 "Aufraeumen: leere Ordner blieben stehen");
+            Soll(File.Exists(notiz), "Aufraeumen: course.json ist weg");
+            var gesehen = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(stand))?["seen"]?.AsArray()
+                              .Select(n => n?.GetValue<string>()).ToHashSet() ?? new HashSet<string?>();
+            Soll(gesehen.Contains(Rivals.RaceArchive.IdAus(sprintLangsam)) && gesehen.Contains(Rivals.RaceArchive.IdAus(abbruch)),
+                 "Aufraeumen: die Rennstatistik sah die geloeschten Rennen nicht vorher");
+            Soll(Rivals.LapCleanup.Planen(wurzel).Dateien == 0, "Aufraeumen: ein zweiter Durchgang findet noch etwas");
+            Soll(Rivals.LapCleanup.Anzeige(5L * 1024 * 1024 * 1024 / 2).Contains("GB")
+                 && Rivals.LapCleanup.Anzeige(3000).EndsWith(" MB", StringComparison.Ordinal),
+                 "Aufraeumen: die Groessenangabe stimmt nicht");
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+            try { File.Delete(stand); } catch (Exception) { }
         }
     }
 

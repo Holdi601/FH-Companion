@@ -156,7 +156,8 @@ Everything drawn over the game while you drive, and where it sits:
     still, the race is over or a menu shows; the most important one shows first
     (website record, then new car, then personal). If the same lap also beats the website, only the website
     celebration shows. The short sound and **Try it** are next to the switches.
-- **Archive every lap for heatmaps.**
+- **Every lap is saved**, with its full telemetry -- there is no switch for it.
+  To free space, use **Delete slower laps** in My times.
 - **Layout editor.** Drag every block where you want it, resize with the mouse
   wheel, and optionally show it on the real screen while you set it up.
   - Each block has its own section on the right: its switch, anchor, size,
@@ -265,6 +266,15 @@ from then on. The same works on the Xbox.
 
 Your recorded laps: the best per car and course, and standings by points and by
 total time. Laps are stored on your disk in `%LOCALAPPDATA%\FHCompanion\laps`.
+
+- **Open lap folder** shows that folder in Explorer: one folder per course,
+  then class, car, tune and tag. Each lap is a `.json` file with its full
+  telemetry beside it as `.json.tele.gz`.
+- **Delete slower laps** keeps your fastest lap per course, PI class and car
+  and deletes the rest, after showing how many laps and how much space. Standing
+  and flying starts and each game mode are kept apart, as your records count
+  them. Unfinished runs go too. Race statistics stay complete: they are brought
+  up to date first. The app never deletes laps on its own.
 
 ## Race statistics
 

@@ -269,6 +269,21 @@ internal static class Program
             Environment.Exit(0);
         }
 
+        // Was "Delete slower laps" loeschen wuerde -- nur lesen, nie loeschen.
+        if (args.Contains("--lap-cleanup-plan", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--lap-cleanup-plan", StringComparison.OrdinalIgnoreCase));
+            var wurzel = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)
+                ? Path.GetFullPath(args[i + 1]) : Rivals.LapArchive.Root;
+            var plan = Rivals.LapCleanup.Planen(wurzel);
+            Console.WriteLine($"Rundenbestand: {wurzel}");
+            Console.WriteLine($"  behalten (je Kurs, Klasse, Auto, Start, Art, Modus): {plan.Behalten}");
+            Console.WriteLine($"  langsamere Runden: {plan.Langsamere.Count}");
+            Console.WriteLine($"  abgebrochene Laeufe: {plan.Unfertige.Count}");
+            Console.WriteLine($"  Platz: {Rivals.LapCleanup.Anzeige(plan.Bytes)}");
+            Environment.Exit(0);
+        }
+
         // Kopflos pruefbar machen, was sonst nur am Fenster zu sehen waere: welche
         // Sprache gewaehlt wurde, wie viele Saetze vorliegen und wie eine Auswahl
         // tatsaechlich uebersetzt wird. Ohne das bleibt "die Sprache funktioniert"

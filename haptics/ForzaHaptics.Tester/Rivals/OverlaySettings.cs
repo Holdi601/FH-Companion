@@ -828,17 +828,10 @@ internal sealed class OverlaySettings
     /// </remarks>
     [JsonPropertyName("lap_mode")] public string LapMode { get; set; } = "auto";
 
-    /// <summary>Die volle Telemetrie je Runde in eine eigene Datei schreiben.</summary>
-    /// <remarks>
-    /// Kostet rund 1,5 MB je Runde (gemessen: 187 s bei 60 Hz, 72 Spalten, gepackt).
-    /// Die Rundendatei selbst bleibt klein und unberuehrt; die volle Spur liegt als
-    /// `.tele.gz` daneben und wird nur von dem gelesen, der nachsimulieren will.
-    /// Wer den Platz nicht ausgeben will, schaltet es hier ab.
-    /// </remarks>
-    [JsonPropertyName("full_telemetry")] public bool FullTelemetry { get; set; } = true;
-
-    /// <summary>Ob jede Runde zusaetzlich ins Archiv geschrieben wird.</summary>
-    [JsonPropertyName("archive_laps")] public bool ArchiveLaps { get; set; } = true;
+    // "full_telemetry" und "archive_laps" gibt es seit 2026-10-01 nicht mehr: jede Runde wird
+    // mit ihrer vollen Spur abgelegt, und aufgeraeumt wird auf Knopfdruck (LapCleanup).
+    // Alte Einstellungsdateien mit diesen Schluesseln lesen sich weiter -- unbekannte
+    // Schluessel uebergeht der Leser.
 
     [JsonPropertyName("gamepad_right")] public List<string> GamepadRight { get; set; } = new() { "BACK" };
     [JsonPropertyName("gamepad_left")] public List<string> GamepadLeft { get; set; } = new() { "LEFT_THUMB" };
