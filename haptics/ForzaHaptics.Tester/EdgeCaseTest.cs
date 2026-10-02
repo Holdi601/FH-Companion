@@ -949,6 +949,28 @@ internal static class EdgeCaseTest
                     g.DrawString(zeit, schrift, tinte, 1414, y + 12);
                 }
             }
+            // Was an den Server geht: das Feld ohne Gamertags, ein JPEG als Beleg.
+            var rennenSenden = new Rivals.RaceRecord
+            {
+                Id = "r1", Track = "Festival Chase", Klass = "B", Mode = "horizon-play", Laps = 1, Drivers = 2,
+                Field = new List<Rivals.FieldEntry>
+                {
+                    new() { Place = 1, Kind = "human", Car = 3852, Ms = 155_000, Self = true },
+                    new() { Place = 2, Kind = "ai", Car = 1564 },
+                },
+            };
+            Soll(Rivals.RaceSubmit.Lohnt(rennenSenden), "Senden: ein Horizon-Play-Rennen mit Menschenzeit lohnt nicht");
+            Soll(!Rivals.RaceSubmit.Lohnt(new Rivals.RaceRecord { Mode = "solo", Track = "x", Field = rennenSenden.Field }),
+                 "Senden: ein Solo-Rennen wird gesendet");
+            var beleg = Rivals.RaceSubmit.Beleg(b);
+            Soll(beleg.Length > 1000 && beleg[0] == 0xFF && beleg[1] == 0xD8, "Senden: der Beleg ist kein JPEG");
+            var gesendet = System.Text.Json.Nodes.JsonNode.Parse(Rivals.RaceSubmit.Rumpf(rennenSenden, beleg))!;
+            Soll(gesendet["race"]?["field"]?.AsArray().Count == 2 && gesendet["race"]?["track"]?.GetValue<string>() == "Festival Chase"
+                 && gesendet["proof"]?.GetValue<string>().Length > 1000,
+                 "Senden: der Rumpf traegt Feld, Strecke oder Beleg nicht");
+            Soll(!gesendet.ToJsonString().Contains("gamertag", StringComparison.OrdinalIgnoreCase),
+                 "Senden: ein Gamertag steht im Rumpf");
+
             var feld = Rivals.RaceResultsReader.Lies(b, new Rivals.GridRead(3, 2, "HHD"));
             if (feld.Count > 0)
             {

@@ -114,6 +114,7 @@ internal sealed class RivalsTab : UserControl
 
         // BESTE RUNDEN AN DIE SEITE -- siehe LapAutoSubmit. Voreingestellt AN
         // (so gewollt; der Hinweis beim ersten Start sagt es), hier abzuschalten.
+        // AUCH RENNERGEBNISSE (seit 2026-10-02): derselbe Schalter -- das soll hier stehen, nicht nur in der Doku.
         var einreichen = Check(Loc.T("Submit my laps when they beat the leaderboard"),
                                _settings.SubmitLaps);
         einreichen.CheckedChanged += (_, _) =>
@@ -140,6 +141,8 @@ internal sealed class RivalsTab : UserControl
         };
         layout.Controls.Add(Row(einreichen, tag));
         layout.Controls.Add(Caption(Loc.T("Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site."),
+                                    9f, Dim, wrap: 720));
+        layout.Controls.Add(Caption(Loc.T("With this on, the results of Horizon Play races are sent too: each driver's car, place and time -- no gamertags -- and a picture of the results screen as proof, which only the site's admin sees."),
                                     9f, Dim, wrap: 720));
         var submitState = Caption("", 9.5f, Dim, wrap: 720);
         layout.Controls.Add(submitState);

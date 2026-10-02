@@ -3663,6 +3663,27 @@ internal sealed class OverlayController : IDisposable
                         }
                         ErgebnisNachtragen(offen.Race, e);
                         if (voll is not null) { RennbildSpeichern(voll, "results", offen.Race.Id); }
+                        // AN DEN SERVER (seit 2026-10-02): Horizon Play, mit Beleg, nur wenn Runden
+                        // eingereicht werden (submit_laps, ab Werk an). Im Hintergrund, nie im Weg.
+                        if (voll is not null && _settings.SubmitLaps && RaceSubmit.Lohnt(offen.Race))
+                        {
+                            var beleg = RaceSubmit.Beleg(voll);
+                            var rennen = offen.Race;
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    var frist = TimeSpan.FromSeconds(30);
+                                    var wer = await _submitter.AusweisAsync(frist).ConfigureAwait(false);
+                                    var antwort = await RaceSubmit.SendenAsync(wer, rennen, beleg, frist).ConfigureAwait(false);
+                                    LogLap("race result submitted: " + antwort.ReplaceLineEndings(" ")[..Math.Min(160, antwort.ReplaceLineEndings(" ").Length)]);
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogLap("race result not submitted: " + ex.Message);
+                                }
+                            });
+                        }
                     }
                     else if (offen is not null)
                     {

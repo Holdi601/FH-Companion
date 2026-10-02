@@ -1,12 +1,12 @@
 {
  "#{0} of {1}": [
-  "Rivals/OverlayController.cs:4093"
+  "Rivals/OverlayController.cs:4114"
  ],
  "(no shared tune)": [
   "Tuning/TuningTab.cs:366"
  ],
  "(none)": [
-  "Rivals/RivalsTab.cs:952"
+  "Rivals/RivalsTab.cs:955"
  ],
  "(own setup or stock)": [
   "Tuning/TunesTab.cs:492"
@@ -42,7 +42,7 @@
   "Rivals/HudTab.cs:1097"
  ],
  "A newer version of the app is available.": [
-  "Rivals/RivalsTab.cs:537"
+  "Rivals/RivalsTab.cs:540"
  ],
  "A tune that is on a car is never deleted.": [
   "Tuning/TunesTab.cs:362"
@@ -130,7 +130,7 @@
   "Rivals/CarCollectionTab.cs:134"
  ],
  "App: {0}": [
-  "Rivals/RivalsTab.cs:520"
+  "Rivals/RivalsTab.cs:523"
  ],
  "Apply": [
   "Rivals/OwnTimesTab.cs:550",
@@ -243,7 +243,7 @@
   "MainForm.cs:2217"
  ],
  "Buttons": [
-  "Rivals/RivalsTab.cs:264"
+  "Rivals/RivalsTab.cs:267"
  ],
  "Bézier: {0} points": [
   "BlueprintEditor.cs:1598"
@@ -271,7 +271,7 @@
   "Rivals/CarCollectionTab.cs:573"
  ],
  "Cancel = skip this version": [
-  "Rivals/RivalsTab.cs:543"
+  "Rivals/RivalsTab.cs:546"
  ],
  "Capture card": [
   "Konsole.cs:338"
@@ -315,7 +315,7 @@
   "MainForm.cs:475"
  ],
  "Car ordinal {0}": [
-  "Rivals/OverlayController.cs:4049"
+  "Rivals/OverlayController.cs:4070"
  ],
  "Car {0} from the telemetry is not in this garage -- it was bought after the database was last written.": [
   "Tuning/TuningTab.cs:262"
@@ -457,7 +457,7 @@
   "MainForm.cs:2066"
  ],
  "Could not read the routes": [
-  "Rivals/OverlayController.cs:3979"
+  "Rivals/OverlayController.cs:4000"
  ],
  "Counted down in blue. Telemetry does not carry it, so correct it here if the countdown ends at the wrong moment.": [
   "Rivals/HudTab.cs:1106"
@@ -569,10 +569,10 @@
   "Tuning/TunesTab.cs:397"
  ],
  "Discard waiting laps": [
-  "Rivals/RivalsTab.cs:150"
+  "Rivals/RivalsTab.cs:153"
  ],
  "Discard {0} waiting lap(s)? They will not be submitted.": [
-  "Rivals/RivalsTab.cs:156"
+  "Rivals/RivalsTab.cs:159"
  ],
  "Discovering controllers...": [
   "MainForm.cs:1776"
@@ -590,7 +590,7 @@
   "MainForm.cs:1099"
  ],
  "Download and replace it now? The app closes and starts again; your settings stay.": [
-  "Rivals/RivalsTab.cs:541"
+  "Rivals/RivalsTab.cs:544"
  ],
  "Drag from a node's right port to another node's left port.\n\nDrag headers to move nodes. Right-click a node to delete it.": [
   "BlueprintEditor.cs:121"
@@ -650,19 +650,19 @@
   "Tuning/TunesTab.cs:105"
  ],
  "Example: this is how a personal record looks.": [
-  "Rivals/OverlayController.cs:4370"
+  "Rivals/OverlayController.cs:4391"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:4387"
+  "Rivals/OverlayController.cs:4408"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:4377"
+  "Rivals/OverlayController.cs:4398"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
  ],
  "Exclusive fullscreen hides the overlay entirely — use borderless.": [
-  "Rivals/OverlayController.cs:3974"
+  "Rivals/OverlayController.cs:3995"
  ],
  "Expand workspace": [
   "BlueprintEditor.cs:224"
@@ -692,7 +692,7 @@
   "MainForm.cs:767"
  ],
  "FIRST": [
-  "Rivals/OverlayController.cs:4362"
+  "Rivals/OverlayController.cs:4383"
  ],
  "Feel wheel lock separately": [
   "MainForm.cs:1063"
@@ -718,7 +718,7 @@
   "Rivals/RaceStatsTab.cs:698"
  ],
  "First lap in class {0} here": [
-  "Rivals/OverlayController.cs:4360"
+  "Rivals/OverlayController.cs:4381"
  ],
  "Fit nodes": [
   "BlueprintEditor.cs:207"
@@ -747,7 +747,7 @@
   "Tuning/TuningTab.cs:68"
  ],
  "Forza: Settings → HUD and Gameplay → Data Out": [
-  "Rivals/OverlayController.cs:4014"
+  "Rivals/OverlayController.cs:4035"
  ],
  "Free roam": [
   "Rivals/OwnTimes.cs:426"
@@ -940,8 +940,8 @@
   "Konsole.cs:570"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:4251",
-  "Rivals/OverlayController.cs:4376"
+  "Rivals/OverlayController.cs:4272",
+  "Rivals/OverlayController.cs:4397"
  ],
  "Key": [
   "TelemetryInspector.cs:45"
@@ -1169,12 +1169,12 @@
   "Rivals/HudTab.cs:1309"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:4252",
-  "Rivals/OverlayController.cs:4358",
-  "Rivals/OverlayController.cs:4378"
+  "Rivals/OverlayController.cs:4273",
+  "Rivals/OverlayController.cs:4379",
+  "Rivals/OverlayController.cs:4399"
  ],
  "NO OCR LANGUAGE": [
-  "Rivals/RivalsTab.cs:744"
+  "Rivals/RivalsTab.cs:747"
  ],
  "NODE PALETTE": [
   "BlueprintEditor.cs:63"
@@ -1186,23 +1186,23 @@
   "BlueprintEditor.cs:640"
  ],
  "Name assumed from the ordinal — not confirmed.": [
-  "Rivals/OverlayController.cs:4061"
+  "Rivals/OverlayController.cs:4082"
  ],
  "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.": [
   "Konsole.cs:437"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:4249",
-  "Rivals/OverlayController.cs:4375"
+  "Rivals/OverlayController.cs:4270",
+  "Rivals/OverlayController.cs:4396"
  ],
  "New car on your list": [
-  "Rivals/OverlayController.cs:4357"
+  "Rivals/OverlayController.cs:4378"
  ],
  "New version available": [
-  "Rivals/RivalsTab.cs:544"
+  "Rivals/RivalsTab.cs:547"
  ],
  "No = ask again at the next start": [
-  "Rivals/RivalsTab.cs:542"
+  "Rivals/RivalsTab.cs:545"
  ],
  "No Discord window found. Open Discord and watch the stream, popped out or full screen.": [
   "Rivals/Bildquelle.cs:78"
@@ -1230,7 +1230,7 @@
   "Tuning/TunesTab.cs:619"
  ],
  "No lap by this car in the records yet.": [
-  "Rivals/OverlayController.cs:4068"
+  "Rivals/OverlayController.cs:4089"
  ],
  "No layout called \"{0}\".": [
   "Rivals/HudTab.cs:1040"
@@ -1252,7 +1252,7 @@
   "Rivals/HudTab.cs:1466"
  ],
  "No route name matched.": [
-  "Rivals/OverlayController.cs:3960"
+  "Rivals/OverlayController.cs:3981"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
@@ -1314,7 +1314,7 @@
   "scripts/contrib_scan.py:362"
  ],
  "Now it is the time to beat": [
-  "Rivals/OverlayController.cs:4361"
+  "Rivals/OverlayController.cs:4382"
  ],
  "Now line": [
   "Rivals/HudTab.cs:1484"
@@ -1349,31 +1349,31 @@
   "Tuning/TunesTab.cs:250"
  ],
  "On · 127.0.0.1 · port {0}": [
-  "Rivals/OverlayController.cs:4016"
+  "Rivals/OverlayController.cs:4037"
  ],
  "One list, never both: a glance mid-menu can only hold one order.": [
-  "Rivals/RivalsTab.cs:242"
+  "Rivals/RivalsTab.cs:245"
  ],
  "One map of the course you are driving, with your car on it. It is drawn from your own laps -- only they know where on the map the car is. On a course you have not driven yet it grows as you drive.": [
   "Rivals/HudTab.cs:1179"
  ],
  "One socket, one port: the overlay reads the very same telemetry the haptics use, so nothing has to be started twice and there is no second port to keep in step. The game must run BORDERLESS windowed: an exclusive-fullscreen swap chain draws over every other window, so no overlay of any kind can appear on top of it.": [
-  "Rivals/RivalsTab.cs:295"
+  "Rivals/RivalsTab.cs:298"
  ],
  "One-make event — the car is fixed.": [
   "Rivals/OverlayController.cs:3238"
  ],
  "Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site.": [
-  "Rivals/RivalsTab.cs:142"
+  "Rivals/RivalsTab.cs:143"
  ],
  "Only cars that appear on a scanned leaderboard can be placed.": [
-  "Rivals/OverlayController.cs:4071"
+  "Rivals/OverlayController.cs:4092"
  ],
  "Only tunes that are on no car": [
   "Tuning/TunesTab.cs:91"
  ],
  "Only two masked regions are read: the 01/02/03 route list on the left, and the lone class badge in the card's top-right corner. The card's lower half prints the featured car's own class and PI, which on a Spec Racing event is the spec car and not the restriction — reading it would answer the wrong question. The masks are fractions of the screen, so they hold at any resolution.": [
-  "Rivals/RivalsTab.cs:281"
+  "Rivals/RivalsTab.cs:284"
  ],
  "Open FH Companion": [
   "MainForm.cs:1347"
@@ -1385,7 +1385,7 @@
   "Rivals/CarCollectionTab.cs:192"
  ],
  "Open the Event Sign Up screen, then press again.": [
-  "Rivals/OverlayController.cs:3972"
+  "Rivals/OverlayController.cs:3993"
  ],
  "Open the recording window": [
   "Rivals/HudTab.cs:1295"
@@ -1436,14 +1436,14 @@
   "Rivals/HudTab.cs:1261"
  ],
  "Personal best in class {0}!": [
-  "Rivals/OverlayController.cs:4349",
-  "Rivals/OverlayController.cs:4368"
+  "Rivals/OverlayController.cs:4370",
+  "Rivals/OverlayController.cs:4389"
  ],
  "Personal best with a car (every car, class and course)": [
   "Rivals/HudTab.cs:1262"
  ],
  "Personal best with this car": [
-  "Rivals/OverlayController.cs:4353"
+  "Rivals/OverlayController.cs:4374"
  ],
  "Personal records": [
   "Rivals/HudTab.cs:1258"
@@ -1456,7 +1456,7 @@
   "Konsole.cs:380"
  ],
  "Pin the panel that is up": [
-  "Rivals/RivalsTab.cs:275"
+  "Rivals/RivalsTab.cs:278"
  ],
  "Pin to taskbar": [
   "MainForm.cs:323",
@@ -1498,7 +1498,7 @@
   "Rivals/OwnTimesTab.cs:337"
  ],
  "Points — beating the field on every route": [
-  "Rivals/RivalsTab.cs:219"
+  "Rivals/RivalsTab.cs:222"
  ],
  "Pop-in phase": [
   "Rivals/HudTab.cs:1474"
@@ -1516,7 +1516,7 @@
   "Rivals/HudTab.cs:1360"
  ],
  "Previous best with it: {0}": [
-  "Rivals/OverlayController.cs:4354"
+  "Rivals/OverlayController.cs:4375"
  ],
  "Price": [
   "Rivals/CarCollectionTab.cs:165"
@@ -1553,7 +1553,7 @@
   "MainForm.cs:322"
  ],
  "P{0} of {1} on your list": [
-  "Rivals/OverlayController.cs:4342"
+  "Rivals/OverlayController.cs:4363"
  ],
  "P{0} on average": [
   "Rivals/RaceStatsTab.cs:333",
@@ -1587,10 +1587,10 @@
   "Tuning/TuningTab.cs:243"
  ],
  "Read the screen now": [
-  "Rivals/RivalsTab.cs:284"
+  "Rivals/RivalsTab.cs:287"
  ],
  "Read the whole screen": [
-  "Rivals/RivalsTab.cs:286"
+  "Rivals/RivalsTab.cs:289"
  ],
  "Read your garage while the game runs -- or tick the cars you own.": [
   "Rivals/CarCollectionTab.cs:267"
@@ -1599,7 +1599,7 @@
   "Tuning/ForzaMemoryDb.cs:83"
  ],
  "Reading the screen": [
-  "Rivals/RivalsTab.cs:279"
+  "Rivals/RivalsTab.cs:282"
  ],
  "Reads the game's memory while it runs -- takes up to a minute.": [
   "Rivals/CarNotesTab.cs:94"
@@ -1779,7 +1779,7 @@
   "Rivals/HudTab.cs:1028"
  ],
  "Save mask preview": [
-  "Rivals/RivalsTab.cs:288"
+  "Rivals/RivalsTab.cs:291"
  ],
  "Saved": [
   "Tuning/TunesTab.cs:250",
@@ -1807,7 +1807,7 @@
   "Rivals/HudTab.cs:1140"
  ],
  "Seconds on screen per press": [
-  "Rivals/RivalsTab.cs:251"
+  "Rivals/RivalsTab.cs:254"
  ],
  "Seen in My Cars": [
   "Rivals/CarCollectionTab.cs:380"
@@ -1862,7 +1862,7 @@
   "Rivals/HudTab.cs:1234"
  ],
  "Show the route panel by itself when it recognises the screen": [
-  "Rivals/RivalsTab.cs:254"
+  "Rivals/RivalsTab.cs:257"
  ],
  "Show the strip while racing": [
   "Rivals/HudTab.cs:1066"
@@ -1956,7 +1956,7 @@
  ],
  "Start overlay": [
   "Rivals/RivalsTab.cs:99",
-  "Rivals/RivalsTab.cs:336"
+  "Rivals/RivalsTab.cs:339"
  ],
  "Start the game first -- the garage is read from its memory.": [
   "Rivals/CarCollectionTab.cs:413",
@@ -2009,7 +2009,7 @@
   "MainForm.cs:716"
  ],
  "Stop overlay": [
-  "Rivals/RivalsTab.cs:356"
+  "Rivals/RivalsTab.cs:359"
  ],
  "Stopped.": [
   "MainForm.cs:719"
@@ -2036,7 +2036,7 @@
   "BlueprintEditor.cs:903"
  ],
  "Submit my laps when they beat the leaderboard": [
-  "Rivals/RivalsTab.cs:117"
+  "Rivals/RivalsTab.cs:118"
  ],
  "Sum (clamped to 100%)": [
   "BlueprintEditor.cs:1288",
@@ -2049,7 +2049,7 @@
   "MainForm.cs:2155"
  ],
  "Switch points / time": [
-  "Rivals/RivalsTab.cs:273"
+  "Rivals/RivalsTab.cs:276"
  ],
  "Switch this while racing": [
   "Rivals/HudTab.cs:1082"
@@ -2102,7 +2102,7 @@
   "Konsole.cs:505"
  ],
  "The Rivals overlay tab has a \"Save mask preview\" button: it draws both regions on a capture, which is how a mask that has drifted is spotted.": [
-  "Rivals/OverlayController.cs:3981"
+  "Rivals/OverlayController.cs:4002"
  ],
  "The Start menu entry could not be created.": [
   "MainForm.cs:1589"
@@ -2191,7 +2191,7 @@
   "Konsole.cs:294"
  ],
  "The route names have to be on screen as text.": [
-  "Rivals/OverlayController.cs:3973"
+  "Rivals/OverlayController.cs:3994"
  ],
  "The scanner ended with code {code}. Whatever finished is packed anyway.": [
   "scripts/contrib_scan.py:357"
@@ -2212,7 +2212,7 @@
   "Rivals/OverlayController.cs:3232"
  ],
  "The update did not go through. Nothing was replaced; the app keeps running as before.": [
-  "Rivals/RivalsTab.cs:578"
+  "Rivals/RivalsTab.cs:581"
  ],
  "The values on the left are every field in the official 324-byte FH6 packet plus useful derived signals. The table above shows the outputs currently owned by this application across native Steam Controller actuators and standard Xbox, PlayStation, or 8BitDo rumble motors.": [
   "TelemetryInspector.cs:87"
@@ -2236,7 +2236,7 @@
   "scripts/contrib_scan.py:326"
  ],
  "This ordinal matches no car in the records.": [
-  "Rivals/OverlayController.cs:4053"
+  "Rivals/OverlayController.cs:4074"
  ],
  "This stays inside the final tool so you can calibrate the controller at any time.": [
   "MainForm.cs:651"
@@ -2251,7 +2251,7 @@
   "Rivals/HudTab.cs:1346"
  ],
  "Time sum — raw total pace": [
-  "Rivals/RivalsTab.cs:220"
+  "Rivals/RivalsTab.cs:223"
  ],
  "To upload: --upload, or just send the file.": [
   "scripts/contrib_scan.py:386"
@@ -2367,8 +2367,8 @@
   "Tuning/TunesTab.cs:293"
  ],
  "Update failed": [
-  "Rivals/RivalsTab.cs:576",
-  "Rivals/RivalsTab.cs:580"
+  "Rivals/RivalsTab.cs:579",
+  "Rivals/RivalsTab.cs:583"
  ],
  "Uploading to {server} ...": [
   "scripts/contrib_scan.py:383"
@@ -2436,8 +2436,8 @@
   "BlueprintEditor.cs:1298"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:4227",
-  "Rivals/OverlayController.cs:4386"
+  "Rivals/OverlayController.cs:4248",
+  "Rivals/OverlayController.cs:4407"
  ],
  "What it compares against": [
   "Rivals/HudTab.cs:1068"
@@ -2446,13 +2446,13 @@
   "Tuning/TuningTab.cs:107"
  ],
  "What it shows": [
-  "Rivals/RivalsTab.cs:217"
+  "Rivals/RivalsTab.cs:220"
  ],
  "What this program does, and what leaves your computer": [
   "MainForm.cs:262"
  ],
  "What to drive": [
-  "Rivals/RivalsTab.cs:265"
+  "Rivals/RivalsTab.cs:268"
  ],
  "What {0} does": [
   "Disclosure.cs:89",
@@ -2523,11 +2523,14 @@
  "With the game's picture on this PC the app also reads the sign-up screen, My Cars and which mode you play.": [
   "Konsole.cs:332"
  ],
+ "With this on, the results of Horizon Play races are sent too: each driver's car, place and time -- no gamertags -- and a picture of the results screen as proof, which only the site's admin sees.": [
+  "Rivals/RivalsTab.cs:145"
+ ],
  "Without a game picture the app cannot see which menu a lap came from. Set it here -- only Rivals and Horizon Play laps count on the website.": [
   "Konsole.cs:655"
  ],
  "Without a gamertag your laps appear on the website under a temporary player name. A gamertag entered later replaces it on all your laps, including the earlier ones.": [
-  "Rivals/RivalsTab.cs:178"
+  "Rivals/RivalsTab.cs:181"
  ],
  "Xbox / 2nd PC": [
   "Konsole.cs:326",
@@ -2546,18 +2549,18 @@
   "Rivals/OwnTimesTab.cs:132"
  ],
  "Yes = now": [
-  "Rivals/RivalsTab.cs:542"
+  "Rivals/RivalsTab.cs:545"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:4224",
-  "Rivals/OverlayController.cs:4385"
+  "Rivals/OverlayController.cs:4245",
+  "Rivals/OverlayController.cs:4406"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:539"
  ],
  "Your car": [
-  "Rivals/OverlayController.cs:4018",
-  "Rivals/RivalsTab.cs:269"
+  "Rivals/OverlayController.cs:4039",
+  "Rivals/RivalsTab.cs:272"
  ],
  "Your first lap in a class on a course": [
   "Rivals/HudTab.cs:1266"
@@ -2575,8 +2578,8 @@
   "Rivals/HudTab.cs:1259"
  ],
  "Your previous best here: {0}": [
-  "Rivals/OverlayController.cs:4350",
-  "Rivals/OverlayController.cs:4369"
+  "Rivals/OverlayController.cs:4371",
+  "Rivals/OverlayController.cs:4390"
  ],
  "Your window is not in the list? Copy the list of all windows": [
   "Konsole.cs:395"
@@ -2585,7 +2588,7 @@
   "Rivals/OverlayController.cs:3468"
  ],
  "a newer version is ready (skipped)": [
-  "Rivals/RivalsTab.cs:528"
+  "Rivals/RivalsTab.cs:531"
  ],
  "a note for whoever receives this": [
   "scripts/contrib_scan.py:300"
@@ -2616,7 +2619,7 @@
   "Rivals/OwnTimesTab.cs:147"
  ],
  "asking the server ...": [
-  "Rivals/RivalsTab.cs:510"
+  "Rivals/RivalsTab.cs:513"
  ],
  "auto ({0})": [
   "Rivals/RaceStatsTab.cs:108",
@@ -2627,7 +2630,7 @@
   "Rivals/OwnTimes.cs:417"
  ],
  "best fit: {0} {1} (#{2} of {3})": [
-  "Rivals/OverlayController.cs:4107"
+  "Rivals/OverlayController.cs:4128"
  ],
  "best per car and course": [
   "Rivals/OwnTimesTab.cs:176"
@@ -2636,7 +2639,7 @@
   "Tuning/TuningTab.cs:373"
  ],
  "built: {0}": [
-  "Rivals/RivalsTab.cs:539"
+  "Rivals/RivalsTab.cs:542"
  ],
  "by points · {0} route(s)": [
   "Rivals/OverlayController.cs:3409"
@@ -2653,24 +2656,24 @@
  ],
  "checking the server ...": [
   "Rivals/CarCollectionTab.cs:441",
-  "Rivals/RivalsTab.cs:441"
+  "Rivals/RivalsTab.cs:444"
  ],
  "class guessed from the {0}": [
   "Rivals/OverlayController.cs:3466"
  ],
  "class {0}": [
-  "Rivals/OverlayController.cs:4034",
+  "Rivals/OverlayController.cs:4055",
   "Tuning/TuningTab.cs:361"
  ],
  "class: none": [
-  "Rivals/RivalsTab.cs:766"
+  "Rivals/RivalsTab.cs:769"
  ],
  "class: not found": [
-  "Rivals/OverlayController.cs:3964"
+  "Rivals/OverlayController.cs:3985"
  ],
  "class: {0}": [
-  "Rivals/OverlayController.cs:3965",
-  "Rivals/RivalsTab.cs:765"
+  "Rivals/OverlayController.cs:3986",
+  "Rivals/RivalsTab.cs:768"
  ],
  "co-op races only": [
   "Rivals/RaceStatsTab.cs:352"
@@ -2697,10 +2700,10 @@
   "Tuning/TuningTab.cs:433"
  ],
  "could not load {0}": [
-  "Rivals/RivalsTab.cs:348"
+  "Rivals/RivalsTab.cs:351"
  ],
  "dataset failed to load: {0}": [
-  "Rivals/RivalsTab.cs:389"
+  "Rivals/RivalsTab.cs:392"
  ],
  "do not scan, only pack what is already there": [
   "scripts/contrib_scan.py:302"
@@ -2811,7 +2814,7 @@
   "Rivals/OverlayController.cs:2640"
  ],
  "kept the previous one ({0})": [
-  "Rivals/RivalsTab.cs:391"
+  "Rivals/RivalsTab.cs:394"
  ],
  "lap stored: {0} s, {1} m": [
   "Rivals/HudTab.cs:288",
@@ -2833,10 +2836,10 @@
   "Rivals/CarCollectionTab.cs:549"
  ],
  "later": [
-  "Rivals/RivalsTab.cs:556"
+  "Rivals/RivalsTab.cs:559"
  ],
  "listening on {0}, no packets yet": [
-  "Rivals/OverlayController.cs:4020"
+  "Rivals/OverlayController.cs:4041"
  ],
  "minimized": [
   "Rivals/FensterQuelle.cs:706"
@@ -2848,7 +2851,7 @@
   "Rivals/AppUpdate.cs:175"
  ],
  "new: {0} ({1} MB)": [
-  "Rivals/RivalsTab.cs:538"
+  "Rivals/RivalsTab.cs:541"
  ],
  "next": [
   "Rivals/CourseShapeHud.cs:224"
@@ -2863,7 +2866,7 @@
   "Tuning/TuningTab.cs:169"
  ],
  "no dataset — set dataset_url, or restore the shipped {0}": [
-  "Rivals/RivalsTab.cs:371"
+  "Rivals/RivalsTab.cs:374"
  ],
  "no garage database found in the game's memory.": [
   "Tuning/TuningTab.cs:214"
@@ -2875,7 +2878,7 @@
   "Rivals/OverlayController.cs:877"
  ],
  "no records to answer from — check the server address, or unzip the package again: it ships {0}": [
-  "Rivals/RivalsTab.cs:346"
+  "Rivals/RivalsTab.cs:349"
  ],
  "no running clock -- nothing is being timed": [
   "Rivals/OverlayController.cs:1798"
@@ -2896,7 +2899,7 @@
   "Tuning/TuningTab.cs:393"
  ],
  "not scanned yet: {0}": [
-  "Rivals/OverlayController.cs:4112"
+  "Rivals/OverlayController.cs:4133"
  ],
  "not uploaded: {error}": [
   "scripts/contrib_scan.py:263"
@@ -2905,13 +2908,13 @@
   "Rivals/CourseShapeHud.cs:223"
  ],
  "one-make event": [
-  "Rivals/RivalsTab.cs:769"
+  "Rivals/RivalsTab.cs:772"
  ],
  "only this build": [
   "Rivals/CarNotesTab.cs:297"
  ],
  "ordinal {0}": [
-  "Rivals/OverlayController.cs:4045"
+  "Rivals/OverlayController.cs:4066"
  ],
  "overlay for recording": [
   "Rivals/AufnahmeFenster.cs:31"
@@ -2934,7 +2937,7 @@
   "Rivals/OverlayController.cs:2164"
  ],
  "preview failed: {0}": [
-  "Rivals/RivalsTab.cs:802"
+  "Rivals/RivalsTab.cs:805"
  ],
  "preview: {0}": [
   "Rivals/OverlayController.cs:2167",
@@ -2942,28 +2945,28 @@
  ],
  "read failed: {0}": [
   "Rivals/OverlayController.cs:2934",
-  "Rivals/RivalsTab.cs:779"
+  "Rivals/RivalsTab.cs:782"
  ],
  "reading ...": [
   "Tuning/TuningTab.cs:176"
  ],
  "rebuilt on this machine": [
-  "Rivals/RivalsTab.cs:614"
+  "Rivals/RivalsTab.cs:617"
  ],
  "rejected ({code}): {detail}": [
   "scripts/contrib_scan.py:259"
  ],
  "replacing ...": [
-  "Rivals/RivalsTab.cs:568"
+  "Rivals/RivalsTab.cs:571"
  ],
  "routes recognised": [
-  "Rivals/OverlayController.cs:3949"
+  "Rivals/OverlayController.cs:3970"
  ],
  "routes: none matched": [
-  "Rivals/RivalsTab.cs:763"
+  "Rivals/RivalsTab.cs:766"
  ],
  "routes: {0}": [
-  "Rivals/RivalsTab.cs:762"
+  "Rivals/RivalsTab.cs:765"
  ],
  "same PI class": [
   "Rivals/OverlayController.cs:961",
@@ -3039,19 +3042,19 @@
  "stopped": [
   "Rivals/OverlayController.cs:631",
   "Rivals/OverlayController.cs:657",
-  "Rivals/RivalsTab.cs:743"
+  "Rivals/RivalsTab.cs:746"
  ],
  "telemetry says you are in car {0}": [
   "Tuning/TuningTab.cs:168"
  ],
  "telemetry: not connected to the app's listener": [
-  "Rivals/RivalsTab.cs:728"
+  "Rivals/RivalsTab.cs:731"
  ],
  "telemetry: the app is listening on UDP {0} — this panel reads that same stream, there is no second port": [
-  "Rivals/RivalsTab.cs:732"
+  "Rivals/RivalsTab.cs:735"
  ],
  "telemetry: the listener is stopped (port {0}) — starting the overlay starts it": [
-  "Rivals/RivalsTab.cs:734"
+  "Rivals/RivalsTab.cs:737"
  ],
  "the app is up to date": [
   "Rivals/AppUpdate.cs:176"
@@ -3066,7 +3069,7 @@
   "Tuning/TuningTab.cs:337"
  ],
  "the listener is not running on {0}": [
-  "Rivals/OverlayController.cs:4021"
+  "Rivals/OverlayController.cs:4042"
  ],
  "the program file is not where it is expected": [
   "Shortcuts.cs:322"
@@ -3094,10 +3097,10 @@
   "Rivals/AppUpdate.cs:171"
  ],
  "this course": [
-  "Rivals/OverlayController.cs:4339"
+  "Rivals/OverlayController.cs:4360"
  ],
  "this version stays skipped": [
-  "Rivals/RivalsTab.cs:551"
+  "Rivals/RivalsTab.cs:554"
  ],
  "tick failed: {0}": [
   "Rivals/OverlayController.cs:2699"
@@ -3147,10 +3150,10 @@
   "Rivals/OwnTimesTab.cs:123"
  ],
  "usable: no": [
-  "Rivals/RivalsTab.cs:770"
+  "Rivals/RivalsTab.cs:773"
  ],
  "usable: yes": [
-  "Rivals/RivalsTab.cs:770"
+  "Rivals/RivalsTab.cs:773"
  ],
  "waiting for Forza": [
   "MainForm.cs:1360"
@@ -3167,13 +3170,13 @@
   "Rivals/CarCollectionTab.cs:595"
  ],
  "what usually fixes it": [
-  "Rivals/OverlayController.cs:3968"
+  "Rivals/OverlayController.cs:3989"
  ],
  "window: {0}": [
   "Rivals/OverlayController.cs:2588"
  ],
  "wrote {0} — the routes box must hold the 01/02/03 list, the class box only the badge": [
-  "Rivals/RivalsTab.cs:796"
+  "Rivals/RivalsTab.cs:799"
  ],
  "yes": [
   "Tuning/TunesTab.cs:258"
@@ -3185,10 +3188,10 @@
   "Rivals/OverlayController.cs:3480"
  ],
  "your gamertag (optional)": [
-  "Rivals/RivalsTab.cs:130"
+  "Rivals/RivalsTab.cs:131"
  ],
  "yours: {0}": [
-  "Rivals/RivalsTab.cs:540"
+  "Rivals/RivalsTab.cs:543"
  ],
  "{0} (standing start)": [
   "Rivals/OverlayController.cs:1757"
@@ -3237,10 +3240,10 @@
   "Rivals/RaceStatsTab.cs:360"
  ],
  "{0} boards": [
-  "Rivals/RivalsTab.cs:380",
-  "Rivals/RivalsTab.cs:390",
-  "Rivals/RivalsTab.cs:461",
-  "Rivals/RivalsTab.cs:745"
+  "Rivals/RivalsTab.cs:383",
+  "Rivals/RivalsTab.cs:393",
+  "Rivals/RivalsTab.cs:464",
+  "Rivals/RivalsTab.cs:748"
  ],
  "{0} car(s) hidden: the dataset has no name for them, only an id": [
   "Rivals/OverlayController.cs:3473"
@@ -3258,7 +3261,7 @@
   "Tuning/TunesTab.cs:310"
  ],
  "{0} cyl": [
-  "Rivals/OverlayController.cs:4042"
+  "Rivals/OverlayController.cs:4063"
  ],
  "{0} file(s) could not be deleted -- another program may have them open. Try again later.": [
   "Rivals/OwnTimesTab.cs:267"
@@ -3279,13 +3282,13 @@
   "Rivals/AppUpdate.cs:372"
  ],
  "{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on and the server answers -- checked again against the leaderboard of that day.": [
-  "Rivals/RivalsTab.cs:172"
+  "Rivals/RivalsTab.cs:175"
  ],
  "{0} lap(s) on {1} course(s), of {2} recorded. Assists, gearbox and valid/invalid are leaderboard facts the telemetry does not send, so they cannot filter your own laps.": [
   "Rivals/OwnTimesTab.cs:465"
  ],
  "{0} lines of text in the masks": [
-  "Rivals/OverlayController.cs:3980"
+  "Rivals/OverlayController.cs:4001"
  ],
  "{0} more with a car not on the leaderboard": [
   "Rivals/RaceStatsTab.cs:379"
@@ -3346,7 +3349,7 @@
   "Rivals/RaceStatsTab.cs:326"
  ],
  "{0}/{1} routes": [
-  "Rivals/OverlayController.cs:4097"
+  "Rivals/OverlayController.cs:4118"
  ],
  "{0}: opacity": [
   "Rivals/HudTab.cs:1580"

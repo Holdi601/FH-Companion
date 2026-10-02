@@ -89,6 +89,9 @@ CODE = [
     "server/serve_analytics.py",
     "server/analytics_api.py",
     "server/lap_submissions.py",
+    # Eingereichte Rennergebnisse (2026-10-02). analytics_api importiert sie -- fehlte sie
+    # drueben, startete der ganze Server nicht.
+    "server/race_submissions.py",
     "server/contrib_format.py",
     "server/import_contrib.py",
     "server/contrib_keys.py",

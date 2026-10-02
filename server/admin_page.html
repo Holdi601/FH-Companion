@@ -107,6 +107,9 @@ button:hover { background: var(--bar); border-color: var(--bar); color: var(--on
   font-variant-numeric: tabular-nums;
 }
 .note { font-size: 13px; color: var(--muted); }
+.race { margin: 14px 0 18px; }
+.race .proof img { max-width: 100%; margin-top: 8px; border-radius: 4px; }
+tr.hidden-row td { opacity: .45; text-decoration: line-through; }
 .err { color: var(--bad); }
 .ok { color: var(--good); }
 .chart { display: flex; align-items: flex-end; gap: 2px; height: 130px; margin-top: 6px; }
@@ -257,6 +260,16 @@ h3 { font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-size: 17
         <button id="laps-refresh">Reload</button>
       </div>
       <div id="laps" class="note">not loaded</div>
+    </div>
+
+    <h2>Race results (Horizon Play)</h2>
+    <div class="panel">
+      <div class="filters"><button id="races-refresh">Reload</button>
+        <span class="note">A car's time is the one at the 1 % mark of all human times, never the single
+        fastest. Hide a time you know is cheated and the next one counts; hide that too if needed.
+        The proof picture shows other players' gamertags -- it stays on this page.</span></div>
+      <div id="hp-boards" class="note">not loaded</div>
+      <div id="races" class="note"></div>
     </div>
 
     <h2>Bans</h2>
@@ -595,6 +608,114 @@ function rundenZeichnen() {
 
 var KLASSEN = ["D", "C", "B", "A", "S1", "S2", "R"];
 
+// ---- Rennergebnisse (Horizon Play, seit 2026-10-02) ------------------------ //
+//
+// Alles mit Admin-Unterschrift: die Liste, das Bild (es zeigt die Gamertags der anderen
+// Spieler und verlaesst diese Seite nie) und das Aus-/Einblenden einer Zeile.
+var alleRennen = [];
+
+function msText(ms) {
+  if (ms === null || ms === undefined) { return "-"; }
+  var s = ms / 1000;
+  var m = Math.floor(s / 60);
+  var rest = (s - m * 60).toFixed(3);
+  return m + ":" + (rest.length < 6 ? "0" + rest : rest);
+}
+
+// Wie schicke(), aber die Antwort als Datei (das Beweisbild).
+function schickeRoh(path, koerper) {
+  var geheim = sessionStorage.getItem("fgh-admin") || "";
+  var stamp = String(Math.floor(Date.now() / 1000));
+  var text = JSON.stringify(koerper);
+  return sha256Hex(text)
+    .then(function (rumpfHash) {
+      return hmacHex(geheim, "POST\n" + path + "\n" + stamp + "\n" + rumpfHash)
+        .then(function (sig) {
+          return fetch(path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Forza-Timestamp": stamp, "X-Forza-Signature": sig },
+            body: text
+          });
+        });
+    }).then(function (r) {
+      if (!r.ok) { return r.text().then(function (t) { throw new Error(t); }); }
+      return r.blob();
+    });
+}
+
+function rennenLaden() {
+  var ziel = document.getElementById("hp-boards");
+  ziel.textContent = "loading ...";
+  return hole("/api/admin/race/list").then(function (d) {
+    alleRennen = d.races || [];
+    rennenZeichnen(d.boards || []);
+  }).catch(function (e) {
+    ziel.textContent = "not available: " + e.message;
+  });
+}
+
+function rennenZeichnen(bretter) {
+  document.getElementById("hp-boards").innerHTML = bretter.length
+    ? "<table><tr><th>Route</th><th>Class</th><th>Car</th><th>Kind</th><th>Time (1 % mark)</th>"
+      + "<th>Fastest single</th><th>Times</th></tr>"
+      + bretter.map(function (x) {
+          return "<tr><td>" + esc(x.track) + "</td><td>" + esc(x["class"]) + "</td><td>" + esc(x.car)
+            + "</td><td>" + esc(x.kind === "lap" ? "best lap" : "race time") + "</td><td>"
+            + esc(msText(x.ms)) + (x.confirmed ? "" : " (unconfirmed)") + "</td><td>"
+            + esc(msText(x.fastest)) + "</td><td>" + esc(x.n) + "</td></tr>";
+        }).join("") + "</table>"
+    : "no Horizon Play times yet";
+  var ziel = document.getElementById("races");
+  var liste = alleRennen.slice().sort(function (a, b) { return (b.received || 0) - (a.received || 0); }).slice(0, 60);
+  ziel.innerHTML = liste.map(function (r) {
+    var versteckt = r.hiddenPlaces || [];
+    return '<div class="race"><div><b>' + esc(r.track) + "</b> &middot; " + esc(r["class"] || "?")
+      + " &middot; " + esc(r.at || "") + (r.flags && r.flags.length ? ' &middot; <span class="bad">'
+      + esc(r.flags.join(", ")) + "</span>" : "")
+      + ' <button data-proof="' + esc(r.id) + '">Proof</button></div>'
+      + '<div class="proof" id="proof-' + esc(r.id) + '"></div>'
+      + "<table><tr><th>Place</th><th>Kind</th><th>Car</th><th>PI</th><th>Best lap</th><th>Time</th><th></th></tr>"
+      + (r.field || []).map(function (z) {
+          var aus = versteckt.indexOf(z.place) >= 0;
+          var knopf = z.kind === "human" && (z.ms || z.bestLapMs)
+            ? '<button data-race="' + esc(r.id) + '" data-place="' + esc(z.place) + '" data-hide="'
+              + (aus ? "0" : "1") + '">' + (aus ? "Show" : "Hide") + "</button>"
+            : "";
+          return "<tr" + (aus ? ' class="hidden-row"' : "") + "><td>" + esc(z.place) + (z.self ? " *" : "")
+            + "</td><td>" + esc(z.kind) + "</td><td>" + esc(z.carName || z.carShort || "?")
+            + (z.car ? " (" + esc(z.car) + ")" : "") + "</td><td>" + esc(z.pi || "") + "</td><td>"
+            + esc(msText(z.bestLapMs)) + "</td><td>" + esc(msText(z.ms)) + "</td><td>" + knopf + "</td></tr>";
+        }).join("") + "</table></div>";
+  }).join("");
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-proof]"), function (b) {
+    b.addEventListener("click", function () {
+      var id = b.getAttribute("data-proof");
+      var platz = document.getElementById("proof-" + id);
+      if (platz.firstChild) { platz.innerHTML = ""; return; }
+      b.disabled = true;
+      schickeRoh("/api/admin/race/proof", { id: id })
+        .then(function (blob) {
+          var bild = document.createElement("img");
+          bild.src = URL.createObjectURL(blob);
+          platz.appendChild(bild);
+        })
+        .catch(function (e) { alert("Failed: " + e.message); })
+        .then(function () { b.disabled = false; });
+    });
+  });
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-race]"), function (b) {
+    b.addEventListener("click", function () {
+      var hide = b.getAttribute("data-hide") === "1";
+      b.disabled = true;
+      schicke(hide ? "/api/admin/race/hide" : "/api/admin/race/show",
+              { id: b.getAttribute("data-race"), place: Number(b.getAttribute("data-place")),
+                reason: hide ? "cheated time" : "" })
+        .then(rennenLaden)
+        .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+    });
+  });
+}
+
 // Eine Runde als Datei: JSON so, wie sie auf dem Server liegt, oder CSV mit einer
 // Zeile je Messpunkt (Spalten = alle vorkommenden Felder, in der Reihenfolge des
 // ersten Punkts) -- fuer eine Tabellenkalkulation.
@@ -743,6 +864,7 @@ function laden() {
     s.textContent = "Counting since " + (d.since || "?") + ".";
     zeichnen();
     rundenLaden();
+    rennenLaden();
     sperrenLaden();
     fassungenLaden();
     besucheLaden();
@@ -781,6 +903,7 @@ document.getElementById("secret").addEventListener("keydown", function (e) {
 });
 document.getElementById("refresh").addEventListener("click", laden);
 document.getElementById("laps-refresh").addEventListener("click", rundenLaden);
+document.getElementById("races-refresh").addEventListener("click", rennenLaden);
 document.getElementById("bans-refresh").addEventListener("click", sperrenLaden);
 ["f-player", "f-car", "f-max"].forEach(function (id) {
   document.getElementById(id).addEventListener("input", rundenZeichnen);

@@ -68,6 +68,27 @@ ihn lässt sich aus dem abgelegten Hash nicht zurückrechnen, welche Maschine ge
 ist — auch nicht durch Ausprobieren, denn dazu bräuchte man den Pfeffer mit. Er
 liegt nicht in derselben Datei wie die Auswertung und verlässt den Server nie.
 
+### 2a. Rennergebnisse aus Horizon Play (seit 2026-10-02)
+
+Ist das Einreichen in der App an („Submit my laps when they beat the leaderboard",
+Reiter Rivals — **ab Werk an**, dort abschaltbar), schickt die App nach jedem
+Horizon-Play-Rennen, dessen Ergebnisschirm sie lesen konnte, zusätzlich:
+
+| Was | Form | Warum |
+|---|---|---|
+| Das Feld | je Fahrer Platz, Mensch/KI/verlassen, Auto, PI, beste Runde oder Fortschritt, Zeit | Daraus werden die Horizon-Play-Zeiten je Auto |
+| Ein Bild des Ergebnisschirms | JPEG, 1280 Punkte breit | Beleg, dass das Ergebnis so stattfand |
+| Installationskennung | wie bei den Runden | Zuordnung, um sperren zu können |
+
+**Gamertags anderer Spieler werden nicht gelesen und nicht als Daten übertragen.**
+Sie stehen aber im Bild des Ergebnisschirms. Dieses Bild sieht **nur der
+Verwalter** zur Prüfung; es erscheint nie auf der Seite und wird nicht weitergegeben.
+Öffentlich sind nur die daraus berechneten Zeiten je Strecke, Klasse und Auto — ohne
+Namen und ohne die einzelne schnellste Zeit.
+
+Wer das nicht möchte, schaltet das Einreichen ab; dann geht weder eine Runde noch ein
+Rennergebnis hinaus.
+
 ### 3. IP-Adressen
 
 Drei Stellen, alle unvermeidbar, alle begrenzt:
@@ -177,6 +198,7 @@ dem zugestimmt wurde.
 | Bestenlisten-Zeilen | dauerhaft | Sie sind der Zweck der Seite |
 | Eingereichte Runden samt Telemetrie | dauerhaft, solange sichtbar (ab Fassung 10 auch zum Herunterladen) | Eine Bestzeit ohne Beleg ist wertlos |
 | Ausgeblendete Runden | bleiben, aber unsichtbar | Was heute falsch aussieht, ist morgen der einzige Beleg dafür, **was** schiefging |
+| Eingereichte Rennergebnisse samt Bild | dauerhaft; das Bild nur für den Verwalter | Die Horizon-Play-Zeiten werden aus ihnen berechnet, das Bild belegt sie |
 | Hardware-Hashes nicht gesperrter Konten | **12 Monate** ohne Einreichung | Danach hat er keinen Zweck mehr |
 | Hardware-Hashes gesperrter Konten | länger | Sonst hebt sich die Sperre von selbst auf |
 | IP im Container-Protokoll | rotierend, max. ~30 MB | Fehlersuche |

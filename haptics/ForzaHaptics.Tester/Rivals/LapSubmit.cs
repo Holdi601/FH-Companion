@@ -135,9 +135,9 @@ internal static class LapSubmit
     }
 
     // Ueber ServerHttp: HTTPS, und nur bei gescheitertem Handschlag HTTP.
-    private static HttpClient Client(TimeSpan timeout) => ServerHttp.Client(timeout);
+    internal static HttpClient Client(TimeSpan timeout) => ServerHttp.Client(timeout);
 
-    private static Uri An(string baseUrl, string pfad) =>
+    internal static Uri An(string baseUrl, string pfad) =>
         new(new Uri(baseUrl.TrimEnd('/') + "/"), pfad.TrimStart('/'));
 
     /// <summary>Der Server hat abgelehnt -- mit seinem Statuscode, damit der Aufrufer

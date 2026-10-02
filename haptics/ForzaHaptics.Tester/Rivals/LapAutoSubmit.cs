@@ -425,24 +425,7 @@ internal sealed class LapAutoSubmit
         LapSubmit.Identity wer;
         try
         {
-            var gemerkt = LapSubmit.Load();
-            // DERSELBE SERVER, NUR JETZT UEBER HTTPS: die Anmeldung behalten und nur
-            // die Adresse nachziehen. Ein blosser Textvergleich hielte http:// und
-            // https:// fuer zwei Server und meldete jede Installation neu an -- mit
-            // neuer Kennung, ohne ihre bisherigen Runden.
-            if (gemerkt is not null && gemerkt.Server != _settings.DatasetUrl
-                && ServerHttp.SameServer(gemerkt.Server, _settings.DatasetUrl))
-            {
-                gemerkt.Server = _settings.DatasetUrl;
-                LapSubmit.Save(gemerkt);
-            }
-            // EIN GEAENDERTER GAMERTAG IST KEIN GRUND FUER EINE NEUE ANMELDUNG
-            // (seit 2026-09-27): er reist mit jeder Einreichung mit. Frueher meldete
-            // jeder neue Name die Installation neu an -- neue Kennung, und nach fuenf
-            // davon nahm der Server diese Maschine gar nicht mehr an.
-            wer = gemerkt is null || gemerkt.Server != _settings.DatasetUrl
-                ? await Anmelden(gamertag, timeout).ConfigureAwait(false)
-                : gemerkt;
+            wer = await AusweisAsync(timeout).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -451,7 +434,40 @@ internal sealed class LapAutoSubmit
             // vergessen: an ihr liegt es nicht.
             return (Ausgang.SpaeterNochmal, "could not sign up with the server: " + e.Message);
         }
+        return await SendenMitAusweisAsync(wer, lap, course, track, befund, buch, spur, gamertag, timeout).ConfigureAwait(false);
+    }
 
+    /// <summary>
+    /// Die Anmeldung beim Server: die gemerkte, sonst eine neue. Auch fuer Rennergebnisse
+    /// (RaceSubmit, seit 2026-10-02) -- die gehen hinaus, auch wenn noch nie eine Runde schneller war.
+    /// </summary>
+    internal async Task<LapSubmit.Identity> AusweisAsync(TimeSpan timeout)
+    {
+        var gamertag = (_settings.Gamertag ?? string.Empty).Trim();
+        var gemerkt = LapSubmit.Load();
+        // DERSELBE SERVER, NUR JETZT UEBER HTTPS: die Anmeldung behalten und nur
+        // die Adresse nachziehen. Ein blosser Textvergleich hielte http:// und
+        // https:// fuer zwei Server und meldete jede Installation neu an -- mit
+        // neuer Kennung, ohne ihre bisherigen Runden.
+        if (gemerkt is not null && gemerkt.Server != _settings.DatasetUrl
+            && ServerHttp.SameServer(gemerkt.Server, _settings.DatasetUrl))
+        {
+            gemerkt.Server = _settings.DatasetUrl;
+            LapSubmit.Save(gemerkt);
+        }
+        // EIN GEAENDERTER GAMERTAG IST KEIN GRUND FUER EINE NEUE ANMELDUNG
+        // (seit 2026-09-27): er reist mit jeder Einreichung mit. Frueher meldete
+        // jeder neue Name die Installation neu an -- neue Kennung, und nach fuenf
+        // davon nahm der Server diese Maschine gar nicht mehr an.
+        return gemerkt is null || gemerkt.Server != _settings.DatasetUrl
+            ? await Anmelden(gamertag, timeout).ConfigureAwait(false)
+            : gemerkt;
+    }
+
+    private async Task<(Ausgang, string)> SendenMitAusweisAsync(LapSubmit.Identity wer, RecordedLap lap, string course,
+                                                                 string track, Befund befund, Dictionary<string, int> buch,
+                                                                 byte[] spur, string gamertag, TimeSpan timeout)
+    {
         lap.Track = track;
         var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
         try

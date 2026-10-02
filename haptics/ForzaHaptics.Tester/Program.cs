@@ -185,6 +185,50 @@ internal static class Program
 
         // Die Startaufstellung aus einem Bild lesen, wie es die App im Menue tut -- zum
         // Pruefen an Aufnahmen (Bild 1080p oder 4K; verkleinert wird hier wie dort).
+        // Ein gespeichertes Ergebnisbild lesen und an EINEN SERVER schicken (lokaler Test: nie der echte).
+        // Anmeldung in FORZA_SUBMIT_HOME, damit die des Nutzers unberuehrt bleibt.
+        if (args.Contains("--race-submit", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--race-submit", StringComparison.OrdinalIgnoreCase));
+            if (i + 2 >= args.Length || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("FORZA_SUBMIT_HOME")))
+            {
+                Console.WriteLine("--race-submit <server> <results.jpg> [track]   (needs FORZA_SUBMIT_HOME)");
+                Environment.Exit(2);
+            }
+            using var gross = new Bitmap(args[i + 2]);
+            using var hd = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(hd)) { g.DrawImage(gross, new Rectangle(0, 0, 1920, 1080)); }
+            using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height,
+                                         System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(klein))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+            }
+            if (Rivals.RaceGrid.ReadResults(klein) is not { } roh) { Console.WriteLine("no results screen"); Environment.Exit(1); return; }
+            var e = Rivals.RaceGrid.MitAbbruechen(hd, roh);
+            var feld = Rivals.RaceResultsReader.Lies(hd, e);
+            var rennen = new Rivals.RaceRecord
+            {
+                Id = "cli-" + Path.GetFileNameWithoutExtension(args[i + 2]), At = DateTime.Now,
+                Track = i + 3 < args.Length ? args[i + 3] : "Festival Chase",
+                Klass = Rivals.LapArchive.ClassOf(feld.FirstOrDefault(f => f.Pi is not null)?.Pi ?? 0),
+                Mode = "horizon-play", Laps = 1, Drivers = e.Drivers, Field = feld,
+            };
+            try
+            {
+                var wer = Rivals.LapSubmit.RegisterAsync(args[i + 1], "CliTester", TimeSpan.FromSeconds(20)).GetAwaiter().GetResult();
+                Console.WriteLine(Rivals.RaceSubmit.SendenAsync(wer, rennen, Rivals.RaceSubmit.Beleg(hd), TimeSpan.FromSeconds(20))
+                                       .GetAwaiter().GetResult());
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("failed: " + ex.Message);
+                Environment.Exit(1);
+            }
+        }
+
         // Das Feld vom Ergebnisschirm, an gespeicherten Bildern: Auto, PI, Fortschritt, Zeit je Zeile.
         if (args.Contains("--results-read", StringComparer.OrdinalIgnoreCase))
         {

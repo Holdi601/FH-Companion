@@ -325,6 +325,43 @@ Der Test schneidet die Methode `Signature` bei jedem Lauf **frisch aus
 abdriften, ohne dass es auffällt. Dasselbe Verfahren sichert im Projekt schon das
 JavaScript der Admin-Seite ab.
 
+## Rennergebnisse aus Horizon Play (seit 2026-10-02)
+
+Nach einem Horizon-Play-Rennen liest die App den Ergebnisschirm (RaceResultsReader):
+je Fahrer Platz, Mensch (Stufenabzeichen) / KI / verlassen, Auto, PI, auf Rundkursen
+die **beste Runde**, auf Strecken von A nach B den Fortschritt, und die Zeit im Ziel.
+Keine Gamertags. Gesendet an `POST /api/race/submit`, unterschrieben wie eine Runde,
+zusammen mit einem Bild des Ergebnisschirms (JPEG, 1280 breit) als Beleg:
+
+```json
+{"race": {"id": "...", "at": "2026-10-01T22:42:04", "track": "Daikoku Circuit",
+          "class": "S2", "mode": "horizon-play", "laps": 3, "drivers": 12,
+          "field": [{"place": 1, "kind": "human", "self": true, "car": 4277,
+                     "pi": 900, "bestLapMs": 47939, "ms": 153409}, ...]},
+ "proof": "<JPEG als Base64>"}
+```
+
+**Wann:** immer, wenn das Einreichen an ist (`submit_laps`, ab Werk an, im Reiter
+Rivals abschaltbar) — nicht nur, wenn eine Runde die Bestenliste schlägt. Ohne
+Anmeldung meldet sich die App dafür an wie für eine Runde.
+
+**Was daraus wird** (`server/race_submissions.py`, öffentlich unter `GET /api/race/hp`):
+je Strecke, Klasse und Auto die Zeiten aller **Menschen** — KI und wer verlassen hat,
+zählen nicht. Auf Rundkursen die beste Runde (vergleichbar mit einer Rivals-Runde),
+sonst die Zeit im Ziel. Genommen wird **nicht die schnellste**, sondern die an der
+1-%-Grenze: die Zeiten aufsteigend, die an Stelle ceil(1 % von N), ab 0 gezählt — so
+fällt immer mindestens die eine schnellste weg (ein Betrüger in einer Lobby). Mit nur
+einer Zeit gilt sie, aber als *unbestätigt*.
+
+**Verwalten:** `GET /api/admin/race/list` (alle Rennen, ohne install_id),
+`POST /api/admin/race/proof` (das Bild), `POST /api/admin/race/hide|show` mit
+`{"id", "place", "reason"}` — eine Zeile aus der Wertung nehmen. Dann rückt die
+nächste Zeit nach; auch die lässt sich ausblenden, bis es stimmt. Ausgeblendet, nie
+gelöscht.
+
+Geprüft: `scripts/test_race_endpoints.py` (Server über HTTP), `scripts/test_race_e2e_local.py
+<bild>` (die App liest ein echtes Ergebnisbild und sendet es an einen lokalen Server).
+
 ## Was noch fehlt
 
 - ~~Die Oberfläche in der App~~ und ~~der Auslöser~~: seit 2026-09-24 gebaut.

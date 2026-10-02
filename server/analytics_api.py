@@ -53,6 +53,7 @@ import contrib_format as fmt  # noqa: E402
 from import_contrib import import_archive  # noqa: E402
 import ip_bans  # noqa: E402
 import lap_submissions as laps  # noqa: E402
+import race_submissions as rennen_api  # noqa: E402
 import leaderboard_check as bestenliste  # noqa: E402
 import usage  # noqa: E402
 
@@ -717,6 +718,85 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
         raise ApiError(e.status, e.message) from None
 
 
+def race_endpunkt(method: str, path: str, headers, body: bytes,
+                  now: float | None = None, client: str = "", keys: dict | None = None,
+                  root: Path | None = None):
+    """Die Pfade rund um eingereichte Rennergebnisse (seit 2026-10-02).
+
+    Ausgewiesen wie eine Runde (das Geheimnis der Installation), verwaltet wie eine Runde
+    (Admin-Unterschrift). Die Logik steht in race_submissions.
+    """
+    def as_json(status: int, value):
+        return (status, "application/json; charset=utf-8",
+                json.dumps(value, ensure_ascii=False, indent=1).encode("utf-8"))
+
+    def rumpf() -> dict:
+        if len(body or b"") > 4 * 1024 * 1024:
+            raise ApiError(413, "The request is larger than 4 MB.")
+        try:
+            d = json.loads((body or b"{}").decode("utf-8"))
+        except Exception:
+            raise ApiError(400, "The request body is not JSON.") from None
+        if not isinstance(d, dict):
+            raise ApiError(400, "The request body must be a JSON object.")
+        return d
+
+    try:
+        if method == "POST" and path == "/api/race/submit":
+            try:
+                install_id, _ = laps.verify(headers, method, path, body, now=now)
+            except laps.SubmitError as e:
+                if e.status == 401:
+                    ip_bans.fehlversuch(client, "race signature", now)
+                raise
+            anfrage = rumpf()
+            try:
+                rennen, auffaellig = rennen_api.pruefe_rennen(anfrage.get("race"))
+                beleg = rennen_api.beleg_pruefen(anfrage.get("proof"))
+            except laps.SubmitError as e:
+                if e.status in (400, 413):
+                    laps.strafpunkt(install_id, e.message, now)
+                raise
+            rennen_api.tageskontingent(install_id, root, now)
+            d = rennen_api.store(install_id, rennen, auffaellig, beleg, root, now)
+            return as_json(200, {"ok": True, "id": d["id"], "flags": auffaellig})
+
+        if method == "GET" and path == "/api/race/hp":
+            # OEFFENTLICH: je Strecke, Klasse und Auto die Zeit an der 1-%-Grenze. Ohne die
+            # schnellste einzelne Zeit -- die ist genau die, die ein Betrueger stellen wuerde.
+            return as_json(200, {"boards": [{k: v for k, v in b.items() if k != "fastest"}
+                                            for b in rennen_api.hp_bretter(root)],
+                                 "rule": "time at the 1 % mark of all human times, never the single fastest"})
+
+        # --- ab hier nur mit Admin-Unterschrift ---
+        keys = load_keys() if keys is None else keys
+
+        if method == "GET" and path == "/api/admin/race/list":
+            require_admin(keys, method, path, headers, body, now)
+            # install_id bleibt draussen, wie bei den Runden.
+            return as_json(200, {"races": [{k: v for k, v in d.items() if k != "install_id"}
+                                           for d in rennen_api.list_races(root)],
+                                 "boards": rennen_api.hp_bretter(root)})
+
+        if method == "POST" and path == "/api/admin/race/proof":
+            require_admin(keys, method, path, headers, body, now)
+            return (200, "image/jpeg", rennen_api.beleg(str(rumpf().get("id") or ""), root))
+
+        if method == "POST" and path in ("/api/admin/race/hide", "/api/admin/race/show"):
+            require_admin(keys, method, path, headers, body, now)
+            d = rumpf()
+            try:
+                platz = int(d.get("place"))
+            except (TypeError, ValueError):
+                raise ApiError(400, "'place' must be a number.") from None
+            return as_json(200, rennen_api.set_row_hidden(
+                str(d.get("id") or ""), platz, path.endswith("hide"), str(d.get("reason") or ""), root))
+
+        raise ApiError(404, "%s %s does not exist here" % (method, path))
+    except laps.SubmitError as e:
+        raise ApiError(e.status, e.message) from None
+
+
 SPUR_PFAD = re.compile(r"/api/lap/telemetry/([0-9a-f]{20})\.(csv|json\.gz)")
 
 
@@ -769,6 +849,7 @@ def handle(method: str, path: str, headers, body: bytes, *,
     # GESPERRTE ADRESSEN: kein Anmelden, kein Einreichen, kein Hochladen. Die Seite
     # und die oeffentlichen Auskuenfte bleiben -- siehe ip_bans.
     braucht_anmeldung = (path.startswith("/api/admin") or path.startswith("/api/lap/")
+                         or path.startswith("/api/race/")
                          or path in ("/api/contribute", "/api/package", "/download/tool"))
     if braucht_anmeldung and client:
         rest = ip_bans.gesperrt(client, now)
@@ -811,6 +892,12 @@ def handle(method: str, path: str, headers, body: bytes, *,
                 # und lockt jemanden dazu, es spaeter nochmal zu versuchen.
                 raise ApiError(404, "%s %s does not exist here" % (method, path))
             return lap_endpunkt(method, path, headers, body, now, client, keys)
+
+        # Eingereichte Rennergebnisse (seit 2026-10-02): hinter demselben Schalter wie die Runden.
+        if path.startswith("/api/race/") or path.startswith("/api/admin/race"):
+            if not feature_an("lap_submissions"):
+                raise ApiError(404, "%s %s does not exist here" % (method, path))
+            return race_endpunkt(method, path, headers, body, now, client, keys)
 
         if method == "GET" and path == "/api/admin/usage":
             # Hinter dem Admin-Geheimnis, obwohl nichts Personenbezogenes darin
