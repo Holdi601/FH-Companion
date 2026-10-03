@@ -74,6 +74,12 @@ internal sealed class RivalsAdvisor
     }
 
     public RivalsDataset Data => _d;
+
+    /// <summary>
+    /// Zeiten, die nicht aus den gescannten Bestenlisten stammen (eingereicht, Horizon Play)
+    /// -- seit 2026-10-03 gilt auch hier: die schnellste Zeit je Auto gewinnt.
+    /// </summary>
+    public Zusatzzeiten? Extra { get; set; }
     public IReadOnlyList<string> Tracks => _d.Tracks;
     public IReadOnlyList<string> Categories => _d.Categories;
     public int BoardCount => _d.Boards.Count;
@@ -127,6 +133,18 @@ internal sealed class RivalsAdvisor
         if (carIndex < 0 || carIndex >= _d.CarNames.Count) { return null; }
         var name = _d.CarNames[carIndex];
         return IsRealCarName(name) ? name : null;
+    }
+
+    /// <summary>Der Index eines Autos nach seinem Namen (gefaltet), auch eines ohne Kennung; sonst null.</summary>
+    public int? CarIndexForName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) { return null; }
+        var gesucht = TextMatch.Normalise(name);
+        for (var i = 0; i < _d.CarNames.Count; i++)
+        {
+            if (TextMatch.Normalise(_d.CarNames[i]) == gesucht) { return i; }
+        }
+        return null;
     }
 
     public int? CarIndexForId(int carId) =>
@@ -280,6 +298,25 @@ internal sealed class RivalsAdvisor
             var count = counts[car];
             picks[car] = new Pick(chosen.Ms, chosen.Rank, bestRank, have, wanted,
                                   count, count < wanted);
+        }
+        // DIE SCHNELLSTE ZEIT JE AUTO GEWINNT (seit 2026-10-03): eine eingereichte oder eine
+        // Horizon-Play-Zeit, die schneller ist als die Rivals-Auswahl, ersetzt sie -- nach der
+        // Auswahl, nicht als Zeile darin, aus demselben Grund wie auf der Seite (applySubmitted).
+        if (Extra is not null && board.Track < _d.Tracks.Count && board.Klass < _d.Classes.Count
+            && Extra.Fuer(_d.Tracks[board.Track], _d.Classes[board.Klass]) is { } fremd)
+        {
+            foreach (var (carId, zeit) in fremd)
+            {
+                if (CarIndexForId(carId) is not { } index) { continue; }
+                if (!picks.TryGetValue(index, out var da))
+                {
+                    picks[index] = new Pick(zeit.Ms, 0, 0, 1, 1, 1, true, zeit.Source);
+                }
+                else if (zeit.Ms < da.Ms)
+                {
+                    picks[index] = da with { Ms = zeit.Ms, Source = zeit.Source };
+                }
+            }
         }
         return picks;
     }
@@ -614,7 +651,8 @@ internal sealed class RivalsAdvisor
     // ----------------------------------------------------------------- //
 
     internal readonly record struct Pick(int Ms, int Rank, int BestRank, int Took,
-                                         int Wanted, int Count, bool Thin);
+                                         int Wanted, int Count, bool Thin,
+                                         string? Source = null);
 
     internal sealed record TrackEntry(string Track, string Klass,
                                       Dictionary<int, Pick> Picks, int Worst,

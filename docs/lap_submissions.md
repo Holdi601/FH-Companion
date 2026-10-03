@@ -301,6 +301,27 @@ es war ein Rennen, dessen Anmeldung nicht gelesen wurde, und der Modus bleibt
 `unknown` (`modeEvidence` `conflict:…`). Runden mit unbekanntem Modus sendet die
 App nicht; die Feier „schneller als die Website“ gibt es nur in der Wertung.
 
+## Wenn das Spiel das Auto anders nennt als die Bestenliste (seit 2026-10-03)
+
+Die Telemetrie nennt das Auto nur mit einer Nummer; der Datensatz der Bestenlisten
+hängt an jede Nummer einen Namen, über die Rundenzeiten zusammengefügt — und die
+Zuordnung kann falsch sein. Am 2026-10-02 fuhr der Nutzer die Corvette Z06 '15, die
+Telemetrie sagte 2177, der Datensatz nennt 2177 „Corvette '53" (14 Stimmen, keine
+exakte Zuordnung). Die App feierte den Rekord der '53 und reichte die Runde so ein.
+
+Darum liest die App nach jedem Rennen auf dem Ergebnisschirm die **eigene Zeile**
+(die mit dem Zielplatz der Telemetrie, nicht die schwarz markierte — die ist ein
+verschiebbarer Zeiger) und lernt, wenn die Zeit der Zeile zur Telemetrie passt:
+diese Nummer heißt so, wie das Spiel es dort schreibt. Das gilt ab dann überall
+(Rundendateien, Ordner, Feiern, Einreichung), auch rückwirkend für ältere Runden.
+
+**Widersprechen** sich gelernter Name und Datensatz-Name einer Nummer, gehört das
+Brett dieser Nummer nicht zu diesem Auto: die Runde wird als *neues Auto*
+eingereicht, nie als Rekord gegen ein fremdes Brett; die Zeile „to beat" nennt dann
+nichts. Der Server prüft dasselbe (`leaderboard_check.gleiches_auto`) und vermerkt
+`car name disagrees with the leaderboard's name for this id`. Die Seite zeigt den
+Namen, den die App schickt, vor dem des Datensatzes.
+
 ## Geprüft wird auf drei Ebenen
 
 ```

@@ -91,8 +91,10 @@ function buildSubmitted(D, laps) {
       var bekannt = carIdx.get(nr);
       others.push({ id: id, mode: mode, track: String(lap.track || ""),
                     klasse: PI_ORDER[Number(lap.carClass)] || "?",
-                    car: bekannt !== undefined ? D.carNames[bekannt]
-                         : (lap.carName ? String(lap.carName) : (nr > 0 ? "Car #" + nr : "?")),
+                    // Der Name, den die App schickt, zuerst (seit 2026-10-03): sie liest ihn vom
+                    // Schirm des Spiels. Der Datensatz nannte die 2177 "Corvette '53", das Spiel '15.
+                    car: lap.carName ? String(lap.carName)
+                         : (bekannt !== undefined ? D.carNames[bekannt] : (nr > 0 ? "Car #" + nr : "?")),
                     ms: Math.round(sek * 1000), gamertag: eintrag.gamertag || "",
                     received: eintrag.received || "",
                     download: eintrag.telemetryDownload === true });
@@ -165,33 +167,94 @@ function buildSubmitted(D, laps) {
   return { byBoard: byBoard, placed: placed, unplaced: unplaced, newCars: newCars, others: others };
 }
 
-/* Die Auswahl von pickCars mit den eingereichten Zeiten verrechnen.
- *
- * Schneller als die Rivals-Zeit -> ersetzt sie, gekennzeichnet.
- * Langsamer                     -> aendert nichts; die bessere Zeit bleibt stehen.
- * Auto ohne Rivals-Zeit         -> kommt neu hinzu, gekennzeichnet. */
-function applySubmitted(D, board, picks, submitted) {
-  if (!submitted) return picks;
-  var karte = submitted.byBoard.get(D.tracks[board.t] + "|" + D.classes[board.k]);
+/* Die Horizon-Play-Zeiten des Servers (/api/race/hp, seit 2026-10-03): je Strecke, Klasse
+ * und Auto die Zeit an der 1-%-Grenze aller menschlichen Zeiten aus Rennergebnissen --
+ * auf Rundkursen die beste Runde, auf Strecken von A nach B die Zeit im Ziel. Dieselbe
+ * Form wie buildSubmitted, damit applyExtra beide gleich verrechnet. */
+function buildHp(D, boards) {
+  var byBoard = new Map();
+  var placed = 0;
+  var trackIdx = new Map();
+  D.tracks.forEach(function (t, i) { trackIdx.set(falteName(t), i); });
+  var carIdx = new Map();
+  D.carIds.forEach(function (id, i) { carIdx.set(Number(id), i); });
+  (boards || []).forEach(function (b) {
+    var t = trackIdx.get(falteName(b.track));
+    var car = carIdx.get(Number(b.car));
+    var ms = Math.round(Number(b.ms));
+    if (t === undefined || car === undefined || !(ms > 0) || D.classes.indexOf(b["class"]) < 0) return;
+    var key = D.tracks[t] + "|" + b["class"];
+    var karte = byBoard.get(key);
+    if (!karte) { karte = new Map(); byBoard.set(key, karte); }
+    var da = karte.get(car);
+    if (!da || ms < da.ms) {
+      karte.set(car, { ms: ms, mode: "horizon-play", kind: b.kind, n: b.n, confirmed: b.confirmed === true, hp: true });
+    }
+    placed += 1;
+  });
+  return { byBoard: byBoard, placed: placed };
+}
+
+/* Eine Fremdzeit (eingereicht oder Horizon Play) in die Auswahl verrechnen: schneller ->
+ * ersetzt, markiert mit `feld` (submitted | hp); langsamer -> nichts; neu -> dazu. */
+function applyExtra(D, board, picks, extra, feld) {
+  if (!extra) return picks;
+  var karte = extra.byBoard.get(D.tracks[board.t] + "|" + D.classes[board.k]);
   if (!karte) return picks;
   karte.forEach(function (s, car) {
     var p = picks.get(car);
     if (!p) {
-      picks.set(car, { ms: s.ms, rank: 0, bestRank: 0, took: 1, wanted: 1,
-                       count: 1, thin: true, submitted: s,
-                       pi: s.pi == null ? null : s.pi });
+      var neu = { ms: s.ms, rank: 0, bestRank: 0, took: 1, wanted: 1, count: 1, thin: true,
+                  pi: s.pi == null ? null : s.pi };
+      neu[feld] = s;
+      picks.set(car, neu);
     } else if (s.ms < p.ms) {
-      p.rivalsMs = p.ms;          // die abgeloeste Zeit bleibt sichtbar
+      if (!p.rivalsMs && !p.submitted && !p.hp) p.rivalsMs = p.ms;   // die abgeloeste Zeit bleibt sichtbar
       p.ms = s.ms;
-      p.submitted = s;
-      // Gezeigt wird jetzt die eingereichte Runde, also auch ihr PI.
+      p.submitted = null;
+      p.hp = null;
+      p[feld] = s;
       p.pi = s.pi == null ? null : s.pi;
     }
   });
   return picks;
 }
 
+/* Die Auswahl von pickCars mit den eingereichten Zeiten verrechnen.
+ *
+ * Schneller als die Rivals-Zeit -> ersetzt sie, gekennzeichnet.
+ * Langsamer                     -> aendert nichts; die bessere Zeit bleibt stehen.
+ * Auto ohne Rivals-Zeit         -> kommt neu hinzu, gekennzeichnet. */
+function applySubmitted(D, board, picks, submitted) {
+  return applyExtra(D, board, picks, submitted, "submitted");
+}
+
+/* WELCHE QUELLEN ZAEHLEN (seit 2026-10-03, auf Wunsch des Nutzers): "all" -- die schnellste
+ * Zeit je Auto gewinnt, gleich woher; "rivals" -- nur die gescannten Bestenlisten; "hp" --
+ * nur Horizon Play (Rennergebnisse und dort eingereichte Runden). */
+function pickWithSources(D, board, rivalsPicks, submitted, hp, source) {
+  if (source === "rivals") return rivalsPicks;
+  if (source === "hp") {
+    var nurHp = new Map();
+    var hpOnly = submitted ? { byBoard: new Map() } : null;
+    if (submitted) {
+      submitted.byBoard.forEach(function (karte, key) {
+        var k = new Map();
+        karte.forEach(function (s, car) { if (s.mode === "horizon-play") k.set(car, s); });
+        if (k.size) hpOnly.byBoard.set(key, k);
+      });
+    }
+    applyExtra(D, board, nurHp, hp, "hp");
+    applyExtra(D, board, nurHp, hpOnly, "submitted");
+    return nurHp;
+  }
+  applyExtra(D, board, rivalsPicks, submitted, "submitted");
+  applyExtra(D, board, rivalsPicks, hp, "hp");
+  return rivalsPicks;
+}
+
 if (typeof module !== "undefined") {
   module.exports = { buildSubmitted: buildSubmitted, applySubmitted: applySubmitted,
+                     buildHp: buildHp, applyExtra: applyExtra, pickWithSources: pickWithSources,
                      PI_ORDER: PI_ORDER, CLEAN_MODES: CLEAN_MODES, modeText: modeText };
 }

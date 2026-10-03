@@ -122,8 +122,9 @@ internal static class OwnCars
     /// Wahr, wenn mehrere eigene Kurse auf die Laenge dieser Strecke passen. Dann
     /// bleibt die Spalte ABSICHTLICH leer -- siehe <see cref="Table"/>.
     /// </param>
+    /// <param name="ByName">Wahr, wenn der eigene Kurs ueber seinen NAMEN gefunden wurde, nicht nur ueber die Laenge.</param>
     internal sealed record CourseColumn(string Key, string Label, int Cars, int Laps,
-                                        bool Ambiguous = false);
+                                        bool Ambiguous = false, bool ByName = false);
 
     /// <summary>Eine Zeile der Uebersicht: ein Auto und seine Zeiten je Kurs.</summary>
     internal sealed record MatrixRow(int Ordinal, double BestSeconds, int Laps,
@@ -183,14 +184,14 @@ internal static class OwnCars
         var spalten = new List<CourseColumn>();
         foreach (var (name, meter) in routen)
         {
-            var (kurs, mehrdeutig) = KursZurStrecke(vermerke, name, meter);
+            var (kurs, mehrdeutig, nachName) = KursZurStrecke(vermerke, name, meter);
             spalten.Add(new CourseColumn(kurs ?? string.Empty, name,
                                          kurs is null ? 0
                                          : laeufe.Where(l => l.Course == kurs)
                                                  .Select(l => l.Ordinal).Distinct().Count(),
                                          kurs is null ? 0
                                          : laeufe.Count(l => l.Course == kurs),
-                                         mehrdeutig));
+                                         mehrdeutig, nachName));
         }
 
         // Auto -> Kurs -> beste Zeit, aber nur fuer die Kurse, die eine Spalte sind.
@@ -253,7 +254,13 @@ internal static class OwnCars
     private const double Toleranz = 0.06;
 
     /// <summary>Welcher eigene Kurs ist diese Strecke?</summary>
-    private static (string? Kurs, bool Mehrdeutig) KursZurStrecke(
+    /// <remarks>
+    /// Seit 2026-10-03 nimmt die Laenge nur noch Kurse OHNE Namen: ein Kurs, der "Soni
+    /// Circuit" heisst, ist nicht "Sekibe Scramble", bloss weil beide 2,1 km lang sind --
+    /// genau so bekam eine Dirt-Strecke in der Vorschau den Umriss eines Rundkurses, und
+    /// die Spalte "deine Zeiten" fremde Zeiten.
+    /// </remarks>
+    internal static (string? Kurs, bool Mehrdeutig, bool NachName) KursZurStrecke(
         IReadOnlyDictionary<string, (string Name, double Metres)> vermerke,
         string strecke, double meter)
     {
@@ -263,21 +270,21 @@ internal static class OwnCars
             if (v.Name.Length > 0
                 && string.Equals(v.Name, strecke, StringComparison.OrdinalIgnoreCase))
             {
-                return (kurs, false);
+                return (kurs, false, true);
             }
         }
 
-        if (meter <= 0) { return (null, false); }
+        if (meter <= 0) { return (null, false, false); }
 
-        // 2. Die Laenge, aber nur wenn sie EINEN Kurs meint.
+        // 2. Die Laenge, aber nur bei Kursen ohne Namen, und nur wenn sie EINEN Kurs meint.
         var treffer = new List<string>();
         foreach (var (kurs, v) in vermerke)
         {
-            if (v.Metres <= 0) { continue; }
+            if (v.Metres <= 0 || LapArchive.IstStreckenname(v.Name)) { continue; }
             if (Math.Abs(v.Metres - meter) / meter <= Toleranz) { treffer.Add(kurs); }
         }
-        if (treffer.Count == 1) { return (treffer[0], false); }
-        return (null, treffer.Count > 1);
+        if (treffer.Count == 1) { return (treffer[0], false, false); }
+        return (null, treffer.Count > 1, false);
     }
 
     private static Dictionary<string, (string Name, double Metres)>? _vermerke;

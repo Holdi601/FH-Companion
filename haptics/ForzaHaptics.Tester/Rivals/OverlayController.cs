@@ -558,6 +558,11 @@ internal sealed class OverlayController : IDisposable
                 if (u > 0) { WriteDiagnostic($"Kursordner nach Strecken benannt: {u}"); }
                 // Und die Autoordner nach ihren Autos: "BMW 2002 Turbo '73 (car1269)".
                 var autoliste = CarCollection.Laden();
+                // WAS DAS SPIEL SCHON GESAGT HAT: aus den aufgezeichneten Rennen die eigene Zeile des
+                // Ergebnisschirms -- Nummer aus der Telemetrie, Kurzname vom Schirm (seit 2026-10-03).
+                // VOR dem Lesen der Karte fuer diesen Faden, damit sie das Gelernte schon enthaelt.
+                var gelerntAusRennen = LerneAusRennen();
+                if (gelerntAusRennen > 0) { WriteDiagnostic($"Autos aus Rennergebnissen gelernt: {gelerntAusRennen}"); }
                 var paare = new OrdinalMap();
                 var autos = LapArchive.AutoOrdnerBenennen(o => AutoNamen.Fuer(o, _advisor, autoliste, paare));
                 if (autos > 0) { WriteDiagnostic($"Autoordner nach Autos benannt: {autos}"); }
@@ -570,8 +575,9 @@ internal sealed class OverlayController : IDisposable
                         // Eine eigene Karte der gelernten Paare: die der Anzeige lernt
                         // waehrend der Fahrt weiter, und dieser Faden liest nebenher.
                         var liste = CarCollection.Laden();
-                        var gelernt = new OrdinalMap();
-                        var k = AutoNamen.Nachtragen(LapArchive.Root, o => AutoNamen.Fuer(o, _advisor, liste, gelernt));
+                        var gelernt = new OrdinalMap();   // frisch gelesen: mit dem, was eben gelernt wurde
+                        var k = AutoNamen.Nachtragen(LapArchive.Root, o => AutoNamen.Fuer(o, _advisor, liste, gelernt),
+                                                     gelernt: o => RivalsAdvisor.IsRealCarName(gelernt.Lookup(o)?.Name) ? gelernt.Lookup(o)!.Name : null);
                         if (k > 0) { WriteDiagnostic($"Autonamen in Rundendateien nachgetragen: {k}"); }
                     }
                     catch (Exception) { }
@@ -708,7 +714,7 @@ internal sealed class OverlayController : IDisposable
     // die Meisterschaft: angebotene Strecken, gefahren, jetzt, danach
     // ------------------------------------------------------------------ //
 
-    private List<(string Name, string Key)> _angebot = new();
+    private List<(string Name, string Key, bool ByName)> _angebot = new();
     private readonly HashSet<int> _erledigt = new();
     private DateTime _angebotZeit = DateTime.MinValue;
     private bool _rennenLaeuft;
@@ -988,8 +994,9 @@ internal sealed class OverlayController : IDisposable
         try
         {
             var strecke = StreckeImRennen();
+            var ordinal = _ordinal ?? (int)packet.Get("CarOrdinal");
             var ziel = LapAutoSubmit.ZuSchlagen(_advisor.Data, strecke, (int)packet.Get("CarClass"),
-                                                _ordinal ?? (int)packet.Get("CarOrdinal"), LapAutoSubmit.LedgerLaden());
+                                                ordinal, LapAutoSubmit.LedgerLaden(), _ordinals.Lookup(ordinal)?.Name);
             _zielZeile = ZielText(ziel);
         }
         catch (Exception)
@@ -1056,9 +1063,59 @@ internal sealed class OverlayController : IDisposable
     {
         var gelernt = _ordinals.Lookup(ordinal);
         if (RivalsAdvisor.IsRealCarName(gelernt?.Name)) { return gelernt!.Name; }
-        var index = gelernt?.CarIndex ?? _advisor.CarIndexForId(ordinal);
+        var index = (gelernt?.CarIndex is >= 0 and var gi ? (int?)gi : null) ?? _advisor.CarIndexForId(ordinal);
         return (index is { } ix ? _advisor.RealCarName(ix) : null)
                ?? (uebersetzt ? AutoKennung(ordinal) : $"car {ordinal}");
+    }
+
+    /// <summary>
+    /// Nummer und Kurzname vom Ergebnisschirm zusammenbringen. Nur, wenn der Kurzname genau ein
+    /// Auto meint; der Index im Datensatz ueber die Kennung, sonst ueber den Namen, sonst -1.
+    /// </summary>
+    /// <summary>
+    /// Der Index eines Autos im Datensatz: das Gelernte zuerst. Widerspricht der gelernte Name
+    /// dem Namen des Datensatzes fuer diese Kennung, gilt die Kennung NICHT als dieses Auto.
+    /// </summary>
+    private int? AutoIndex(int ordinal)
+    {
+        var gelernt = _ordinals.Lookup(ordinal);
+        if (gelernt?.CarIndex is >= 0 and var gi) { return gi; }
+        if (LapAutoSubmit.Widerspruch(_advisor.Data, ordinal, gelernt?.Name)) { return null; }
+        return _advisor.CarIndexForId(ordinal);
+    }
+
+    /// <summary>Jedes aufgezeichnete Rennen mit gelesenem Feld: die eigene Zeile lernen, falls die Zeit stimmt.</summary>
+    private int LerneAusRennen()
+    {
+        var vorher = _ordinals.Count;
+        try
+        {
+            foreach (var r in RaceLog.LoadLive())
+            {
+                if (r.Field is null || r.Finish is not { } platz || r.Car <= 0) { continue; }
+                var eigene = r.Field.FirstOrDefault(f => f.Place == platz) ?? r.Field.FirstOrDefault(f => f.Self);
+                if (eigene?.Ms is not { } ms || r.Seconds <= 0 || Math.Abs(ms - (r.Seconds * 1000.0)) > 500) { continue; }
+                LerneAutoVomSchirm(r.Car, eigene.CarShort, eigene.Pi);
+            }
+        }
+        catch (Exception) { }
+        return _ordinals.Count - vorher;
+    }
+
+    private void LerneAutoVomSchirm(int ordinal, string? kurz, int? pi)
+    {
+        try
+        {
+            if (ordinal <= 0 || CarShortNames.Finde(kurz) is not { } auto || !RivalsAdvisor.IsRealCarName(auto.Name)) { return; }
+            var index = (auto.Id is { } id ? _advisor.CarIndexForId(id) : null) ?? _advisor.CarIndexForName(auto.Name) ?? -1;
+            if (_ordinals.Learn(ordinal, index, auto.Name, pi))
+            {
+                LogLap($"car {ordinal} is \"{auto.Name}\" -- learned from the results screen"
+                       + (LapAutoSubmit.AutoName(_advisor.Data, ordinal) is { } alt && !LapAutoSubmit.GleichesAuto(alt, auto.Name)
+                          ? $" (the leaderboard dataset calls this id \"{alt}\")" : string.Empty));
+            }
+        }
+        catch (Exception) { }
     }
 
     /// <summary>Ein Auto ohne Namen, auf dem Schirm: "car 1234" in der Sprache der App.</summary>
@@ -1125,7 +1182,7 @@ internal sealed class OverlayController : IDisposable
         if (key == _carKey) { return; }
         _carKey = key;
 
-        var index = _ordinals.Lookup(ordinal)?.CarIndex
+        var index = (_ordinals.Lookup(ordinal)?.CarIndex is >= 0 and var gi ? (int?)gi : null)
                     ?? _advisor.CarIndexForId(ordinal);
         var name = (RivalsAdvisor.IsRealCarName(_ordinals.Lookup(ordinal)?.Name)
                         ? _ordinals.Lookup(ordinal)!.Name : null)
@@ -2944,6 +3001,9 @@ internal sealed class OverlayController : IDisposable
         _forced = false;
         _screen = state;
         LearnOrdinal(state);
+        // DAS AUKTIONSHAUS (seit 2026-10-03): Bilder sammeln, solange man dort ist -- die Leser
+        // fuer Gebot, Restzeit und Ausgang entstehen an echten Schirmen, nicht an geratenen.
+        if (state.IsAuctionHouse) { AuktionsbildMerken(); }
 
         if (!state.IsOffer)
         {
@@ -3223,7 +3283,7 @@ internal sealed class OverlayController : IDisposable
             // DIE UMRISSE HAENGEN NICHT AN DER BESTENLISTE. Bis zum 2026-09-25 kehrte
             // dieser Zweig vor ihnen zurueck: ohne Board in dieser Klasse keine Karten,
             // obwohl die Karten gar nichts mit den Zeiten zu tun haben.
-            ZeigeUmrisse(state.Tracks.Select(n => (n, string.Empty)).ToList(), state.FirstOwnIndex);
+            ZeigeUmrisse(state.Tracks.Select(n => (n, string.Empty, false)).ToList(), state.FirstOwnIndex);
             lines.Add(new PanelLine(Loc.T("No board for these routes in this class yet."),
                                     string.Empty, OverlayPanel.Warn));
             _right.SetContent(title,
@@ -3514,8 +3574,8 @@ internal sealed class OverlayController : IDisposable
         // haben -- und irgendwann widersprechen die sich.
         ZeigeUmrisse(Enumerable.Range(0, routen.Count)
             .Select(i => (routen[i].Name,
-                          i < meineTabelle.Courses.Count ? meineTabelle.Courses[i].Key
-                                                         : string.Empty))
+                          i < meineTabelle.Courses.Count ? meineTabelle.Courses[i].Key : string.Empty,
+                          i < meineTabelle.Courses.Count && meineTabelle.Courses[i].ByName))
             .ToList(), state.FirstOwnIndex);
     }
 
@@ -3535,7 +3595,7 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Die Umrisse der angebotenen Strecken zeigen -- mit oder ohne Bestenliste.</summary>
     /// <param name="routen">Name je Strecke und, wenn bekannt, der eigene Kursordner.</param>
     /// <param name="ab">Ab welcher Strecke man selbst faehrt (Horizon Play "2/3": ab der zweiten).</param>
-    private void ZeigeUmrisse(IReadOnlyList<(string Name, string Key)> routen, int ab = 0)
+    private void ZeigeUmrisse(IReadOnlyList<(string Name, string Key, bool ByName)> routen, int ab = 0)
     {
         // DASSELBE ANGEBOT WIE ZULETZT? Dann bleibt, was schon gefahren ist -- zwischen
         // zwei Rennen einer Meisterschaft zeigt das Spiel die Liste womoeglich erneut.
@@ -3643,16 +3703,28 @@ internal sealed class OverlayController : IDisposable
                             try
                             {
                                 var feld = RaceResultsReader.Lies(voll, e);
-                                // Die eigene Zeile: das Auto steht in der Telemetrie, genauer als gelesen.
+                                // DIE EIGENE ZEILE: die mit dem Zielplatz der Telemetrie -- die schwarze
+                                // Markierung ist ein Zeiger, den man verschieben kann. Erst ohne Zielplatz
+                                // gilt sie.
+                                if (offen.Race.Finish is { } zielplatz && feld.Any(f => f.Place == zielplatz))
+                                {
+                                    foreach (var f in feld) { f.Self = f.Place == zielplatz; }
+                                }
                                 foreach (var eigene in feld.Where(f => f.Self))
                                 {
+                                    // WAS DAS SPIEL ZU DIESER NUMMER SAGT (seit 2026-10-03): steht die
+                                    // Rennzeit der Zeile zur Telemetrie, ist es die eigene -- und ihr
+                                    // Kurzname gehoert zur Nummer aus der Telemetrie. Das schlaegt den
+                                    // Datensatz: der nannte 2177 "Corvette '53", das Spiel "Corvette '15".
+                                    var zeitPasst = eigene.Ms is { } ms && offen.Race.Seconds > 0
+                                                    && Math.Abs(ms - (offen.Race.Seconds * 1000.0)) <= 500;
+                                    if (zeitPasst) { LerneAutoVomSchirm(offen.Race.Car, eigene.CarShort, eigene.Pi); }
                                     eigene.Car = offen.Race.Car;
                                     eigene.CarName = AutoName(offen.Race.Car, uebersetzt: false);
                                 }
                                 offen.Race.Field = feld;
                                 // DIE ERWARTUNG: das eigene Auto gegen die anderen im Feld, nach der Bestenliste.
-                                if (RaceStats.Erwartung(_advisor, offen.Race,
-                                        o => _ordinals.Lookup(o)?.CarIndex ?? _advisor.CarIndexForId(o)) is { } erw)
+                                if (RaceStats.Erwartung(_advisor, offen.Race, AutoIndex) is { } erw)
                                 {
                                     offen.Race.Expected = erw.Erwartet;
                                     offen.Race.ExpectedActual = erw.Tatsaechlich;
@@ -3765,21 +3837,50 @@ internal sealed class OverlayController : IDisposable
         if (voll is not null) { RennbildSpeichern(voll, "unread", offen.Race.Id); }
     }
 
-    private static void RennbildSpeichern(Bitmap voll, string art, string? rennen)
+    // ------------------------------------------------------------------ Auktionshaus
+    //
+    // SCHIRME DES AUKTIONSHAUSES ALS BILD (seit 2026-10-03): das Fundament fuer die
+    // Auktionsfunktionen (Gebot erkennen, Restzeit, Ausgang, Preisgeschichte). Hoechstens
+    // alle 4 s eines, die letzten 150, nur auf dieser Platte.
+
+    internal static string AuktionsbildOrdner => Path.Combine(AppInfo.DataFolder, "auction_screens");
+    private DateTime _auktionsbildZuletzt = DateTime.MinValue;
+
+    private void AuktionsbildMerken()
     {
         try
         {
-            Directory.CreateDirectory(RennbildOrdner);
-            var kennung = rennen is null ? string.Empty : "_" + string.Concat(rennen.Where(char.IsLetterOrDigit));
-            var pfad = Path.Combine(RennbildOrdner, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{art}{kennung}.jpg");
+            if (DateTime.UtcNow - _auktionsbildZuletzt < TimeSpan.FromSeconds(4)) { return; }
+            _auktionsbildZuletzt = DateTime.UtcNow;
+            var flaeche = GameArea.Find(_settings.ForzaProcess);
+            if (flaeche.IsEmpty) { return; }
+            Task.Run(() =>
+            {
+                using var voll = Vollbild(flaeche);
+                if (voll is not null) { BildSpeichern(voll, AuktionsbildOrdner, "auction", null, 150); }
+            });
+        }
+        catch (Exception) { }
+    }
+
+    private static void RennbildSpeichern(Bitmap voll, string art, string? rennen) =>
+        BildSpeichern(voll, RennbildOrdner, art, rennen, RennbilderHoechstens);
+
+    private static void BildSpeichern(Bitmap voll, string ordner, string art, string? kennungRoh, int hoechstens)
+    {
+        try
+        {
+            Directory.CreateDirectory(ordner);
+            var kennung = kennungRoh is null ? string.Empty : "_" + string.Concat(kennungRoh.Where(char.IsLetterOrDigit));
+            var pfad = Path.Combine(ordner, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{art}{kennung}.jpg");
             var jpeg = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders().First(c => c.MimeType == "image/jpeg");
             using (var guete = new System.Drawing.Imaging.EncoderParameters(1))
             {
                 guete.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 90L);
                 voll.Save(pfad, jpeg, guete);
             }
-            foreach (var alt in new DirectoryInfo(RennbildOrdner).GetFiles("*.jpg")
-                         .OrderByDescending(f => f.Name, StringComparer.Ordinal).Skip(RennbilderHoechstens))
+            foreach (var alt in new DirectoryInfo(ordner).GetFiles("*.jpg")
+                         .OrderByDescending(f => f.Name, StringComparer.Ordinal).Skip(hoechstens))
             {
                 alt.Delete();
             }
@@ -3851,8 +3952,7 @@ internal sealed class OverlayController : IDisposable
             // DIE META-WAHL: wo das Auto JETZT auf der Bestenliste dieser Strecke steht.
             try
             {
-                var index = _ordinals.Lookup(lap.CarOrdinal)?.CarIndex ?? _advisor.CarIndexForId(lap.CarOrdinal);
-                if (RaceStats.MetaPlatz(_advisor, r.Track, r.Klass, index) is { } meta)
+                if (RaceStats.MetaPlatz(_advisor, r.Track, r.Klass, AutoIndex(lap.CarOrdinal)) is { } meta)
                 {
                     r.MetaRank = meta.Platz;
                     r.MetaCars = meta.Autos;
@@ -3946,12 +4046,15 @@ internal sealed class OverlayController : IDisposable
         }
         var routen = _angebot;
         var umrisse = new List<(string, CourseShape.Outline?)>();
-        foreach (var (name, key) in routen)
+        foreach (var (name, key, nachName) in routen)
         {
-            // Ohne eigenen Kursordner (nie gefahren) gibt es keine Telemetrie --
-            // aber die geerntete Rivalen-Karte, nach dem Namen der Strecke.
-            var umriss = key.Length > 0 ? CourseShape.For(key, _settings.ShapeSourceChoice) : null;
-            umriss ??= CourseShape.ForRoute(name, _settings.ShapeSourceChoice);
+            // Ohne eigenen Kursordner (nie gefahren) gibt es keine Telemetrie -- aber die
+            // geerntete Rivalen-Karte, nach dem Namen der Strecke. Ein eigener Kurs, der
+            // nur ueber die LAENGE passt, kommt erst nach der Karte (seit 2026-10-03):
+            // "Sekibe Scramble" zeigte sonst die eigenen Runden eines gleich langen Rundkurses.
+            var karte = CourseShape.ForRoute(name, _settings.ShapeSourceChoice);
+            var eigener = key.Length > 0 ? CourseShape.For(key, _settings.ShapeSourceChoice) : null;
+            var umriss = nachName ? eigener ?? karte : karte ?? eigener;
             umrisse.Add((name, umriss));
         }
         _shapes.SetCourses(umrisse, Stati(umrisse.Count, _erledigt));
@@ -4009,7 +4112,7 @@ internal sealed class OverlayController : IDisposable
     public void RenderCar()
     {
         var known = _ordinals.Lookup(_ordinal);
-        int? carIndex = known?.CarIndex;
+        int? carIndex = known?.CarIndex is >= 0 and var ki ? ki : null;
         var assumed = false;
         if (carIndex is null && _ordinal is not null)
         {

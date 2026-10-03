@@ -27,6 +27,7 @@ Klasse nach PI-Reihenfolge (0..6 = D C B A S1 S2 R), Auto nach Kennung.
 from __future__ import annotations
 
 import json
+import re
 import threading
 from pathlib import Path
 
@@ -40,6 +41,19 @@ def falte(name) -> str:
     return " ".join(str(name or "").strip().lower().split())
 
 
+_KEIN_NAME = re.compile(r"^car\s*#?\s*\d+$", re.I)
+_UNTERSCHEIDUNG = re.compile(r"\s*\(#\d+\)\s*$")
+
+
+def gleiches_auto(a, b) -> bool:
+    """Meinen zwei Autonamen dasselbe Auto? Ohne echten Namen auf einer Seite: ja (nichts spricht dagegen)."""
+    a, b = str(a or "").strip(), str(b or "").strip()
+    if not a or not b or _KEIN_NAME.match(a) or _KEIN_NAME.match(b):
+        return True
+    kern = lambda s: re.sub(r"[^a-z0-9]+", " ", _UNTERSCHEIDUNG.sub("", s).lower()).strip()
+    return kern(a) == kern(b)
+
+
 def _index(dataset_file: Path) -> dict:
     """(Strecke, Klasse) -> {Autokennung: schnellste gueltige ms}. Gemerkt je Stand."""
     st = dataset_file.stat()
@@ -51,6 +65,13 @@ def _index(dataset_file: Path) -> dict:
         flags = d.get("flags") or []
         sauber = 1 << flags.index("clean") if "clean" in flags else 0
         tracks, classes, car_ids = d["tracks"], d["classes"], d["carIds"]
+        namen = {}
+        for cid, name in zip(car_ids, d.get("carNames") or []):
+            try:
+                namen[int(cid)] = str(name or "")
+            except (TypeError, ValueError):
+                continue
+        _INDEX["namen"] = namen
         bretter: dict = {}
         for b in d["boards"]:
             try:
@@ -116,6 +137,13 @@ def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
                                   % (runde.get("track"), klasse))
 
     rivals = brett.get(ordinal)
+    # DER WIDERSPRUCH (seit 2026-10-03): nennt die App das Auto anders als der Datensatz die
+    # Kennung (sie liest den Namen vom Ergebnisschirm des Spiels), gehoert das Brett dieser
+    # Kennung nicht zu diesem Auto -- die Runde ist dann ein neues Auto, kein Rekord.
+    widerspruch = False
+    if rivals is not None and not gleiches_auto(runde.get("carName"), _INDEX.get("namen", {}).get(ordinal)):
+        widerspruch = True
+        rivals = None
     if rivals is not None and ms >= rivals:
         raise NichtSchneller(409, "Not faster than the leaderboard: %.3f s against %.3f s."
                                   % (ms / 1000, rivals / 1000),
@@ -134,4 +162,4 @@ def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
                                       "%.3f s." % (beste_frueher / 1000),
                                  langsamer=(ms - beste_frueher) / max(1, beste_frueher))
 
-    return {"rivalsMs": rivals, "newCar": rivals is None, "klass": klasse}
+    return {"rivalsMs": rivals, "newCar": rivals is None, "klass": klasse, "nameDisagrees": widerspruch}

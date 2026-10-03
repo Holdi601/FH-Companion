@@ -609,7 +609,9 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
             # Der Name kommt mit jeder (unterschriebenen) Einreichung -- freiwillig;
             # angezeigt wird er ueber mit_spielernamen, auch an frueheren Runden.
             laps.set_gamertag(install_id, anfrage.get("gamertag"), eintrag)
-            if befund.get("newCar"):
+            if befund.get("nameDisagrees"):
+                auffaellig = list(auffaellig) + ["car name disagrees with the leaderboard's name for this id"]
+            elif befund.get("newCar"):
                 auffaellig = list(auffaellig) + ["car not on this leaderboard yet"]
             # Oeffentlich zum Herunterladen nur, wenn die App es sagt -- sie tut es erst
             # mit dem Hinweis, der es ankuendigt (Fassung 10). Siehe telemetrie_oeffentlich.

@@ -53,8 +53,15 @@ internal static class AutoNamen
     /// laeuft neben dem Spiel und soll dort nicht auffallen.
     /// </remarks>
     /// <returns>Wie viele Dateien einen Namen bekamen.</returns>
+    private static readonly System.Text.RegularExpressions.Regex NameImKopf =
+        new(@"""carName""\s*:\s*""((?:[^""\\]|\\.)*)""\s*,", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <param name="gelernt">
+    /// Der vom Schirm gelernte Name je Nummer (seit 2026-10-03): steht in einer Datei ein anderer,
+    /// wird er berichtigt -- die 2177 hiess drei Runden lang "Corvette '53", das Spiel sagt '15.
+    /// </param>
     public static int Nachtragen(string wurzel, Func<int, string?> name, CancellationToken abbruch = default,
-                                 int pauseMs = 40)
+                                 int pauseMs = 40, Func<int, string?>? gelernt = null)
     {
         if (!Directory.Exists(wurzel)) { return 0; }
         var n = 0;
@@ -71,16 +78,29 @@ internal static class AutoNamen
                     var gelesen = strom.Read(puffer, 0, puffer.Length);
                     kopf = System.Text.Encoding.UTF8.GetString(puffer, 0, gelesen);
                 }
-                if (kopf.Contains("\"carName\"", StringComparison.Ordinal)) { continue; }
                 var m = Nummer.Match(kopf);
                 if (!m.Success || !int.TryParse(m.Groups[1].Value, out var ordinal)) { continue; }
-                if (name(ordinal) is not { Length: > 0 } autoname) { continue; }
-
-                var text = File.ReadAllText(datei, System.Text.Encoding.UTF8);
-                var stelle = Nummer.Match(text);
-                if (!stelle.Success) { continue; }
-                var einschub = "\"carName\":" + System.Text.Json.JsonSerializer.Serialize(autoname, Lesbar) + ",";
-                var neu = text.Insert(stelle.Index + stelle.Length, einschub);
+                string neu;
+                if (kopf.Contains("\"carName\"", StringComparison.Ordinal))
+                {
+                    // Schon benannt: nur ein gelernter Name darf einen anderen ersetzen.
+                    if (gelernt?.Invoke(ordinal) is not { Length: > 0 } richtig) { continue; }
+                    var da = NameImKopf.Match(kopf);
+                    if (!da.Success || LapAutoSubmit.GleichesAuto(System.Text.RegularExpressions.Regex.Unescape(da.Groups[1].Value), richtig)) { continue; }
+                    var text = File.ReadAllText(datei, System.Text.Encoding.UTF8);
+                    var alt = NameImKopf.Match(text);
+                    if (!alt.Success) { continue; }
+                    neu = text[..alt.Index] + "\"carName\":" + System.Text.Json.JsonSerializer.Serialize(richtig, Lesbar) + "," + text[(alt.Index + alt.Length)..];
+                }
+                else
+                {
+                    if (name(ordinal) is not { Length: > 0 } autoname) { continue; }
+                    var text = File.ReadAllText(datei, System.Text.Encoding.UTF8);
+                    var stelle = Nummer.Match(text);
+                    if (!stelle.Success) { continue; }
+                    var einschub = "\"carName\":" + System.Text.Json.JsonSerializer.Serialize(autoname, Lesbar) + ",";
+                    neu = text.Insert(stelle.Index + stelle.Length, einschub);
+                }
                 var tmp = datei + ".tmp";
                 File.WriteAllText(tmp, neu, new System.Text.UTF8Encoding(false));
                 File.Move(tmp, datei, overwrite: true);

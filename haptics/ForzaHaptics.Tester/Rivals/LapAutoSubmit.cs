@@ -145,6 +145,28 @@ internal sealed class LapAutoSubmit
     }
 
     /// <summary>The car's name from the dataset -- or null if it has none there.</summary>
+    /// <summary>
+    /// Meinen zwei Autonamen dasselbe Auto? "(#2177)" und Leerraum zaehlen nicht, der Jahrgang schon.
+    /// </summary>
+    internal static bool GleichesAuto(string? a, string? b)
+    {
+        if (!RivalsAdvisor.IsRealCarName(a) || !RivalsAdvisor.IsRealCarName(b)) { return true; }
+        static string Kern(string s) => TextMatch.Normalise(
+            System.Text.RegularExpressions.Regex.Replace(s, @"\s*\(#\d+\)\s*$", string.Empty));
+        return Kern(a!) == Kern(b!);
+    }
+
+    /// <summary>
+    /// DER WIDERSPRUCH (seit 2026-10-03): das Spiel nannte das Auto mit Nummer 2177 auf dem
+    /// Ergebnisschirm "Corvette '15", der Datensatz nennt die Kennung 2177 "Corvette '53"
+    /// (eine schwache Zuordnung, 14 Stimmen). Die App feierte den Rekord der '53 und
+    /// reichte die Runde so ein. Widersprechen sich der vom Schirm gelernte Name und der
+    /// des Datensatzes, gilt das Brett dieser Kennung NICHT fuer dieses Auto.
+    /// </summary>
+    internal static bool Widerspruch(RivalsDataset? data, int ordinal, string? gelernterName) =>
+        data is not null && RivalsAdvisor.IsRealCarName(gelernterName)
+        && !GleichesAuto(gelernterName, AutoName(data, ordinal));
+
     internal static string? AutoName(RivalsDataset data, int ordinal)
     {
         var i = data.CarIds.IndexOf(ordinal);
@@ -180,9 +202,11 @@ internal sealed class LapAutoSubmit
     /// 2026-09-27).
     /// </summary>
     internal static Ziel? ZuSchlagen(RivalsDataset? data, string? track, int carClass, int ordinal,
-                                     IReadOnlyDictionary<string, int> ledger)
+                                     IReadOnlyDictionary<string, int> ledger, string? carName = null)
     {
         if (data is null || string.IsNullOrWhiteSpace(track) || carClass < 0 || carClass >= PiOrder.Length) { return null; }
+        // Ein Brett, das einem anderen Auto gehoert, ist kein Ziel.
+        if (Widerspruch(data, ordinal, carName)) { return new Ziel(null, false); }
         var t = data.Tracks.FindIndex(x => Falte(x) == Falte(track));
         var k = data.Classes.IndexOf(PiOrder[carClass]);
         var board = t < 0 || k < 0 ? null : data.Boards.FirstOrDefault(b => b.Track == t && b.Klass == k);
@@ -234,7 +258,8 @@ internal sealed class LapAutoSubmit
         }
         var schluessel = Schluessel(lap, track)!;
         var ms = (int)Math.Round(lap.LapSeconds * 1000.0);
-        var bestenliste = BestValidMs(data, board, lap.CarOrdinal);
+        var widerspruch = Widerspruch(data, lap.CarOrdinal, lap.CarName);
+        var bestenliste = widerspruch ? null : BestValidMs(data, board, lap.CarOrdinal);
         ledger.TryGetValue(schluessel, out var frueher);
         if (bestenliste is int b && ms >= b)
         {
@@ -246,9 +271,12 @@ internal sealed class LapAutoSubmit
             return new Befund(false, $"not faster than the time already sent ({frueher / 1000.0:0.000} s)",
                               bestenliste, frueher, schluessel);
         }
-        return new Befund(true, bestenliste is null
-                                    ? "car not on this leaderboard yet"
-                                    : $"faster than the leaderboard ({ms / 1000.0:0.000} s vs {bestenliste / 1000.0:0.000} s)",
+        return new Befund(true, widerspruch
+                                    ? $"car not on this leaderboard yet -- the leaderboard calls id {lap.CarOrdinal} "
+                                      + $"\"{AutoName(data, lap.CarOrdinal)}\", the game showed \"{lap.CarName}\""
+                                    : bestenliste is null
+                                        ? "car not on this leaderboard yet"
+                                        : $"faster than the leaderboard ({ms / 1000.0:0.000} s vs {bestenliste / 1000.0:0.000} s)",
                           bestenliste, frueher > 0 ? frueher : null, schluessel);
     }
 

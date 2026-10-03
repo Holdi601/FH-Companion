@@ -68,6 +68,8 @@ internal static class EdgeCaseTest
         CarNameTravelsWithTheLap();
         LapCleanupKeepsTheBest();
         CarFoldersCarryTheName();
+        RouteTilesByNameNotLength();
+        FastestTimePerCarWins();
         RaceFieldIsRead();
         PictureSourcesFindTheGame();
         CarCollectionKnowsWhatIsMissing();
@@ -994,6 +996,81 @@ internal static class EdgeCaseTest
             Rivals.CarShortNames.Vergessen();
             try { File.Delete(datei); } catch (Exception) { }
         }
+    }
+
+    /// <summary>
+    /// DIE KACHELN VOR DEM RENNEN (2026-10-03): ein eigener Kurs mit Namen passt nur ueber den
+    /// Namen zu einer Strecke, nie ueber die Laenge allein -- "Sekibe Scramble" (2,1 km) bekam
+    /// sonst den Umriss von "Soni Circuit" (2,1 km).
+    /// </summary>
+    private static void RouteTilesByNameNotLength()
+    {
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-edge-kacheln-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            void Kurs(string key, string name, double meter)
+            {
+                var ordner = Directory.CreateDirectory(Path.Combine(wurzel, key)).FullName;
+                File.WriteAllText(Path.Combine(ordner, "course.json"),
+                    "{\"Name\":\"" + name + "\",\"ShortestMetres\":" + meter.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + ",\"LongestMetres\":" + (meter + 20).ToString(System.Globalization.CultureInfo.InvariantCulture) + "}");
+            }
+            Kurs("Soni Circuit (course_1_2_to_1_2)", "Soni Circuit", 2100);
+            Kurs("course_5_6_to_7_8", "course_5_6_to_7_8", 2620);
+            var tabelle = Rivals.OwnCars.Table("D", new[] { ("Sekibe Scramble", 2100.0), ("Soni Circuit", 2100.0), ("Chiheisen Scramble", 2600.0) }, wurzel);
+            Soll(tabelle.Courses[0].Key.Length == 0 && !tabelle.Courses[0].Ambiguous,
+                 "Kacheln: eine gleich lange Strecke bekam den benannten Kurs: " + tabelle.Courses[0].Key);
+            Soll(tabelle.Courses[1].Key == "course_1_2_to_1_2" && tabelle.Courses[1].ByName,   // die Kennung, nicht der Ordnername
+                 "Kacheln: der Kurs mit demselben Namen wurde nicht gefunden");
+            Soll(tabelle.Courses[2].Key == "course_5_6_to_7_8" && !tabelle.Courses[2].ByName,
+                 "Kacheln: ein unbenannter Kurs passt nicht mehr ueber die Laenge: " + tabelle.Courses[2].Key);
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// DIE SCHNELLSTE ZEIT JE AUTO GEWINNT (2026-10-03): eine eingereichte Runde oder eine
+    /// Horizon-Play-Zeit, die schneller ist als die Rivals-Auswahl, steht in der Autowahl der App.
+    /// </summary>
+    private static void FastestTimePerCarWins()
+    {
+        var data = new Rivals.RivalsDataset
+        {
+            Categories = new List<string> { "Road Racing" }, Tracks = new List<string> { "Soni Circuit" },
+            Classes = new List<string> { "B" }, CarIds = new List<int> { 1234, 5678, 9999 },
+            CarNames = new List<string> { "Car A", "Car B", "Car C" },
+            Flags = new List<string> { "clean" },
+            Boards = new List<Rivals.RivalsDataset.Board>
+            {
+                new()
+                {
+                    Category = 0, Track = 0, Klass = 0, Rows = 3, Valid = 3,
+                    GroupCar = new[] { 0, 1 }, GroupSignature = new[] { 1, 1 }, GroupCount = new[] { 2, 1 },
+                    LapGroup = new[] { 0, 0, 1 }, LapMs = new[] { 100_000, 101_000, 105_000 }, LapRank = new[] { 1, 2, 3 },
+                },
+            },
+        };
+        var rat = new Rivals.RivalsAdvisor(data);
+        var ohne = rat.PickCars(data.Boards[0], 1, 0);
+        // Auto A: beste Runde auf Rang 1, also greift die Auswahl zwei Runden tief (101 s), siehe PickCars.
+        Soll(ohne[0].Ms == 101_000 && ohne[1].Ms == 105_000 && !ohne.ContainsKey(2), $"Fremdzeiten: die Rivals-Auswahl stimmt nicht ({ohne[0].Ms}/{ohne[1].Ms})");
+
+        var z = new Rivals.Zusatzzeiten();
+        z.LiesEingereicht("{\"laps\":[{\"id\":\"a\",\"lap\":{\"track\":\"Soni Circuit\",\"carClass\":2,\"carOrdinal\":5678,\"mode\":\"rivals\",\"lapSeconds\":99.5}},"
+                          + "{\"id\":\"b\",\"lap\":{\"track\":\"Soni Circuit\",\"carClass\":2,\"carOrdinal\":1234,\"mode\":\"rivals\",\"lapSeconds\":120.0}},"
+                          + "{\"id\":\"c\",\"lap\":{\"track\":\"Soni Circuit\",\"carClass\":2,\"carOrdinal\":9999,\"mode\":\"solo\",\"lapSeconds\":50.0}},"
+                          + "{\"id\":\"d\",\"hidden\":true,\"lap\":{\"track\":\"Soni Circuit\",\"carClass\":2,\"carOrdinal\":1234,\"mode\":\"rivals\",\"lapSeconds\":10.0}}]}");
+        z.LiesHp("{\"boards\":[{\"track\":\"Soni Circuit\",\"class\":\"B\",\"car\":9999,\"kind\":\"lap\",\"ms\":98000,\"n\":3,\"confirmed\":true}]}");
+        rat.Extra = z;
+        var mit = rat.PickCars(data.Boards[0], 1, 0);
+        Soll(mit[1].Ms == 99_500 && mit[1].Source == "submitted", $"Fremdzeiten: die schnellere Einreichung ersetzt die Rivals-Zeit nicht ({mit[1].Ms})");
+        Soll(mit[0].Ms == 101_000 && mit[0].Source is null, "Fremdzeiten: eine langsamere Einreichung aenderte die Rivals-Zeit");
+        Soll(mit.TryGetValue(2, out var neu) && neu.Ms == 98_000 && neu.Source == "horizon-play" && neu.Thin,
+             "Fremdzeiten: ein Auto ohne Rivals-Zeit kam nicht ueber Horizon Play dazu");
+        Soll(rat.Advise(new[] { "Soni Circuit" }, "B").ByTime.First().Car == 2, "Fremdzeiten: die Reihung nimmt die Fremdzeiten nicht");
     }
 
     private static void FullTelemetryTravelsWithTheLap()
@@ -3515,6 +3592,8 @@ internal static class EdgeCaseTest
             Tracks = new List<string> { "Test Circuit" },
             Classes = new List<string> { "A", "B", "C", "D", "R", "S1", "S2" },
             CarIds = new List<int> { 1234, 5678 },
+            // Mit Namen: der Widerspruch (unten) entsteht nur, wenn der Datensatz die Kennung benennt.
+            CarNames = new List<string> { "Chevrolet Corvette '53 (#1234)", "Honda Beat '91" },
             Flags = new List<string> { "clean" },
             Boards = new List<Rivals.RivalsDataset.Board>
             {
@@ -3537,6 +3616,28 @@ internal static class EdgeCaseTest
         Soll(Rivals.LapAutoSubmit.SaubererModus("rivals") && Rivals.LapAutoSubmit.SaubererModus("horizon-play")
              && !Rivals.LapAutoSubmit.SaubererModus("race") && !Rivals.LapAutoSubmit.SaubererModus("freeroam"),
              "welche Modi in die Wertung kommen, stimmt nicht");
+        // DER WIDERSPRUCH (2026-10-03): nennt das Spiel die Nummer anders als der Datensatz, ist
+        // das Brett dieser Nummer nicht das dieses Autos -- kein Rekord gegen ein fremdes Brett.
+        Soll(Rivals.LapAutoSubmit.GleichesAuto("Chevrolet Corvette '53 (#2177)", "Chevrolet Corvette '53")
+             && !Rivals.LapAutoSubmit.GleichesAuto("Chevrolet Corvette '53 (#2177)", "Chevrolet Corvette Z06 '15")
+             && Rivals.LapAutoSubmit.GleichesAuto("Car #2177", "Chevrolet Corvette Z06 '15")
+             && Rivals.LapAutoSubmit.GleichesAuto(null, "x"),
+             "Widerspruch: der Namensvergleich stimmt nicht");
+        var fremd = Lap(59.0f);
+        fremd.CarName = "Chevrolet Corvette Z06 '15";
+        var fremdBefund = Rivals.LapAutoSubmit.Pruefen(fremd, "Test Circuit", data, leer);
+        Soll(fremdBefund.Senden && fremdBefund.BestenlisteMs is null && fremdBefund.Grund.Contains("calls id", StringComparison.Ordinal),
+             "Widerspruch: ein anders benanntes Auto wurde gegen das Brett der Nummer gemessen: " + fremdBefund.Grund);
+        var langsamFremd = Lap(61.0f);
+        langsamFremd.CarName = "Chevrolet Corvette Z06 '15";
+        Soll(Rivals.LapAutoSubmit.Pruefen(langsamFremd, "Test Circuit", data, leer).Senden,
+             "Widerspruch: eine langsamere Runde eines anders benannten Autos wurde am fremden Brett abgewiesen");
+        var gleich = Lap(61.0f);
+        gleich.CarName = "Chevrolet Corvette '53";   // der Datensatz sagt "... (#1234)": dasselbe Auto
+        Soll(!Rivals.LapAutoSubmit.Pruefen(gleich, "Test Circuit", data, leer).Senden,
+             "Widerspruch: die Unterscheidung (#id) im Namen galt als anderes Auto");
+        Soll(Rivals.LapAutoSubmit.ZuSchlagen(data, "Test Circuit", Lap(1f).CarClass, data.CarIds[0], leer, "Chevrolet Corvette Z06 '15") is { Ms: null },
+             "Widerspruch: die Zeile 'to beat' nennt das fremde Brett");
         Soll(Rivals.LapAutoSubmit.Pruefen(Lap(59.0f), "Test Circuit", data, leer).Senden,
              "eine schnellere Runde (59 < 60 s) wird nicht gesendet");
         Soll(!Rivals.LapAutoSubmit.Pruefen(Lap(60.0f), "Test Circuit", data, leer).Senden,
