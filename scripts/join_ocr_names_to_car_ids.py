@@ -199,6 +199,11 @@ def main(argv: list[str] | None = None) -> int:
         # Er gilt als exakt belegt -- das ist die vorsichtige Annahme: sie laesst den
         # Bestand, wie er ist, statt ihn auf eine Vermutung hin umzuschreiben.
         alt_basis = record.get("basis") or "exact"
+        # EIN VON HAND BELEGTER NAME ("manual", mit Beleg im Eintrag) bleibt: er stammt
+        # vom Schirm des Spiels oder der Garage, nicht aus dem Rundenzeit-Join.
+        if alt_basis == "manual":
+            record["samples"] = int(record.get("samples") or 0) + sum(tally.values())
+            continue
         if record.get("name") == name:
             record["basis"] = "exact"
             record["votes"] = max(int(record.get("votes") or 0), count)

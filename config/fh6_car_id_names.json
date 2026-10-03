@@ -1708,10 +1708,12 @@
       "basis": "exact"
     },
     "2177": {
-      "name": "Chevrolet Corvette",
-      "year": 1953,
+      "name": "Chevrolet Corvette Z06",
+      "year": 2015,
+      "basis": "manual",
       "votes": 14,
-      "samples": 212
+      "samples": 212,
+      "evidence": "2026-10-02: the game's results screen showed \"Corvette '15\" on the own row while telemetry sent ordinal 2177 (twice, race times matching); the garage dump has 2177 at S1 791; memory-scan rows of id 2177 are all S1/S2/R. The old join said Chevrolet Corvette 1953 with 14 group votes -- the '53 is 1564 (exact, 35 votes)."
     },
     "2178": {
       "name": "Audi RS 4 Avant",
