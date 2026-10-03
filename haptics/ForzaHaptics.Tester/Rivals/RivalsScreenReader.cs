@@ -80,6 +80,9 @@ internal sealed class ScreenState
     /// </summary>
     public bool IsRivalsMenu => Kopf.Split('|').Any(z => GameText.Aehnlich(z, "rivals", "Rivals"));
 
+    /// <summary>Das Auktionshaus (seit 2026-10-03): die Ueberschrift sagt es, in jeder Spielsprache.</summary>
+    public bool IsAuctionHouse => Kopf.Split('|').Any(z => GameText.Aehnlich(z, "auction_house", "Auction House"));
+
     /// <summary>Auf dem Rivals-Schirm: die gezeigte Strecke.</summary>
     public string? RivalsRoute { get; set; }
 

@@ -262,6 +262,15 @@ list: open **Upgrades & Tuning › My Tuning Setups** and move the selection ont
 the tune marked grey (unchanged against the car). The car note shows that tune
 from then on. The same works on the Xbox.
 
+## Fastest time per car wins
+
+The Rivals car ranking in the app uses three sources and takes the fastest time per
+car on each route: the scanned Rivals leaderboards, laps submitted from the app, and
+the Horizon Play times the server derives from race results. A lap you drove with the
+app that beats the leaderboard therefore counts as that car's time, in the app as on
+the website. The two extra lists are fetched with every dataset check and kept beside
+it (`submitted.json`, `hp.json`); offline, the last fetched ones apply.
+
 ## My times
 
 Your recorded laps: the best per car and course, and standings by points and by
@@ -336,6 +345,13 @@ finish, but not the field size. For them, **estimate field size for older races*
 counts the worst position seen in the race as the field. That is a lower bound,
 so percentages from it read worse than they were. The races live in
 `%LOCALAPPDATA%\FHCompanion\races.jsonl`.
+
+## Auction House (groundwork)
+
+While you are in the Auction House, the app keeps pictures of its screens (1080p,
+one every 4 seconds, the latest 150) in `%LOCALAPPDATA%\FHCompanionuction_screens`,
+only on your disk. They are the material for the coming auction features: noticing a
+bid you placed, warning before it ends, the result and a price history.
 
 ## Free roam
 
