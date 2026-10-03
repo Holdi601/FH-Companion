@@ -928,7 +928,11 @@ internal static class EdgeCaseTest
             using (var g = Graphics.FromImage(b))
             {
                 g.Clear(Color.FromArgb(20, 18, 24));
-                var schrift = new Font("Arial", 19f, GraphicsUnit.Pixel);
+                // Wie das Spiel: Graustufen-Kantenglaettung. ClearType malt weisse Ziffern mit
+                // bunten Raendern, und bunt ist auf dem Klassenkasten keine Tinte (RaceResults).
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                // Fett und 20 Punkte, wie die Tabellenschrift des Spiels in 1080p.
+                var schrift = new Font("Arial", 20f, FontStyle.Bold, GraphicsUnit.Pixel);
                 var zeilen = new[]
                 {
                     ("Honda Beat '91", "600", "00:47.939", "02:33.409", false),
@@ -946,7 +950,11 @@ internal static class EdgeCaseTest
                     g.FillRectangle(grund, 341, y, 1239, 48);
                     g.DrawString(auto, schrift, tinte, 721, y + 12);
                     g.FillRectangle(Brushes.Black, 1122, y + 6, 58, 36);
-                    g.DrawString(pi, schrift, Brushes.White, 1130, y + 12);
+                    // Fett wie im Spiel: duenne Graustufen-Ziffern las die Erkennung als "699" statt "599".
+                    using (var fett = new Font("Arial", 20f, FontStyle.Bold, GraphicsUnit.Pixel))
+                    {
+                        g.DrawString(pi, fett, Brushes.White, 1130, y + 10);
+                    }
                     g.DrawString(vierte, schrift, tinte, 1262, y + 12);
                     g.DrawString(zeit, schrift, tinte, 1414, y + 12);
                 }

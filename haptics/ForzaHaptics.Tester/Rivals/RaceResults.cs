@@ -246,6 +246,19 @@ internal static class RaceResultsReader
 
     private static readonly Regex Zeit = new(@"(\d{1,2})\s*[:;.,]+\s*(\d{2})\s*[.,:;]+\s*(\d{3})", RegexOptions.CultureInvariant);
 
+    /// <summary>"01148.648": der Doppelpunkt als Ziffer 1 gelesen -- fuenf Ziffern vor dem Punkt gibt es sonst nicht.</summary>
+    private static readonly Regex ZeitOhneDoppelpunkt = new(@"^\s*(\d{2})1(\d{2})[.,](\d{3})\s*$", RegexOptions.CultureInvariant);
+
+    private static long? Millisekunden(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) { return null; }
+        var z = Ziffern(text);
+        var m = Zeit.Match(z);
+        if (!m.Success) { m = ZeitOhneDoppelpunkt.Match(z); }
+        if (!m.Success) { return null; }
+        return (long.Parse(m.Groups[1].Value) * 60_000) + (long.Parse(m.Groups[2].Value) * 1000) + long.Parse(m.Groups[3].Value);
+    }
+
     /// <summary>Was die Texterkennung in Zahlen verliest: "02•.35.736", "02:38.i70".</summary>
     private static string Ziffern(string text) =>
         text.Replace('\u2022', ':').Replace('\u00B7', ':').Replace('O', '0').Replace('o', '0')
@@ -295,6 +308,10 @@ internal static class RaceResultsReader
         }
 
         var autos = Spalte(AutoSpalte, false, 1);
+        // Zweimal gelesen: in Originalgroesse verlor die Texterkennung "Turbo" aus "911 Turbo S '23"
+        // und "C-X75" aus "Jaguar C-X75"; doppelt gross machte sie aus dem Hochkomma eine Ziffer.
+        // Es gilt die Lesung, die ein Auto ergibt -- die in Originalgroesse zuerst.
+        var autosGross = Spalte(AutoSpalte, false, 2);
         var pis = Spalte(PiSpalte, true, 2);
         var vierte = Spalte(FortschrittSpalte, false, 2);
         var zeiten = Spalte(ZeitSpalte, false, 2);
@@ -308,7 +325,13 @@ internal static class RaceResultsReader
                 Self = e.Cursor == s + 1,
                 CarShort = string.IsNullOrWhiteSpace(autos[s]) ? null : autos[s]!.Trim(),
             };
-            if (CarShortNames.Finde(eintrag.CarShort) is { } auto)
+            var auto = CarShortNames.Finde(eintrag.CarShort);
+            if (auto is null && !string.IsNullOrWhiteSpace(autosGross[s]) && CarShortNames.Finde(autosGross[s]) is { } zweite)
+            {
+                auto = zweite;
+                eintrag.CarShort = autosGross[s]!.Trim();
+            }
+            if (auto is not null)
             {
                 eintrag.Car = auto.Id;
                 eintrag.CarName = auto.Name;
@@ -321,21 +344,16 @@ internal static class RaceResultsReader
             // Die vierte Spalte: "Progress" auf Strecken von A nach B, "Best Lap" auf Rundkursen.
             if (vierte[s] is { } v)
             {
-                if (Zeit.Match(Ziffern(v)) is { Success: true } bm)
+                if (Millisekunden(v) is { } bestzeit)
                 {
-                    eintrag.BestLapMs = (long.Parse(bm.Groups[1].Value) * 60_000) + (long.Parse(bm.Groups[2].Value) * 1000)
-                                        + long.Parse(bm.Groups[3].Value);
+                    eintrag.BestLapMs = bestzeit;
                 }
                 else if (Prozent.Match(v) is { Success: true } fp && int.TryParse(fp.Groups[1].Value, out var pct))
                 {
                     eintrag.Progress = Math.Clamp(pct, 0, 100);
                 }
             }
-            if (zeiten[s] is { } z && Zeit.Match(Ziffern(z)) is { Success: true } zm)
-            {
-                eintrag.Ms = (long.Parse(zm.Groups[1].Value) * 60_000) + (long.Parse(zm.Groups[2].Value) * 1000)
-                             + long.Parse(zm.Groups[3].Value);
-            }
+            eintrag.Ms = Millisekunden(zeiten[s]);
             raus.Add(eintrag);
         }
         return raus;
@@ -386,7 +404,13 @@ internal static class RaceResultsReader
                         var hell = (q[i] + q[i + 1] + q[i + 2]) / 3;
                         // Auf dunklem Grund ist Schrift WEISS -- der limettengruene Rahmen der eigenen
                         // Zeile (Blau unter 90) wurde sonst zu schwarzen Balken.
-                        var tinte = dunklerGrund ? hell > 150 && q[i] > 120 : hell < 120;
+                        // Auf dem Klassenkasten (rosa bei S1, blau bei S2, orange bei B) ist Tinte, was
+                        // hell UND farblos ist -- die Kastenfarbe selbst ist hell, aber bunt.
+                        var tinte = dunklerGrund
+                            ? (hellAufDunkel
+                                ? hell > 150 && Math.Abs(q[i] - q[i + 1]) < 40 && Math.Abs(q[i + 1] - q[i + 2]) < 40
+                                : hell > 150 && q[i] > 120)
+                            : hell < 120;
                         if (!tinte) { continue; }
                         var j = (yz * ziel.Stride) + ((Rand + xz) * 3);
                         z[j] = z[j + 1] = z[j + 2] = 0;

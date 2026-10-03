@@ -371,26 +371,30 @@ internal static class RaceGrid
                 if (Math.Abs(dy * 1080f) < 8f) { dy = 0f; }
             }
             static bool Tuerkis((int R, int G, int B) p) => p.G - p.R > 50 && p.G > 90 && p.B - p.R > 30;
-            static bool Dunkel((int R, int G, int B) p) => (p.R + p.G + p.B) / 3 < 90 && p.G - p.R < 30;
             // Die schwarze Schrift der Kopfzeile verdeckt einzelne Proben -- darum drei Hoehen je Spalte.
             bool Spalte(float fx) => KopfY.Any(y => Limette(Px(fx, y + dy)));
 
-            var grund = 0;
-            for (var i = 0; i < 5; i++)
-            {
-                for (var j = 0; j < 5; j++)
-                {
-                    var p = Px(0.02f + (0.08f * i / 4f), 0.35f + (0.30f * j / 4f));
-                    if (ergebnis ? Dunkel(p) : Tuerkis(p)) { grund++; }
-                }
-            }
-            if (grund < 18) { return null; }
             if (ergebnis)
             {
+                // ERGEBNIS ODER AUFSTELLUNG: die Kopfzeile des Ergebnisses laeuft von 19 bis 81 %
+                // durch, die der Aufstellung hat bei 64,5 % eine Luecke (dort beginnt ihr rechter
+                // Kasten "Event 2/3"). An 56 gespeicherten Schirmen ohne Ausnahme (2026-10-03).
+                // Vorher musste der Hintergrund links dunkel sein -- und jedes Ergebnis vor einer
+                // hellen, verwischten Szene (23 an einem Nachmittag) blieb ungelesen.
                 if (Enumerable.Range(0, 30).Count(i => Spalte(0.19f + (0.62f * i / 29f))) < 26) { return null; }
+                if (!KopfY.Any(y => Limette(Px(0.645f, y + dy)))) { return null; }
             }
             else
             {
+                var grund = 0;
+                for (var i = 0; i < 5; i++)
+                {
+                    for (var j = 0; j < 5; j++)
+                    {
+                        if (Tuerkis(Px(0.02f + (0.08f * i / 4f), 0.35f + (0.30f * j / 4f)))) { grund++; }
+                    }
+                }
+                if (grund < 18) { return null; }
                 if (Enumerable.Range(0, 20).Count(i => Spalte(0.18f + (0.45f * i / 19f))) < 17) { return null; }
                 if (Enumerable.Range(0, 10).Count(i => Spalte(0.66f + (0.16f * i / 9f))) < 9) { return null; }
             }
