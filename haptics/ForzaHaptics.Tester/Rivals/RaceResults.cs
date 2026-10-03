@@ -145,7 +145,7 @@ internal static class CarShortNames
 
     /// <summary>Fuer den Vergleich: was die Texterkennung verwechselt, gleich gemacht ("Sl" und "S1").</summary>
     private static string Falte(string s) =>
-        s.Replace('l', '1').Replace('|', '1').Replace('o', '0');
+        s.Replace('l', '1').Replace('|', '1').Replace('i', '1').Replace('o', '0');   // "Evo Ill" ist "Evo III"
 
     // Das Hochkomma vor dem Jahrgang, als Ziffer oder Buchstabe gelesen: "Honda Beat 191", "Focus r09".
     private static readonly Regex Jahrgang = new(@"\s[1rl|](\d\d)$", RegexOptions.CultureInvariant);
@@ -276,9 +276,9 @@ internal static class RaceResultsReader
         var sy = voll.Height / 1080f;
         var versatz = e.Versatz * 1080f;
 
-        string?[] Spalte((int X0, int X1) spalte, bool hellAufDunkel, int faktor)
+        string?[] Spalte((int X0, int X1) spalte, bool hellAufDunkel, int faktor, int dunkelGrenze = 120)
         {
-            using var streifen = Streifen(voll, spalte, e.Drivers, versatz, sx, sy, hellAufDunkel);
+            using var streifen = Streifen(voll, spalte, e.Drivers, versatz, sx, sy, hellAufDunkel, dunkelGrenze);
             // ZAHLEN DOPPELT SO GROSS: in Originalgroesse las die Texterkennung "02•.35.736" nur
             // halb. Die Autonamen dagegen in Originalgroesse -- doppelt gross wurde das Hochkomma
             // zur Ziffer ("Honda Beat 191").
@@ -307,11 +307,11 @@ internal static class RaceResultsReader
             return texte;
         }
 
-        var autos = Spalte(AutoSpalte, false, 1);
+        var autos = Spalte(AutoSpalte, false, 1, 150);
         // Zweimal gelesen: in Originalgroesse verlor die Texterkennung "Turbo" aus "911 Turbo S '23"
         // und "C-X75" aus "Jaguar C-X75"; doppelt gross machte sie aus dem Hochkomma eine Ziffer.
         // Es gilt die Lesung, die ein Auto ergibt -- die in Originalgroesse zuerst.
-        var autosGross = Spalte(AutoSpalte, false, 2);
+        var autosGross = Spalte(AutoSpalte, false, 2, 150);
         var pis = Spalte(PiSpalte, true, 2);
         var vierte = Spalte(FortschrittSpalte, false, 2);
         var zeiten = Spalte(ZeitSpalte, false, 2);
@@ -363,8 +363,13 @@ internal static class RaceResultsReader
     /// Eine Spalte ueber alle Zeilen als dunkle Schrift auf Weiss.
     /// </summary>
     /// <param name="hellAufDunkel">Das PI-Feld: weisse Ziffern auf dunklem Grund, in jeder Zeile.</param>
+    /// <param name="dunkelGrenze">
+    /// Ab welcher Helligkeit ein Punkt auf weisser Zeile Tinte ist. Die Autonamen des Spiels sind
+    /// nicht tiefschwarz: bei 120 fehlten "Turbo" und "C-X75", bei 150 kamen sie -- die Zahlen
+    /// aber wurden bei 150 schlechter (8 statt 2 Zeiten verloren), darum je Spalte.
+    /// </param>
     private static Bitmap Streifen(Bitmap voll, (int X0, int X1) spalte, int zeilen, float versatz,
-                                   float sx, float sy, bool hellAufDunkel)
+                                   float sx, float sy, bool hellAufDunkel, int dunkelGrenze = 120)
     {
         var breite = spalte.X1 - spalte.X0;
         var bild = new Bitmap(breite + (2 * Rand), (zeilen * 54) + (2 * Rand), PixelFormat.Format24bppRgb);
@@ -410,7 +415,7 @@ internal static class RaceResultsReader
                             ? (hellAufDunkel
                                 ? hell > 150 && Math.Abs(q[i] - q[i + 1]) < 40 && Math.Abs(q[i + 1] - q[i + 2]) < 40
                                 : hell > 150 && q[i] > 120)
-                            : hell < 120;
+                            : hell < dunkelGrenze;
                         if (!tinte) { continue; }
                         var j = (yz * ziel.Stride) + ((Rand + xz) * 3);
                         z[j] = z[j + 1] = z[j + 2] = 0;
