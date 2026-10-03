@@ -128,6 +128,26 @@ pruefe(p9.submitted && p9.submitted.download === true && p9.submitted.id === mit
 pruefe(p8.submitted && p8.submitted.download === false,
        "ohne Angebot vom Server gibt es keinen Download");
 
+// --- Horizon-Play-Zeiten und die Quellenwahl (2026-10-03): die schnellste je Auto gewinnt.
+var hpSchnell = S.buildHp(D, [{ track: strecke, "class": klasse, car: ordinal, kind: "lap", ms: rivalsBest - 900, n: 4, confirmed: true }]);
+var pq = S.pickWithSources(D, board, picks(), null, hpSchnell, "all").get(auto);
+pruefe(pq.ms === rivalsBest - 900 && pq.hp && pq.rivalsMs === rivalsBest, "eine schnellere Horizon-Play-Zeit ersetzt die Rivals-Zeit");
+var hpLangsam = S.buildHp(D, [{ track: strecke, "class": klasse, car: ordinal, kind: "lap", ms: rivalsBest + 900, n: 4, confirmed: true }]);
+pq = S.pickWithSources(D, board, picks(), null, hpLangsam, "all").get(auto);
+pruefe(pq.ms === rivalsBest && !pq.hp, "eine langsamere Horizon-Play-Zeit aendert nichts");
+var subUndHp = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [schneller]);
+pq = S.pickWithSources(D, board, picks(), subUndHp, hpSchnell, "all").get(auto);
+pruefe(pq.ms === rivalsBest - 900 && pq.hp && !pq.submitted, "unter allen Quellen gewinnt die schnellste (hier Horizon Play)");
+pq = S.pickWithSources(D, board, picks(), subUndHp, hpSchnell, "rivals").get(auto);
+pruefe(pq.ms === rivalsBest && !pq.hp && !pq.submitted, "'nur Rivals' laesst beide Fremdzeiten weg");
+pq = S.pickWithSources(D, board, picks(), subUndHp, hpSchnell, "hp").get(auto);
+pruefe(pq.ms === rivalsBest - 900 && pq.hp, "'nur Horizon Play' zeigt die Horizon-Play-Zeit");
+var hpSub = JSON.parse(JSON.stringify(schneller)); hpSub.lap.mode = "horizon-play"; hpSub.lap.lapSeconds = (rivalsBest - 2000) / 1000;
+var nurHpSub = S.buildSubmitted(JSON.parse(JSON.stringify(D)), [hpSub, schneller]);
+pq = S.pickWithSources(D, board, picks(), nurHpSub, null, "hp").get(auto);
+pruefe(pq.ms === rivalsBest - 2000 && pq.submitted && pq.submitted.mode === "horizon-play",
+       "'nur Horizon Play' nimmt eingereichte Horizon-Play-Runden, keine Rivals-Runden");
+
 console.log("");
 if (fehler) { console.log(fehler + " Pruefung(en) fehlgeschlagen."); process.exit(1); }
 console.log("Alle Pruefungen bestanden.");

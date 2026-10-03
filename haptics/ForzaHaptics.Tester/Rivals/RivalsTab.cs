@@ -377,7 +377,7 @@ internal sealed class RivalsTab : UserControl
         }
         try
         {
-            _advisor = new RivalsAdvisor(RivalsDataset.Load(path));
+            _advisor = new RivalsAdvisor(RivalsDataset.Load(path)) { Extra = Zusatzzeiten.Laden() };
             _datasetPath = path;
             _dataSource.Text =
                 string.Format(Loc.T("{0} boards"), _advisor.BoardCount) + $" · {origin} · "
@@ -451,6 +451,18 @@ internal sealed class RivalsTab : UserControl
             progress: announce ? new Progress<string>(text => _dataSource.Text = text)
                                : null).ConfigureAwait(true);
 
+        // Die Fremdzeiten (eingereicht, Horizon Play) mit jedem Abgleich -- auch wenn der
+        // Datensatz schon der neueste ist: sie aendern sich laufend.
+        if (result.Reached)
+        {
+            try
+            {
+                await Zusatzzeiten.HolenAsync(_settings.ServerUrl,
+                    TimeSpan.FromSeconds(Math.Max(5, _settings.DatasetProbeSeconds * 2))).ConfigureAwait(true);
+                if (_advisor is not null) { _advisor.Extra = Zusatzzeiten.Laden(); }
+            }
+            catch (Exception) { }
+        }
         if (result.Path is null)
         {
             if (announce) _dataSource.Text = result.Detail;
