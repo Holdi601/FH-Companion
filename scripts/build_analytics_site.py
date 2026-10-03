@@ -313,6 +313,7 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
       <div class="frow"><span class="label">Race category</span><div class="frow" id="f-cat"></div></div>
       <div class="frow"><span class="label">Performance class</span><div class="frow" id="f-cls"></div></div>
       <div class="frow"><span class="label">Tracks</span><div class="frow" id="f-trk"></div></div>
+      <div class="frow"><span class="label">Times from</span><div class="frow" id="f-source"></div></div>
       <div class="frow"><span class="label">Lap</span><div class="frow" id="f-clean"></div></div>
       <div class="frow"><span class="label">Gearbox</span><div class="frow" id="f-gear"></div></div>
       <div class="frow"><span class="label">Assists</span><div class="frow" id="f-assists"></div></div>
@@ -385,6 +386,11 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     <p><b>Times submitted from the app</b> come in after this choice: where one is faster
     than the lap chosen from the leaderboard for that car, track and class, it takes its
     place, marked as submitted, and the replaced leaderboard time stays visible.
+    <b>Horizon Play times</b> come in the same way: from race results sent by the app, per
+    route, class and car the time at the 1&nbsp;% mark of all human times (never the single
+    fastest, so one cheat in a lobby does not set it), marked Horizon Play. <b>Times from</b>
+    picks the sources: all (the fastest time per car wins), Rivals leaderboards only, or
+    Horizon Play only.
     Only laps driven in <b>Rivals</b> or <b>Horizon Play</b> count: there, a lap that hits
     a wall is invalid or penalised. Laps from solo and co-op races or free roam, where
     wall riding is possible, are listed separately under &ldquo;Data as it stands&rdquo;
@@ -548,6 +554,7 @@ const F = {
   yearFrom: null,
   yearTo: null,
   tracks: new Set(),      // empty = all
+  source: "all",          // all | rivals | hp -- all: the fastest time per car wins, whatever its source
   clean: "valid",         // any | valid | invalid -- valid by default, because a
                           // board appends its invalid laps after the valid ones and
                           // they restart from a faster time
@@ -712,8 +719,9 @@ function zeigeAndereModi(liste) {
    Stunde. Ohne Server (Seite als Datei geoeffnet) bleibt SUBMITTED leer,
    und die Seite ist genau die alte. */
 let SUBMITTED = null;
+let HP = null;
 function pickCars(board, need, forbid) {
-  return applySubmitted(D, board, pickCarsRivals(board, need, forbid), SUBMITTED);
+  return pickWithSources(D, board, pickCarsRivals(board, need, forbid), SUBMITTED, HP, F.source);
 }
 
 /* How many rows one board still holds behind the current filters -- the sample size
@@ -1271,6 +1279,17 @@ function renderBoards(host) {
       zeit.append(document.createTextNode(" "), marke);
       if (s.download && s.id) zeit.appendChild(downloadLinks(s.id));
     }
+    if (row.pick.hp) {
+      // Aus Rennergebnissen: die Zeit an der 1-%-Grenze aller menschlichen Zeiten mit
+      // diesem Auto, nie die einzelne schnellste (ein Betrueger in einer Lobby).
+      const h = row.pick.hp;
+      const marke = el("span", "flag", "Horizon Play" + (h.confirmed ? "" : " · unconfirmed"));
+      marke.title = (h.kind === "lap" ? "Best lap" : "Finishing time") + " from " + num(h.n)
+        + " Horizon Play result(s), taken at the 1 % mark of all human times"
+        + (row.pick.rivalsMs ? ". Replaces the Rivals time " + lapText(row.pick.rivalsMs) : "")
+        + (h.confirmed ? "" : ". A single time so far -- unconfirmed") + ".";
+      zeit.append(document.createTextNode(" "), marke);
+    }
     tr.appendChild(zeit);
     tr.appendChild(gapCell(row.pick.ms - fastest, worstGap,
       row.pick.ms === fastest ? "—" : "+" + ((row.pick.ms - fastest) / 1000).toFixed(3),
@@ -1826,6 +1845,7 @@ function renderScans(host) {
   host.appendChild(tiles);
 
   host.appendChild(el("h3", null, "What has been read"));
+  host.appendChild(el("p", "sub2", "A board is the union of every scan of it. Rivals keeps one time per driver, so a driver who improves with another car pushes their earlier car’s time off the live list; the earlier time stays here, because it still says what that car can do. Laps from the latest scan carry the “current” mark, older ones do not."));
   const wrap = el("div", "tablewrap");
   const table = el("table");
   const head = el("tr");
@@ -1954,6 +1974,8 @@ function renderRuleNote() {
   host.textContent = "";
   const klass = classLabel(selectedClasses());
   const bits = [];
+  if (F.source === "rivals") bits.push("Rivals leaderboards only");
+  if (F.source === "hp") bits.push("Horizon Play times only");
   if (F.clean === "valid") bits.push("valid laps only");
   if (F.clean === "invalid") bits.push("invalid laps only");
   if (F.gear === "auto") bits.push("Carmatic");
@@ -1992,6 +2014,11 @@ function render() {
   multiChips(document.getElementById("f-cat"), D.categories.slice().sort(), F.cat);
   multiChips(document.getElementById("f-cls"), classesInScope(), F.cls, null, "chip k");
   multiChips(document.getElementById("f-trk"), D.tracks.slice().sort(), F.tracks);
+
+  const sourceHost = document.getElementById("f-source");
+  sourceHost.textContent = "";
+  triGroup(sourceHost, null, [["all", "All (fastest wins)"], ["rivals", "Rivals only"], ["hp", "Horizon Play only"]],
+    () => F.source, v => { F.source = v; });
 
   const cleanHost = document.getElementById("f-clean");
   cleanHost.textContent = "";
@@ -2084,7 +2111,7 @@ function render() {
     render();
   });
   document.getElementById("f-reset").addEventListener("click", () => {
-    F.cat.clear(); F.cls.clear(); F.tracks.clear(); F.clean = "any"; F.gear = "any";
+    F.cat.clear(); F.cls.clear(); F.tracks.clear(); F.clean = "any"; F.gear = "any"; F.source = "all";
     F.make.clear(); F.country.clear(); F.carType.clear(); F.tune.clear();
     F.yearFrom = null; F.yearTo = null;
     ASSISTS.forEach(([key]) => { F.assist[key] = "any"; });
@@ -2123,6 +2150,11 @@ function render() {
       zeigeAndereModi(SUBMITTED.others);
       render();
     })
+    .catch(() => { /* ohne Server: nichts zu tun */ });
+  // Die Horizon-Play-Zeiten aus Rennergebnissen (seit 2026-10-03), ebenso nachgeladen.
+  fetch("/api/race/hp", { cache: "no-store" })
+    .then(r => r.json().then(d => (r.ok ? d : { boards: [] }), () => ({ boards: [] })))
+    .then(d => { HP = buildHp(D, d.boards || []); if (HP.placed) render(); })
     .catch(() => { /* ohne Server: nichts zu tun */ });
 })();
 </script>

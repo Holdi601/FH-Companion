@@ -55,6 +55,12 @@ FLAGS = [
     ("autoshift", "used_auto_shifting"),
     ("clutch", "used_clutch"),
     ("supereasy", "used_super_easy_assist"),
+    # AUS DEM NEUESTEN LAUF DIESES BOARDS (seit 2026-10-03): gesetzt bei den Zeilen, die
+    # die Bestenliste beim letzten Scan zeigte. Die anderen sind aeltere Zeiten, die der
+    # Datensatz BEHAELT -- Rivals fuehrt je Spieler nur eine Zeit, und wer mit einem
+    # anderen Auto schneller wird, verdraengt damit seine Zeit mit dem ersten Auto von
+    # der Liste. Fuer die Frage "welches Auto ist stark" zaehlt die trotzdem.
+    ("current", "_current"),
 ]
 
 # `car_name` matters as much as `car_id`: a screen-read row has no id and is identified
@@ -766,11 +772,28 @@ def build(root: Path, *, drop_invalid: bool = False,
         if key not in sizes or score > sizes[key][0]:
             sizes[key] = (score, int(implied), estimator)
 
-    merged: dict[tuple, dict[int, dict]] = defaultdict(dict)
+    # Der neueste Lauf je Board: seine Zeilen sind "current", alle anderen Geschichte.
+    def lauf_stand(state: dict) -> str:
+        return str(state.get("completed_at") or state.get("updated_at") or "")
+
+    neuester: dict[tuple, str] = {}
+    for state, parquet, track in staged:
+        key = (state.get("rivals_mode") or "Unknown", fix.get(track, track),
+               (state.get("performance_class") or "?").upper())
+        if lauf_stand(state) > neuester.get(key, ""):
+            neuester[key] = lauf_stand(state)
+
+    # JE BOARD DIE VEREINIGUNG ALLER LAEUFE, nicht der neueste Stand je Rang (so war es
+    # bis 2026-10-03: ein Rang, eine Zeile, der zweite Lauf verlor). Dieselbe Runde in
+    # zwei Laeufen -- gleicher Rang, gleiche Zeit -- bleibt eine; was spaeter dasselbe Auto
+    # mit derselben Zeit ist, faellt unten nach der Autozuordnung zusammen.
+    merged: dict[tuple, list[dict]] = defaultdict(list)
+    gesehen: dict[tuple, dict[tuple[int, int], dict]] = defaultdict(dict)
     for state, parquet, track in staged:
         key = (state.get("rivals_mode") or "Unknown",
                fix.get(track, track),
                (state.get("performance_class") or "?").upper())
+        aktuell = lauf_stand(state) == neuester.get(key)
         # Different scanners write different column sets -- the stream scanner's rows
         # have no `car_codename`, and asking for it aborts the whole build. Read the
         # intersection and treat the rest as absent.
@@ -785,21 +808,27 @@ def build(root: Path, *, drop_invalid: bool = False,
                 continue
             if not isinstance(lap, (int, float)) or not 1.0 <= lap <= 86400.0:
                 continue
-            kept = merged[key].setdefault(rank, row)
-            # Derselbe Rang aus einem zweiten Lauf mit derselben Zeit ist dieselbe
-            # Runde. Hat nur dieser zweite ihren PI gelesen, geht er nicht verloren,
-            # bloss weil der erste Lauf zuerst gefunden wurde.
-            if (kept is not row and lap_pi(kept.get("pi"), key[2]) is None
-                    and lap_pi(row.get("pi"), key[2]) is not None
-                    and round(float(kept["lap_time_seconds"]) * 1000)
-                    == round(float(lap) * 1000)):
+            row["_current"] = aktuell
+            ms = round(float(lap) * 1000)
+            kept = gesehen[key].get((rank, ms))
+            if kept is None:
+                gesehen[key][(rank, ms)] = row
+                merged[key].append(row)
+                continue
+            # Derselbe Rang mit derselben Zeit aus einem zweiten Lauf ist dieselbe Runde:
+            # was der eine Lauf mehr weiss (PI, Auto-Kennung, "aktuell"), bekommt sie.
+            if lap_pi(kept.get("pi"), key[2]) is None and lap_pi(row.get("pi"), key[2]) is not None:
                 kept["pi"] = row["pi"]
+            if kept.get("car_id") is None and row.get("car_id") is not None:
+                kept["car_id"] = row["car_id"]
+            if aktuell:
+                kept["_current"] = True
 
     # ALLE BILDSCHIRMNAMEN AUF EINMAL SUCHEN, bevor die Boards einzeln durchgehen --
     # parallel und aus dem Merker (siehe namen_zuordnen). Das Ergebnis ist dasselbe wie
     # die Suche Zeile fuer Zeile; nur die Reihenfolge der Arbeit ist eine andere.
     if roster_tools is not None:
-        offen = sorted({str(row["car_name"]) for rows in merged.values() for row in rows.values()
+        offen = sorted({str(row["car_name"]) for rows in merged.values() for row in rows
                         if row.get("car_id") is None and row.get("car_name")})
         vorab.update(namen_zuordnen(offen, ROSTER_HTML))
 
@@ -818,7 +847,7 @@ def build(root: Path, *, drop_invalid: bool = False,
     boards = []
     total_raw = total_invalid = total_kept = total_placeholder = total_pi = 0
     for (category, track, klass), rows in sorted(merged.items()):
-        valid, invalid = split_invalid(list(rows.values()))
+        valid, invalid = split_invalid(rows)
         valid, dropped = drop_placeholder_times(valid)
         total_placeholder += dropped
         entries = valid if drop_invalid else valid + invalid
@@ -826,10 +855,26 @@ def build(root: Path, *, drop_invalid: bool = False,
         total_invalid += len(invalid)
 
         groups: dict[tuple[int, int], list[dict]] = defaultdict(list)
+        # DIESELBE RUNDE AUS SPEICHER- UND BILDSCHIRMLAUF: dort eine Auto-Kennung, hier ein
+        # Name -- nach der Zuordnung dasselbe Auto mit derselben Zeit. Eine Zeile je
+        # (Auto, Zeit), die aktuelle vor der alten, die mit PI vor der ohne.
+        eine_je_runde: dict[tuple[int, int], dict] = {}
         for row in entries:
             car_id = resolve_car(row)
             if car_id is None:
                 continue
+            schluessel = (car_id, int(round(float(row["lap_time_seconds"]) * 1000)))
+            da = eine_je_runde.get(schluessel)
+            if da is None:
+                eine_je_runde[schluessel] = row
+                continue
+            besser = (bool(row.get("_current")), lap_pi(row.get("pi"), klass) is not None)
+            bisher = (bool(da.get("_current")), lap_pi(da.get("pi"), klass) is not None)
+            if besser > bisher:
+                eine_je_runde[schluessel] = row
+            elif besser == bisher and da.get("car_codename") is None and row.get("car_codename"):
+                da["car_codename"] = row["car_codename"]
+        for (car_id, _ms), row in eine_je_runde.items():
             if car_id not in car_slot:
                 car_slot[car_id] = len(car_ids)
                 car_ids.append(car_id)
