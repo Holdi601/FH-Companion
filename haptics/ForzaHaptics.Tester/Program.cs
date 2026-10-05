@@ -53,6 +53,16 @@ internal sealed class VorschauForm : Form
             {
                 foreach (ColumnHeader kopf in liste.Columns) { kopf.Width = (int)(kopf.Width * f); }
             }
+            if (c is DataGridView raster)
+            {
+                foreach (DataGridViewColumn spalte in raster.Columns) { spalte.Width = (int)(spalte.Width * f); }
+                raster.RowTemplate.Height = (int)(raster.RowTemplate.Height * f);
+                foreach (DataGridViewRow zeile in raster.Rows) { zeile.Height = (int)(zeile.Height * f); }
+                if (raster.ColumnHeadersHeightSizeMode != DataGridViewColumnHeadersHeightSizeMode.AutoSize)
+                {
+                    raster.ColumnHeadersHeight = (int)(raster.ColumnHeadersHeight * f);
+                }
+            }
         }
         Scale(new SizeF(f, f));
         ResumeLayout(true);
@@ -664,8 +674,8 @@ internal static class Program
 
         if (args.Contains("--tab-preview", StringComparer.OrdinalIgnoreCase))
         {
-            // "--tab-preview scan|collection [besitz.json] [x2]": einen Reiter allein zeichnen -- fuer
-            // Bilder (Trailer, Anleitung). "x2" doppelt so gross, fuer 4K.
+            // "--tab-preview scan|collection|tunes|racestats|auction [besitz.json] [x2]": einen Reiter
+            // allein zeichnen -- fuer Bilder (Trailer, Anleitung). "x2" doppelt so gross, fuer 4K.
             var tp = Array.FindIndex(args, a => string.Equals(a, "--tab-preview", StringComparison.OrdinalIgnoreCase));
             var welcher = tp + 1 < args.Length ? args[tp + 1].ToLowerInvariant() : "scan";
             var besitz = tp + 2 < args.Length && args[tp + 2].EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? args[tp + 2] : null;
@@ -673,12 +683,21 @@ internal static class Program
             var dp = Rivals.RivalsDataset.FindDefaultPath();
             if (dp is not null) { rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dp)); }
             using var form = new VorschauForm { Width = 1500, Height = 900, Text = welcher };
-            Control reiter = welcher == "collection"
-                ? new Rivals.CarCollectionTab(() => null, () => null, () => rat, false, besitzPfad: besitz)
-                : new Scan.ScanTab(Rivals.OverlaySettings.Load(), () => false);
+            Auction.AuctionWatch.OhneTakt = true;
+            Control reiter = welcher switch
+            {
+                "collection" => new Rivals.CarCollectionTab(() => null, () => null, () => rat, false, besitzPfad: besitz),
+                "tunes" => new Tuning.TunesTab(Rivals.OverlaySettings.Load(), () => rat),
+                "racestats" => new Rivals.RaceStatsTab(() => rat),
+                "auction" => new Auction.AuctionTab(() => false),
+                _ => new Scan.ScanTab(Rivals.OverlaySettings.Load(), () => false),
+            };
+            reiter.Dock = DockStyle.Fill;
             form.Controls.Add(reiter);
             form.Show();
             if (reiter is Rivals.CarCollectionTab sammlung) { sammlung.Zeigen(); }
+            if (reiter is Tuning.TunesTab tunes) { tunes.Neu(); }
+            if (reiter is Rivals.RaceStatsTab rennen) { rennen.Reload(); }
             for (var i = 0; i < 30; i++) { Application.DoEvents(); Thread.Sleep(50); }
             form.Vergroessern(VorschauForm.Faktor(args));
             Application.DoEvents();

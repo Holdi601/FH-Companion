@@ -328,8 +328,10 @@ internal sealed class AuctionTab : UserControl
             s.Auktionen.Select(a => new Zeile(a.Id, a.Auto, a.Pi, a.Status, a.Gebot, a.Sofortkauf, a.EndeUtc,
                                               a.ZuletztGesehenUtc, a.Ergebnis, a.Endpreis, a.Laeuft)).ToList(),
             s.Preise.ToList(), s.Warnen));
-        _stand = Ordnen(zeilen);
-        _preisStand = preise;
+        // Aeltere Eintraege tragen noch den rohen OCR-Namen ("CHALLENGER RIT"): beim Zeigen
+        // berichtigen, wie es das Lesen inzwischen gleich tut.
+        _stand = Ordnen(zeilen.Select(z => z with { Auto = Name(z.Auto) }).ToList());
+        _preisStand = preise.Select(p => p with { Auto = Name(p.Auto) }).ToList();
         _still = true;
         try
         {
@@ -339,6 +341,19 @@ internal sealed class AuctionTab : UserControl
         TabelleZeigen();
         PreiseZeigen();
         Uhr();
+    }
+
+    private readonly Dictionary<string, string> _namen = new(StringComparer.Ordinal);
+
+    private string Name(string gelesen)
+    {
+        if (string.IsNullOrWhiteSpace(gelesen)) { return gelesen; }
+        if (!_namen.TryGetValue(gelesen, out var name))
+        {
+            name = AuctionNames.Berichtige(gelesen) ?? gelesen;
+            _namen[gelesen] = name;
+        }
+        return name;
     }
 
     private void TabelleZeigen()
