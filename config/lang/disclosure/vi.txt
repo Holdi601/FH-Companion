@@ -1,0 +1,198 @@
+#fassung 12
+Vui lòng đọc phần này một lần. Nó giải thích chương trình làm gì trên PC của
+bạn, những gì rời khỏi máy tính của bạn, và vì sao Windows có thể cảnh báo bạn
+về nó.
+
+
+CHƯƠNG TRÌNH LÀM GÌ TRÊN PC CỦA BẠN
+
+  Đọc telemetry từ game.
+      Forza Horizon 6 có thể gửi telemetry của chính nó tới chính máy của bạn
+      qua UDP. Bạn tự bật tính năng đó trong game tại
+      Settings > HUD and Gameplay. Chương trình lắng nghe trên 127.0.0.1 --
+      chính máy tính của bạn, không phải mạng -- và dùng dữ liệu đó cho delta
+      vòng, bản đồ trực tiếp, các kỷ lục vòng của bạn và độ rung của tay cầm.
+      Chỉ khi bạn chuyển chương trình sang "Xbox / PC thứ 2" ở đầu cửa sổ của nó
+      thì nó mới lắng nghe trên mạng của bạn thay vào đó, để Xbox hoặc PC kia có
+      thể kết nối tới. Nếu Windows Firewall chặn việc đó, một nút trong bảng
+      Xbox sẽ thêm một quy tắc cho đúng cổng UDP đó -- chỉ khi bạn bấm nút, và
+      Windows sẽ hỏi sự cho phép của bạn trước.
+
+  Đọc những gì game hiển thị trên màn hình.
+      Để biết màn hình Event Sign Up có những đường đua nào, xe nào đang được
+      chọn trong menu xe, những xe nào có trên các trang "My Cars" mà bạn xem,
+      và bản tune nào đang nằm trên một xe trong danh sách tune của xe đó,
+      chương trình chụp ảnh cửa sổ game và đọc chữ bằng tính năng nhận dạng văn
+      bản có sẵn trong Windows. Việc này diễn ra trên PC của bạn; các ảnh không
+      được gửi đi đâu cả. Ở chế độ "Xbox / PC thứ 2", nó chụp các ảnh đó từ
+      nguồn bạn chọn thay vào đó: card capture, OBS, cửa sổ Xbox Remote Play,
+      Discord, một luồng trong trình duyệt của bạn hoặc một địa chỉ luồng. Khi
+      đó Windows vẽ một khung màu vàng quanh cửa sổ đang được chụp.
+
+  Đọc các bản tune bạn đã tải về từ thư mục lưu của game -- chỉ đọc.
+      Thẻ Tunes đếm chúng và cho biết bản nào không có xe nào dùng. Việc này
+      không bao giờ làm thay đổi thư mục lưu.
+
+  Đọc bảng xếp hạng và các phiên đấu giá của bạn -- bằng cách nhấn phím trong
+  trò chơi.
+      Trong thẻ Quét bảng xếp hạng, chương trình điều khiển menu của trò chơi
+      đến các bảng xếp hạng bạn chọn và đọc chúng từ màn hình. Trong thẻ Nhà
+      đấu giá, chương trình có thể đưa trò chơi đến “Lượt trả giá của tôi” và
+      đọc các phiên đấu giá của bạn; danh sách đó ở lại trên máy tính này.
+      Chương trình không bao giờ trả giá. Cả hai đều dừng khi nhấn Alt+Tab,
+      phím Pause hoặc Dừng.
+
+  Làm tay cầm của bạn rung -- và điều đó làm pin của nó hao nhanh hơn.
+      Khi Forza đang chạy và gửi telemetry, chương trình điều khiển độ rung của
+      tay cầm của bạn: độ bám của lốp thành rung, bánh xe bị bó cứng thành một
+      cú rung ngắn. Tính năng này bật ngay từ đầu. Tay cầm không dây sẽ hết pin
+      sớm hơn đáng kể khi rung, và bạn đặt độ rung trong Trình chỉnh Blueprint càng
+      mạnh và càng nhanh (tần số cao hơn) thì nó càng tốn điện. Bỏ đánh dấu
+      "Đầu ra đồ thị đã bật" trong Trình chỉnh Blueprint để tắt nó; chương trình sẽ
+      ghi nhớ điều đó.
+
+  Theo dõi việc nhấn phím.
+      Chỉ để bắt các phím tắt -- F10 đặt một vạch xuất phát/về đích ở chế độ tự
+      do khám phá. Nó kiểm tra xem đúng những phím đó có đang được nhấn hay
+      không. Nó không ghi lại những gì bạn gõ và không có nhật ký phím bấm nào ở
+      bất cứ đâu.
+
+  Vẽ lớp phủ lên trên game.
+      Delta vòng, các bản đồ, ghi chú xe và các bảng đối thủ là những cửa sổ
+      riêng được vẽ đè lên Forza. Khi một vòng vượt thời gian trên trang web,
+      một màn ăn mừng ngắn với pháo giấy và âm thanh sẽ xuất hiện trong khoảng
+      năm giây; bạn có thể tắt nó trong thẻ HUD delta vòng.
+
+  Ghi lại các vòng của bạn -- trên ổ đĩa của bạn.
+      Thời gian, vị trí và tốc độ được ghi vào thư mục riêng của chương trình để
+      nó có thể cho bạn xem delta so với thành tích tốt nhất của chính bạn. Chỉ
+      vòng nào vượt bảng xếp hạng mới được gửi đi -- xem bên dưới.
+
+
+NHỮNG GÌ RỜI KHỎI MÁY TÍNH CỦA BẠN
+
+  Chương trình liên lạc với máy chủ cho đúng sáu việc:
+
+      1. Để hỏi xem các đánh giá xe có mới hơn những đánh giá bạn đang có không,
+         và tải chúng về nếu có.
+      2. Để hỏi xem có phiên bản mới hơn của chương trình này không.
+      3. Để tải phiên bản mới đó về, khi bạn bấm nút cập nhật.
+      4. Để gửi một vòng VƯỢT bảng xếp hạng -- BẬT trừ khi bạn tắt nó.
+      5. Để tải danh sách tất cả các xe và cách có được chúng, cho thẻ
+         Bộ sưu tập xe -- nhiều nhất mười hai giờ một lần, và chỉ khi thẻ đó
+         đang mở. Nó không gửi gì cả; việc bạn sở hữu những xe nào vẫn nằm trên
+         máy tính này.
+      6. Để gửi một bảng xếp hạng bạn đã quét trong thẻ Quét bảng xếp hạng:
+         mỗi dòng gồm hạng, thời gian, xe, PI, hệ dẫn động, hộp số và trợ lực,
+         cùng với tuyến đường, hạng xe và thời điểm quét, và mã định danh đã
+         băm của PC này -- không có gamertag. Việc này diễn ra sau mỗi bảng đã
+         quét xong khi “Tải lên mỗi bảng đã quét xong” được chọn (được chọn
+         sẵn từ đầu) và việc gửi đang bật.
+
+  Về mục 4: một vòng chỉ được gửi nếu nó nhanh hơn thời gian tốt nhất trên bảng
+  xếp hạng của cùng chiếc xe đó trên đường đua và hạng đó, và nhanh hơn mọi vòng
+  bạn từng gửi cho xe, đường đua và hạng đó trước đây. Những gì được gửi: chiếc
+  xe, đường đua, hạng, thời gian, và TOÀN BỘ telemetry của vòng đó -- mọi gói dữ
+  liệu mà game gửi trong vòng đó: vị trí và hướng, tốc độ, ga, phanh, côn và
+  đánh lái của bạn, số, động cơ, và với từng bánh xe là nhiệt độ lốp, độ trượt
+  và hệ thống treo -- để máy chủ có thể kiểm tra rằng thời gian là thật và một
+  người có thể xem xét một vòng có vẻ sai. Thêm vào đó là một mã định danh đã
+  băm của PC này để có thể chặn hành vi lạm dụng -- và gamertag của bạn, nếu bạn
+  đặt nó trong thẻ Rivals. Gamertag là không bắt buộc: không có nó, vòng vẫn
+  được gửi và xuất hiện trên trang web dưới một tên người chơi tạm thời. Một
+  gamertag bạn đặt sau này sẽ thay thế tên đó trên tất cả các vòng của bạn, kể
+  cả các vòng trước đó, và nếu sau này bạn xóa trống ô đó thì tên cuối cùng vẫn
+  được giữ. Máy chủ kiểm tra lại vòng đó trước khi hiển thị. Tắt tính năng này
+  trong thẻ Rivals ("Gửi vòng của tôi ...") hoặc đặt "submit_laps": false trong
+  config/overlay.json.
+
+  Các vòng bạn gửi từ phiên bản này trở đi cũng được công bố kèm telemetry đó:
+  trên trang web, cạnh thời gian của bạn, ai cũng có thể tải telemetry đầy đủ
+  của vòng (dạng bảng CSV và tệp gốc) để xem vòng đó được lái thế nào. Các
+  vòng bạn đã gửi trước đó vẫn riêng tư và chỉ dùng để kiểm tra thời gian.
+
+  Một vòng vượt bảng xếp hạng nhưng không thể gửi ngay lúc đó -- do việc gửi
+  đang tắt, đang ngoại tuyến, hoặc máy chủ không trả lời -- sẽ được giữ trên máy
+  tính này và gửi sau, khi mọi thứ ổn trở lại, kể cả nhiều tuần sau. Trước khi
+  gửi, nó được kiểm tra thêm một lần với bảng xếp hạng của ngày hôm đó và bị bỏ
+  nếu không còn nhanh hơn. Vì vậy, bật lại việc gửi cũng sẽ gửi các vòng tốt
+  nhất bạn đã chạy trong lúc nó tắt. Thay vào đó, "Bỏ các vòng đang chờ" trong
+  thẻ Rivals sẽ xóa chúng.
+
+  Không có gì khác được gửi. Các vòng thông thường của bạn không được tải lên.
+  Bản tune của bạn không được tải lên. Không có tài khoản và không có gì để đăng
+  nhập.
+
+  Vì máy tính của bạn đặt những câu hỏi đó, máy chủ thấy rằng có một bản cài đặt
+  nào đó đã hỏi -- điều này là không thể tránh khỏi với bất kỳ chương trình nào
+  kiểm tra bản cập nhật. Việc đó được đếm để chúng tôi biết đại khái có bao
+  nhiêu người dùng chương trình này, và mã định danh được băm bằng một khóa bí
+  mật vẫn nằm lại trên máy chủ và bị xóa sau 40 ngày. Nếu điều đó làm bạn phiền
+  lòng, hãy đặt "offline": true trong config/overlay.json và chương trình sẽ
+  không bao giờ liên lạc với máy chủ nữa -- khi đó nó chạy hoàn toàn bằng dữ
+  liệu đi kèm bản tải về, và mọi thứ trừ việc cập nhật vẫn tiếp tục hoạt động.
+
+
+CÁCH CHƯƠNG TRÌNH TỰ CẬP NHẬT
+
+  Khi bạn bấm nút cập nhật, chương trình tải về một tệp ZIP, xác minh chữ ký của
+  nhà phát hành, giải nén nó và thay thế các tệp của chính nó. Gói nào không
+  được nhà phát hành ký sẽ bị từ chối. Một cửa sổ console nhỏ xuất hiện trong
+  lúc đó -- cửa sổ đó được cố ý để hiển thị, để bạn có thể thấy những gì đang
+  được thay thế. Thư mục thiết lập của bạn được giữ nguyên.
+
+  Không có gì được cài đặt. Không có gì được ghi vào registry của Windows. Xóa
+  thư mục đi là chương trình biến mất.
+
+
+VÌ SAO WINDOWS CÓ THỂ GỌI NÓ LÀ TROJAN
+
+  Windows Defender có thể báo chương trình này là Trojan:Win32/Bearfoos.A!ml và
+  chặn nó. Hậu tố "!ml" có nghĩa là đây không phải là kết quả khớp với bất kỳ
+  phần mềm độc hại đã biết nào -- đó là phỏng đoán của một mô hình học máy về
+  một tệp mà nó chưa từng thấy.
+
+  Nó phỏng đoán như vậy vì chương trình không được ký số, gần như chưa ai có nó,
+  và nó làm hai việc đã nêu ở trên: thay thế các tệp của chính nó và tải xuống
+  từ internet. Đó chính xác là những hành vi mà mô hình được huấn luyện để không
+  tin tưởng.
+
+  Mỗi bản phát hành đều được quét trước khi công bố, và trang tải về hiển thị
+  một mã checksum để bạn có thể xác minh rằng tệp bạn nhận được chính là tệp đã
+  được tạo ra. Nếu bạn không muốn chỉ dựa vào lòng tin như vậy, đừng chạy nó --
+  đó là một lựa chọn chính đáng và chương trình này sẽ không làm phiền bạn về
+  chuyện đó.
+
+
+LỐI TẮT, NẾU BẠN MUỐN
+
+  Bên dưới văn bản này, bạn có thể yêu cầu một lối tắt trên màn hình nền, một
+  mục trong menu Start, và để chương trình khởi động cùng Forza. Cả ba đều tắt
+  trừ khi bạn đánh dấu chúng, cả ba chỉ là một tệp .lnk trong một thư mục, và
+  sau này bạn có thể xóa bất kỳ cái nào mà không động tới chương trình.
+
+  "Khởi động cùng Forza" đặt chương trình vào thư mục Startup của Windows. Từ
+  lúc đăng nhập, nó chờ ẩn trong vùng thông báo và mở ra (thu nhỏ) khi Forza
+  khởi động; sau khi chơi xong, nó quay lại đó. Windows không cho phép một
+  chương trình khởi động khi một chương trình khác khởi động nếu không có quyền
+  quản trị viên -- chờ trong vùng thông báo thì không cần quyền đó và gần như
+  không tốn gì. Đóng cửa sổ thì nó vẫn tiếp tục chờ; bấm chuột phải vào biểu
+  tượng để thoát. Nút "Khởi động cùng Forza" ở góc trên bên phải của cửa sổ
+  chính dùng để bật và tắt tính năng này.
+
+  Windows không cho phép một chương trình tự ghim chính nó vào thanh tác vụ --
+  quyền đó được dành riêng cho bạn kể từ Windows 10 phiên bản 1607, và muốn lách
+  qua thì phải làm giả một mã checksum trong registry. Chương trình này không
+  làm điều đó. Hãy đánh dấu mục menu Start, sau đó bấm chuột phải vào mục đó và
+  chọn "Ghim vào thanh tác vụ".
+
+
+KHÔNG BẢO HÀNH
+
+  Đây là một dự án sở thích, được phát hành miễn phí, không có bất kỳ hình thức
+  bảo hành nào. Nó không liên kết với, không được chứng thực bởi, và không có
+  liên hệ với Microsoft, Turn 10, Playground Games hay dòng game Forza Horizon.
+
+
+Bạn có thể đọc lại nội dung này bất cứ lúc nào: liên kết
+"Chương trình này làm gì" ở đầu cửa sổ chính.

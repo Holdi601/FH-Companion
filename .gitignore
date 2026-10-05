@@ -1,0 +1,102 @@
+__pycache__/
+*.pyc
+.venv/
+
+# ---------------------------------------------------------------------------
+# Editorordner: nichts davon gehoert zum Projekt. Werkzeuge, die nur auf einem
+# Rechner laufen, gehoeren nach .git/info/exclude (bleibt lokal).
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+.vs/
+
+# ---------------------------------------------------------------------------
+# Gebautes. Entsteht bei jedem Bau neu.
+# ---------------------------------------------------------------------------
+**/bin/
+**/obj/
+haptics/ForzaHaptics.Tester/app/
+dist/
+
+# ---------------------------------------------------------------------------
+# Daten: gross (zig GB), abgeleitet, und zum Teil persoenlich (Gamertags in
+# Bestenlisten, Aufnahmen vom eigenen Bildschirm). Nichts davon ins Repository.
+# ---------------------------------------------------------------------------
+data/
+bodies/
+
+# ---------------------------------------------------------------------------
+# Eigene Telemetrie und Aufnahmen: nie ins Repository, egal wo sie liegen.
+# Die App schreibt sie nach %LOCALAPPDATA%\FHCompanion, ausserhalb dieses Baums;
+# diese Regeln fangen Kopien ab, die zum Testen hier abgelegt werden.
+# ---------------------------------------------------------------------------
+**/laps/
+personal_laps.json
+freeroam_lines.json
+tune_usage.json
+last_blueprint.txt
+*.pcap
+*.pcapng
+*.etl
+*.parquet
+*.sqlite
+*.db
+*.mmdb
+*.csv
+
+# ---------------------------------------------------------------------------
+# Persoenliches: die Werte dieser Installation und die eigenen Einstellungen.
+#
+# config/local.json   Serveradresse, oeffentlicher Name, Kontakt (Form: local.example.json)
+# config/overlay.json die Einstellungen der App auf diesem Rechner, samt Gamertag
+# config/private_words.txt  Woerter, die kein Commit enthalten darf
+# ---------------------------------------------------------------------------
+config/local.json
+config/overlay.json
+# Die eigenen Autos und die Notizen dazu -- persoenlich, wie overlay.json.
+config/car_notes.json
+config/owned_cars.json
+config/private_words.txt
+config/fh6_learned_route.json
+config/*.bak*
+config/*.vor-*
+
+# Schluesselbund fuer Fremdbeitraege: die Geheimnisse der Beitragenden, das
+# Admin-Geheimnis und das 256-Zeichen-Zugangspasswort -- alles im Klartext.
+# Landet diese Datei je in einem oeffentlichen Repository, kann jeder Daten
+# einspielen und die Verwaltung bedienen.
+config/contrib_keys.json
+
+# ---------------------------------------------------------------------------
+# Geheimnisse: nichts davon gehoert je in ein Repository.
+#
+# Der Schluessel je Installation, das Admin-Geheimnis und das Zugangspasswort
+# liegen in diesen Dateien im Klartext. Wird eine davon veroeffentlicht, kann
+# jeder Daten einspielen und die Verwaltung bedienen -- und zurueckholen laesst
+# sich das nicht, der Schluessel muss dann getauscht werden.
+#
+# Geprueft wird das zusaetzlich bei jedem Commit: .githooks/pre-commit ruft
+# scripts/check_no_secrets.py auf.
+# ---------------------------------------------------------------------------
+config/submit_keys.json
+config/admin_secret.txt
+config/*_secret*
+config/*_keys.json
+*.pem
+*.key
+*.pfx
+.env
+.env.*
+
+# Zugang zum GNAS: Adresse, Konto, Zielordner -- nur fuer diese Maschine.
+config/gnas_deploy.json
+
+# Signierung: Zertifikatsangaben und alles, was ein Passwort tragen koennte.
+config/signing.json
+*.p12
+*.snk
+
+# NUR LOKAL (nie veroeffentlichen): Speicher-, Rueckwaertsanalyse- und Spielstand-Werkzeuge
+/lokal/
+haptics/ForzaHaptics.Tester/Lokal/
+config/fh6_part_names.json

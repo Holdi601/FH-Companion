@@ -1,0 +1,750 @@
+{
+ "_": "Car ids decided by review where the game's code name alone did not settle it (scripts/build_car_game_ids.py). Key: list name|model year. id null = not in the game files.",
+ "reviewed": "2026-10-04",
+ "cars": {
+  "AMG Transport Dynamics M12S Warthog CST|2554": {
+   "id": 2574,
+   "code": "343_Warthog_15",
+   "reason": "Halo Warthog, 343 Industries prefix; unique code.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Abarth Fiat 131|1980": {
+   "id": 1124,
+   "code": "FIA_131AbarthStradale_80",
+   "reason": "Only 131 Abarth code (FIA prefix = Fiat/Abarth), year matches; agrees with old_id.",
+   "checked": "second review agreed"
+  },
+  "Alumicraft #122 Class 1 Buggy|2021": {
+   "id": 3549,
+   "code": "AC_122_Class1_20",
+   "reason": "AC = Alumicraft, race number 122 and Class 1 match; year off by one is normal.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Alumicraft #6165 Trick Truck|2022": {
+   "id": 3693,
+   "code": "AC_6165_Class6100_21",
+   "reason": "Race number 6165, Class 6100 is the trophy truck class; the only other AC codes are #122 and Class10.",
+   "checked": "second review agreed"
+  },
+  "Apollo Intensa Emozione|2019": {
+   "id": 3141,
+   "code": "APO_Intensa_18",
+   "reason": "APO = Apollo, the only Intensa (IE) code; code year 18 is the usual drift.",
+   "checked": "old id [3141] agrees"
+  },
+  "Aston Martin DB5|1964": {
+   "id": 1105,
+   "code": "AST_DB5Vantage_64",
+   "reason": "Only DB5 code in the game, year 64 matches.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Aston Martin DBX|2021": {
+   "id": 3580,
+   "code": "AST_DBX_19",
+   "reason": "Only DBX code.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Aston Martin Valhalla Concept Car|2019": {
+   "id": 3364,
+   "code": "AST_Valhalla_21",
+   "reason": "Only Valhalla code; Valkyrie codes are taken by Valkyrie cars.",
+   "checked": "second review agreed"
+  },
+  "Aston Martin Vulcan AMR Pro|2017": {
+   "id": 3211,
+   "code": "AST_VulcanAMRPro_19",
+   "reason": "Plain Vulcan '16 is AST_Vulcan_16 (taken); the AMR Pro code is the only one left. Year differs by 2, which is within the usual drift.",
+   "checked": "second review agreed"
+  },
+  "Audi RS 4 Avant|2013": {
+   "id": 1607,
+   "code": "AUD_RS4Avant_13",
+   "reason": "Exact model and year; the '18 RS4 Avant is taken by its own car. old_id was missing, but this code fits uniquely.",
+   "checked": "second review agreed"
+  },
+  "Audi RS e-tron GT|2021": {
+   "id": 3359,
+   "code": "AUD_Etron_18",
+   "reason": "This is the only Audi e-tron code. The 18 probably comes from the 2018 e-tron GT concept/development name. No other Audi code is free and fits.",
+   "checked": "second review agreed"
+  },
+  "BMW 850CSi|1995": {
+   "id": 1493,
+   "code": "BMW_850CSi_96",
+   "reason": "Only 850CSi code; year off by one.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "BMW Isetta 300 Export|1957": {
+   "id": 2412,
+   "code": "bmw_isetta_62",
+   "reason": "Only Isetta code; the year mismatch is a quirk of the code name.",
+   "checked": "second review agreed"
+  },
+  "BMW M2 Forza Edition|2023": {
+   "id": 4166,
+   "code": "BMW_M2FE_23",
+   "reason": "FE suffix = Forza Edition; plain BMW_M2_23 is taken by the plain M2.",
+   "checked": "second review agreed"
+  },
+  "BMW M3|1997": {
+   "id": 382,
+   "code": "BMW_E36M3_97",
+   "reason": "E36 M3, year 97 matches.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "BMW M3|2005": {
+   "id": 383,
+   "code": "BMW_E46M3_05",
+   "reason": "E46 M3 (2000-06), year matches.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "BMW M3|2008": {
+   "id": 1011,
+   "code": "BMW_M3E92_08",
+   "reason": "E92 M3, year 08 matches; GTS '10 is a separate car and already taken.",
+   "checked": "second review agreed"
+  },
+  "BMW M4 Competition Coupé Welcome Pack|2021": {
+   "id": 4266,
+   "code": "BMW_M4WP_21",
+   "reason": "WP suffix = Welcome Pack; plain BMW_M4_21 is taken by the plain M4 Competition '21.",
+   "checked": "second review agreed"
+  },
+  "BMW M5|1988": {
+   "id": 1368,
+   "code": "BMW_M5E28_88",
+   "reason": "E28 is the first-generation M5 of 1985-88; exact match.",
+   "checked": "second review agreed"
+  },
+  "BMW M5|2003": {
+   "id": 1367,
+   "code": "BMW_M5E39_03",
+   "reason": "E39 M5 (1998-2003), year matches.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Chevrolet Camaro Super Sport Coupe|1969": {
+   "id": 289,
+   "code": "CHE_CamaroSS_69",
+   "reason": "Camaro SS with year 69; Z28 codes are different cars.",
+   "checked": "second review agreed"
+  },
+  "Chevrolet Corvette ZR1|2019": {
+   "id": 3118,
+   "code": "CHE_CorvetteZR1_19",
+   "reason": "C7 ZR1, exact name and year; the other ZR1 codes are years 70/95/09.",
+   "checked": "second review agreed"
+  },
+  "Chevrolet El Camino Super Sport 454|1970": {
+   "id": 1291,
+   "code": "CHE_ElCaminoSS_70",
+   "reason": "Only El Camino code; year matches.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Chevrolet Impala Super Sport 409|1964": {
+   "id": 1300,
+   "code": "CHE_ImpalaSS_64",
+   "reason": "Impala SS with year 64; the '96 Impala SS has its own code.",
+   "checked": "second review agreed"
+  },
+  "Chevrolet Impala Super Sport|1996": {
+   "id": 1379,
+   "code": "CHE_ImpalaSS_96",
+   "reason": "Only Impala SS code with year 96; the '64 Impala SS 409 is CHE_ImpalaSS_64 (1300).",
+   "checked": "second review agreed"
+  },
+  "Chevrolet K-10 Custom|1972": {
+   "id": 3590,
+   "code": "CHE_CKPickup_73",
+   "reason": "C/K pickup (the K-10 is the 4x4 C/K), and it is the only C/K code; year off by one.",
+   "checked": "second review agreed"
+  },
+  "Chevrolet Nova Super Sport 396|1969": {
+   "id": 1429,
+   "code": "CHE_NovaSS_69",
+   "reason": "Only Nova code; year matches.",
+   "checked": "not cross-checked (unchanged id, high confidence)"
+  },
+  "Chevrolet Silverado LT Trail Boss|2020": {
+   "id": 3477,
+   "code": "CHE_SilveradoLTZ71_20",
+   "reason": "Only Silverado code. The real car is sold as the LT Z71 Trail Boss.",
+   "checked": "second review agreed"
+  },
+  "Dodge Challenger R/T|1970": {
+   "id": 639,
+   "code": "DOD_ChallengerHemi_70",
+   "reason": "Only 1970 Challenger code (Hemi R/T). The other Challengers are the Hellcat 15, SRT 22 and Demon.",
+   "checked": "second review agreed"
+  },
+  "Dodge Challenger SRT Demon 170|2023": {
+   "id": 3958,
+   "code": "DOD_Demon170_23",
+   "reason": "Exact Demon 170 code. The '18 Demon is 2909.",
+   "checked": "second review agreed"
+  },
+  "Dodge Viper GTS ACR Forza Edition|1999": {
+   "id": 4198,
+   "code": "DOD_ViperGTSACRFE_99",
+   "reason": "FE suffix on the GTS ACR '99. The plain car is 483.",
+   "checked": "second review agreed"
+  },
+  "Ferrari 250 GTO|1962": {
+   "id": 249,
+   "code": "FER_250GTO_64",
+   "reason": "Only 250 GTO code. The code year 64 is the usual 1-2 year drift.",
+   "checked": "second review agreed"
+  },
+  "Ferrari 275 GTB4 Spider|1967": {
+   "id": 3950,
+   "code": "FER_275GTS_67",
+   "reason": "Only 275 code (GTS = the Spider, i.e. NART Spider), year 67 matches.",
+   "checked": "second review agreed"
+  },
+  "Ferrari 458 Speciale|2013": {
+   "id": 2184,
+   "code": "FER_458Speciale_15",
+   "reason": "Only 458 Speciale code (the plain 458 is FER_F142_10). The code year 15 is drift.",
+   "checked": "second review agreed"
+  },
+  "Ferrari 599XX|2010": {
+   "id": 1171,
+   "code": "FER_599XX_10",
+   "reason": "Plain 599XX with matching year. The old id 1599 is FER_599XXEvolution_12, the Evolution variant.",
+   "checked": "second review agreed"
+  },
+  "Ferrari F40|1987": {
+   "id": 340,
+   "code": "FER_F40_87",
+   "reason": "Plain F40 code with matching year. The old id 1023 is FER_F40Competizione_89, a different car (a known swap).",
+   "checked": "second review agreed"
+  },
+  "Ferrari FXX K|2014": {
+   "id": 2371,
+   "code": "fer_fxxk_16",
+   "reason": "Plain FXX K. The old id 3311 is FER_FXXKEvo_18, which belongs to the FXX-K Evo '18 list car.",
+   "checked": "second review agreed"
+  },
+  "Ferrari FXX-K Evo Welcome Pack|2018": {
+   "id": 4264,
+   "code": "FER_FXXKEvoWP_18",
+   "reason": "WP suffix = Welcome Pack variant of the FXX-K Evo.",
+   "checked": "second review agreed"
+  },
+  "Ferrari FXX-K Evo|2018": {
+   "id": 3311,
+   "code": "FER_FXXKEvo_18",
+   "reason": "Plain Evo code. The WP variant 4264 goes to the Welcome Pack car and 2371 to the FXX K '14.",
+   "checked": "second review agreed"
+  },
+  "Ferrari J50 Preorder Car|2017": {
+   "id": 4341,
+   "code": "FER_J50PO_17",
+   "reason": "PO suffix = preorder variant of the J50. The plain J50 is 3226.",
+   "checked": "second review agreed"
+  },
+  "Ford #14 Rahal Letterman Lanigan Racing Fiesta|2017": {
+   "id": 2937,
+   "code": "FOR_14_FiestaGRC_17",
+   "reason": "Race number 14, Fiesta GRC '17 = the RLL rallycross Fiesta.",
+   "checked": "second review agreed"
+  },
+  "Ford #4 Ford Focus RS|2001": {
+   "id": 3670,
+   "code": "FOR_4_FocusWRC_01",
+   "reason": "Race number 4, Focus WRC '01 (the Focus RS WRC). The road Focus RS codes are 03/09/17.",
+   "checked": "second review agreed"
+  },
+  "Ford F-150 Raptor R Welcome Pack|2023": {
+   "id": 4268,
+   "code": "FOR_F150RaptorRWP_23",
+   "reason": "WP suffix = Welcome Pack",
+   "checked": "second review agreed"
+  },
+  "Ford F-150 Raptor R|2023": {
+   "id": 3849,
+   "code": "FOR_F150RaptorR_23",
+   "reason": "Plain Raptor R code; WP variant 4268 belongs to the Welcome Pack entry",
+   "checked": "second review agreed"
+  },
+  "Ford F-150 XLT Lariat Forza Edition|1986": {
+   "id": 4171,
+   "code": "FOR_F150FE_83",
+   "reason": "FE suffix of the same F-150 '83 code.",
+   "checked": "second review agreed"
+  },
+  "Ford F-150 XLT Lariat|1986": {
+   "id": 3597,
+   "code": "FOR_F150_83",
+   "reason": "7th-gen F-150 (1980-86), plain code. The FE variant is 4171.",
+   "checked": "second review agreed"
+  },
+  "Ford GT|2017": {
+   "id": 2363,
+   "code": "FOR_Phoenix_16",
+   "reason": "Phoenix is the internal nickname for the second-gen Ford GT. The '05 GT is for_gt_05 and the GT40 is FOR_2_GT40_66.",
+   "checked": "second review agreed"
+  },
+  "Ford Mustang GT 2+2 Fastback Forza Edition|1968": {
+   "id": 4168,
+   "code": "FOR_MustangGT390FE_68",
+   "reason": "FE suffix on the '68 Mustang GT 390 fastback. The plain car is 2614.",
+   "checked": "second review agreed"
+  },
+  "Ford RS200 Evolution|1985": {
+   "id": 1108,
+   "code": "FOR_RS200Evolution_87",
+   "reason": "Only RS200 code. The code year 87 is drift.",
+   "checked": "second review agreed"
+  },
+  "Ford Super Duty F-450 DRW PLATINUM Forza Edition|2020": {
+   "id": 4175,
+   "code": "FOR_F450DRWFE_20",
+   "reason": "FE suffix of the F450 DRW '20. The plain car is 3476.",
+   "checked": "second review agreed"
+  },
+  "Ford Supervan 4|2022": {
+   "id": 3755,
+   "code": "FOR_4_ElectricSupervan_22",
+   "reason": "Only Supervan 4 code (#4 electric Supervan, 2022); Supervan 3 is FOR_Supervan3_94",
+   "checked": "second review agreed"
+  },
+  "Ford Transit SuperSportVan|2011": {
+   "id": 1477,
+   "code": "FOR_TransitSSV_11",
+   "reason": "SSV = SuperSportVan, year matches.",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #117 599 GTB Fiorano|2007": {
+   "id": 3249,
+   "code": "FER_117_599FD_18",
+   "reason": "Race number 117, 599, FD suffix; code year 18 is the livery season, the only 599 FD code",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #13 Ford Mustang|2015": {
+   "id": 2996,
+   "code": "FOR_13_MustangFD_15",
+   "reason": "Race number 13, Mustang, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #151 Toyota GR Supra|2020": {
+   "id": 3523,
+   "code": "TOY_151_SupraGRFD_20",
+   "reason": "Race number 151, GR Supra, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #411 Toyota Corolla Hatchback|2019": {
+   "id": 3524,
+   "code": "TOY_411_CorollaFD_19",
+   "reason": "Race number 411, Corolla, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #43 Dodge Viper SRT-10 ACR|2006": {
+   "id": 3003,
+   "code": "DOD_43_ViperFD_06",
+   "reason": "Race number 43, Viper, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #530 HSV Maloo GEN-F|2016": {
+   "id": 2997,
+   "code": "HOL_530_MalooFD_16",
+   "reason": "Race number 530, Maloo, FD (HOL prefix covers HSV)",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #64 Forsberg Racing Nissan Z|2023": {
+   "id": 3744,
+   "code": "NIS_64_ZFD_23",
+   "reason": "Race number 64, Z, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #777 Chevrolet Corvette|2013": {
+   "id": 3232,
+   "code": "CHE_777_CorvetteFD_13",
+   "reason": "Race number 777, Corvette, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #777 Nissan 240SX|1997": {
+   "id": 3000,
+   "code": "NIS_777_240SXFD_97",
+   "reason": "Race number 777, 240SX, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #91 BMW M2|2020": {
+   "id": 3551,
+   "code": "BMW_91_M2FD_20",
+   "reason": "Race number 91, M2, FD, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #98 BMW 325i|1989": {
+   "id": 3037,
+   "code": "BMW_98_325iFD_89",
+   "reason": "Race number 98, 325i, FD suffix, year matches",
+   "checked": "second review agreed"
+  },
+  "Formula Drift #99 Mazda RX-8|2009": {
+   "id": 3400,
+   "code": "MAZ_99_RX8FD_19",
+   "reason": "Race number 99, RX-8, FD; code year is the season, unique",
+   "checked": "second review agreed"
+  },
+  "GR GT Prototype|2025": {
+   "id": 4221,
+   "code": "TOY_Scallop_26",
+   "reason": "Scallop is the internal nickname for the GR GT Prototype; plain code for plain car, ID variant 4263 is a non-list variant",
+   "checked": "second review agreed"
+  },
+  "Gordon Murray Automotive T.50|2020": {
+   "id": 3599,
+   "code": "GMA_T50_22",
+   "reason": "Only GMA code; code year 22 = production year vs displayed '20 reveal",
+   "checked": "second review agreed"
+  },
+  "HSV GEN-F GTS|2014": {
+   "id": 2131,
+   "code": "HOL_HSVGTS_14",
+   "reason": "Plain HSV GTS code, year matches",
+   "checked": "second review agreed"
+  },
+  "HSV Limited Edition GEN-F GTS Maloo|2014": {
+   "id": 2422,
+   "code": "HOL_HSVGTSMaloo_16",
+   "reason": "Only non-FD GTS Maloo code; FD Maloo is 2997",
+   "checked": "second review agreed"
+  },
+  "Jaguar XJ-S Forza Edition|1990": {
+   "id": 4354,
+   "code": "JAG_XJSFE_90",
+   "reason": "FE suffix = Forza Edition; JAG_XJS_90 (1534) is the plain XJ-S '90. The automatic match had put this car on 1534.",
+   "checked": "second review agreed (raised by the reviewer of the plain XJ-S)"
+  },
+  "Jaguar XJ-S|1990": {
+   "id": 1534,
+   "code": "JAG_XJS_90",
+   "reason": "Plain code JAG_XJS_90 is the plain XJ-S. The 'certain' match of Jaguar XJ-S Forza Edition '90 to 1534 is wrong: the Forza Edition must be 4354 JAG_XJSFE_90 (FE suffix). Swap them.",
+   "checked": "second review agreed"
+  },
+  "Jeep JT|2020": {
+   "id": 3255,
+   "code": "JEE_Gladiator_20",
+   "reason": "JT is the Gladiator's model code; year matches",
+   "checked": "second review agreed"
+  },
+  "Jimco #179 Hammerhead Class 1|2020": {
+   "id": 3604,
+   "code": "JIM_HammerHeadBuggy_19",
+   "reason": "Hammerhead Class 1 buggy; other Jimco code is the trophy truck (#240)",
+   "checked": "second review agreed"
+  },
+  "Lamborghini Centenario LP 770-4|2016": {
+   "id": 2616,
+   "code": "LAM_Bellissima_17",
+   "reason": "Bellissima is the internal nickname for the Centenario",
+   "checked": "second review agreed"
+  },
+  "Lamborghini Countach LPI 800-4|2021": {
+   "id": 3774,
+   "code": "LAM_Countach_23",
+   "reason": "Modern Countach (deliveries 2022/23); classic Countach is LAM_Countach_88",
+   "checked": "second review agreed"
+  },
+  "Land Rover Defender 110 X|2020": {
+   "id": 3414,
+   "code": "LR_Defender_20",
+   "reason": "LR = Land Rover, the only Defender code, year 20 matches.",
+   "checked": "old id [3414] agrees"
+  },
+  "Land Rover Range Rover Sport SVR|2015": {
+   "id": 2494,
+   "code": "lr_rangeroversvr_15",
+   "reason": "Only Range Rover Sport SVR code (LR prefix, year 15); old id agrees.",
+   "checked": "second review agreed"
+  },
+  "Lexus LFA Forza Edition|2010": {
+   "id": 4158,
+   "code": "LEX_LFAFE_10",
+   "reason": "FE suffix of LFA_10 (1260 is plain LFA); old id agrees.",
+   "checked": "second review agreed"
+  },
+  "Lotus Evija Forza Edition|2020": {
+   "id": 4200,
+   "code": "LOT_EvijaFE_20",
+   "reason": "FE variant of Evija (3449 plain); old id agrees.",
+   "checked": "second review agreed"
+  },
+  "MINI John Cooper Works GP|2012": {
+   "id": 2003,
+   "code": "MIN_JCWGP_13",
+   "reason": "R56 JCW GP (2012/13); MIN_JCWGP_21 is the F56 GP '21.",
+   "checked": "second review agreed"
+  },
+  "MINI John Cooper Works GP|2021": {
+   "id": 3534,
+   "code": "MIN_JCWGP_21",
+   "reason": "F56 JCW GP, year 21 matches.",
+   "checked": "second review agreed"
+  },
+  "MINI X-Raid All4 Racing Countryman|2013": {
+   "id": 2148,
+   "code": "min_xraidcountryman_13",
+   "reason": "X-Raid Countryman code, year 13 matches.",
+   "checked": "second review agreed"
+  },
+  "MINI X-Raid John Cooper Works Buggy|2018": {
+   "id": 3132,
+   "code": "MIN_JCWBuggy_18",
+   "reason": "JCW Buggy code, year 18 matches.",
+   "checked": "second review agreed"
+  },
+  "Maserati MC12 Versione Corsa|2008": {
+   "id": 3082,
+   "code": "MAS_MC12Corsa_06",
+   "reason": "Corsa token = Versione Corsa; MAS_MC12_04 is the road MC12. Year offset normal.",
+   "checked": "second review agreed"
+  },
+  "Mazda MX-5 Miata Forza Edition|1994": {
+   "id": 4197,
+   "code": "MAZ_MiataFE_94",
+   "reason": "FE variant of Miata_94 (1110 plain).",
+   "checked": "second review agreed"
+  },
+  "Mazda RX-3 Forza Edition|1973": {
+   "id": 4165,
+   "code": "MAZ_RX3FE_73",
+   "reason": "FE variant of RX3_73 (1514 plain); only free candidate.",
+   "checked": "second review agreed"
+  },
+  "McLaren 12C Coupé|2011": {
+   "id": 1130,
+   "code": "MCL_MP412C_11",
+   "reason": "MP4-12C = 12C, year 11 matches; no other 12C code.",
+   "checked": "second review agreed"
+  },
+  "Mercedes-AMG GT Black Series Welcome Pack|2020": {
+   "id": 4265,
+   "code": "MER_GTBlackSeriesWP_21",
+   "reason": "WP suffix of GT Black Series (3616 plain); year off by one is normal.",
+   "checked": "second review agreed"
+  },
+  "Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition|1990": {
+   "id": 4169,
+   "code": "MER_190EFE_90",
+   "reason": "FE variant of MER_190E_90 (1296 plain).",
+   "checked": "second review agreed"
+  },
+  "Mercedes-Benz Unimog U5023|2014": {
+   "id": 2986,
+   "code": "MER_Unimog_17",
+   "reason": "Only Unimog code in the game; code year differs from display year.",
+   "checked": "second review agreed"
+  },
+  "Mitsubishi Lancer Evolution VI GSR TM Edition|2001": {
+   "id": 4090,
+   "code": "MIT_LancerEvoVITME_01",
+   "reason": "Evo VI Tommi Makinen Edition, year 01 matches.",
+   "checked": "second review agreed"
+  },
+  "Mitsubishi Lancer Evolution VIII MR Welcome Pack|2004": {
+   "id": 4267,
+   "code": "MIT_LancerEvoVIIIMRWP_04",
+   "reason": "WP variant of Evo VIII MR (378 plain).",
+   "checked": "second review agreed"
+  },
+  "Mitsubishi Montero Evolution|1997": {
+   "id": 2652,
+   "code": "MIT_PajeroEvo_97",
+   "reason": "Pajero Evolution = Montero Evolution, year 97 matches.",
+   "checked": "second review agreed"
+  },
+  "Mitsubishi Montero Exceed 2800 TD|1995": {
+   "id": 3750,
+   "code": "MIT_Pajero_95",
+   "reason": "Montero = Pajero; plain code rather than MIT_Pajero_Traffic_95 (4127).",
+   "checked": "second review agreed"
+  },
+  "Nissan #11 Tomica Skyline Turbo Super Silhouette|1983": {
+   "id": 2801,
+   "code": "NIS_11_Skyline_84",
+   "reason": "Race number 11 Skyline = Tomica Super Silhouette; year off by one.",
+   "checked": "second review agreed"
+  },
+  "Nissan GT-R Black Edition (R35) Forza Edition|2012": {
+   "id": 4167,
+   "code": "NIS_GTRFE_12",
+   "reason": "FE variant of NIS_GTR_12 (2002 plain); NIS_GTRTG_12 is a different (TG) variant.",
+   "checked": "second review agreed"
+  },
+  "Nissan S-Cargo Forza Edition|1989": {
+   "id": 4160,
+   "code": "NIS_SCargoFE_89",
+   "reason": "FE variant of S-Cargo (3860 plain).",
+   "checked": "second review agreed"
+  },
+  "Nissan Skyline 2000 Turbo RS|1983": {
+   "id": 4238,
+   "code": "NIS_SkylineTurboRS_83",
+   "reason": "Skyline Turbo RS, year 83 matches exactly.",
+   "checked": "second review agreed"
+  },
+  "Nissan Skyline GT-R 40th Anniversary|1998": {
+   "id": 4119,
+   "code": "NIS_SkylineAutech_98",
+   "reason": "The R33 4-door 40th Anniversary was the Autech Version; 1998 matches; no other '98 Skyline road code (NIS_23_Skyline_98 is a race car).",
+   "checked": "second review agreed"
+  },
+  "Pagani Zonda Cinque Roadster|2010": {
+   "id": 1369,
+   "code": "PAG_ZondaCinque_09",
+   "reason": "Only Zonda Cinque code in the game (other Zonda is ZondaR_10); code does not say Roadster, year 09 vs 10 within normal offset.",
+   "checked": "second review agreed"
+  },
+  "Polaris RZR Pro XP Factory Racing Limited Edition|2021": {
+   "id": 3686,
+   "code": "POL_51_RZRDakar_21",
+   "reason": "Only two Polaris codes; plain RZRProXP (3687) is certainly the Ultimate. The race-numbered Dakar code is the Factory Racing edition.",
+   "checked": "second review agreed"
+  },
+  "Porsche #3 917 LH Forza Edition|1970": {
+   "id": 4313,
+   "code": "POR_3_917LHFE_70",
+   "reason": "FE suffix on the #3 917 LH code. The plain one is 2549.",
+   "checked": "second review agreed"
+  },
+  "Porsche 911 Carrera S|2019": {
+   "id": 3123,
+   "code": "POR_992_19",
+   "reason": "The 992 generation Carrera S from 2019.",
+   "checked": "second review agreed"
+  },
+  "Porsche 911 GT2 RS|2018": {
+   "id": 2755,
+   "code": "POR_Raymond_17",
+   "reason": "Raymond is the internal nickname for the 991 GT2 RS.",
+   "checked": "second review agreed"
+  },
+  "Porsche 911 Rallye|2023": {
+   "id": 3910,
+   "code": "POR_911Dakar_23",
+   "reason": "The 992 Dakar from 2023 is the rally-raised 911. It is the only fitting code.",
+   "checked": "second review agreed"
+  },
+  "Porsche Carrera Coupe 'Luftauto 002'|1987": {
+   "id": 3624,
+   "code": "POR_911LuftAuto_85",
+   "reason": "LuftAuto in the code name, and the year is within the usual offset.",
+   "checked": "second review agreed"
+  },
+  "RJ Anderson #37 Polaris RZR Pro 4 Truck|2021": {
+   "id": 3662,
+   "code": "RJ_37_Pro4_20",
+   "reason": "RJ = RJ Anderson, race number 37, Pro 4; the Pro 2 truck is RJ_37_Pro2Truck_16.",
+   "checked": "old id [3662] agrees"
+  },
+  "Schuppan 962CR|1993": {
+   "id": 3288,
+   "code": "POR_962CRS_93",
+   "reason": "The Schuppan 962CR is Porsche 962 based, and the year matches exactly.",
+   "checked": "second review agreed"
+  },
+  "Subaru BRZ Forza Edition|2022": {
+   "id": 4164,
+   "code": "SUB_BRZFE_22",
+   "reason": "FE suffix on the BRZ '22 code. The auto pick 3599 (GMA T.50) is wrong. The plain BRZ '22 is 3735.",
+   "checked": "second review agreed"
+  },
+  "Subaru STI S209|2019": {
+   "id": 3412,
+   "code": "SUB_WRXSTiS209_19",
+   "reason": "Exact model and year match.",
+   "checked": "second review agreed"
+  },
+  "Subaru Vivio RX-R Forza Edition|1994": {
+   "id": 4287,
+   "code": "SUB_VivioRXRFE_94",
+   "reason": "FE suffix on the Vivio RX-R code. The plain one is 3960.",
+   "checked": "second review agreed"
+  },
+  "Subaru WRX STI ARX Supercar|2018": {
+   "id": 3241,
+   "code": "SUB_00_VT18X_18",
+   "reason": "VT18x is the Vermont SportsCar ARX rallycross car. The auto pick 3412 is the S209, which is wrong.",
+   "checked": "second review agreed"
+  },
+  "Toyota 86 Stories|2013": {
+   "id": 4259,
+   "code": "TOY_GT86_Stories_13",
+   "reason": "The Stories suffix matches the Stories variant.",
+   "checked": "second review agreed"
+  },
+  "Toyota 86|2013": {
+   "id": 2007,
+   "code": "TOY_GT86_13",
+   "reason": "Plain GT86 code for the plain car.",
+   "checked": "second review agreed"
+  },
+  "Toyota Celica GT-Four RC ST185|1992": {
+   "id": 1517,
+   "code": "TOY_CelicaST185_90",
+   "reason": "The only ST185 code.",
+   "checked": "second review agreed"
+  },
+  "Toyota Celica Sport Specialty II|2003": {
+   "id": 295,
+   "code": "TOY_CelicaSSI_03",
+   "reason": "SSI = Sport Specialty I(I), and the year matches.",
+   "checked": "second review agreed"
+  },
+  "Toyota FJ40|1979": {
+   "id": 2566,
+   "code": "TOY_FJ40_75",
+   "reason": "The only FJ40 code. The year offset is a known code quirk.",
+   "checked": "second review agreed"
+  },
+  "Toyota Sprinter Trueno GT Apex Forza Edition|1985": {
+   "id": 4162,
+   "code": "TOY_SprinterFE_85",
+   "reason": "FE suffix. The plain car is 455, and TG 4250 is another variant.",
+   "checked": "second review agreed"
+  },
+  "Toyota Tacoma TRD Pro Forza Edition|2019": {
+   "id": 4199,
+   "code": "TOY_TacomaTRDProFE_19",
+   "reason": "FE suffix. The plain car is 3374.",
+   "checked": "second review agreed"
+  },
+  "Volkswagen #34 Andretti Rally Cross Beetle|2017": {
+   "id": 3007,
+   "code": "VW_34_BeetleGRC_17",
+   "reason": "The #34 GRC Beetle matches exactly.",
+   "checked": "second review agreed"
+  },
+  "Volkswagen Beetle|1963": {
+   "id": 1435,
+   "code": "VW_Beetle_66",
+   "reason": "The only plain Beetle code. Type2_63 is the bus (Type 2 De Luxe).",
+   "checked": "second review agreed"
+  },
+  "Volkswagen Golf R|2021": {
+   "id": 3413,
+   "code": "VW_GolfR_19",
+   "reason": "VW_GolfR_22 (3533) is certainly the Golf R '22. The '10 and '14 codes belong to older cars, so GolfR_19 is the only Golf R code left for '21.",
+   "checked": "second review agreed"
+  },
+  "Volkswagen Pickup LX|1982": {
+   "id": 3235,
+   "code": "VW_Caddy_82",
+   "reason": "The US Rabbit Pickup is the Caddy Mk1, and the year matches.",
+   "checked": "second review agreed"
+  },
+  "Wuling Sunshine S Forza Edition|2013": {
+   "id": 4163,
+   "code": "WUL_HongguangSFE_20",
+   "reason": "FE suffix on the same Hongguang S code.",
+   "checked": "second review agreed"
+  },
+  "Wuling Sunshine S|2013": {
+   "id": 3548,
+   "code": "WUL_HongguangS_20",
+   "reason": "The only plain Wuling van code (Hongguang S). The FE is 4163, and MiniEV is a different car.",
+   "checked": "second review agreed"
+  }
+ }
+}

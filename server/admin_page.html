@@ -1,0 +1,1471 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Forza Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<!--
+  Die Verwaltungsseite.
+
+  WARUM SIE ENGLISCH IST und die Downloadseite nicht: diese Seite sieht genau ein
+  Mensch, und der hat die App auf Englisch gebaut. Eine Sprachumschaltung hier waere
+  Arbeit ohne Leser.
+
+  DAS GEHEIMNIS STEHT NICHT IN DIESER DATEI. Es wird getippt und liegt fuer die Dauer
+  des Reiters in sessionStorage -- nicht in localStorage: ein geschlossener Reiter
+  soll es vergessen. "Lock" wirft es sofort weg. Damit kann diese Datei bedenkenlos
+  ins Git, und genau darum geht es.
+
+  Unterschrieben wird jede Anfrage wie in analytics_api.admin_signature:
+      HMAC-SHA256(geheim, METHOD + "\n" + PATH + "\n" + ZEIT + "\n" + SHA256(body))
+  Der Server laesst hoechstens CLOCK_SKEW Sekunden Abweichung zu; geht die Uhr des
+  Browsers falsch, sagt die Seite das auch so, statt "401" hinzuwerfen.
+-->
+<style>
+/* GROSSE SCHIRME. Die Seite ist in CSS-Pixeln fuer ~1080p-1440p gebaut (Spalte
+   1240px, Schrift 12-15px). Auf einem 4K-Schirm mit 100 % Skalierung war sie ein
+   schmaler Streifen winziger Schrift, auf 8K/16K unlesbar. zoom skaliert Layout,
+   Schrift, Tabellen und Diagramme gemeinsam; die Stufen haengen an der Breite des
+   Fensters in CSS-Pixeln, also greifen sie nicht, wenn Windows ohnehin skaliert. */
+@media (min-width: 2200px) { html { zoom: 1.5; } }
+@media (min-width: 3000px) { html { zoom: 2; } }
+@media (min-width: 4400px) { html { zoom: 3; } }
+@media (min-width: 6000px) { html { zoom: 4; } }
+@media (min-width: 9000px) { html { zoom: 6; } }
+@media (min-width: 12000px) { html { zoom: 8; } }
+
+:root {
+  --ground: #f5f6f8; --surface: #ffffff; --raised: #fafbfc;
+  --border: #e3e7ed; --ink: #0f1520; --ink-soft: #3d4759; --muted: #59647a;
+  --bar: #0891b2; --good: #15803d; --bad: #b91c1c; --on-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(15,21,32,.05), 0 10px 26px rgba(15,21,32,.045);
+  /* Besuchsgrafik: zwei Reihen, mit dataviz/validate_palette.js geprueft
+     (hell gegen #ffffff, dunkel gegen #131a23 -- alle Pruefungen bestanden). */
+  --v1: #0891b2; --v2: #eb6834; --grid: #e3e7ed;
+  /* Seiten: die ersten drei Plaetze der Referenzpalette (alle Paare geprueft). */
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a;
+  /* Karte: eine Farbe, hell nach dunkel (validate_palette.js --ordinal bestanden). */
+  --m1: #62bfd4; --m2: #35a9c4; --m3: #1a8eab; --m4: #0d7089; --m5: #0a5163; --m0: #e9edf1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0b1017; --surface: #131a23; --raised: #182029;
+    --border: #232e3b; --ink: #e7ecf3; --ink-soft: #c3ccd9; --muted: #93a2b5;
+    --bar: #22d3ee; --good: #4ade80; --bad: #f87171; --on-ink: #0b1017;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.35);
+    --v1: #0ea5c6; --v2: #d95926; --grid: #232e3b;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70;
+    --m1: #1d6a80; --m2: #1e8aa3; --m3: #28a9c3; --m4: #5cc6db; --m5: #9ae0ec; --m0: #1e2733;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; line-height: 1.55;
+}
+.wrap { max-width: 1000px; margin: 0 auto; padding: 26px 18px 70px; }
+.label { font-size: 12.5px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+h1 {
+  font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
+  font-size: clamp(28px, 5vw, 40px); margin: 6px 0 4px;
+}
+h2 {
+  font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-weight: 700;
+  font-size: 20px; margin: 30px 0 10px;
+}
+p { margin: 0 0 12px; max-width: 74ch; color: var(--ink-soft); }
+a { color: var(--bar); }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 18px 20px; margin: 16px 0;
+  /* Eine breite Tabelle scrollt IN ihrer Tafel, statt auf dem Telefon die ganze
+     Seite breiter zu machen (gemessen: 508 statt 390 px). */
+  overflow-x: auto;
+}
+input[type=password], input[type=text] {
+  background: var(--raised); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 11px; font: inherit; min-width: 260px; flex: 1 1 260px;
+}
+button {
+  background: var(--ink); color: var(--on-ink); border: 1px solid var(--ink);
+  border-radius: 8px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer;
+}
+button.ghost { background: transparent; color: var(--ink-soft); border-color: var(--border); }
+button:hover { background: var(--bar); border-color: var(--bar); color: var(--on-ink); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.card {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.card .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.card .v {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 30px; font-weight: 600; line-height: 1.15; margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.note { font-size: 13px; color: var(--muted); }
+.race { margin: 14px 0 18px; }
+.race .proof img { max-width: 100%; margin-top: 8px; border-radius: 4px; }
+tr.hidden-row td { opacity: .45; text-decoration: line-through; }
+.err { color: var(--bad); }
+.ok { color: var(--good); }
+.chart { display: flex; align-items: flex-end; gap: 2px; height: 130px; margin-top: 6px; }
+.chart div {
+  flex: 1 1 0; background: var(--bar); border-radius: 2px 2px 0 0; min-height: 1px;
+  opacity: .85;
+}
+.chart div:hover { opacity: 1; }
+.scale { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+footer { margin-top: 36px; font-size: 13px; color: var(--muted); }
+/* ---- Besuche ---- */
+.ranges { gap: 6px; margin: 4px 0 14px; }
+.ranges button { padding: 5px 12px; font-weight: 500; }
+.ranges button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.ranges button[aria-pressed="false"] { background: transparent; color: var(--ink-soft); border-color: var(--border); }
+.card .v.prop { font-variant-numeric: normal; }
+.card .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.legend { display: flex; gap: 18px; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
+.legend i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+.vchart { position: relative; outline: none; }
+.vchart:focus-visible { box-shadow: 0 0 0 2px var(--bar); border-radius: 6px; }
+.vchart svg { display: block; width: 100%; overflow: visible; }
+.vchart .tick { font: 11px "IBM Plex Mono", ui-monospace, monospace; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.vchart .endlabel { font: 600 12px "IBM Plex Sans", sans-serif; fill: var(--ink); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+       border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: 12.5px; min-width: 140px; }
+.tip b { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px; color: var(--ink); }
+.tip .k { color: var(--muted); }
+.tip i { display: inline-block; width: 12px; height: 2px; vertical-align: middle; margin-right: 6px; }
+.bar-cell { position: relative; min-width: 120px; }
+.bar-cell span { display: block; height: 8px; background: var(--v1); border-radius: 0 4px 4px 0; min-width: 2px; }
+td.num, th.num { text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+details.land summary { cursor: pointer; }
+details.land table { margin: 4px 0 8px 18px; width: calc(100% - 18px); }
+h3 { font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-size: 17px; margin: 18px 0 6px; }
+.geo { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(220px, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 760px) { .geo { grid-template-columns: 1fr; } }
+.map { position: relative; }
+.map svg { display: block; width: 100%; height: auto; }
+.map path { stroke: var(--surface); stroke-width: .6; cursor: pointer; }
+.map path:hover, .map path.sel { stroke: var(--ink); stroke-width: 1.2; }
+.steps { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.steps i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.hbar { display: grid; grid-template-columns: minmax(90px, 1fr) 2fr auto; gap: 8px; align-items: center;
+        font-size: 13px; margin: 5px 0; }
+.hbar .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); }
+.hbar .tr { height: 8px; }
+.hbar .tr span { display: block; height: 8px; background: var(--v1); border-radius: 0 4px 4px 0; min-width: 2px; }
+.hbar .z { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
+.vlegend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-soft); margin: 2px 0 6px; }
+.vlegend i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+</style>
+
+<div class="wrap">
+  <span class="label">Forza Horizon 6</span>
+  <h1>Admin</h1>
+  <p class="note">The secret is never stored on disk and is not part of this page.
+    It stays in this tab until you close it or press Lock.</p>
+
+  <div class="panel" id="gate">
+    <div class="row">
+      <input type="password" id="secret" placeholder="Admin secret" autocomplete="off">
+      <button id="unlock">Unlock</button>
+      <button class="ghost" id="lock" hidden>Lock</button>
+      <button class="ghost" id="refresh" hidden>Refresh</button>
+    </div>
+    <div class="note" id="state" style="margin-top:10px">Enter the secret to load the numbers.</div>
+  </div>
+
+  <div id="body" hidden>
+    <h2>Downloads</h2>
+    <div class="cards" id="dl"></div>
+
+    <h2>Active installs</h2>
+    <div class="cards" id="act"></div>
+    <p class="note" id="active-note"></p>
+
+    <h2>Last 30 days</h2>
+    <div class="panel">
+      <div class="vlegend"><span><i style="background:var(--v1)"></i>Active installs</span>
+        <span><i style="background:var(--v2)"></i>Downloads</span></div>
+      <div class="vchart" id="chart30" tabindex="0" aria-label="Active installs and downloads per day. Arrow keys step through."></div>
+      <details><summary class="note">Table view</summary><div id="table30"></div></details>
+    </div>
+
+    <h2>Downloads by version</h2>
+    <div id="versions" class="note">not loaded</div>
+    <p class="note">Cumulative downloads of each version since it appeared; the newest version is
+      highlighted, older ones are grey. "App" is the app fetching its own update (older versions send no
+      browser id, which also counts as app), "browser" a download from a web page. HEAD requests and
+      resumed downloads are not counted.</p>
+
+    <h2>Website visits</h2>
+    <div class="row ranges" id="ranges" role="group" aria-label="Time range">
+      <button data-r="hours" aria-pressed="false">48 hours</button>
+      <button data-r="days" aria-pressed="true">90 days</button>
+      <button data-r="weeks" aria-pressed="false">52 weeks</button>
+      <button data-r="months" aria-pressed="false">24 months</button>
+      <button data-r="years" aria-pressed="false">Years</button>
+      <button data-r="all" aria-pressed="false">All time</button>
+    </div>
+    <div class="cards" id="visit-cards"></div>
+    <div class="panel">
+      <div class="vlegend"><span><i style="background:var(--v1)"></i>Visitors</span>
+        <span><i style="background:var(--v2)"></i>Page views</span></div>
+      <div class="vchart" id="visit-chart" tabindex="0"
+           aria-label="Visitors and page views over time. Arrow keys step through."></div>
+      <details><summary class="note">Table view</summary><div id="visit-table"></div></details>
+    </div>
+
+    <h3>Where visitors come from</h3>
+    <div class="panel">
+      <div class="geo">
+        <div>
+          <div class="map" id="map" aria-label="World map shaded by visitors per country"></div>
+          <div class="steps" id="map-steps"></div>
+        </div>
+        <div>
+          <div id="geo-side"></div>
+          <h3 style="margin-top:16px">Continents</h3>
+          <div id="continents" class="note"></div>
+        </div>
+      </div>
+      <details><summary class="note">Table view</summary><div id="geo-table"></div></details>
+    </div>
+
+    <h3>Page views by page</h3>
+    <div class="panel">
+      <div class="vlegend" id="pages-legend"></div>
+      <div class="vchart" id="pages-chart" tabindex="0" aria-label="Page views per page over time. Arrow keys step through."></div>
+      <details><summary class="note">Table view</summary><div id="pages-table"></div></details>
+    </div>
+    <p class="note" id="visit-note"></p>
+
+    <h2>Scan runs</h2>
+    <div class="panel"><div id="runs" class="note">not loaded</div></div>
+
+    <h2>Submitted lap times</h2>
+    <div class="panel">
+      <div class="filters">
+        <input id="f-player" placeholder="player" />
+        <input id="f-car" placeholder="car ordinal" />
+        <input id="f-max" placeholder="max seconds" />
+        <label><input type="checkbox" id="f-hidden" /> show hidden too</label>
+        <button id="laps-refresh">Reload</button>
+      </div>
+      <div id="laps" class="note">not loaded</div>
+    </div>
+
+    <h2>Race results (Horizon Play)</h2>
+    <div class="panel">
+      <div class="filters"><button id="races-refresh">Reload</button>
+        <span class="note">A car's time is the one at the 1 % mark of all human times, never the single
+        fastest. Hide a time you know is cheated and the next one counts; hide that too if needed.
+        The proof picture shows other players' gamertags -- it stays on this page.</span></div>
+      <div id="hp-boards" class="note">not loaded</div>
+      <div id="races" class="note"></div>
+    </div>
+
+    <h2>Leaderboard scans from the app</h2>
+    <div class="panel">
+      <div class="filters"><button id="scans-refresh">Reload</button>
+        <span class="note">Boards read in FH Companion's scan tab, stored like a friend's contribution
+        (contrib/app-&hellip;). No gamertags. Hiding puts the run on the dataset visibility list;
+        it leaves the site with the next dataset build. A scan is <b>held</b> (hidden on arrival)
+        when its board is not in the dataset, its top times do not match the dataset's, or its end
+        is unproven (under 500 rows or 80% of the board) -- Show releases it.</span></div>
+      <div id="scans" class="note">not loaded</div>
+    </div>
+
+    <h2>Bans</h2>
+    <div class="panel">
+      <div class="filters"><button id="bans-refresh">Reload</button>
+        <span id="bans-rules" class="note"></span></div>
+      <h3>Players</h3>
+      <div id="bans-installs" class="note">not loaded</div>
+      <h3>Addresses (failed logins)</h3>
+      <div id="bans-ips" class="note">not loaded</div>
+    </div>
+  </div>
+
+  <footer><a href="/">Back to the car ratings</a></footer>
+</div>
+
+<style>
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+             margin-bottom: 10px; }
+  .filters input[type=text], .filters input:not([type]) {
+    background: #0d1117; color: #e7ecf3; border: 1px solid #30363d;
+    border-radius: 4px; padding: 4px 7px; width: 130px; }
+  .filters label { color: #9aa4b2; font-size: 13px; }
+  .laps td.hid { color: #8b949e; text-decoration: line-through; }
+  .laps button { background: #21262d; color: #e7ecf3; border: 1px solid #30363d;
+                 border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+  .laps .flag { color: #d29922; }
+</style>
+<script>
+var LEER = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+// JEDER WERT, DER ALS HTML EINGESETZT WIRD, GEHT HIER DURCH.
+// Bis 2026-09-24 stand z. B. lap.carOrdinal roh im innerHTML -- ein Feld, das der
+// Einreichende frei setzt. Eine Runde mit Markup darin haette in diesem Tab Skript
+// ausgefuehrt, und dieser Tab haelt das Admin-Geheimnis.
+function esc(v) {
+  return String(v === null || v === undefined ? "" : v)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+var daten = null;
+
+function hex(buf) {
+  return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+    return ("0" + b.toString(16)).slice(-2);
+  }).join("");
+}
+
+// ---- SHA-256 / HMAC, AUCH OHNE crypto.subtle -------------------------------
+// Browser geben crypto.subtle nur in einem "sicheren Kontext" (HTTPS oder
+// localhost). Diese Seite laeuft unter http://...:8787 -- dort war subtle
+// undefiniert, und die Verwaltung scheiterte, bevor sie ueberhaupt fragte
+// (gefunden 2026-09-24). Das Verfahren selbst ist fuer einfaches HTTP gebaut: das
+// Geheimnis wird nie gesendet, nur die Unterschrift. Also rechnet die Seite sie
+// selbst, wenn der Browser es nicht tut -- dasselbe Ergebnis, Byte fuer Byte
+// (scripts/test_admin_hmac.js prueft es gegen Python).
+var SHA_K = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+
+function sha256Bytes(daten) {
+  var n = daten.length, bits = n * 8;
+  var laenge = ((n + 9 + 63) >> 6) << 6;
+  var m = new Uint8Array(laenge);
+  m.set(daten);
+  m[n] = 0x80;
+  var hoch = Math.floor(bits / 0x100000000);
+  m[laenge - 8] = (hoch >>> 24) & 255; m[laenge - 7] = (hoch >>> 16) & 255;
+  m[laenge - 6] = (hoch >>> 8) & 255;  m[laenge - 5] = hoch & 255;
+  m[laenge - 4] = (bits >>> 24) & 255; m[laenge - 3] = (bits >>> 16) & 255;
+  m[laenge - 2] = (bits >>> 8) & 255;  m[laenge - 1] = bits & 255;
+  var h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+           0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  var w = new Array(64);
+  for (var blk = 0; blk < laenge; blk += 64) {
+    for (var i = 0; i < 16; i++) {
+      w[i] = (m[blk + 4 * i] << 24) | (m[blk + 4 * i + 1] << 16) |
+             (m[blk + 4 * i + 2] << 8) | m[blk + 4 * i + 3];
+    }
+    for (i = 16; i < 64; i++) {
+      var a0 = w[i - 15], a1 = w[i - 2];
+      var s0 = ((a0 >>> 7) | (a0 << 25)) ^ ((a0 >>> 18) | (a0 << 14)) ^ (a0 >>> 3);
+      var s1 = ((a1 >>> 17) | (a1 << 15)) ^ ((a1 >>> 19) | (a1 << 13)) ^ (a1 >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+    }
+    var a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
+    for (i = 0; i < 64; i++) {
+      var S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (hh + S1 + ch + SHA_K[i] + w[i]) | 0;
+      var S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) | 0;
+      hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+  }
+  var aus = new Uint8Array(32);
+  for (i = 0; i < 8; i++) {
+    aus[4 * i] = (h[i] >>> 24) & 255; aus[4 * i + 1] = (h[i] >>> 16) & 255;
+    aus[4 * i + 2] = (h[i] >>> 8) & 255; aus[4 * i + 3] = h[i] & 255;
+  }
+  return aus;
+}
+
+function hmacBytes(schluessel, nachricht) {
+  if (schluessel.length > 64) { schluessel = sha256Bytes(schluessel); }
+  var k = new Uint8Array(64); k.set(schluessel);
+  var innen = new Uint8Array(64 + nachricht.length), aussen = new Uint8Array(96);
+  for (var i = 0; i < 64; i++) { innen[i] = k[i] ^ 0x36; aussen[i] = k[i] ^ 0x5c; }
+  innen.set(nachricht, 64);
+  aussen.set(sha256Bytes(innen), 64);
+  return sha256Bytes(aussen);
+}
+
+function subtleDa() {
+  return typeof crypto !== "undefined" && crypto && crypto.subtle && window.isSecureContext;
+}
+
+// Beide geben ein Promise auf Hex zurueck, gleich woher gerechnet.
+function sha256Hex(text) {
+  var bytes = new TextEncoder().encode(text);
+  if (subtleDa()) { return crypto.subtle.digest("SHA-256", bytes).then(hex); }
+  return Promise.resolve(hex(sha256Bytes(bytes).buffer));
+}
+
+function hmacHex(geheim, nachricht) {
+  var enc = new TextEncoder();
+  if (subtleDa()) {
+    return crypto.subtle
+      .importKey("raw", enc.encode(geheim), { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+      .then(function (k) { return crypto.subtle.sign("HMAC", k, enc.encode(nachricht)); })
+      .then(hex);
+  }
+  return Promise.resolve(hex(hmacBytes(enc.encode(geheim), enc.encode(nachricht)).buffer));
+}
+// ---- Ende SHA-256 / HMAC ----------------------------------------------------
+
+// HMAC-SHA256 wie analytics_api.admin_signature.
+function unterschreiben(geheim, method, path, stamp) {
+  var nachricht = [method.toUpperCase(), path, String(stamp), LEER].join("\n");
+  return hmacHex(geheim, nachricht);
+}
+
+function hole(path) {
+  var geheim = sessionStorage.getItem("fgh-admin") || "";
+  var stamp = Math.floor(Date.now() / 1000);
+  return unterschreiben(geheim, "GET", path, stamp).then(function (sig) {
+    return fetch(path, {
+      cache: "no-store",
+      headers: { "X-Forza-Timestamp": String(stamp), "X-Forza-Signature": sig },
+    });
+  }).then(function (r) {
+    if (r.ok) { return r.json(); }
+    return r.text().then(function (t) {
+      // Der Server sagt bei einer schiefen Uhr genau das -- weitergeben, statt
+      // den Nutzer raten zu lassen, ob das Geheimnis falsch war.
+      var e = new Error(t || ("HTTP " + r.status));
+      e.status = r.status;
+      throw e;
+    });
+  });
+}
+
+function karte(k, v) {
+  return '<div class="card"><div class="k">' + esc(k) + '</div><div class="v">'
+    + (v === null || v === undefined ? "--" : esc(Number(v).toLocaleString("en")))
+    + "</div></div>";
+}
+
+function zeichnen() {
+  var d = daten;
+  document.getElementById("dl").innerHTML =
+    karte("Today", d.downloads.today) + karte("7 days", d.downloads.week) +
+    karte("30 days", d.downloads.month) + karte("Total", d.downloads.total);
+  document.getElementById("act").innerHTML =
+    karte("Today", d.active.today) + karte("7 days", d.active.week) +
+    karte("30 days", d.active.month);
+  document.getElementById("active-note").textContent =
+    "An install counts on a day it contacts the server, which the app does on "
+    + "startup. A download is not a user, and two people behind one address count "
+    + "as one until their app sends its own id. These are a floor, not a headcount. "
+    + "Identifiers are stored hashed with a server-only salt and dropped after "
+    + d.retentionDays + " days.";
+  var punkte = (d.daily || []).map(function (t) {
+    var tag = new Date(t.day + "T00:00:00Z");
+    return { label: tag.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }),
+             kurz: tag.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }),
+             active: Number(t.active), downloads: Number(t.downloads) };
+  });
+  linien(document.getElementById("chart30"), punkte,
+         [{ feld: "active", name: "Active installs", farbe: "var(--v1)" },
+          { feld: "downloads", name: "Downloads", farbe: "var(--v2)" }]);
+  tabelle(document.getElementById("table30"), punkte, [["Day", "label"], ["Active installs", "active"], ["Downloads", "downloads"]]);
+}
+
+// ---- Eingereichte Runden ------------------------------------------------ //
+//
+// Die Liste kommt OFFEN von /api/lap/list -- dort stehen keine Geheimnisse, und
+// die Installationskennung wird serverseitig entfernt. Verborgene Runden gibt es
+// nur mit Admin-Unterschrift, darum zwei verschiedene Wege.
+var alleRunden = [];
+
+function rundeSekunden(r) {
+  return ((r && r.lap) || {}).lapSeconds;
+}
+
+function schicke(path, koerper) {
+  var geheim = sessionStorage.getItem("fgh-admin") || "";
+  var stamp = String(Math.floor(Date.now() / 1000));
+  var text = JSON.stringify(koerper);
+  return sha256Hex(text)
+    .then(function (rumpfHash) {
+      var nachricht = "POST\n" + path + "\n" + stamp + "\n" + rumpfHash;
+      return hmacHex(geheim, nachricht)
+        .then(function (sig) {
+          return fetch(path, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Forza-Timestamp": stamp,
+              "X-Forza-Signature": sig
+            },
+            body: text
+          });
+        });
+    }).then(function (r) {
+      if (!r.ok) { return r.text().then(function (t) { throw new Error(t); }); }
+      return r.json();
+    });
+}
+
+function rundenZeichnen() {
+  var spieler = (document.getElementById("f-player").value || "").toLowerCase();
+  var auto = (document.getElementById("f-car").value || "").trim();
+  var max = parseFloat(document.getElementById("f-max").value);
+  var zeigeVersteckt = document.getElementById("f-hidden").checked;
+
+  var reihen = alleRunden.filter(function (r) {
+    if (!zeigeVersteckt && r.hidden) { return false; }
+    if (spieler && String(r.gamertag || "").toLowerCase().indexOf(spieler) < 0) {
+      return false;
+    }
+    if (auto && String(((r.lap || {}).carOrdinal) || "") !== auto) { return false; }
+    if (!isNaN(max) && !(rundeSekunden(r) <= max)) { return false; }
+    return true;
+  }).sort(function (a, b) {
+    return (rundeSekunden(a) || 1e9) - (rundeSekunden(b) || 1e9);
+  });
+
+  var ziel = document.getElementById("laps");
+  if (!reihen.length) {
+    ziel.textContent = alleRunden.length
+      ? "no lap matches the filter (" + alleRunden.length + " total)"
+      : "no laps submitted yet";
+    return;
+  }
+  ziel.innerHTML = '<table class="laps"><tr><th>Time</th><th>Player</th>'
+    + '<th>Track</th><th>Class</th>'
+    + '<th>Car</th><th>PI</th><th>Received</th><th>Flags</th><th>Telemetry</th><th></th><th></th></tr>'
+    + reihen.map(function (r) {
+        var s = rundeSekunden(r);
+        // Ein vorlaeufiger Name (Spieler ohne Gamertag) ist als solcher erkennbar.
+        var vorlaeufig = r.gamertag_temporary === true ? " <i>(temporary)</i>" : "";
+        var lap = r.lap || {};
+        return '<tr><td class="' + (r.hidden ? "hid" : "") + '">'
+          + (s === undefined || isNaN(Number(s)) ? "?" : esc(Number(s).toFixed(3)) + " s")
+          + "</td><td>" + esc(r.gamertag || "(no gamertag)") + vorlaeufig
+          + "</td><td>" + esc(lap.track || "-")
+          + "</td><td>" + esc(KLASSEN[Number(lap.carClass)] || "-")
+          + "</td><td>" + esc(lap.carOrdinal !== undefined ? lap.carOrdinal : "?")
+          + "</td><td>" + esc(lap.performanceIndex !== undefined ? lap.performanceIndex : "-")
+          + "</td><td>" + esc(String(r.received || "").replace("T", " ").replace("+00:00", ""))
+          + '</td><td class="flag">' + esc((r.flags || []).join(", ") || "")
+          + '</td><td class="tele">'
+          + (r.fullTelemetry
+             ? '<button class="tele" data-tele="' + esc(r.id) + '" data-fmt="full" title="'
+               + esc((r.fullTelemetry.rows || 0) + " packets x " + (r.fullTelemetry.columns || 0)
+                     + " fields") + '">full csv</button> '
+             : '')
+          + '<button class="tele" data-tele="' + esc(r.id) + '" data-fmt="json" title="'
+          + esc((lap.samplesCount || 0) + " samples") + '">json</button> '
+          + '<button class="tele" data-tele="' + esc(r.id) + '" data-fmt="csv">csv</button>'
+          + '</td><td><button data-id="' + esc(r.id) + '" data-hide="'
+          + (r.hidden ? "0" : "1") + '">'
+          + (r.hidden ? "restore" : "delete") + "</button></td>"
+          + '<td><button class="ban" data-ban="' + esc(r.id) + '">ban player</button></td></tr>';
+      }).join("") + "</table>";
+
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-tele]"), function (b) {
+    b.addEventListener("click", function () {
+      b.disabled = true;
+      var fmt = b.getAttribute("data-fmt");
+      var id = b.getAttribute("data-tele");
+      var r = alleRunden.filter(function (x) { return x.id === id; })[0] || { id: id };
+      (fmt === "full"
+        ? schicke("/api/admin/lap/fulltelemetry", { id: id })
+            .then(function (spur) { volleSpurSpeichern(r, spur); })
+        : schicke("/api/admin/lap/telemetry", { id: id })
+            .then(function (d) { telemetrieSpeichern(d, fmt); }))
+        .catch(function (e) { alert("Failed: " + e.message); })
+        .then(function () { b.disabled = false; });
+    });
+  });
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-ban]"), function (b) {
+    b.addEventListener("click", function () {
+      if (!confirm("Ban this player from submitting? Their laps are hidden too.")) { return; }
+      b.disabled = true;
+      schicke("/api/admin/lap/ban", { lap_id: b.getAttribute("data-ban"), reason: "banned in admin" })
+        .then(function () { rundenLaden(); sperrenLaden(); })
+        .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+    });
+  });
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-id]"), function (b) {
+    b.addEventListener("click", function () {
+      var id = b.getAttribute("data-id");
+      var verstecken = b.getAttribute("data-hide") === "1";
+      b.disabled = true;
+      schicke(verstecken ? "/api/admin/lap/hide" : "/api/admin/lap/show",
+              verstecken ? { id: id, reason: "removed in admin" } : { id: id })
+        .then(rundenLaden)
+        .catch(function (e) {
+          b.disabled = false;
+          alert("Failed: " + e.message);
+        });
+    });
+  });
+}
+
+var KLASSEN = ["D", "C", "B", "A", "S1", "S2", "R"];
+
+// ---- Rennergebnisse (Horizon Play, seit 2026-10-02) ------------------------ //
+//
+// Alles mit Admin-Unterschrift: die Liste, das Bild (es zeigt die Gamertags der anderen
+// Spieler und verlaesst diese Seite nie) und das Aus-/Einblenden einer Zeile.
+var alleRennen = [];
+
+function msText(ms) {
+  if (ms === null || ms === undefined) { return "-"; }
+  var s = ms / 1000;
+  var m = Math.floor(s / 60);
+  var rest = (s - m * 60).toFixed(3);
+  return m + ":" + (rest.length < 6 ? "0" + rest : rest);
+}
+
+// Wie schicke(), aber die Antwort als Datei (das Beweisbild).
+function schickeRoh(path, koerper) {
+  var geheim = sessionStorage.getItem("fgh-admin") || "";
+  var stamp = String(Math.floor(Date.now() / 1000));
+  var text = JSON.stringify(koerper);
+  return sha256Hex(text)
+    .then(function (rumpfHash) {
+      return hmacHex(geheim, "POST\n" + path + "\n" + stamp + "\n" + rumpfHash)
+        .then(function (sig) {
+          return fetch(path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Forza-Timestamp": stamp, "X-Forza-Signature": sig },
+            body: text
+          });
+        });
+    }).then(function (r) {
+      if (!r.ok) { return r.text().then(function (t) { throw new Error(t); }); }
+      return r.blob();
+    });
+}
+
+function rennenLaden() {
+  var ziel = document.getElementById("hp-boards");
+  ziel.textContent = "loading ...";
+  return hole("/api/admin/race/list").then(function (d) {
+    alleRennen = d.races || [];
+    rennenZeichnen(d.boards || []);
+  }).catch(function (e) {
+    ziel.textContent = "not available: " + e.message;
+  });
+}
+
+function rennenZeichnen(bretter) {
+  document.getElementById("hp-boards").innerHTML = bretter.length
+    ? "<table><tr><th>Route</th><th>Class</th><th>Car</th><th>Kind</th><th>Time (1 % mark)</th>"
+      + "<th>Fastest single</th><th>Times</th></tr>"
+      + bretter.map(function (x) {
+          return "<tr><td>" + esc(x.track) + "</td><td>" + esc(x["class"]) + "</td><td>" + esc(x.car)
+            + "</td><td>" + esc(x.kind === "lap" ? "best lap" : "race time") + "</td><td>"
+            + esc(msText(x.ms)) + (x.confirmed ? "" : " (unconfirmed)") + "</td><td>"
+            + esc(msText(x.fastest)) + "</td><td>" + esc(x.n) + "</td></tr>";
+        }).join("") + "</table>"
+    : "no Horizon Play times yet";
+  var ziel = document.getElementById("races");
+  var liste = alleRennen.slice().sort(function (a, b) { return (b.received || 0) - (a.received || 0); }).slice(0, 60);
+  ziel.innerHTML = liste.map(function (r) {
+    var versteckt = r.hiddenPlaces || [];
+    return '<div class="race"><div><b>' + esc(r.track) + "</b> &middot; " + esc(r["class"] || "?")
+      + " &middot; " + esc(r.at || "") + (r.flags && r.flags.length ? ' &middot; <span class="bad">'
+      + esc(r.flags.join(", ")) + "</span>" : "")
+      + ' <button data-proof="' + esc(r.id) + '">Proof</button></div>'
+      + '<div class="proof" id="proof-' + esc(r.id) + '"></div>'
+      + "<table><tr><th>Place</th><th>Kind</th><th>Car</th><th>PI</th><th>Best lap</th><th>Time</th><th></th></tr>"
+      + (r.field || []).map(function (z) {
+          var aus = versteckt.indexOf(z.place) >= 0;
+          var knopf = z.kind === "human" && (z.ms || z.bestLapMs)
+            ? '<button data-race="' + esc(r.id) + '" data-place="' + esc(z.place) + '" data-hide="'
+              + (aus ? "0" : "1") + '">' + (aus ? "Show" : "Hide") + "</button>"
+            : "";
+          return "<tr" + (aus ? ' class="hidden-row"' : "") + "><td>" + esc(z.place) + (z.self ? " *" : "")
+            + "</td><td>" + esc(z.kind) + "</td><td>" + esc(z.carName || z.carShort || "?")
+            + (z.car ? " (" + esc(z.car) + ")" : "") + "</td><td>" + esc(z.pi || "") + "</td><td>"
+            + esc(msText(z.bestLapMs)) + "</td><td>" + esc(msText(z.ms)) + "</td><td>" + knopf + "</td></tr>";
+        }).join("") + "</table></div>";
+  }).join("");
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-proof]"), function (b) {
+    b.addEventListener("click", function () {
+      var id = b.getAttribute("data-proof");
+      var platz = document.getElementById("proof-" + id);
+      if (platz.firstChild) { platz.innerHTML = ""; return; }
+      b.disabled = true;
+      schickeRoh("/api/admin/race/proof", { id: id })
+        .then(function (blob) {
+          var bild = document.createElement("img");
+          bild.src = URL.createObjectURL(blob);
+          platz.appendChild(bild);
+        })
+        .catch(function (e) { alert("Failed: " + e.message); })
+        .then(function () { b.disabled = false; });
+    });
+  });
+  Array.prototype.forEach.call(ziel.querySelectorAll("button[data-race]"), function (b) {
+    b.addEventListener("click", function () {
+      var hide = b.getAttribute("data-hide") === "1";
+      b.disabled = true;
+      schicke(hide ? "/api/admin/race/hide" : "/api/admin/race/show",
+              { id: b.getAttribute("data-race"), place: Number(b.getAttribute("data-place")),
+                reason: hide ? "cheated time" : "" })
+        .then(rennenLaden)
+        .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+    });
+  });
+}
+
+// Bestenlisten-Scans aus der App (seit 2026-10-04). Aus- und einblenden ueber die
+// Sichtbarkeitsliste wie jeder Lauf -- es gibt dafuer keinen eigenen Pfad.
+function scansLaden() {
+  var ziel = document.getElementById("scans");
+  ziel.textContent = "loading ...";
+  return hole("/api/admin/scan/list").then(function (d) {
+    var liste = d.scans || [];
+    ziel.innerHTML = liste.length
+      ? "<table><tr><th>Received</th><th>From</th><th>Route</th><th>Class</th><th>Mode</th><th>Rows</th>"
+        + "<th>Deepest</th><th>Status</th><th>Flags</th><th>Held / hidden</th><th></th></tr>"
+        + liste.map(function (s) {
+            var wann = s.received ? new Date(s.received * 1000).toISOString().slice(0, 16).replace("T", " ") : "";
+            return "<tr" + (s.hidden ? ' class="hidden-row"' : "") + ' title="' + esc(s.run_id) + '"><td>'
+              + esc(wann) + "</td><td>" + esc(s.who) + "</td><td>" + esc(s.track) + "</td><td>"
+              + esc(s["class"]) + "</td><td>" + esc(s.mode || "") + "</td><td>" + esc(s.rows) + "</td><td>"
+              + esc(s.maxRank) + "</td><td>" + esc(s.status || "") + "</td><td>"
+              + (s.flags && s.flags.length ? '<span class="bad">' + esc(s.flags.join(", ")) + "</span>" : "")
+              + "</td><td>"
+              // Ausgeblendet: der Grund der Liste (das Tor oder der Admin). Eingeblendet, aber
+              // vom Tor zurueckgehalten: das steht noch da, damit man weiss, was freigegeben wurde.
+              + (s.hidden ? '<span class="bad">' + esc(s.reason || "hidden") + "</span>"
+                 : (s.held ? "released (was: " + esc(s.held) + ")" : "")) + "</td><td>"
+              + '<button data-scan="' + esc(s.run_id) + '" data-hide="' + (s.hidden ? "0" : "1") + '">'
+              + (s.hidden ? "Show" : "Hide") + "</button></td></tr>";
+          }).join("") + "</table>"
+      : "no scans sent yet";
+    Array.prototype.forEach.call(ziel.querySelectorAll("button[data-scan]"), function (b) {
+      b.addEventListener("click", function () {
+        var hide = b.getAttribute("data-hide") === "1";
+        var grund = "";
+        if (hide) {
+          grund = prompt("Why hide this scan?", "wrong data");
+          if (grund === null) { return; }
+        }
+        b.disabled = true;
+        schicke("/api/admin/visibility", { run_id: b.getAttribute("data-scan"), hidden: hide, reason: grund })
+          .then(scansLaden)
+          .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+      });
+    });
+  }).catch(function (e) {
+    ziel.textContent = "not available: " + e.message;
+  });
+}
+
+// Eine Runde als Datei: JSON so, wie sie auf dem Server liegt, oder CSV mit einer
+// Zeile je Messpunkt (Spalten = alle vorkommenden Felder, in der Reihenfolge des
+// ersten Punkts) -- fuer eine Tabellenkalkulation.
+// Die volle Telemetrie (jedes Paket, alle Felder) als CSV: die Spalten stehen im
+// Kopf der Datei, die Zeilen sind reine Zahlenreihen -- so wie die App sie ablegt.
+function volleSpurSpeichern(r, spur) {
+  var lap = r.lap || {};
+  var s = Number(lap.lapSeconds);
+  var name = [r.gamertag || "player", lap.track || lap.course || "track",
+              isNaN(s) ? "lap" : s.toFixed(3) + "s", r.id, "full"]
+    .map(function (t) { return String(t).replace(/[^A-Za-z0-9._-]+/g, "_"); }).join("_") + ".csv";
+  var teile = [(spur.columns || []).join(",") + "\n"];
+  (spur.data || []).forEach(function (z) { teile.push(z.join(",") + "\n"); });
+  herunterladen(new Blob(teile, { type: "text/csv" }), name);
+}
+
+function herunterladen(blob, name) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+function telemetrieSpeichern(d, fmt) {
+  var lap = d.lap || {};
+  var s = Number(lap.lapSeconds);
+  var name = [d.gamertag || "player", lap.track || lap.course || "track",
+              isNaN(s) ? "lap" : s.toFixed(3) + "s", d.id]
+    .map(function (t) { return String(t).replace(/[^A-Za-z0-9._-]+/g, "_"); }).join("_");
+  var inhalt, typ;
+  if (fmt === "csv") {
+    var proben = lap.samples || [];
+    var spalten = [];
+    proben.forEach(function (p) {
+      Object.keys(p).forEach(function (k) { if (spalten.indexOf(k) < 0) { spalten.push(k); } });
+    });
+    inhalt = spalten.join(",") + "\n" + proben.map(function (p) {
+      return spalten.map(function (k) { return p[k] === undefined ? "" : String(p[k]); }).join(",");
+    }).join("\n") + "\n";
+    typ = "text/csv";
+    name += ".csv";
+  } else {
+    inhalt = JSON.stringify(d, null, 1);
+    typ = "application/json";
+    name += ".json";
+  }
+  herunterladen(new Blob([inhalt], { type: typ }), name);
+}
+
+function sperrenLaden() {
+  var spieler = document.getElementById("bans-installs");
+  var adressen = document.getElementById("bans-ips");
+  spieler.textContent = "loading ...";
+  adressen.textContent = "loading ...";
+  return hole("/api/admin/bans").then(function (d) {
+    var r = d.rules || {};
+    document.getElementById("bans-rules").textContent =
+      "Auto-ban: " + esc(r.strikes_to_ban) + " rejected submissions in "
+      + esc(r.strike_window_hours) + " h (laps more than "
+      + esc(Math.round((r.slower_than_leaderboard_counts_from || 0) * 100)) + " % slower count). "
+      + "Address block: " + esc(r.failed_logins_to_block_ip) + " failed logins in an hour -> "
+      + esc(r.ip_block_hours) + " h. Home-network addresses are never blocked.";
+    var inst = d.installs || [];
+    spieler.innerHTML = inst.length
+      ? '<table class="laps"><tr><th>Player</th><th>Install</th><th>State</th><th>Strikes 24h</th>'
+        + '<th>Reason / last strike</th><th>Since</th><th></th></tr>'
+        + inst.map(function (x) {
+            var vorlaeufig = x.name_temporary === true ? " <i>(temporary)</i>" : "";
+            return "<tr><td>" + esc(x.display_name || x.gamertag || "(no gamertag)")
+              + vorlaeufig + "</td><td>"
+              + esc(String(x.install_id || "").slice(0, 10)) + "...</td><td>"
+              + (x.banned ? (x.banned_auto ? "banned (auto)" : "banned") : "watching")
+              + "</td><td>" + esc(x.strikes_24h) + "</td><td>"
+              + esc(x.banned ? x.ban_reason : x.last_strike) + "</td><td>"
+              + esc(String(x.ban_changed || "").replace("T", " ").slice(0, 16)) + "</td><td>"
+              + (x.banned ? '<button data-unban-install="' + esc(x.install_id) + '">unban</button>' : "")
+              + "</td></tr>";
+          }).join("") + "</table>"
+      : "no banned or warned players";
+    var ips = d.ips || [];
+    adressen.innerHTML = ips.length
+      ? '<table class="laps"><tr><th>Address</th><th>State</th><th>Failed logins 1h</th>'
+        + '<th>Kind</th><th>Reason</th><th></th></tr>'
+        + ips.map(function (x) {
+            return "<tr><td>" + esc(x.ip) + "</td><td>"
+              + (x.banned ? "blocked until " + esc(x.until) : (x.home_network ? "home network (never blocked)" : "watching"))
+              + "</td><td>" + esc(x.failures_last_hour) + "</td><td>" + esc(x.last_kind)
+              + "</td><td>" + esc(x.reason) + "</td><td>"
+              + '<button data-unban-ip="' + esc(x.ip) + '">' + (x.banned ? "unban" : "clear") + "</button>"
+              + "</td></tr>";
+          }).join("") + "</table>"
+      : "no failed logins recorded";
+    Array.prototype.forEach.call(spieler.querySelectorAll("button[data-unban-install]"), function (b) {
+      b.addEventListener("click", function () {
+        b.disabled = true;
+        schicke("/api/admin/lap/unban", { install_id: b.getAttribute("data-unban-install") })
+          .then(function () { sperrenLaden(); rundenLaden(); })
+          .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+      });
+    });
+    Array.prototype.forEach.call(adressen.querySelectorAll("button[data-unban-ip]"), function (b) {
+      b.addEventListener("click", function () {
+        b.disabled = true;
+        schicke("/api/admin/ip/unban", { ip: b.getAttribute("data-unban-ip") })
+          .then(sperrenLaden)
+          .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+      });
+    });
+  }).catch(function (e) {
+    spieler.textContent = "not available: " + e.message;
+    adressen.textContent = "";
+  });
+}
+
+function rundenLaden() {
+  var ziel = document.getElementById("laps");
+  ziel.textContent = "loading ...";
+  // Verborgene mitzaehlen geht nur mit Unterschrift; ohne sie bleibt die
+  // oeffentliche Sicht. Beides ueber denselben Knopf, damit niemand raetselt,
+  // warum eine Runde fehlt.
+  var pfad = document.getElementById("f-hidden").checked
+    ? "/api/admin/lap/list" : "/api/lap/list";
+  var holen = document.getElementById("f-hidden").checked
+    ? hole(pfad) : fetch(pfad).then(function (r) { return r.json(); });
+  return holen.then(function (d) {
+    alleRunden = d.laps || [];
+    rundenZeichnen();
+  }).catch(function (e) {
+    ziel.textContent = "not available: " + e.message;
+  });
+}
+
+function laden() {
+  var s = document.getElementById("state");
+  s.className = "note";
+  s.textContent = "loading ...";
+  hole("/api/admin/usage").then(function (d) {
+    daten = d;
+    document.getElementById("body").hidden = false;
+    document.getElementById("lock").hidden = false;
+    document.getElementById("refresh").hidden = false;
+    s.className = "note ok";
+    s.textContent = "Counting since " + (d.since || "?") + ".";
+    zeichnen();
+    rundenLaden();
+    rennenLaden();
+    scansLaden();
+    sperrenLaden();
+    fassungenLaden();
+    besucheLaden();
+    return hole("/api/admin/runs").then(function (r) {
+      var rows = (r.runs || []).slice(0, 25);
+      document.getElementById("runs").innerHTML = rows.length
+        ? '<table><tr><th>Run</th><th>Routes</th><th>Laps</th></tr>'
+          + rows.map(function (x) {
+              return "<tr><td>" + esc(x.name || x.run_id || x.id || "?") + "</td><td>"
+                + esc(x.routes !== undefined ? x.routes : (x.track || "-")) + "</td><td>"
+                + esc(x.laps !== undefined ? x.laps : (x.rows !== undefined ? x.rows : "-"))
+                + "</td></tr>";
+            }).join("") + "</table>"
+        : "no runs recorded";
+    }).catch(function (e) {
+      document.getElementById("runs").textContent = "not available: " + e.message;
+    });
+  }).catch(function (e) {
+    s.className = "note err";
+    s.textContent = e.status === 401
+      ? "Rejected: " + e.message
+      : "Failed: " + e.message;
+    document.getElementById("body").hidden = true;
+  });
+}
+
+document.getElementById("unlock").addEventListener("click", function () {
+  var v = document.getElementById("secret").value.trim();
+  if (!v) { return; }
+  sessionStorage.setItem("fgh-admin", v);
+  document.getElementById("secret").value = "";
+  laden();
+});
+document.getElementById("secret").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") { document.getElementById("unlock").click(); }
+});
+document.getElementById("refresh").addEventListener("click", laden);
+document.getElementById("laps-refresh").addEventListener("click", rundenLaden);
+document.getElementById("races-refresh").addEventListener("click", rennenLaden);
+document.getElementById("scans-refresh").addEventListener("click", scansLaden);
+document.getElementById("bans-refresh").addEventListener("click", sperrenLaden);
+["f-player", "f-car", "f-max"].forEach(function (id) {
+  document.getElementById(id).addEventListener("input", rundenZeichnen);
+});
+document.getElementById("f-hidden").addEventListener("change", rundenLaden);
+document.getElementById("lock").addEventListener("click", function () {
+  sessionStorage.removeItem("fgh-admin");
+  daten = null;
+  document.getElementById("body").hidden = true;
+  document.getElementById("lock").hidden = true;
+  document.getElementById("refresh").hidden = true;
+  var s = document.getElementById("state");
+  s.className = "note";
+  s.textContent = "Locked. Enter the secret to load the numbers.";
+});
+
+// ---- Liniengrafik ------------------------------------------------------ //
+//
+// EINE Zeichnung fuer alle Liniengrafiken dieser Seite: 2-px-Linien, Haarlinien-
+// Raster, saubere Teilstriche, der Endpunkt beschriftet (nie jeder Punkt), ein
+// Fadenkreuz, das auf den naechsten Punkt springt, und ein Tooltip mit ALLEN
+// Reihen -- mit der Maus und mit den Pfeiltasten. Die Werte stehen ausserdem in der
+// eingeklappten Tabellenansicht darunter; der Tooltip ist nie der einzige Weg.
+function sauber(max) {
+  if (max <= 4) { return { schritt: 1, oben: Math.max(1, Math.ceil(max)) }; }
+  var roh = max / 4, p = Math.pow(10, Math.floor(Math.log10(roh))), f = roh / p;
+  var schritt = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  return { schritt: schritt, oben: Math.ceil(max / schritt) * schritt };
+}
+
+function zahl(x) { return Number(x || 0).toLocaleString("en"); }
+
+function linien(box, punkte, reihen, opt) {
+  opt = opt || {};
+  var W = Math.max(320, box.clientWidth || 900), H = opt.hoehe || 230, L = 48, R = 74, T = 12, B = 28;
+  var n = punkte.length, zeiger = -1;
+  if (!n) { box.innerHTML = '<p class="note">nothing counted yet</p>'; return; }
+  var max = 1;
+  punkte.forEach(function (p) { reihen.forEach(function (r) { max = Math.max(max, Number(p[r.feld] || 0)); }); });
+  var s = sauber(max);
+  var x = function (i) { return L + (n <= 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1)); };
+  var y = function (v) { return T + (H - T - B) * (1 - Number(v || 0) / s.oben); };
+  var teile = [];
+  for (var v = 0; v <= s.oben + 1e-9; v += s.schritt) {
+    teile.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--grid)" stroke-width="1"/>');
+    teile.push('<text class="tick" x="' + (L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + esc(zahl(v)) + '</text>');
+  }
+  // So viele Datumsangaben, wie nebeneinander passen -- auf dem Telefon liefen
+  // sieben feste Beschriftungen ineinander.
+  var platz = Math.max(2, Math.floor((W - L - R) / 72));
+  var schrittX = Math.max(1, Math.ceil(n / platz));
+  for (var i = 0; i < n; i += schrittX) {
+    teile.push('<text class="tick" x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(punkte[i].kurz) + '</text>');
+  }
+  // Gedaempfte Reihen zuerst, damit die hervorgehobene obenauf liegt.
+  reihen.slice().sort(function (a, b) { return (b.leise ? 1 : 0) - (a.leise ? 1 : 0); }).forEach(function (r) {
+    var d = punkte.map(function (p, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p[r.feld]).toFixed(1); }).join(" ");
+    // Auch Berechnetes geht durch esc(): diese Seite haelt das Admin-Geheimnis, und
+    // "kommt nicht von aussen" ist eine Annahme, die beim naechsten Umbau nicht mehr stimmt.
+    var dicke = r.leise ? 1.5 : 2, deckung = r.leise ? 0.55 : 1, farbe = esc(r.farbe);
+    teile.push('<path d="' + esc(d) + '" fill="none" stroke="' + farbe + '" stroke-width="' + dicke
+      + '" stroke-opacity="' + deckung + '" stroke-linejoin="round" stroke-linecap="round"/>');
+  });
+  // DIREKT BESCHRIFTET NUR DAS ENDE, und nur die lauten Reihen (hoechstens vier).
+  var laut = reihen.filter(function (r) { return !r.leise; }).slice(0, 4);
+  var ende = punkte[n - 1], belegt = [];
+  laut.map(function (r) { return { r: r, yy: y(ende[r.feld]) }; })
+      .sort(function (a, b) { return a.yy - b.yy; })
+      .forEach(function (e) {
+        var yy = e.yy;
+        belegt.forEach(function (b) { if (Math.abs(yy - b) < 14) { yy = b + 14; } });
+        belegt.push(yy);
+        teile.push('<circle cx="' + x(n - 1) + '" cy="' + e.yy + '" r="4" fill="' + esc(e.r.farbe) + '" stroke="var(--surface)" stroke-width="2"/>');
+        teile.push('<text class="endlabel" x="' + (x(n - 1) + 9) + '" y="' + (yy + 4) + '">' + esc(zahl(ende[e.r.feld])) + '</text>');
+      });
+  teile.push('<line class="kreuz" x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>');
+  teile.push('<rect class="fang" x="' + L + '" y="' + T + '" width="' + (W - L - R) + '" height="' + (H - T - B) + '" fill="transparent"/>');
+  box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" aria-hidden="true">' + teile.join("")
+    + '</svg><div class="tip" hidden></div>';
+  var kreuz = box.querySelector(".kreuz"), tip = box.querySelector(".tip"), fang = box.querySelector(".fang");
+  function zeige(i) {
+    zeiger = i;
+    if (i < 0 || i >= n) { kreuz.setAttribute("visibility", "hidden"); tip.hidden = true; return; }
+    kreuz.setAttribute("x1", x(i)); kreuz.setAttribute("x2", x(i)); kreuz.setAttribute("visibility", "visible");
+    var p = punkte[i];
+    tip.textContent = "";
+    var kopf = document.createElement("div"); kopf.className = "k"; kopf.textContent = p.label; tip.appendChild(kopf);
+    reihen.forEach(function (r) {
+      var z = document.createElement("div");
+      var key = document.createElement("i"); key.style.background = r.farbe; if (r.leise) { key.style.opacity = ".55"; }
+      z.appendChild(key);
+      var b = document.createElement("b"); b.textContent = zahl(p[r.feld]); z.appendChild(b);
+      var name = document.createElement("span"); name.className = "k"; name.textContent = " " + r.name; z.appendChild(name);
+      tip.appendChild(z);
+    });
+    tip.hidden = false;
+    var px = x(i) / W * box.clientWidth, links = px + 14;
+    if (links + tip.offsetWidth > box.clientWidth) { links = px - 14 - tip.offsetWidth; }
+    tip.style.left = Math.max(0, links) + "px"; tip.style.top = "8px";
+  }
+  fang.addEventListener("pointermove", function (ev) {
+    var r = fang.getBoundingClientRect(), rel = (ev.clientX - r.left) / Math.max(1, r.width);
+    zeige(Math.max(0, Math.min(n - 1, Math.round(rel * (n - 1)))));
+  });
+  fang.addEventListener("pointerleave", function () { zeige(-1); });
+  box.onkeydown = function (ev) {
+    if (ev.key === "ArrowRight") { zeige(Math.min(n - 1, zeiger < 0 ? n - 1 : zeiger + 1)); ev.preventDefault(); }
+    if (ev.key === "ArrowLeft") { zeige(Math.max(0, zeiger < 0 ? n - 1 : zeiger - 1)); ev.preventDefault(); }
+    if (ev.key === "Escape") { zeige(-1); }
+  };
+  box.onfocus = function () { if (zeiger < 0) { zeige(n - 1); } };
+  box.onblur = function () { zeige(-1); };
+  box._neu = function () { linien(box, punkte, reihen, opt); };
+}
+
+function tabelle(ziel, punkte, spalten) {
+  ziel.innerHTML = '<table><tr>' + spalten.map(function (s, i) {
+      return '<th' + (i ? ' class="num"' : '') + '>' + esc(s[0]) + '</th>'; }).join("") + '</tr>'
+    + punkte.slice().reverse().map(function (p) {
+        return '<tr>' + spalten.map(function (s, i) {
+          return '<td' + (i ? ' class="num"' : '') + '>' + esc(i ? zahl(p[s[1]]) : p[s[1]]) + '</td>'; }).join("") + '</tr>';
+      }).join("") + '</table>';
+}
+
+function balken(eintraege, einheit) {
+  // Waagerechte Balken, eine Farbe; Zahl am Ende, Name davor.
+  var hoch = Math.max.apply(null, eintraege.map(function (e) { return e.wert; }).concat([1]));
+  return eintraege.map(function (e) {
+    return '<div class="hbar"><span class="n" title="' + esc(e.name) + '">' + esc(e.name) + '</span>'
+      + '<span class="tr"><span style="width:' + Math.max(1, Math.round(e.wert / hoch * 100)) + '%"></span></span>'
+      + '<span class="z">' + esc(zahl(e.wert)) + (einheit ? '' : '') + '</span></div>';
+  }).join("");
+}
+
+// ---- Downloads je Fassung ----------------------------------------------- //
+function fassungenLaden() {
+  var ziel = document.getElementById("versions");
+  ziel.textContent = "loading ...";
+  return hole("/api/admin/downloads").then(function (d) {
+    var v = d.versions || [];
+    if (!v.length) { ziel.textContent = "no download counted per version yet"; return; }
+    var werkzeuge = [];
+    v.forEach(function (r) { if (werkzeuge.indexOf(r.tool) < 0) { werkzeuge.push(r.tool); } });
+    ziel.className = "";
+    ziel.innerHTML = werkzeuge.map(function (w, k) {
+      return '<div class="panel"><h3 style="margin-top:0" id="vt' + k + '"></h3><div class="vlegend" id="vl' + k + '"></div>'
+        + '<div class="vchart" id="vc' + k + '" tabindex="0" aria-label="Cumulative downloads per version"></div>'
+        + '<details><summary class="note">Table view</summary><div id="vx' + k + '"></div></details></div>';
+    }).join("");
+    werkzeuge.forEach(function (w, k) {
+      // Aelteste zuerst; die NEUESTE (zuletzt erschienene) ist die hervorgehobene.
+      var reihen = v.filter(function (r) { return r.tool === w; })
+                    .sort(function (a, b) { return String(a.first).localeCompare(String(b.first)); });
+      var summe = reihen.reduce(function (a, r) { return a + Number(r.total || 0); }, 0);
+      document.getElementById("vt" + k).textContent = reihen[0].toolName + " \u00b7 " + zahl(summe) + " downloads";
+      var tage = {};
+      reihen.forEach(function (r) { Object.keys(r.days || {}).forEach(function (t) { tage[t] = true; }); });
+      var erster = Object.keys(tage).sort()[0] || new Date().toISOString().slice(0, 10);
+      var heute = new Date(), punkte = [], stand = {};
+      for (var t = new Date(erster + "T00:00:00Z"); t <= heute; t = new Date(t.getTime() + 864e5)) {
+        var iso = t.toISOString().slice(0, 10), p = {
+          label: t.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }),
+          kurz: t.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }) };
+        reihen.forEach(function (r, i) {
+          stand[i] = (stand[i] || 0) + Number((r.days || {})[iso] || 0);
+          p["v" + i] = stand[i];
+        });
+        punkte.push(p);
+      }
+      var neueste = reihen.length - 1;
+      var beschr = function (r) { return (r.name ? r.name.replace(/^(fh-companion|forza-grip-haptics|forza-contrib-tool)-?/, "").replace(/\.zip$/, "") + " " : "") + r.version; };
+      var serien = reihen.map(function (r, i) {
+        return { feld: "v" + i, name: beschr(r), farbe: i === neueste ? "var(--v1)" : "var(--muted)", leise: i !== neueste };
+      });
+      linien(document.getElementById("vc" + k), punkte, serien);
+      var neu = reihen[neueste], by = neu.by || {};
+      var aeltere = reihen.slice(0, neueste).reduce(function (a, r) { return a + Number(r.total || 0); }, 0);
+      document.getElementById("vl" + k).innerHTML =
+        '<span><i style="background:var(--v1)"></i>Newest: ' + esc(beschr(neu)) + ' \u2014 ' + esc(zahl(neu.total))
+        + ' (app ' + esc(zahl(by.app)) + ', browser ' + esc(zahl(by.browser)) + ', other ' + esc(zahl(by.other)) + ')</span>'
+        + (neueste > 0 ? '<span><i style="background:var(--muted);opacity:.55"></i>' + esc(zahl(neueste))
+          + ' older version' + (neueste > 1 ? 's' : '') + ' \u2014 ' + esc(zahl(aeltere)) + '</span>' : '');
+      var tag = function (s) { return esc(String(s || "").replace("T", " ").slice(0, 16)); };
+      document.getElementById("vx" + k).innerHTML = '<table><tr><th>Version</th><th>Built</th><th class="num">Total</th>'
+        + '<th class="num">App</th><th class="num">Browser</th><th class="num">Other</th><th>First</th><th>Last</th></tr>'
+        + reihen.slice().reverse().map(function (r) {
+            var b = r.by || {};
+            return '<tr><td class="mono">' + esc(beschr(r)) + '</td><td>' + tag(r.built) + '</td><td class="num">' + zahl(r.total)
+              + '</td><td class="num">' + zahl(b.app) + '</td><td class="num">' + zahl(b.browser) + '</td><td class="num">'
+              + zahl(b.other) + '</td><td>' + tag(r.first) + '</td><td>' + tag(r.last) + '</td></tr>';
+          }).join("") + '</table>';
+    });
+  }).catch(function (e) { ziel.textContent = "not available: " + e.message; });
+}
+
+// ---- Besuche ------------------------------------------------------------- //
+//
+// Der Server liefert Stunden- und Tageszaehler (UTC) und die Laender je Tag;
+// Wochen, Monate und Jahre fasst diese Seite zusammen. Besucher eines Zeitraums
+// ueber einem Tag sind die SUMME der Tagesbesucher: das Tagessalz wird taeglich
+// verworfen, niemand ist ueber Tage hinweg wiedererkennbar (visits.py).
+var besuche = null, bereich = "days", welt = null, gewaehlt = null;
+var SEITEN_FARBE = { "car ratings": "var(--c1)", "app download": "var(--c2)", "contribute": "var(--c3)" };
+
+function tagIso(d) { return d.toISOString().slice(0, 10); }
+function tagAus(iso) { return new Date(iso + "T00:00:00Z"); }
+
+function eimer() {
+  var d = besuche, jetzt = new Date(d.now || Date.now()), raus = [];
+  var tage = d.days || {};
+  function tagWert(iso) { var x = tage[iso]; return x ? [Number(x[0]), Number(x[1])] : [0, 0]; }
+  var heute = tagAus(tagIso(jetzt));
+  if (bereich === "hours") {
+    var h0 = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), jetzt.getUTCDate(), jetzt.getUTCHours()));
+    for (var i = 47; i >= 0; i--) {
+      var s = new Date(h0.getTime() - i * 3600e3), key = s.toISOString().slice(0, 13);
+      var x = (d.hours || {})[key] || [0, 0];
+      raus.push({ label: s.toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" }),
+                  kurz: s.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+                  views: Number(x[0]), visitors: Number(x[1]), tage: [tagIso(s)] });
+    }
+    return raus;
+  }
+  if (bereich === "days" || bereich === "all") {
+    var start = bereich === "days" ? new Date(heute.getTime() - 89 * 864e5) : tagAus(d.since || tagIso(heute));
+    for (var t = start; t <= heute; t = new Date(t.getTime() + 864e5)) {
+      var iso = tagIso(t), w = tagWert(iso);
+      raus.push({ label: t.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }),
+                  kurz: t.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }),
+                  views: w[0], visitors: w[1], tage: [iso] });
+    }
+    return raus;
+  }
+  if (bereich === "weeks") {
+    var montag = new Date(heute.getTime() - ((heute.getUTCDay() + 6) % 7) * 864e5);
+    for (var k = 51; k >= 0; k--) {
+      var ab = new Date(montag.getTime() - k * 7 * 864e5), liste = [], v = 0, u = 0;
+      for (var j = 0; j < 7; j++) {
+        var tt = tagIso(new Date(ab.getTime() + j * 864e5)); liste.push(tt);
+        var ww = tagWert(tt); v += ww[0]; u += ww[1];
+      }
+      raus.push({ label: "Week of " + ab.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }),
+                  kurz: ab.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }),
+                  views: v, visitors: u, tage: liste });
+    }
+    return raus;
+  }
+  var gruppen = {}, ordnung = [];
+  function gruppe(key, label, kurz) {
+    if (!gruppen[key]) { gruppen[key] = { label: label, kurz: kurz, views: 0, visitors: 0, tage: [] }; ordnung.push(key); }
+  }
+  if (bereich === "months") {
+    for (var m = 23; m >= 0; m--) {
+      var md = new Date(Date.UTC(heute.getUTCFullYear(), heute.getUTCMonth() - m, 1));
+      gruppe(tagIso(md).slice(0, 7), md.toLocaleDateString(undefined, { year: "numeric", month: "long", timeZone: "UTC" }),
+             md.toLocaleDateString(undefined, { year: "2-digit", month: "short", timeZone: "UTC" }));
+    }
+  } else {
+    var ersteJahr = Number((d.since || tagIso(heute)).slice(0, 4));
+    for (var y = ersteJahr; y <= heute.getUTCFullYear(); y++) { gruppe(String(y), String(y), String(y)); }
+  }
+  // Auch Tage OHNE Besuch gehoeren zum Zeitraum (fuer Seiten und Laender).
+  ordnung.forEach(function (key) {
+    var g = gruppen[key];
+    if (bereich === "months") {
+      var a = tagAus(key + "-01");
+      for (var dd = a; dd.getUTCMonth() === a.getUTCMonth() && dd <= heute; dd = new Date(dd.getTime() + 864e5)) { g.tage.push(tagIso(dd)); }
+    }
+  });
+  Object.keys(tage).forEach(function (iso) {
+    var key = bereich === "months" ? iso.slice(0, 7) : iso.slice(0, 4);
+    var g = gruppen[key]; if (!g) { return; }
+    var w = tagWert(iso); g.views += w[0]; g.visitors += w[1];
+    if (bereich !== "months") { g.tage.push(iso); }
+  });
+  return ordnung.map(function (k) { return gruppen[k]; });
+}
+
+function tageImBereich(punkte) {
+  var menge = {};
+  punkte.forEach(function (p) { (p.tage || []).forEach(function (t) { menge[t] = true; }); });
+  return menge;
+}
+
+function stufen(max) {
+  // Fuenf Stufen, bei grossen Zahlen logarithmisch -- eine einzige grosse Zahl
+  // soll nicht alle anderen Laender in die hellste Stufe druecken.
+  if (max <= 5) { return [1, 2, 3, 4, 5].slice(0, Math.max(1, max)); }
+  var raus = [1];
+  for (var i = 1; i < 5; i++) {
+    var g = Math.max(raus[raus.length - 1] + 1, Math.round(Math.pow(max, i / 5)));
+    raus.push(g);
+  }
+  return raus;
+}
+
+function karteZeichnen(laender) {
+  var box = document.getElementById("map");
+  if (!welt) { box.innerHTML = '<p class="note">loading the map ...</p>'; return; }
+  var werte = Object.keys(laender).filter(function (c) { return c !== "??"; }).map(function (c) { return laender[c].u; });
+  var max = Math.max.apply(null, werte.concat([0]));
+  var grenzen = stufen(max);
+  function stufe(u) {
+    if (!u) { return "var(--m0)"; }
+    var k = 0;
+    for (var i = 0; i < grenzen.length; i++) { if (u >= grenzen[i]) { k = i; } }
+    return "var(--m" + (k + 1) + ")";
+  }
+  var namen = Object.keys(welt.countries);
+  box.innerHTML = '<svg viewBox="' + esc(welt.viewBox) + '" role="img" aria-label="World map">'
+    + namen.map(function (cc) {
+        var l = laender[cc];
+        return '<path data-cc="' + esc(cc) + '" d="' + esc(welt.countries[cc].d) + '" fill="' + esc(stufe(l ? l.u : 0)) + '"'
+          + (cc === gewaehlt ? ' class="sel"' : '') + '/>';
+      }).join("") + '</svg><div class="tip" hidden></div>';
+  var tip = box.querySelector(".tip");
+  box.querySelector("svg").addEventListener("pointermove", function (ev) {
+    var ziel = ev.target.closest ? ev.target.closest("path") : null;
+    if (!ziel) { tip.hidden = true; return; }
+    var cc = ziel.getAttribute("data-cc"), l = laender[cc] || { u: 0, v: 0 };
+    tip.textContent = "";
+    var kopf = document.createElement("div"); kopf.className = "k"; kopf.textContent = (welt.countries[cc] || {}).n || cc; tip.appendChild(kopf);
+    [["Visitors", l.u], ["Page views", l.v]].forEach(function (a) {
+      var z = document.createElement("div"), b = document.createElement("b"); b.textContent = zahl(a[1]); z.appendChild(b);
+      var s = document.createElement("span"); s.className = "k"; s.textContent = " " + a[0]; z.appendChild(s); tip.appendChild(z);
+    });
+    tip.hidden = false;
+    var r = box.getBoundingClientRect(), px = ev.clientX - r.left, py = ev.clientY - r.top;
+    tip.style.left = Math.min(Math.max(0, r.width - tip.offsetWidth), px + 14) + "px";
+    tip.style.top = Math.max(0, py - tip.offsetHeight - 10) + "px";
+  });
+  box.querySelector("svg").addEventListener("pointerleave", function () { tip.hidden = true; });
+  box.querySelector("svg").addEventListener("click", function (ev) {
+    var ziel = ev.target.closest ? ev.target.closest("path") : null;
+    if (!ziel) { return; }
+    gewaehlt = ziel.getAttribute("data-cc");
+    geoZeichnen();
+  });
+  var bis = function (i) { return i + 1 < grenzen.length ? grenzen[i + 1] - 1 : null; };
+  document.getElementById("map-steps").innerHTML = '<span><i style="background:var(--m0)"></i>none</span>'
+    + grenzen.map(function (g, i) {
+        var b = bis(i);
+        return '<span><i style="background:var(--m' + (i + 1) + ')"></i>' + esc(zahl(g)) + (b === null ? '+' : (b > g ? '\u2013' + esc(zahl(b)) : '')) + '</span>';
+      }).join("") + '<span>visitors per country</span>';
+}
+
+var geoStand = null;
+
+function geoZeichnen() {
+  var s = geoStand; if (!s) { return; }
+  karteZeichnen(s.laender);
+  var codes = Object.keys(s.laender).sort(function (a, b) { return s.laender[b].u - s.laender[a].u || s.laender[b].v - s.laender[a].v; });
+  if (!gewaehlt || !s.laender[gewaehlt]) { gewaehlt = codes.filter(function (c) { return c !== "??"; })[0] || null; }
+  function name(cc) { return cc === "??" ? "Unknown location" : ((besuche.names || {})[cc] || ((welt && welt.countries[cc]) || {}).n || cc); }
+  var seite = document.getElementById("geo-side");
+  if (!codes.length) { seite.innerHTML = '<p class="note">no visits in this range</p>'; }
+  else {
+    var oben = codes.slice(0, 8).map(function (cc) { return { name: name(cc), wert: s.laender[cc].u }; });
+    var html = '<h3 style="margin-top:0">Top countries</h3>' + balken(oben);
+    if (gewaehlt && s.laender[gewaehlt]) {
+      var l = s.laender[gewaehlt], regionen = Object.keys(l.r).sort(function (a, b) { return l.r[b].u - l.r[a].u; });
+      html += '<h3>' + esc(name(gewaehlt)) + ' <span class="note">' + esc(zahl(l.u)) + ' visitors, ' + esc(zahl(l.v)) + ' page views</span></h3>'
+        + (regionen.length ? balken(regionen.slice(0, 10).map(function (r) { return { name: r, wert: l.r[r].u }; }))
+                           : '<p class="note">no region known</p>')
+        + '<p class="note">Click a country on the map to see its regions.</p>';
+    }
+    // Laender ohne Flaeche auf einer 1:110-Mio.-Karte (Singapur, Malta, ...) nicht verlieren.
+    var ohne = codes.filter(function (c) { return c !== "??" && welt && !welt.countries[c]; });
+    if (ohne.length) {
+      html += '<p class="note">Too small for the map: ' + ohne.map(function (c) { return esc(name(c)) + " " + esc(zahl(s.laender[c].u)); }).join(", ") + '</p>';
+    }
+    if (s.laender["??"]) { html += '<p class="note">Location unknown: ' + esc(zahl(s.laender["??"].u)) + ' visitor(s).</p>'; }
+    seite.innerHTML = html;
+  }
+  var kn = Object.keys(s.kontinente).sort(function (a, b) { return s.kontinente[b].u - s.kontinente[a].u; });
+  document.getElementById("continents").innerHTML = kn.length
+    ? balken(kn.map(function (k) { return { name: k, wert: s.kontinente[k].u }; })) : "no visits in this range";
+  document.getElementById("geo-table").innerHTML = codes.length
+    ? '<table><tr><th>Country / region</th><th class="num">Visitors</th><th class="num">Page views</th></tr>'
+      + codes.map(function (cc) {
+          var l = s.laender[cc];
+          return '<tr><td>' + esc(name(cc)) + '</td><td class="num">' + zahl(l.u) + '</td><td class="num">' + zahl(l.v) + '</td></tr>'
+            + Object.keys(l.r).sort(function (a, b) { return l.r[b].u - l.r[a].u; }).map(function (r) {
+                return '<tr><td style="padding-left:18px">' + esc(r) + '</td><td class="num">' + zahl(l.r[r].u) + '</td><td class="num">' + zahl(l.r[r].v) + '</td></tr>';
+              }).join("");
+        }).join("") + '</table>'
+    : "no visits in this range";
+}
+
+function besucheZeichnen() {
+  if (!besuche) { return; }
+  var punkte = eimer();
+  var summeV = 0, summeU = 0;
+  punkte.forEach(function (p) { summeV += p.views; summeU += p.visitors; });
+  var heute = (besuche.days || {})[tagIso(new Date(besuche.now || Date.now()))] || [0, 0];
+  var gesamtU = 0, gesamtV = 0;
+  Object.keys(besuche.days || {}).forEach(function (k) { gesamtV += Number(besuche.days[k][0]); gesamtU += Number(besuche.days[k][1]); });
+  var name = { hours: "48 hours", days: "90 days", weeks: "52 weeks", months: "24 months", years: "all years", all: "all time" }[bereich];
+  function kachel(k, v, s) {
+    return '<div class="card"><div class="k">' + esc(k) + '</div><div class="v prop">' + esc(zahl(v))
+      + '</div>' + (s ? '<div class="s">' + esc(s) + '</div>' : '') + '</div>';
+  }
+  document.getElementById("visit-cards").innerHTML =
+    kachel("Visitors, " + name, summeU, zahl(summeV) + " page views")
+    + kachel("Visitors today", heute[1], zahl(heute[0]) + " page views")
+    + kachel("Visitors, all time", gesamtU, zahl(gesamtV) + " page views since " + (besuche.since || "?"));
+  linien(document.getElementById("visit-chart"), punkte,
+         [{ feld: "visitors", name: "Visitors", farbe: "var(--v1)" }, { feld: "views", name: "Page views", farbe: "var(--v2)" }]);
+  tabelle(document.getElementById("visit-table"), punkte, [["Period", "label"], ["Visitors", "visitors"], ["Page views", "views"]]);
+
+  // ---- Laender, Regionen, Kontinente und Seiten im gewaehlten Zeitraum
+  var tage = tageImBereich(punkte), laender = {}, kontinente = {}, eigene = 0, bots = 0;
+  Object.keys(tage).forEach(function (t) {
+    var g = (besuche.geo || {})[t] || {};
+    Object.keys(g).forEach(function (cc) {
+      var e = g[cc], l = laender[cc] || (laender[cc] = { v: 0, u: 0, r: {} });
+      l.v += Number(e[0]); l.u += Number(e[1]);
+      var reg = e[2] || {};
+      Object.keys(reg).forEach(function (rn) {
+        var rr = l.r[rn] || (l.r[rn] = { v: 0, u: 0 });
+        rr.v += Number(reg[rn][0]); rr.u += Number(reg[rn][1]);
+      });
+    });
+    eigene += Number((besuche.own || {})[t] || 0);
+    bots += Number((besuche.bots || {})[t] || 0);
+  });
+  Object.keys(laender).forEach(function (cc) {
+    var k = (besuche.continents || {})[cc] || ["", "Unknown"];
+    var e = kontinente[k[1] || "Unknown"] || (kontinente[k[1] || "Unknown"] = { v: 0, u: 0 });
+    e.v += laender[cc].v; e.u += laender[cc].u;
+  });
+  geoStand = { laender: laender, kontinente: kontinente };
+  geoZeichnen();
+
+  // Seiten je Tag: auch im 48-Stunden-Bereich je TAG (der Server zaehlt Seiten nur taeglich).
+  var seitenTage = Object.keys(tage).sort(), namen = {};
+  seitenTage.forEach(function (t) { Object.keys((besuche.pages || {})[t] || {}).forEach(function (s) { namen[s] = true; }); });
+  var seitenNamen = ["car ratings", "app download", "contribute"].filter(function (s) { return namen[s]; })
+    .concat(Object.keys(namen).filter(function (s) { return !SEITEN_FARBE[s]; }));
+  var seitenPunkte = (bereich === "hours" || bereich === "days" || bereich === "all")
+    ? seitenTage.map(function (t) {
+        var p = { label: tagAus(t).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }),
+                  kurz: tagAus(t).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }) };
+        seitenNamen.forEach(function (s) { p[s] = Number(((besuche.pages || {})[t] || {})[s] || 0); });
+        return p;
+      })
+    : punkte.map(function (g) {
+        var p = { label: g.label, kurz: g.kurz };
+        seitenNamen.forEach(function (s) {
+          p[s] = (g.tage || []).reduce(function (a, t) { return a + Number(((besuche.pages || {})[t] || {})[s] || 0); }, 0);
+        });
+        return p;
+      });
+  var serien = seitenNamen.map(function (s) { return { feld: s, name: s, farbe: SEITEN_FARBE[s] || "var(--muted)" }; });
+  document.getElementById("pages-legend").innerHTML = serien.map(function (r) {
+    return '<span><i style="background:' + esc(r.farbe) + '"></i>' + esc(r.name) + '</span>'; }).join("");
+  if (serien.length) { linien(document.getElementById("pages-chart"), seitenPunkte, serien); }
+  else { document.getElementById("pages-chart").innerHTML = '<p class="note">no page views counted in this range yet</p>'; }
+  tabelle(document.getElementById("pages-table"), seitenPunkte,
+          [["Period", "label"]].concat(seitenNamen.map(function (s) { return [s, s]; })));
+
+  var g = besuche.geoip || {};
+  document.getElementById("visit-note").textContent =
+    "A visitor is recognised only within one day, by a hash of address and browser with a salt that is "
+    + "thrown away at midnight UTC -- no cookie, no stored address. Visitors over more than a day are the "
+    + "sum of daily visitors, so someone who comes on three days counts three times. Days are UTC days; "
+    + "the 48-hour view shows your local time. Not counted in this range: " + zahl(eigene)
+    + " page view(s) from your own network, " + zahl(bots) + " from bots and scripts. "
+    + (bereich === "hours" ? "Countries and pages in the 48-hour view cover the days it touches. " : "")
+    + (g.available ? g.attribution + ", database of " + g.updated + ". " : "The country database has not been downloaded yet. ")
+    + "Map: Natural Earth (public domain).";
+}
+
+function besucheLaden() {
+  var karteHolen = welt ? Promise.resolve(welt)
+    : fetch("/admin/world.json").then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (w) { welt = w; return w; }).catch(function () { return null; });
+  return Promise.all([hole("/api/admin/visits"), karteHolen]).then(function (a) {
+    besuche = a[0];
+    besucheZeichnen();
+  }).catch(function (e) {
+    document.getElementById("visit-cards").innerHTML = "";
+    document.getElementById("geo-side").textContent = "not available: " + e.message;
+  });
+}
+
+Array.prototype.forEach.call(document.querySelectorAll("#ranges button"), function (b) {
+  b.addEventListener("click", function () {
+    bereich = b.getAttribute("data-r");
+    Array.prototype.forEach.call(document.querySelectorAll("#ranges button"), function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    besucheZeichnen();
+  });
+});
+var neuZeichnen = null;
+window.addEventListener("resize", function () {
+  clearTimeout(neuZeichnen);
+  neuZeichnen = setTimeout(function () {
+    Array.prototype.forEach.call(document.querySelectorAll(".vchart"), function (b) { if (b._neu) { b._neu(); } });
+  }, 150);
+});
+
+// Nach einem Neuladen im selben Reiter geht es ohne erneutes Tippen weiter.
+if (sessionStorage.getItem("fgh-admin")) { laden(); }
+</script>
+</html>

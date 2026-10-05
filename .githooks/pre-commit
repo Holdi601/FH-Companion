@@ -1,0 +1,14 @@
+#!/bin/sh
+# Kein Commit, der wie ein Geheimnis aussieht.
+#
+# Ein veroeffentlichter Schluessel laesst sich nicht zurueckholen: er muss getauscht
+# werden, und wer ihn kopiert hat, behaelt ihn. Deshalb steht die Pruefung VOR dem
+# Commit und nicht vor dem Hochladen -- in der Vorgeschichte ist er sonst schon drin.
+#
+# Umgehen (nur mit gutem Grund):  git commit --no-verify
+python scripts/check_no_secrets.py --staged || {
+  echo ""
+  echo "Commit abgelehnt. Mit 'git commit --no-verify' liesse sich das umgehen --"
+  echo "tu das nur, wenn du sicher bist, dass der Fund harmlos ist."
+  exit 1
+}

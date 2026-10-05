@@ -1,0 +1,2 @@
+# Passive VM packet-capture analysis.
+scapy==2.7.0

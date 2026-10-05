@@ -1,0 +1,199 @@
+#fassung 12
+Te rog să citești asta o dată. Explică ce face programul pe PC-ul tău, ce pleacă
+de pe calculatorul tău și de ce Windows te-ar putea avertiza în legătură cu el.
+
+
+CE FACE PE PC-UL TĂU
+
+  Citește telemetria din joc.
+      Forza Horizon 6 poate trimite propria telemetrie către propriul tău
+      calculator prin UDP. Activezi asta chiar tu în joc, la Settings > HUD &
+      Gameplay. Programul ascultă pe 127.0.0.1 -- propriul tău calculator, nu
+      rețeaua -- și o folosește pentru delta turului, harta live, recordurile tale
+      de tur și vibrația controllerului. Doar dacă treci programul pe
+      „Xbox / al 2-lea PC” în partea de sus a ferestrei sale, ascultă în schimb în
+      rețeaua ta, ca Xbox-ul sau celălalt PC să-l poată accesa. Dacă firewallul
+      Windows blochează asta, un buton din panoul Xbox adaugă o singură regulă
+      pentru exact acel port UDP -- doar când îl apeși, iar Windows îți cere mai
+      întâi permisiunea.
+
+  Citește ce arată jocul pe ecran.
+      Ca să știe ce trasee oferă ecranul Event Sign Up, ce mașină este evidențiată
+      în meniul de mașini, ce mașini se află pe paginile „My Cars” pe care le
+      privești și ce reglaj se află pe o mașină în lista ei de reglaje, programul
+      face capturi ale ferestrei jocului și citește textul cu recunoașterea de
+      text integrată în Windows. Asta se întâmplă pe PC-ul tău; imaginile nu sunt
+      trimise nicăieri. În modul „Xbox / al 2-lea PC” face aceste capturi în
+      schimb din sursa pe care o alegi: o placă de captură, OBS, fereastra Xbox
+      Remote Play, Discord, un stream în browserul tău sau o adresă de stream.
+      Windows desenează atunci un cadru galben în jurul unei ferestre capturate.
+
+  Citește reglajele descărcate din folderul de salvări al jocului -- doar citire.
+      Fila Tunes le numără și arată pe care nu le folosește nicio mașină. Folderul
+      de salvări nu este modificat niciodată prin asta.
+
+  Citește clasamente și licitațiile tale -- apăsând taste în joc.
+      În fila Scanează clasamentele, programul duce meniurile jocului la
+      clasamentele pe care le bifezi și le citește de pe ecran. În fila Casa
+      de licitații poate duce jocul la „Ofertele mele” și îți citește
+      licitațiile; lista aceea rămâne pe acest calculator. Nu licitează
+      niciodată. Ambele se opresc la Alt+Tab, tasta Pause sau Oprește.
+
+  Face controllerul să vibreze -- iar asta îi descarcă bateria mai repede.
+      Cât timp Forza rulează și trimite telemetrie, programul comandă vibrația
+      controllerului tău: aderența pneurilor devine vibrație, o roată care se
+      blochează devine un bâzâit scurt. Funcția este pornită de la început. Un
+      controller wireless rămâne fără baterie vizibil mai repede cât timp
+      vibrează, iar cu cât setezi vibrația mai puternică și mai rapidă (frecvență
+      mai mare) în Editor Blueprint, cu atât consumă mai multă energie. Debifează
+      „Ieșirea grafului pornită” în Editor Blueprint ca s-o oprești; programul
+      ține minte asta.
+
+  Urmărește apăsările de taste.
+      Doar ca să prindă tastele rapide -- F10 setează o linie de start/sosire în
+      free roam. Verifică dacă acele taste anume sunt apăsate. Nu înregistrează ce
+      tastezi și nu există nicăieri vreun jurnal al tastelor apăsate.
+
+  Desenează o suprapunere peste joc.
+      Delta turului, hărțile, notele despre mașini și panourile de rivali sunt
+      ferestre separate, desenate peste Forza. Când un tur bate timpul de pe site,
+      apare pentru aproximativ cinci secunde o scurtă sărbătorire cu confetti și
+      un sunet; o poți dezactiva în fila HUD delta pe tur.
+
+  Înregistrează tururile tale -- pe discul tău.
+      Timpii, pozițiile și vitezele sunt scrise în folderul propriu al
+      programului, ca să-ți poată arăta o deltă față de propriul tău cel mai bun
+      tur. Doar un tur care bate clasamentul este trimis undeva -- vezi mai jos.
+
+
+CE PLEACĂ DE PE CALCULATORUL TĂU
+
+  Programul contactează serverul pentru exact șase lucruri:
+
+      1. Ca să întrebe dacă evaluările mașinilor sunt mai noi decât cele pe care
+         le ai și ca să le descarce, dacă sunt.
+      2. Ca să întrebe dacă există o versiune mai nouă a acestui program.
+      3. Ca să descarce acea versiune nouă, când apeși butonul de actualizare.
+      4. Ca să trimită un tur care BATE clasamentul -- PORNIT, dacă nu îl
+         dezactivezi.
+      5. Ca să descarce lista tuturor mașinilor și cum le obții, pentru fila Car
+         collection -- cel mult o dată la douăsprezece ore și doar cât timp acea
+         filă este deschisă. Nu trimite nimic; ce mașini deții rămâne pe acest
+         calculator.
+      6. Ca să trimită un clasament pe care l-ai scanat în fila Scanează
+         clasamentele: pe fiecare rând locul, timpul, mașina, PI, tracțiunea,
+         cutia de viteze și asistențele, plus traseul, clasa și momentul
+         scanării și identificatorul hash al acestui PC -- fără gamertag-uri.
+         Se întâmplă după fiecare clasament terminat cât timp „Trimite fiecare
+         clasament terminat” este bifat (este de la început) și trimiterea
+         este pornită.
+
+  Despre 4: un tur este trimis doar dacă este mai rapid decât cel mai bun timp din
+  clasament al aceleiași mașini pe acel traseu și în acea clasă și mai rapid decât
+  orice ai trimis pentru ea înainte. Se trimit: mașina, traseul, clasa, timpul și
+  telemetria COMPLETĂ a turului -- fiecare pachet pe care jocul l-a trimis în
+  timpul acelui tur: poziția și orientarea, viteza, comenzile tale de accelerație,
+  frână, ambreiaj și direcție, treapta de viteză, motorul și, pentru fiecare
+  roată, temperatura pneului, patinarea și suspensia -- ca serverul să poată
+  verifica dacă timpul este real și ca un om să se poată uita la un tur care pare
+  greșit. În plus, un identificator hash al acestui PC, ca abuzurile să poată fi
+  blocate -- și gamertagul tău, dacă ai setat unul în fila Rivals. Un gamertag nu
+  este obligatoriu: fără el turul este trimis oricum și apare pe site sub un nume
+  de jucător temporar. Un gamertag pe care îl setezi mai târziu îl înlocuiește la
+  toate tururile tale, inclusiv la cele anterioare, iar dacă golești câmpul mai
+  târziu, rămâne ultimul nume. Serverul verifică din nou turul înainte
+  să-l afișeze. Dezactivează asta în fila Rivals („Trimite tururile mele ...”) sau
+  setează "submit_laps": false în config/overlay.json.
+
+  Tururile pe care le trimiți începând cu această versiune sunt publicate și
+  cu această telemetrie: pe site, lângă timpul tău, oricine poate descărca
+  telemetria completă a turului (ca tabel CSV și ca fișier brut) pentru a
+  studia cum a fost condus. Tururile trimise înainte rămân private și servesc
+  doar la verificarea timpului.
+
+  Un tur care bate clasamentul, dar nu poate fi trimis chiar atunci -- trimiterea
+  este dezactivată, ești offline sau serverul nu răspunde -- este păstrat pe acest
+  calculator și trimis mai târziu, după ce toate acestea sunt din nou în regulă,
+  chiar și după săptămâni. Înainte să plece, este verificat încă o dată față de
+  clasamentul din acea zi și eliminat dacă nu mai este mai rapid. Așadar, când
+  reactivezi trimiterea, se trimit și cele mai bune tururi pe care le-ai condus
+  cât timp era dezactivată. „Renunță la turele în așteptare” din fila Rivals le
+  șterge în schimb.
+
+  Nimic altceva nu este trimis. Tururile tale obișnuite nu sunt încărcate.
+  Reglajul tău nu este încărcat. Nu există niciun cont și nimic la care să te
+  conectezi.
+
+  Pentru că acele întrebări vin de la calculatorul tău, serverul vede că o anumită
+  instalare a întrebat -- lucru inevitabil pentru orice program care caută
+  actualizări. Acest lucru este numărat ca să știm aproximativ câți oameni
+  folosesc programul, iar identificatorul este trecut printr-un hash cu un secret
+  care rămâne pe server și este șters după 40 de zile. Dacă asta te deranjează,
+  setează "offline": true în config/overlay.json și programul nu va mai contacta
+  niciodată serverul -- atunci rulează în întregime pe datele venite odată cu
+  descărcarea și totul, în afară de actualizare, continuă să funcționeze.
+
+
+CUM SE ACTUALIZEAZĂ
+
+  Când apeși butonul de actualizare, programul descarcă un ZIP, verifică semnătura
+  editorului său, îl dezarhivează și își înlocuiește propriile fișiere. Un pachet
+  care nu este semnat de editor este refuzat. Cât timp se întâmplă asta, apare
+  o mică fereastră de consolă -- acea fereastră este vizibilă intenționat, ca să
+  poți vedea ce se înlocuiește. Folderul cu setările tale este păstrat.
+
+  Nu se instalează nimic. Nu se scrie nimic în registrul Windows. Șterge folderul
+  și programul a dispărut.
+
+
+DE CE WINDOWS L-AR PUTEA NUMI TROIAN
+
+  Windows Defender poate raporta acest program ca Trojan:Win32/Bearfoos.A!ml și îl
+  poate bloca. Sufixul „!ml” înseamnă că nu este o potrivire cu vreun malware
+  cunoscut -- este o presupunere a unui model de învățare automată despre un
+  fișier pe care nu l-a mai văzut niciodată.
+
+  Modelul presupune asta pentru că programul nu are semnătură digitală de cod,
+  aproape nimeni nu îl are încă și face cele două lucruri enumerate mai sus: își
+  înlocuiește propriile fișiere și descarcă de pe internet. Exact acestea sunt
+  comportamentele în care modelul a fost antrenat să nu aibă încredere.
+
+  Fiecare versiune este scanată înainte de a fi publicată, iar pagina de
+  descărcare afișează o sumă de control, ca să poți verifica faptul că fișierul
+  primit este fișierul care a fost compilat. Dacă preferi să nu crezi asta pe
+  cuvânt, nu îl rula -- este o alegere legitimă și acest program nu te va sâcâi în
+  legătură cu ea.
+
+
+SCURTĂTURI, DACĂ LE VREI
+
+  Sub acest text poți cere o scurtătură pe desktop, o intrare în meniul Start și
+  ca programul să pornească odată cu Forza. Toate trei sunt dezactivate dacă nu le
+  bifezi, toate trei sunt doar un fișier .lnk într-un folder și poți șterge
+  oricare dintre ele mai târziu fără să atingi programul.
+
+  „Pornește cu Forza” pune programul în folderul de pornire Windows. De la
+  conectare așteaptă invizibil în zona de notificare și se deschide (minimizat)
+  când pornește Forza; după joc se întoarce acolo. Fără drepturi de administrator,
+  Windows nu permite unui program să pornească atunci când pornește un alt
+  program -- așteptarea în zona de notificare nu are nevoie de ele și nu costă
+  practic nimic. Dacă închizi fereastra, programul continuă să aștepte; ca să
+  ieși, dă clic dreapta pe pictogramă. Butonul „Pornește cu Forza” din dreapta sus
+  a ferestrei principale activează și dezactivează această funcție.
+
+  Windows nu permite unui program să se fixeze singur în bara de activități --
+  acest lucru îți este rezervat ție începând cu Windows 10 versiunea 1607, iar
+  ocolirea lui înseamnă falsificarea unei sume de control în registru. Acest
+  program nu face asta. Bifează intrarea din meniul Start, apoi dă clic dreapta pe
+  ea și alege „Fixare în bara de activități”.
+
+
+FĂRĂ GARANȚIE
+
+  Acesta este un proiect de hobby, oferit gratuit, fără nicio garanție de niciun
+  fel. Nu este afiliat cu, susținut de sau legat de Microsoft, Turn 10, Playground
+  Games sau seria Forza Horizon.
+
+
+Poți citi asta din nou oricând: linkul „Ce face acest program” din partea de sus
+a ferestrei principale.

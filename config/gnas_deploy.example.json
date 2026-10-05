@@ -1,0 +1,8 @@
+{
+ "_": "Kopieren nach config/gnas_deploy.json und ausfuellen. Die echte Datei steht in .gitignore.",
+ "host": "192.168.x.x",
+ "user": "benutzername",
+ "remote_root": "/home/benutzername/forza-site",
+ "key": "C:/Users/DU/.ssh/gnas_deploy",
+ "port": 8787
+}

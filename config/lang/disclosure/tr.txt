@@ -1,0 +1,192 @@
+#fassung 12
+Lütfen bunu bir kez oku. Programın PC'nde ne yaptığını, bilgisayarından neyin
+çıktığını ve Windows'un seni neden bu konuda uyarabileceğini açıklar.
+
+
+PC'NDE NE YAPAR
+
+  Oyundan telemetri okur.
+      Forza Horizon 6 kendi telemetrisini UDP üzerinden kendi bilgisayarına
+      gönderebilir. Bunu oyunda Ayarlar > Gösterge ve Oynanış altında kendin
+      açarsın. Program 127.0.0.1 adresini dinler -- ağı değil, kendi
+      bilgisayarını -- ve telemetriyi tur deltası, canlı harita, tur rekorların ve
+      kumanda titreşimi için kullanır. Yalnızca programı penceresinin üstünde
+      “Xbox / 2. PC” seçeneğine geçirirsen bunun yerine ağını dinler, böylece Xbox
+      ya da diğer PC ona ulaşabilir. Windows Güvenlik Duvarı bunu engellerse, Xbox
+      panelindeki bir düğme tam olarak o UDP portu için tek bir kural ekler --
+      yalnızca ona bastığında ve Windows önce senden izin ister.
+
+  Oyunun ekranda gösterdiklerini okur.
+      Etkinlik Kaydı ekranının hangi parkurları sunduğunu, araç menüsünde hangi
+      aracın vurgulandığını, baktığın “Arabalarım” sayfalarında hangi araçların
+      olduğunu ve bir aracın ayar listesinde o araçta hangi ayarın bulunduğunu
+      bilmek için program oyun penceresinin görüntülerini alır ve metni
+      Windows'a yerleşik metin tanıma ile okur. Bu senin PC'nde olur; görüntüler
+      hiçbir yere gönderilmez. “Xbox / 2. PC” modunda bu görüntüleri bunun yerine
+      seçtiğin kaynaktan alır: bir yakalama kartı, OBS, Xbox Remote Play
+      penceresi, Discord, tarayıcındaki bir yayın ya da bir yayın adresi. Windows
+      bu durumda yakalanan bir pencerenin etrafına sarı bir çerçeve çizer.
+
+  İndirdiğin ayarları oyunun kayıt klasöründen okur -- salt okunur.
+      Tunes sekmesi bunları sayar ve hangilerini hiçbir aracın kullanmadığını
+      gösterir. Kayıt klasörü bununla asla değiştirilmez.
+
+  Sıralama tablolarını ve müzayedelerini okur -- oyunda tuşlara basarak.
+      Sıralama tablolarını tara sekmesinde program oyunun menülerini
+      işaretlediğin tablolara götürür ve onları ekrandan okur. Müzayede Evi
+      sekmesinde oyunu Tekliflerim ekranına götürüp müzayedelerini okuyabilir;
+      bu liste bu bilgisayarda kalır. Asla teklif vermez. İkisi de Alt+Tab,
+      Pause tuşu veya Durdur ile durur.
+
+  Kumandanı titreştirir -- bu da pilini daha hızlı tüketir.
+      Forza çalışıp telemetri gönderdiği sürece program kumandanın titreşimini
+      yönetir: lastik tutuşu titreşime, kilitlenen bir tekerlek kısa bir vızıltıya
+      dönüşür. Bu en baştan açıktır. Kablosuz bir kumandanın pili titreşirken
+      belirgin şekilde daha erken biter ve titreşimi Blueprint düzenleyici'da ne kadar
+      güçlü ve hızlı (daha yüksek frekans) ayarlarsan o kadar çok güç çeker.
+      Kapatmak için Blueprint düzenleyici'da “Çizge çıkışı açık” işaretini kaldır;
+      program bunu hatırlar.
+
+  Tuş basışlarını izler.
+      Yalnızca kısayol tuşlarını yakalamak için -- F10 serbest dolaşmada bir
+      başlangıç/bitiş çizgisi belirler. O belirli tuşların basılı olup olmadığını
+      kontrol eder. Ne yazdığını kaydetmez ve hiçbir yerde tuş vuruşu kaydı
+      yoktur.
+
+  Oyunun üzerine bir bindirme çizer.
+      Tur deltası, haritalar, araç notları ve rakip panelleri Forza'nın üzerine
+      çizilen ayrı pencerelerdir. Bir tur sitedeki süreyi geçtiğinde, yaklaşık beş
+      saniye boyunca konfeti ve sesle kısa bir kutlama görünür; bunu Tur delta HUD'u
+      sekmesinden kapatabilirsin.
+
+  Turlarını kaydeder -- diskine.
+      Süreler, konumlar ve hızlar programın kendi klasörüne yazılır, böylece sana
+      kendi en iyinle karşılaştırmalı bir delta gösterebilir. Yalnızca sıralamayı
+      geçen bir tur bir yere gönderilir -- aşağıya bak.
+
+
+BİLGİSAYARINDAN NE ÇIKAR
+
+  Program sunucuyla tam olarak altı şey için iletişim kurar:
+
+      1. Araç derecelendirmelerinin sendekilerden daha yeni olup olmadığını sormak
+         ve öyleyse onları indirmek için.
+      2. Bu programın daha yeni bir sürümünün olup olmadığını sormak için.
+      3. Güncelleme düğmesine bastığında o yeni sürümü indirmek için.
+      4. Sıralamayı GEÇEN bir turu göndermek için -- sen kapatmadıkça AÇIK.
+      5. Araç koleksiyonu sekmesi için tüm araçların listesini ve nasıl elde
+         edileceklerini indirmek için -- en fazla on iki saatte bir ve yalnızca
+         o sekme açıkken. Hiçbir şey göndermez; hangi araçlara sahip olduğun bu
+         bilgisayarda kalır.
+      6. Sıralama tablolarını tara sekmesinde taradığın bir tabloyu göndermek
+         için: her satır için sıra, süre, araç, PI, çekiş, şanzıman ve
+         yardımlar, ayrıca parkur, sınıf ve tarama zamanı ile bu bilgisayarın
+         karma kimliği -- oyuncu etiketi yok. Bu, "Biten her tabloyu yükle"
+         işaretli olduğu sürece (baştan beri işaretli) ve gönderme açıkken her
+         biten tablodan sonra olur.
+
+  4 hakkında: bir tur yalnızca aynı aracın o parkurdaki ve o sınıftaki en iyi
+  sıralama süresinden daha hızlıysa ve bunun için daha önce gönderdiğin her şeyden
+  daha hızlıysa gönderilir. Gönderilenler: araç, parkur, sınıf, süre ve turun TAM
+  telemetrisi -- oyunun o tur boyunca gönderdiği her paket: konum ve yönelim, hız,
+  gaz, fren, debriyaj ve direksiyon girdilerin, vites, motor ve her tekerlek için
+  lastik sıcaklığı, kayma ve süspansiyon -- böylece sunucu sürenin gerçek olduğunu
+  kontrol edebilir ve bir insan yanlış görünen bir tura bakabilir. Buna ek olarak,
+  kötüye kullanımın engellenebilmesi için bu PC'nin hash'lenmiş bir
+  tanımlayıcısı -- ve Rivals sekmesinde bir gamertag belirlediysen gamertag'in.
+  Gamertag zorunlu değildir: gamertag olmadan da tur gönderilir ve sitede geçici
+  bir oyuncu adıyla görünür. Sonradan belirlediğin bir gamertag, önceki turların
+  dahil tüm turlarında bu adın yerini alır; alanı sonradan boşaltırsan son ad
+  korunur. Sunucu turu göstermeden önce yeniden kontrol eder. Bunu Rivals
+  sekmesinden (“Turlarım sıralamayı geçtiğinde gönder”) kapat ya da
+  config/overlay.json içinde "submit_laps": false ayarla.
+
+  Bu sürümden itibaren gönderdiğin turlar bu telemetriyle birlikte yayımlanır
+  da: web sitesinde, zamanının yanında herkes turun tam telemetrisini (CSV
+  tablosu ve ham dosya olarak) indirip nasıl sürüldüğünü inceleyebilir. Daha
+  önce gönderdiğin turlar gizli kalır ve yalnızca zamanı doğrulamak için
+  kullanılır.
+
+  Sıralamayı geçen ama o anda gönderilemeyen bir tur -- gönderim kapalıysa,
+  çevrimdışıysan ya da sunucu yanıt vermiyorsa -- bu bilgisayarda saklanır ve tüm
+  bunlar yeniden yoluna girdiğinde, haftalar sonra bile olsa, gönderilir.
+  Gönderilmeden önce o günün sıralamasıyla bir kez daha karşılaştırılır ve artık
+  daha hızlı değilse atılır. Yani gönderimi yeniden açmak, kapalıyken sürdüğün en
+  iyi turları da gönderir. Rivals sekmesindeki “Bekleyen turları at” ise bunları
+  gönderilmek yerine siler.
+
+  Başka hiçbir şey gönderilmez. Sıradan turların yüklenmez. Araç ayarın yüklenmez.
+  Hesap yoktur ve oturum açılacak hiçbir şey yoktur.
+
+  Bilgisayarın bu soruları sorduğu için sunucu, bir kurulumun soru sorduğunu
+  görür -- bu, güncellemeleri denetleyen her program için kaçınılmazdır. Programı
+  kabaca kaç kişinin kullandığını bilelim diye bu sayılır ve tanımlayıcı, sunucuda
+  kalan ve 40 gün sonra silinen bir gizli anahtarla hash'lenir. Bu seni rahatsız
+  ediyorsa config/overlay.json içinde "offline": true ayarla; program sunucuyla
+  bir daha asla iletişim kurmaz -- o zaman tamamen indirmeyle gelen verilerle
+  çalışır ve güncelleme dışında her şey çalışmaya devam eder.
+
+
+KENDİNİ NASIL GÜNCELLER
+
+  Güncelleme düğmesine bastığında program bir ZIP indirir, yayıncısının imzasını
+  doğrular, arşivi açar ve kendi dosyalarını değiştirir. Yayıncı tarafından
+  imzalanmamış bir paket reddedilir. Bu sırada küçük bir konsol penceresi
+  görünür -- bu pencere bilerek görünür bırakılmıştır, böylece neyin
+  değiştirildiğini görebilirsin. Ayarlar klasörün korunur.
+
+  Hiçbir şey kurulmaz. Windows kayıt defterine hiçbir şey yazılmaz. Klasörü sil,
+  program gitmiş olur.
+
+
+WINDOWS NEDEN ONA TRUVA ATI DİYEBİLİR
+
+  Windows Defender bu programı Trojan:Win32/Bearfoos.A!ml olarak bildirip
+  engelleyebilir. “!ml” soneki, bunun bilinen herhangi bir kötü amaçlı yazılımla
+  eşleşme olmadığı anlamına gelir -- bu, bir makine öğrenimi modelinin daha önce
+  hiç görmediği bir dosya hakkındaki tahminidir.
+
+  Model böyle tahmin eder, çünkü program kod imzalı değildir, neredeyse kimsede
+  henüz yoktur ve yukarıda sayılan iki şeyi yapar: kendi dosyalarını değiştirir
+  ve internetten indirme yapar. Bunlar tam olarak modelin güvenmemek üzere
+  eğitildiği davranışlardır.
+
+  Her sürüm yayımlanmadan önce taranır ve indirme sayfası bir sağlama toplamı
+  gösterir, böylece aldığın dosyanın derlenen dosya olduğunu doğrulayabilirsin.
+  Bunu sırf güvenerek kabul etmek istemiyorsan programı çalıştırma -- bu meşru bir
+  seçimdir ve bu program seni bu konuda rahatsız etmez.
+
+
+İSTERSEN KISAYOLLAR
+
+  Bu metnin altında bir masaüstü kısayolu, bir Başlat menüsü girdisi ve programın
+  Forza ile başlamasını isteyebilirsin. Üçü de sen işaretlemedikçe kapalıdır, üçü
+  de bir klasördeki bir .lnk dosyasından ibarettir ve herhangi birini daha sonra
+  programa dokunmadan silebilirsin.
+
+  “Forza ile başlat” programı Windows başlangıç klasörüne koyar. Oturum
+  açıldığından itibaren bildirim alanında görünmeden bekler ve Forza başladığında
+  (simge durumunda) açılır; oyundan sonra oraya geri döner. Windows, yönetici
+  hakları olmadan bir programın başka bir program başladığında başlamasına izin
+  vermez -- bildirim alanında beklemek bu hakları gerektirmez ve neredeyse hiçbir
+  şeye mal olmaz. Pencereyi kapatınca program beklemeye devam eder; çıkmak için
+  simgeye sağ tıkla. Ana pencerenin sağ üstündeki “Forza ile başlat” düğmesi bunu
+  açar ve kapatır.
+
+  Windows bir programın kendisini görev çubuğuna sabitlemesine izin vermez -- bu,
+  Windows 10 sürüm 1607'den beri sana ayrılmıştır ve bunu aşmak, kayıt defterinde
+  bir sağlama toplamını sahtelemek demektir. Bu program bunu yapmaz. Başlat menüsü
+  girdisini işaretle, sonra ona sağ tıkla ve “Görev çubuğuna sabitle” seçeneğini
+  seç.
+
+
+GARANTİ YOK
+
+  Bu, ücretsiz olarak dağıtılan ve hiçbir türde garantisi olmayan bir hobi
+  projesidir. Microsoft, Turn 10, Playground Games ya da Forza Horizon serisiyle
+  bağlantılı değildir, onlar tarafından onaylanmamıştır ve onlarla ilişkili
+  değildir.
+
+
+Bunu istediğin zaman yeniden okuyabilirsin: ana pencerenin üstündeki
+“Bu program ne yapar” bağlantısı.

@@ -1,0 +1,4350 @@
+{
+  "source": "forza.net/fh6cars joined to memory car_id by lap time",
+  "by_car_id": {
+    "247": {
+      "name": "Toyota 2000GT",
+      "year": 1969,
+      "votes": 143,
+      "samples": 3584,
+      "basis": "exact"
+    },
+    "249": {
+      "name": "Ferrari 250 GTO",
+      "year": 1962,
+      "votes": 29,
+      "samples": 655,
+      "basis": "exact"
+    },
+    "251": {
+      "name": "Mercedes-Benz 300 SL Coupé",
+      "year": 1954,
+      "basis": "exact",
+      "votes": 20,
+      "samples": 100
+    },
+    "253": {
+      "name": "Ferrari F355 Berlinetta",
+      "year": 1994,
+      "votes": 220,
+      "samples": 8545,
+      "basis": "exact"
+    },
+    "255": {
+      "name": "Ferrari 512 TR",
+      "year": 1992,
+      "votes": 33,
+      "samples": 1317,
+      "basis": "exact"
+    },
+    "260": {
+      "name": "Porsche 911 Carrera RS",
+      "year": 1973,
+      "votes": 39,
+      "samples": 905,
+      "basis": "exact"
+    },
+    "261": {
+      "name": "Porsche 911 GT2",
+      "year": 1995,
+      "votes": 18,
+      "samples": 1106,
+      "basis": "exact"
+    },
+    "262": {
+      "name": "Porsche 911 GT3",
+      "year": 2004,
+      "votes": 43,
+      "samples": 4077,
+      "basis": "exact"
+    },
+    "265": {
+      "name": "Porsche 911 Turbo 3.3",
+      "year": 1982,
+      "votes": 116,
+      "samples": 3645,
+      "basis": "exact"
+    },
+    "268": {
+      "name": "Porsche 944 Turbo",
+      "year": 1989,
+      "votes": 41,
+      "samples": 844,
+      "basis": "exact"
+    },
+    "269": {
+      "name": "Porsche 959",
+      "year": 1987,
+      "votes": 33,
+      "samples": 1536,
+      "basis": "exact"
+    },
+    "281": {
+      "name": "Plymouth Barracuda Formula S",
+      "year": 1968,
+      "basis": "exact",
+      "votes": 13,
+      "samples": 65
+    },
+    "289": {
+      "name": "Chevrolet Camaro Super Sport Coupe",
+      "year": 1969,
+      "votes": 32,
+      "samples": 613,
+      "basis": "exact"
+    },
+    "292": {
+      "name": "Porsche Carrera GT",
+      "year": 2003,
+      "basis": "exact",
+      "votes": 7,
+      "samples": 35
+    },
+    "295": {
+      "name": "Toyota Celica Sport Specialty II",
+      "year": 2003,
+      "votes": 710,
+      "samples": 11519,
+      "basis": "exact"
+    },
+    "296": {
+      "name": "TVR Cerbera Speed 12",
+      "year": 1998,
+      "votes": 14,
+      "samples": 313,
+      "basis": "exact"
+    },
+    "299": {
+      "name": "Chevrolet Chevelle Super Sport 454",
+      "year": 1970,
+      "votes": 22,
+      "samples": 451,
+      "basis": "exact"
+    },
+    "302": {
+      "name": "Honda Civic Type R",
+      "year": 2004,
+      "votes": 78,
+      "samples": 1636,
+      "basis": "exact"
+    },
+    "306": {
+      "name": "Shelby Cobra 427 S/C",
+      "year": 1965,
+      "votes": 37,
+      "samples": 780,
+      "basis": "exact"
+    },
+    "309": {
+      "name": "Volkswagen Corrado VR6",
+      "year": 1995,
+      "votes": 44,
+      "samples": 781,
+      "basis": "exact"
+    },
+    "312": {
+      "name": "Chevrolet Corvette Stingray 427",
+      "year": 1967,
+      "votes": 19,
+      "samples": 405,
+      "basis": "exact"
+    },
+    "314": {
+      "name": "Chevrolet Corvette Z06",
+      "year": 2002,
+      "votes": 43,
+      "samples": 1534,
+      "basis": "exact"
+    },
+    "315": {
+      "name": "Chevrolet Corvette ZR-1",
+      "year": 1970,
+      "votes": 28,
+      "samples": 596,
+      "basis": "exact"
+    },
+    "316": {
+      "name": "Lamborghini Countach LP5000 QV",
+      "year": 1988,
+      "votes": 66,
+      "samples": 2416,
+      "basis": "exact"
+    },
+    "320": {
+      "name": "Honda CR-X SiR",
+      "year": 1991,
+      "votes": 46,
+      "samples": 826,
+      "basis": "exact"
+    },
+    "323": {
+      "name": "Lancia Delta HF Integrale EVO",
+      "year": 1992,
+      "votes": 14,
+      "samples": 314,
+      "basis": "exact"
+    },
+    "324": {
+      "name": "Lamborghini Diablo GTR",
+      "year": 1999,
+      "votes": 12,
+      "samples": 232,
+      "basis": "exact"
+    },
+    "325": {
+      "name": "Lamborghini Diablo SV",
+      "year": 1997,
+      "votes": 180,
+      "samples": 9774,
+      "basis": "exact"
+    },
+    "326": {
+      "name": "Ferrari Dino 246 GT",
+      "year": 1969,
+      "votes": 2285,
+      "samples": 46853,
+      "basis": "exact"
+    },
+    "327": {
+      "name": "Mitsubishi Eclipse GSX",
+      "year": 1995,
+      "votes": 50,
+      "samples": 1164,
+      "basis": "exact"
+    },
+    "333": {
+      "name": "Ferrari Enzo Ferrari",
+      "year": 2002,
+      "votes": 24,
+      "samples": 775,
+      "basis": "exact"
+    },
+    "336": {
+      "name": "Jaguar E-type",
+      "year": 1961,
+      "votes": 12,
+      "samples": 184,
+      "basis": "exact"
+    },
+    "338": {
+      "name": "McLaren F1 GT",
+      "year": 1997,
+      "votes": 32,
+      "samples": 554,
+      "basis": "exact"
+    },
+    "340": {
+      "name": "Ferrari F40",
+      "year": 1987,
+      "votes": 46,
+      "samples": 2089,
+      "basis": "exact"
+    },
+    "342": {
+      "name": "Ferrari F50",
+      "year": 1995,
+      "votes": 70,
+      "samples": 3236,
+      "basis": "exact"
+    },
+    "343": {
+      "name": "Nissan Fairlady Z 432",
+      "year": 1969,
+      "votes": 47,
+      "samples": 1009,
+      "basis": "exact"
+    },
+    "344": {
+      "name": "Nissan Fairlady Z",
+      "year": 2003,
+      "votes": 59,
+      "samples": 1292,
+      "basis": "exact"
+    },
+    "345": {
+      "name": "Nissan Fairlady Z Version S Twin Turbo",
+      "year": 1994,
+      "votes": 45,
+      "samples": 901,
+      "basis": "exact"
+    },
+    "348": {
+      "name": "Ford GT",
+      "year": 2005,
+      "votes": 727,
+      "samples": 28874,
+      "basis": "exact"
+    },
+    "353": {
+      "name": "Volkswagen Golf Gti 16v Mk2",
+      "year": 1992,
+      "votes": 45,
+      "samples": 1265,
+      "basis": "exact"
+    },
+    "357": {
+      "name": "Mitsubishi GTO",
+      "year": 1997,
+      "votes": 107,
+      "samples": 2534,
+      "basis": "exact"
+    },
+    "358": {
+      "name": "Ferrari 288 GTO",
+      "year": 1984,
+      "votes": 7,
+      "samples": 323,
+      "basis": "exact"
+    },
+    "363": {
+      "name": "Subaru Impreza 22B-STi Version",
+      "year": 1998,
+      "votes": 262,
+      "samples": 4668,
+      "basis": "exact"
+    },
+    "364": {
+      "name": "Subaru IMPREZA WRX STI",
+      "year": 2004,
+      "votes": 34,
+      "samples": 680,
+      "basis": "exact"
+    },
+    "365": {
+      "name": "Subaru IMPREZA WRX STI",
+      "year": 2005,
+      "votes": 48,
+      "samples": 942,
+      "basis": "exact"
+    },
+    "368": {
+      "name": "Acura Integra Type R",
+      "year": 2001,
+      "votes": 661,
+      "samples": 3398,
+      "basis": "exact"
+    },
+    "374": {
+      "name": "Mitsubishi Lancer Evolution IX MR",
+      "year": 2006,
+      "votes": 38,
+      "samples": 763,
+      "basis": "exact"
+    },
+    "378": {
+      "name": "Mitsubishi Lancer Evolution VIII MR",
+      "year": 2004,
+      "votes": 78,
+      "samples": 1614,
+      "basis": "exact"
+    },
+    "379": {
+      "name": "Subaru LEGACY B4 2.0 GT",
+      "year": 2005,
+      "votes": 12,
+      "samples": 228,
+      "basis": "exact"
+    },
+    "382": {
+      "name": "BMW M3",
+      "year": 1997,
+      "votes": 48,
+      "samples": 1101,
+      "basis": "exact"
+    },
+    "383": {
+      "name": "BMW M3",
+      "year": 2005,
+      "votes": 77,
+      "samples": 1972,
+      "basis": "exact"
+    },
+    "391": {
+      "name": "Maserati MC12",
+      "year": 2004,
+      "votes": 62,
+      "samples": 1782,
+      "basis": "exact"
+    },
+    "398": {
+      "name": "Toyota MR2 GT",
+      "year": 1995,
+      "votes": 58,
+      "samples": 1291,
+      "basis": "exact"
+    },
+    "405": {
+      "name": "Ford Mustang SVT Cobra R",
+      "year": 2000,
+      "votes": 51,
+      "samples": 1166,
+      "basis": "exact"
+    },
+    "411": {
+      "name": "Honda NSX-R",
+      "year": 2005,
+      "votes": 146,
+      "samples": 3813,
+      "basis": "exact"
+    },
+    "412": {
+      "name": "Honda NSX-R",
+      "year": 1992,
+      "votes": 145,
+      "samples": 3564,
+      "basis": "exact"
+    },
+    "417": {
+      "name": "Buick Regal GNX",
+      "year": 1987,
+      "votes": 11,
+      "samples": 244,
+      "basis": "exact"
+    },
+    "419": {
+      "name": "Audi RS 4",
+      "year": 2006,
+      "votes": 113,
+      "samples": 2497,
+      "basis": "exact"
+    },
+    "420": {
+      "name": "Audi RS 6",
+      "year": 2003,
+      "votes": 17,
+      "samples": 360,
+      "basis": "exact"
+    },
+    "422": {
+      "name": "Acura RSX Type S",
+      "year": 2002,
+      "votes": 161,
+      "samples": 3532,
+      "basis": "exact"
+    },
+    "423": {
+      "name": "Mazda Savanna RX-7",
+      "year": 1990,
+      "votes": 100,
+      "samples": 1925,
+      "basis": "exact"
+    },
+    "427": {
+      "name": "Honda S2000",
+      "year": 2003,
+      "votes": 144,
+      "samples": 3745,
+      "basis": "exact"
+    },
+    "433": {
+      "name": "TVR Sagaris",
+      "year": 2005,
+      "votes": 18,
+      "samples": 510,
+      "basis": "exact"
+    },
+    "440": {
+      "name": "Nissan Silvia K's",
+      "year": 1994,
+      "votes": 44,
+      "samples": 1056,
+      "basis": "exact"
+    },
+    "455": {
+      "name": "Toyota Sprinter Trueno GT Apex",
+      "year": 1985,
+      "basis": "exact",
+      "votes": 176,
+      "samples": 890
+    },
+    "458": {
+      "name": "Lancia Stratos HF Stradale",
+      "year": 1974,
+      "votes": 27,
+      "samples": 560,
+      "basis": "exact"
+    },
+    "460": {
+      "name": "Toyota Supra 2.0 GT",
+      "year": 1992,
+      "votes": 16,
+      "samples": 421,
+      "basis": "exact"
+    },
+    "461": {
+      "name": "Toyota Supra RZ",
+      "year": 1998,
+      "votes": 168,
+      "samples": 4105,
+      "basis": "exact"
+    },
+    "483": {
+      "name": "Dodge Viper GTS ACR",
+      "year": 1999,
+      "votes": 177,
+      "samples": 3274,
+      "basis": "exact"
+    },
+    "489": {
+      "name": "Jaguar XJ220",
+      "year": 1993,
+      "votes": 15,
+      "samples": 817,
+      "basis": "exact"
+    },
+    "513": {
+      "name": "Dodge Charger R/T",
+      "year": 1969,
+      "votes": 77,
+      "samples": 396,
+      "basis": "exact"
+    },
+    "567": {
+      "name": "Nissan R390 (GT1)",
+      "year": 1998,
+      "votes": 16,
+      "samples": 395,
+      "basis": "exact"
+    },
+    "568": {
+      "name": "Mercedes-Benz AMG CLK GTR",
+      "year": 1998,
+      "votes": 18,
+      "samples": 444,
+      "basis": "exact"
+    },
+    "569": {
+      "name": "Honda NSX-R GT",
+      "year": 2005,
+      "votes": 200,
+      "samples": 7420,
+      "basis": "exact"
+    },
+    "615": {
+      "name": "Peugeot 207 Super 2000",
+      "year": 2007,
+      "votes": 19,
+      "samples": 450,
+      "basis": "exact"
+    },
+    "625": {
+      "name": "Honda Civic Type R",
+      "year": 2007,
+      "votes": 48,
+      "samples": 930,
+      "basis": "exact"
+    },
+    "633": {
+      "name": "Audi Sport quattro",
+      "year": 1984,
+      "votes": 17,
+      "samples": 88,
+      "basis": "exact"
+    },
+    "634": {
+      "name": "Renault 5 Turbo",
+      "year": 1980,
+      "votes": 24,
+      "samples": 506,
+      "basis": "exact"
+    },
+    "637": {
+      "name": "Lamborghini Miura P400",
+      "year": 1967,
+      "votes": 32,
+      "samples": 509,
+      "basis": "exact"
+    },
+    "639": {
+      "name": "Dodge Challenger R/T",
+      "year": 1970,
+      "votes": 9,
+      "samples": 230,
+      "basis": "exact"
+    },
+    "641": {
+      "name": "Porsche 911 GT1 Strassenversion",
+      "year": 1997,
+      "votes": 11,
+      "samples": 210,
+      "basis": "exact"
+    },
+    "1006": {
+      "name": "Ferrari FXX",
+      "year": 2005,
+      "votes": 13,
+      "samples": 269,
+      "basis": "exact"
+    },
+    "1007": {
+      "name": "Koenigsegg CCGT",
+      "year": 2008,
+      "votes": 42,
+      "samples": 770,
+      "basis": "exact"
+    },
+    "1009": {
+      "name": "Mitsubishi Lancer Evolution X GSR",
+      "year": 2008,
+      "votes": 63,
+      "samples": 1236,
+      "basis": "exact"
+    },
+    "1011": {
+      "name": "BMW M3",
+      "year": 2008,
+      "votes": 45,
+      "samples": 1496,
+      "basis": "exact"
+    },
+    "1020": {
+      "name": "Ferrari F50 GT",
+      "year": 1996,
+      "votes": 29,
+      "samples": 612,
+      "basis": "exact"
+    },
+    "1022": {
+      "name": "Ferrari 430 Scuderia",
+      "year": 2007,
+      "votes": 55,
+      "samples": 1843,
+      "basis": "exact"
+    },
+    "1023": {
+      "name": "Ferrari F40",
+      "year": 1987,
+      "votes": 58,
+      "samples": 1294,
+      "basis": "exact"
+    },
+    "1032": {
+      "name": "Alfa Romeo 8C Competizione",
+      "year": 2007,
+      "votes": 104,
+      "samples": 3374,
+      "basis": "exact"
+    },
+    "1034": {
+      "name": "Toyota Celica GT-Four ST205",
+      "year": 1994,
+      "votes": 646,
+      "samples": 11781,
+      "basis": "exact"
+    },
+    "1040": {
+      "name": "BMW M1",
+      "year": 1981,
+      "votes": 82,
+      "samples": 1138,
+      "basis": "exact"
+    },
+    "1041": {
+      "name": "Ford Mustang SVT Cobra R",
+      "year": 1993,
+      "votes": 31,
+      "samples": 754,
+      "basis": "exact"
+    },
+    "1042": {
+      "name": "Nissan Skyline 2000GT-R",
+      "year": 1971,
+      "votes": 86,
+      "samples": 2178,
+      "basis": "exact"
+    },
+    "1045": {
+      "name": "Pontiac Firebird Trans Am GTA",
+      "year": 1987,
+      "votes": 63,
+      "samples": 1491,
+      "basis": "exact"
+    },
+    "1046": {
+      "name": "Dodge Viper SRT-10 ACR",
+      "year": 2008,
+      "votes": 117,
+      "samples": 3810,
+      "basis": "exact"
+    },
+    "1052": {
+      "name": "Dodge Ram SRT-10",
+      "year": 2006,
+      "votes": 16,
+      "samples": 440,
+      "basis": "exact"
+    },
+    "1059": {
+      "name": "BMW Z4 M Coupé",
+      "year": 2008,
+      "votes": 21,
+      "samples": 465,
+      "basis": "exact"
+    },
+    "1060": {
+      "name": "Subaru IMPREZA WRX STI",
+      "year": 2008,
+      "votes": 22,
+      "samples": 401,
+      "basis": "exact"
+    },
+    "1063": {
+      "name": "Dodge Charger Daytona HEMI",
+      "year": 1969,
+      "votes": 75,
+      "samples": 1507,
+      "basis": "exact"
+    },
+    "1064": {
+      "name": "Chevrolet Camaro Z28",
+      "year": 1979,
+      "votes": 26,
+      "samples": 579,
+      "basis": "exact"
+    },
+    "1069": {
+      "name": "Chevrolet Corvette ZR1",
+      "year": 2009,
+      "votes": 10,
+      "samples": 313,
+      "basis": "exact"
+    },
+    "1086": {
+      "name": "Ford Focus RS",
+      "year": 2009,
+      "votes": 12,
+      "samples": 285,
+      "basis": "exact"
+    },
+    "1090": {
+      "name": "Mercedes-Benz SL 65 AMG Black Series",
+      "year": 2009,
+      "basis": "exact",
+      "votes": 33,
+      "samples": 165
+    },
+    "1093": {
+      "name": "Chevrolet Corvette",
+      "year": 1960,
+      "votes": 16,
+      "samples": 318,
+      "basis": "exact"
+    },
+    "1103": {
+      "name": "Nissan 370Z",
+      "year": 2010,
+      "votes": 18,
+      "samples": 485,
+      "basis": "exact"
+    },
+    "1104": {
+      "name": "Datsun 510",
+      "year": 1970,
+      "votes": 36,
+      "samples": 825,
+      "basis": "exact"
+    },
+    "1105": {
+      "name": "Aston Martin DB5",
+      "year": 1964,
+      "votes": 19,
+      "samples": 372,
+      "basis": "exact"
+    },
+    "1108": {
+      "name": "Ford RS200 Evolution",
+      "year": 1985,
+      "votes": 6,
+      "samples": 163,
+      "basis": "exact"
+    },
+    "1110": {
+      "name": "Mazda MX-5 Miata",
+      "year": 1994,
+      "votes": 219,
+      "samples": 4301,
+      "basis": "exact"
+    },
+    "1124": {
+      "name": "Abarth Fiat 131",
+      "year": 1980,
+      "votes": 246,
+      "samples": 6145,
+      "basis": "exact"
+    },
+    "1126": {
+      "name": "BMW M5",
+      "year": 2009,
+      "votes": 26,
+      "samples": 612,
+      "basis": "exact"
+    },
+    "1130": {
+      "name": "McLaren 12C Coupé",
+      "year": 2011,
+      "votes": 11,
+      "samples": 264,
+      "basis": "exact"
+    },
+    "1131": {
+      "name": "Ferrari 458 Italia",
+      "year": 2009,
+      "basis": "exact",
+      "votes": 49,
+      "samples": 250
+    },
+    "1150": {
+      "name": "Alfa Romeo Giulia Sprint GTA Stradale",
+      "year": 1965,
+      "votes": 51,
+      "samples": 1159,
+      "basis": "exact"
+    },
+    "1155": {
+      "name": "Shelby Cobra Daytona Coupe",
+      "year": 1965,
+      "votes": 35,
+      "samples": 823,
+      "basis": "exact"
+    },
+    "1171": {
+      "name": "Ferrari 599XX",
+      "year": 2010,
+      "votes": 1,
+      "samples": 15
+    },
+    "1173": {
+      "name": "Lamborghini Murciélago LP 670-4 SV",
+      "year": 2010,
+      "votes": 39,
+      "samples": 1406,
+      "basis": "exact"
+    },
+    "1175": {
+      "name": "Pagani Zonda R",
+      "year": 2009,
+      "votes": 39,
+      "samples": 746,
+      "basis": "exact"
+    },
+    "1184": {
+      "name": "Audi RS 6",
+      "year": 2009,
+      "votes": 70,
+      "samples": 1503,
+      "basis": "exact"
+    },
+    "1200": {
+      "name": "Audi R8 LMS",
+      "year": 2009,
+      "votes": 23,
+      "samples": 571,
+      "basis": "exact"
+    },
+    "1204": {
+      "name": "Renault Megane RS 250",
+      "year": 2010,
+      "votes": 10,
+      "samples": 251,
+      "basis": "exact"
+    },
+    "1216": {
+      "name": "Audi RS 3 Sportback",
+      "year": 2011,
+      "basis": "exact",
+      "votes": 65,
+      "samples": 325
+    },
+    "1220": {
+      "name": "Audi TT RS Coupé",
+      "year": 2010,
+      "votes": 55,
+      "samples": 1227,
+      "basis": "exact"
+    },
+    "1221": {
+      "name": "Mazda Mazdaspeed 3",
+      "year": 2010,
+      "basis": "exact",
+      "votes": 34,
+      "samples": 175
+    },
+    "1229": {
+      "name": "Mazda Furai",
+      "year": 2008,
+      "votes": 272,
+      "samples": 5740,
+      "basis": "exact"
+    },
+    "1231": {
+      "name": "Volkswagen Golf R",
+      "year": 2010,
+      "votes": 12,
+      "samples": 294,
+      "basis": "exact"
+    },
+    "1253": {
+      "name": "Noble M600",
+      "year": 2010,
+      "votes": 22,
+      "samples": 545,
+      "basis": "exact"
+    },
+    "1260": {
+      "name": "Lexus LFA",
+      "year": 2010,
+      "votes": 38,
+      "samples": 2801,
+      "basis": "exact"
+    },
+    "1269": {
+      "name": "BMW 2002 Turbo",
+      "year": 1973,
+      "votes": 137,
+      "samples": 2568,
+      "basis": "exact"
+    },
+    "1270": {
+      "name": "DeLorean DMC-12",
+      "year": 1982,
+      "votes": 175,
+      "samples": 3608,
+      "basis": "exact"
+    },
+    "1272": {
+      "name": "Ford Escort RS Cosworth",
+      "year": 1992,
+      "votes": 39,
+      "samples": 838,
+      "basis": "exact"
+    },
+    "1273": {
+      "name": "Honda Civic Type R",
+      "year": 1997,
+      "votes": 312,
+      "samples": 6427,
+      "basis": "exact"
+    },
+    "1276": {
+      "name": "Pontiac Firebird Trans Am",
+      "year": 1977,
+      "votes": 28,
+      "samples": 573,
+      "basis": "exact"
+    },
+    "1277": {
+      "name": "Plymouth Cuda 426 HEMI",
+      "year": 1971,
+      "votes": 15,
+      "samples": 323,
+      "basis": "exact"
+    },
+    "1278": {
+      "name": "Ford XB Falcon GT",
+      "year": 1973,
+      "votes": 17,
+      "samples": 342,
+      "basis": "exact"
+    },
+    "1282": {
+      "name": "Nissan 240SX",
+      "year": 1993,
+      "votes": 153,
+      "samples": 2792,
+      "basis": "exact"
+    },
+    "1283": {
+      "name": "Ford Thunderbird",
+      "year": 1957,
+      "votes": 4,
+      "samples": 63,
+      "basis": "exact"
+    },
+    "1291": {
+      "name": "Chevrolet El Camino Super Sport 454",
+      "year": 1970,
+      "votes": 16,
+      "samples": 281,
+      "basis": "exact"
+    },
+    "1293": {
+      "name": "Ford Sierra Cosworth RS500",
+      "year": 1987,
+      "votes": 120,
+      "samples": 2572,
+      "basis": "exact"
+    },
+    "1294": {
+      "name": "GMC Syclone",
+      "year": 1991,
+      "votes": 56,
+      "samples": 1522,
+      "basis": "exact"
+    },
+    "1295": {
+      "name": "Lancia 037 Stradale",
+      "year": 1982,
+      "votes": 31,
+      "samples": 563,
+      "basis": "exact"
+    },
+    "1296": {
+      "name": "Mercedes-Benz 190 E 2.5-16 Evolution II",
+      "year": 1990,
+      "votes": 36,
+      "samples": 617,
+      "basis": "exact"
+    },
+    "1299": {
+      "name": "Volvo 242 Turbo Evolution",
+      "year": 1983,
+      "votes": 28,
+      "samples": 474,
+      "basis": "exact"
+    },
+    "1300": {
+      "name": "Chevrolet Impala Super Sport 409",
+      "year": 1964,
+      "basis": "exact",
+      "votes": 11,
+      "samples": 55
+    },
+    "1301": {
+      "name": "Jaguar D-Type",
+      "year": 1956,
+      "votes": 12,
+      "samples": 226,
+      "basis": "exact"
+    },
+    "1314": {
+      "name": "McLaren F1",
+      "year": 1993,
+      "votes": 7,
+      "samples": 176,
+      "basis": "exact"
+    },
+    "1323": {
+      "name": "Subaru WRX STI",
+      "year": 2011,
+      "votes": 17,
+      "samples": 397,
+      "basis": "exact"
+    },
+    "1330": {
+      "name": "Chevrolet Camaro Z28",
+      "year": 1970,
+      "votes": 14,
+      "samples": 388,
+      "basis": "exact"
+    },
+    "1332": {
+      "name": "Dodge Dart HEMI Super Stock",
+      "year": 1968,
+      "votes": 12,
+      "samples": 231,
+      "basis": "exact"
+    },
+    "1335": {
+      "name": "Mazda #55 Mazda 787B",
+      "year": 1991,
+      "votes": 937,
+      "samples": 22770,
+      "basis": "exact"
+    },
+    "1350": {
+      "name": "BMW X5 M",
+      "year": 2011,
+      "votes": 18,
+      "samples": 351,
+      "basis": "exact"
+    },
+    "1352": {
+      "name": "Dodge Coronet Super Bee",
+      "year": 1970,
+      "votes": 14,
+      "samples": 307,
+      "basis": "exact"
+    },
+    "1355": {
+      "name": "Ford Mustang GT Coupe",
+      "year": 1965,
+      "votes": 26,
+      "samples": 588,
+      "basis": "exact"
+    },
+    "1367": {
+      "name": "BMW M5",
+      "year": 2003,
+      "votes": 41,
+      "samples": 757,
+      "basis": "exact"
+    },
+    "1368": {
+      "name": "BMW M5",
+      "year": 1988,
+      "votes": 56,
+      "samples": 1178,
+      "basis": "exact"
+    },
+    "1369": {
+      "name": "Pagani Zonda R",
+      "year": 2009,
+      "votes": 2,
+      "samples": 12
+    },
+    "1376": {
+      "name": "Lotus Elise Series 1 Sport 190",
+      "year": 1999,
+      "votes": 102,
+      "samples": 2331,
+      "basis": "exact"
+    },
+    "1379": {
+      "name": "Chevrolet Impala Super Sport",
+      "year": 1996,
+      "votes": 31,
+      "samples": 562,
+      "basis": "exact"
+    },
+    "1381": {
+      "name": "Mitsubishi Galant VR-4",
+      "year": 1992,
+      "votes": 12,
+      "samples": 264,
+      "basis": "exact"
+    },
+    "1382": {
+      "name": "Subaru LEGACY RS",
+      "year": 1990,
+      "votes": 25,
+      "samples": 462,
+      "basis": "exact"
+    },
+    "1388": {
+      "name": "BMW M5",
+      "year": 2012,
+      "votes": 6,
+      "samples": 158,
+      "basis": "exact"
+    },
+    "1392": {
+      "name": "Lamborghini Sesto Elemento",
+      "year": 2011,
+      "votes": 232,
+      "samples": 4457,
+      "basis": "exact"
+    },
+    "1393": {
+      "name": "Alfa Romeo 155 Q4",
+      "year": 1992,
+      "votes": 128,
+      "samples": 3610,
+      "basis": "exact"
+    },
+    "1394": {
+      "name": "GMC Typhoon",
+      "year": 1992,
+      "votes": 13,
+      "samples": 224,
+      "basis": "exact"
+    },
+    "1395": {
+      "name": "Toyota MR2 SC",
+      "year": 1989,
+      "votes": 91,
+      "samples": 2228,
+      "basis": "exact"
+    },
+    "1397": {
+      "name": "Koenigsegg Agera",
+      "year": 2011,
+      "votes": 4,
+      "samples": 83,
+      "basis": "exact"
+    },
+    "1398": {
+      "name": "Lamborghini Aventador LP700-4",
+      "year": 2012,
+      "votes": 13,
+      "samples": 371,
+      "basis": "exact"
+    },
+    "1417": {
+      "name": "Audi RS 5 Coupé",
+      "year": 2011,
+      "basis": "exact",
+      "votes": 14,
+      "samples": 70
+    },
+    "1418": {
+      "name": "BMW M5",
+      "year": 1995,
+      "votes": 21,
+      "samples": 411,
+      "basis": "exact"
+    },
+    "1426": {
+      "name": "Mazda RX-8 R3",
+      "year": 2011,
+      "basis": "exact",
+      "votes": 45,
+      "samples": 225
+    },
+    "1428": {
+      "name": "Volkswagen Scirocco R",
+      "year": 2011,
+      "votes": 18,
+      "samples": 330,
+      "basis": "exact"
+    },
+    "1429": {
+      "name": "Chevrolet Nova Super Sport 396",
+      "year": 1969,
+      "votes": 30,
+      "samples": 552,
+      "basis": "exact"
+    },
+    "1435": {
+      "name": "Volkswagen Beetle",
+      "year": 1963,
+      "votes": 30,
+      "samples": 635,
+      "basis": "exact"
+    },
+    "1459": {
+      "name": "Chevrolet Bel Air",
+      "year": 1957,
+      "votes": 21,
+      "samples": 482,
+      "basis": "exact"
+    },
+    "1477": {
+      "name": "Ford Transit SuperSportVan",
+      "year": 2011,
+      "votes": 9,
+      "samples": 263,
+      "basis": "exact"
+    },
+    "1478": {
+      "name": "Audi #2 Audi Sport quattro S1",
+      "year": 1986,
+      "basis": "exact",
+      "votes": 22,
+      "samples": 110
+    },
+    "1480": {
+      "name": "Mazda RX-7 GSL-SE",
+      "year": 1985,
+      "votes": 103,
+      "samples": 2481,
+      "basis": "exact"
+    },
+    "1481": {
+      "name": "Austin-Healey 3000 MkIII",
+      "year": 1965,
+      "votes": 74,
+      "samples": 928,
+      "basis": "exact"
+    },
+    "1493": {
+      "name": "BMW 850CSi",
+      "year": 1995,
+      "votes": 116,
+      "samples": 2520,
+      "basis": "exact"
+    },
+    "1500": {
+      "name": "Mercedes-Benz C 63 AMG Coupé Black Series",
+      "year": 2012,
+      "basis": "exact",
+      "votes": 16,
+      "samples": 80
+    },
+    "1513": {
+      "name": "Maserati Ghibli Cup",
+      "year": 1997,
+      "votes": 67,
+      "samples": 1406,
+      "basis": "exact"
+    },
+    "1514": {
+      "name": "Mazda RX-3",
+      "year": 1973,
+      "votes": 42,
+      "samples": 955,
+      "basis": "exact"
+    },
+    "1517": {
+      "name": "Toyota Celica GT-Four RC ST185",
+      "year": 1992,
+      "votes": 21,
+      "samples": 379,
+      "basis": "exact"
+    },
+    "1522": {
+      "name": "Jeep Wrangler Rubicon",
+      "year": 2012,
+      "votes": 13,
+      "samples": 268,
+      "basis": "exact"
+    },
+    "1529": {
+      "name": "Ford Capri RS3100",
+      "year": 1973,
+      "votes": 22,
+      "samples": 537,
+      "basis": "exact"
+    },
+    "1532": {
+      "name": "Hennessey Venom GT",
+      "year": 2012,
+      "votes": 1,
+      "samples": 13,
+      "basis": "exact"
+    },
+    "1533": {
+      "name": "Holden Torana A9X",
+      "year": 1977,
+      "votes": 25,
+      "samples": 509,
+      "basis": "exact"
+    },
+    "1537": {
+      "name": "Toyota Corolla SR5",
+      "year": 1974,
+      "basis": "exact",
+      "votes": 29,
+      "samples": 145
+    },
+    "1549": {
+      "name": "Alfa Romeo 33 Stradale",
+      "year": 1968,
+      "basis": "exact",
+      "votes": 41,
+      "samples": 205
+    },
+    "1559": {
+      "name": "Mercedes-Benz 300 SLR",
+      "year": 1955,
+      "votes": 18,
+      "samples": 338,
+      "basis": "exact"
+    },
+    "1562": {
+      "name": "SRT Viper GTS",
+      "year": 2013,
+      "votes": 17,
+      "samples": 573,
+      "basis": "exact"
+    },
+    "1564": {
+      "name": "Chevrolet Corvette",
+      "year": 1953,
+      "votes": 35,
+      "samples": 819,
+      "basis": "exact"
+    },
+    "1568": {
+      "name": "Honda Civic RS",
+      "year": 1974,
+      "votes": 41,
+      "samples": 813,
+      "basis": "exact"
+    },
+    "1575": {
+      "name": "Chevrolet Monte Carlo Super Sport",
+      "year": 1988,
+      "votes": 39,
+      "samples": 956,
+      "basis": "exact"
+    },
+    "1578": {
+      "name": "Ferrari 250 GT Berlinetta Lusso",
+      "year": 1962,
+      "votes": 62,
+      "samples": 1163,
+      "basis": "exact"
+    },
+    "1586": {
+      "name": "Lincoln Continental",
+      "year": 1962,
+      "votes": 61,
+      "samples": 1369,
+      "basis": "exact"
+    },
+    "1587": {
+      "name": "Mazda Cosmo 110S Series II",
+      "year": 1972,
+      "votes": 70,
+      "samples": 1325,
+      "basis": "exact"
+    },
+    "1591": {
+      "name": "Peugeot 205 Turbo 16",
+      "year": 1984,
+      "votes": 65,
+      "samples": 1246,
+      "basis": "exact"
+    },
+    "1598": {
+      "name": "BMW M3 GTS",
+      "year": 2010,
+      "votes": 28,
+      "samples": 1277,
+      "basis": "exact"
+    },
+    "1599": {
+      "name": "Ferrari 599XX",
+      "year": 2010,
+      "votes": 29,
+      "samples": 506,
+      "basis": "exact"
+    },
+    "1601": {
+      "name": "Lamborghini Gallardo LP570-4 Spyder Performante",
+      "year": 2012,
+      "votes": 164,
+      "samples": 12918,
+      "basis": "exact"
+    },
+    "1607": {
+      "name": "Audi RS 4",
+      "year": 2006,
+      "votes": 2,
+      "samples": 94,
+      "basis": "exact"
+    },
+    "1627": {
+      "name": "Mercedes-Benz G 65 AMG",
+      "year": 2013,
+      "basis": "exact",
+      "votes": 11,
+      "samples": 55
+    },
+    "1650": {
+      "name": "Honda Civic Si",
+      "year": 1986,
+      "votes": 148,
+      "samples": 4188,
+      "basis": "exact"
+    },
+    "1651": {
+      "name": "Ariel Atom 500 V8",
+      "year": 2013,
+      "votes": 5,
+      "samples": 107,
+      "basis": "exact"
+    },
+    "1654": {
+      "name": "Ford Mustang Shelby GT500",
+      "year": 2013,
+      "votes": 45,
+      "samples": 676,
+      "basis": "exact"
+    },
+    "1655": {
+      "name": "Subaru BRZ",
+      "year": 2013,
+      "votes": 117,
+      "samples": 2244,
+      "basis": "exact"
+    },
+    "1658": {
+      "name": "Mercedes-Benz A 45 AMG",
+      "year": 2013,
+      "votes": 31,
+      "samples": 165,
+      "basis": "exact"
+    },
+    "1661": {
+      "name": "Lancia Delta S4",
+      "year": 1986,
+      "votes": 27,
+      "samples": 469,
+      "basis": "exact"
+    },
+    "1662": {
+      "name": "MINI Cooper S",
+      "year": 1965,
+      "votes": 43,
+      "samples": 853,
+      "basis": "exact"
+    },
+    "1667": {
+      "name": "McLaren P1",
+      "year": 2013,
+      "votes": 14,
+      "samples": 291,
+      "basis": "exact"
+    },
+    "1668": {
+      "name": "Ford Mustang Boss 302",
+      "year": 1969,
+      "votes": 47,
+      "samples": 929,
+      "basis": "exact"
+    },
+    "2002": {
+      "name": "Nissan GT-R Black Edition (R35)",
+      "year": 2012,
+      "votes": 90,
+      "samples": 1248,
+      "basis": "exact"
+    },
+    "2003": {
+      "name": "MINI John Cooper Works GP",
+      "year": 2012,
+      "votes": 14,
+      "samples": 295,
+      "basis": "exact"
+    },
+    "2004": {
+      "name": "Mazda MX-5",
+      "year": 2013,
+      "votes": 56,
+      "samples": 1107,
+      "basis": "exact"
+    },
+    "2006": {
+      "name": "Chevrolet Corvette ZR-1",
+      "year": 1995,
+      "votes": 57,
+      "samples": 1214,
+      "basis": "exact"
+    },
+    "2007": {
+      "name": "Toyota 86",
+      "year": 2013,
+      "votes": 88,
+      "samples": 1766,
+      "basis": "exact"
+    },
+    "2009": {
+      "name": "Audi RS 7 Sportback",
+      "year": 2013,
+      "basis": "exact",
+      "votes": 11,
+      "samples": 55
+    },
+    "2010": {
+      "name": "Audi R8 Coupé V10 plus 5.2 FSI quattro",
+      "year": 2013,
+      "votes": 152,
+      "samples": 4237,
+      "basis": "exact"
+    },
+    "2017": {
+      "name": "Abarth 595 esseesse",
+      "year": 1968,
+      "votes": 91,
+      "samples": 2046,
+      "basis": "exact"
+    },
+    "2019": {
+      "name": "Ford Focus RS",
+      "year": 2003,
+      "votes": 35,
+      "samples": 821,
+      "basis": "exact"
+    },
+    "2034": {
+      "name": "Ferrari LaFerrari",
+      "year": 2013,
+      "votes": 18,
+      "samples": 404,
+      "basis": "exact"
+    },
+    "2038": {
+      "name": "Alfa Romeo 4C",
+      "year": 2014,
+      "votes": 1326,
+      "samples": 40236,
+      "basis": "exact"
+    },
+    "2040": {
+      "name": "BAC Mono",
+      "year": 2014,
+      "votes": 30,
+      "samples": 714,
+      "basis": "exact"
+    },
+    "2042": {
+      "name": "Lamborghini Veneno",
+      "year": 2013,
+      "votes": 7,
+      "samples": 163,
+      "basis": "exact"
+    },
+    "2119": {
+      "name": "Honda Civic CRX Mugen",
+      "year": 1984,
+      "votes": 150,
+      "samples": 3441,
+      "basis": "exact"
+    },
+    "2121": {
+      "name": "Honda Prelude Si",
+      "year": 1994,
+      "votes": 62,
+      "samples": 1326,
+      "basis": "exact"
+    },
+    "2128": {
+      "name": "Cadillac XTS Limousine",
+      "year": 2013,
+      "votes": 36,
+      "samples": 238,
+      "basis": "exact"
+    },
+    "2131": {
+      "name": "HSV GEN-F GTS",
+      "year": 2014,
+      "votes": 30,
+      "samples": 1320,
+      "basis": "exact"
+    },
+    "2133": {
+      "name": "BMW i8",
+      "year": 2015,
+      "votes": 14,
+      "samples": 322,
+      "basis": "exact"
+    },
+    "2140": {
+      "name": "Subaru BRAT GL",
+      "year": 1980,
+      "votes": 18,
+      "samples": 372,
+      "basis": "exact"
+    },
+    "2142": {
+      "name": "Volkswagen Golf R",
+      "year": 2014,
+      "votes": 20,
+      "samples": 438,
+      "basis": "exact"
+    },
+    "2145": {
+      "name": "Ford Ranger T6 Rally Raid",
+      "year": 2014,
+      "votes": 2,
+      "samples": 29,
+      "basis": "exact"
+    },
+    "2147": {
+      "name": "MG Metro 6R4",
+      "year": 1986,
+      "votes": 19,
+      "samples": 326,
+      "basis": "exact"
+    },
+    "2148": {
+      "name": "MINI X-Raid All4 Racing Countryman",
+      "year": 2013,
+      "basis": "exact",
+      "votes": 2,
+      "samples": 10
+    },
+    "2149": {
+      "name": "Renault Clio Williams",
+      "year": 1993,
+      "votes": 81,
+      "samples": 2015,
+      "basis": "exact"
+    },
+    "2151": {
+      "name": "Volkswagen Type 2 De Luxe",
+      "year": 1963,
+      "votes": 42,
+      "samples": 767,
+      "basis": "exact"
+    },
+    "2154": {
+      "name": "BMW M4 Coupé",
+      "year": 2014,
+      "votes": 9,
+      "samples": 317,
+      "basis": "exact"
+    },
+    "2161": {
+      "name": "Alfa Romeo Giulia TZ2",
+      "year": 1965,
+      "votes": 40,
+      "samples": 687,
+      "basis": "exact"
+    },
+    "2163": {
+      "name": "Honda Civic Si",
+      "year": 1986,
+      "basis": "exact",
+      "votes": 37,
+      "samples": 185
+    },
+    "2164": {
+      "name": "Lamborghini Huracán LP 610-4",
+      "year": 2014,
+      "basis": "exact",
+      "votes": 17,
+      "samples": 85
+    },
+    "2168": {
+      "name": "Subaru WRX STI",
+      "year": 2015,
+      "votes": 20,
+      "samples": 396,
+      "basis": "exact"
+    },
+    "2171": {
+      "name": "Mazda Mazdaspeed MX-5",
+      "year": 2005,
+      "votes": 66,
+      "samples": 1581,
+      "basis": "exact"
+    },
+    "2175": {
+      "name": "Lexus RC F",
+      "year": 2015,
+      "votes": 12,
+      "samples": 421,
+      "basis": "exact"
+    },
+    "2177": {
+      "name": "Chevrolet Corvette Z06",
+      "year": 2015,
+      "basis": "manual",
+      "votes": 14,
+      "samples": 212,
+      "evidence": "2026-10-02: the game's results screen showed \"Corvette '15\" on the own row while telemetry sent ordinal 2177 (twice, race times matching); the garage dump has 2177 at S1 791; memory-scan rows of id 2177 are all S1/S2/R. The old join said Chevrolet Corvette 1953 with 14 group votes -- the '53 is 1564 (exact, 35 votes)."
+    },
+    "2178": {
+      "name": "Audi RS 4 Avant",
+      "year": 2001,
+      "votes": 27,
+      "samples": 614,
+      "basis": "exact"
+    },
+    "2179": {
+      "name": "Audi S1",
+      "year": 2015,
+      "votes": 35,
+      "samples": 683,
+      "basis": "exact"
+    },
+    "2180": {
+      "name": "Audi RS 6 Avant",
+      "year": 2015,
+      "basis": "exact",
+      "votes": 8,
+      "samples": 40
+    },
+    "2183": {
+      "name": "Chevrolet Camaro Z/28",
+      "year": 2015,
+      "votes": 9,
+      "samples": 226,
+      "basis": "exact"
+    },
+    "2184": {
+      "name": "Ferrari 458 Italia",
+      "year": 2009,
+      "basis": "exact",
+      "votes": 43,
+      "samples": 220
+    },
+    "2188": {
+      "name": "Koenigsegg One:1",
+      "year": 2015,
+      "votes": 7,
+      "samples": 167,
+      "basis": "exact"
+    },
+    "2205": {
+      "name": "Honda S800",
+      "year": 1970,
+      "votes": 93,
+      "samples": 1740,
+      "basis": "exact"
+    },
+    "2216": {
+      "name": "Plymouth Fury",
+      "year": 1958,
+      "votes": 20,
+      "samples": 398,
+      "basis": "exact"
+    },
+    "2217": {
+      "name": "Subaru SVX",
+      "year": 1996,
+      "votes": 50,
+      "samples": 990,
+      "basis": "exact"
+    },
+    "2242": {
+      "name": "Mercedes-AMG GT S",
+      "year": 2015,
+      "basis": "exact",
+      "votes": 24,
+      "samples": 120
+    },
+    "2262": {
+      "name": "Cadillac ATS-V",
+      "year": 2016,
+      "votes": 37,
+      "samples": 1319,
+      "basis": "exact"
+    },
+    "2263": {
+      "name": "Dodge Challenger SRT Hellcat",
+      "year": 2015,
+      "votes": 10,
+      "samples": 296,
+      "basis": "exact"
+    },
+    "2267": {
+      "name": "Mazda MX-5",
+      "year": 2016,
+      "votes": 34,
+      "samples": 707,
+      "basis": "exact"
+    },
+    "2270": {
+      "name": "Nissan Skyline H/T 2000GT-R",
+      "year": 1973,
+      "basis": "exact",
+      "votes": 23,
+      "samples": 115
+    },
+    "2272": {
+      "name": "Datsun 2000 Roadster",
+      "year": 1969,
+      "votes": 51,
+      "samples": 1048,
+      "basis": "exact"
+    },
+    "2290": {
+      "name": "Porsche 918 Spyder",
+      "year": 2014,
+      "votes": 16,
+      "samples": 311,
+      "basis": "exact"
+    },
+    "2297": {
+      "name": "Porsche 911 GT3 RS 4.0",
+      "year": 2012,
+      "votes": 29,
+      "samples": 731,
+      "basis": "exact"
+    },
+    "2357": {
+      "name": "Ford Focus RS",
+      "year": 2017,
+      "votes": 132,
+      "samples": 2726,
+      "basis": "exact"
+    },
+    "2363": {
+      "name": "Ford GT",
+      "year": 2017,
+      "votes": 44,
+      "samples": 1137,
+      "basis": "exact"
+    },
+    "2371": {
+      "name": "Ferrari FXX",
+      "year": 2005,
+      "votes": 9,
+      "samples": 207,
+      "basis": "exact"
+    },
+    "2372": {
+      "name": "Ford De Luxe Five-Window Coupe",
+      "year": 1932,
+      "votes": 64,
+      "samples": 1151,
+      "basis": "exact"
+    },
+    "2400": {
+      "name": "Ford Mustang Shelby GT350R",
+      "year": 2016,
+      "votes": 14,
+      "samples": 360,
+      "basis": "exact"
+    },
+    "2412": {
+      "name": "BMW Isetta 300 Export",
+      "year": 1957,
+      "votes": 43,
+      "samples": 766,
+      "basis": "exact"
+    },
+    "2416": {
+      "name": "Meyers Manx",
+      "year": 1971,
+      "votes": 8,
+      "samples": 164,
+      "basis": "exact"
+    },
+    "2420": {
+      "name": "Opel Manta 400",
+      "year": 1984,
+      "votes": 40,
+      "samples": 764,
+      "basis": "exact"
+    },
+    "2421": {
+      "name": "Cadillac CTS-V Sedan",
+      "year": 2016,
+      "votes": 8,
+      "samples": 247,
+      "basis": "exact"
+    },
+    "2422": {
+      "name": "HSV Limited Edition GEN-F GTS Maloo",
+      "year": 2014,
+      "votes": 7,
+      "samples": 171,
+      "basis": "exact"
+    },
+    "2430": {
+      "name": "Ariel Nomad",
+      "year": 2016,
+      "votes": 19,
+      "samples": 317,
+      "basis": "exact"
+    },
+    "2467": {
+      "name": "Ferrari 488 GTB",
+      "year": 2015,
+      "votes": 36,
+      "samples": 1133,
+      "basis": "exact"
+    },
+    "2468": {
+      "name": "Dodge Charger SRT Hellcat",
+      "year": 2015,
+      "votes": 6,
+      "samples": 276,
+      "basis": "exact"
+    },
+    "2469": {
+      "name": "Toyota Sports 800",
+      "year": 1965,
+      "votes": 43,
+      "samples": 996,
+      "basis": "exact"
+    },
+    "2470": {
+      "name": "Aston Martin Vulcan",
+      "year": 2016,
+      "votes": 30,
+      "samples": 879,
+      "basis": "exact"
+    },
+    "2471": {
+      "name": "Mercedes-AMG SL 63",
+      "year": 2021,
+      "votes": 7,
+      "samples": 179
+    },
+    "2472": {
+      "name": "McLaren 570S Coupé",
+      "year": 2015,
+      "votes": 35,
+      "samples": 1279,
+      "basis": "exact"
+    },
+    "2473": {
+      "name": "Audi R8 V10 plus",
+      "year": 2016,
+      "votes": 18,
+      "samples": 648,
+      "basis": "exact"
+    },
+    "2486": {
+      "name": "Radical RXC Turbo",
+      "year": 2015,
+      "votes": 14,
+      "samples": 329,
+      "basis": "exact"
+    },
+    "2489": {
+      "name": "Abarth 695 Biposto",
+      "year": 2016,
+      "votes": 68,
+      "samples": 1395,
+      "basis": "exact"
+    },
+    "2494": {
+      "name": "Land Rover Range Rover Sport SVR",
+      "year": 2015,
+      "votes": 2,
+      "samples": 41,
+      "basis": "exact"
+    },
+    "2507": {
+      "name": "Chevrolet 150 Utility Sedan",
+      "year": 1955,
+      "votes": 22,
+      "samples": 474,
+      "basis": "exact"
+    },
+    "2512": {
+      "name": "Nissan Be-1",
+      "year": 1987,
+      "votes": 34,
+      "samples": 735,
+      "basis": "exact"
+    },
+    "2515": {
+      "name": "Penhall The Cholla",
+      "year": 2011,
+      "votes": 3,
+      "samples": 50,
+      "basis": "exact"
+    },
+    "2517": {
+      "name": "Ford #11 Rockstar F-150 Trophy Truck",
+      "year": 2014,
+      "votes": 1,
+      "samples": 7
+    },
+    "2526": {
+      "name": "Koenigsegg Regera",
+      "year": 2016,
+      "votes": 1,
+      "samples": 20,
+      "basis": "exact"
+    },
+    "2527": {
+      "name": "Aston Martin DB11",
+      "year": 2017,
+      "votes": 29,
+      "samples": 1153,
+      "basis": "exact"
+    },
+    "2534": {
+      "name": "Porsche 968 Turbo S",
+      "year": 1993,
+      "votes": 38,
+      "samples": 721,
+      "basis": "exact"
+    },
+    "2535": {
+      "name": "Porsche 928 GTS",
+      "year": 1993,
+      "votes": 14,
+      "samples": 306,
+      "basis": "exact"
+    },
+    "2542": {
+      "name": "Alfa Romeo Giulia Quadrifoglio",
+      "year": 2017,
+      "votes": 201,
+      "samples": 7358,
+      "basis": "exact"
+    },
+    "2544": {
+      "name": "Dodge Viper ACR",
+      "year": 2016,
+      "votes": 41,
+      "samples": 1032,
+      "basis": "exact"
+    },
+    "2549": {
+      "name": "Porsche #3 917 LH",
+      "year": 1970,
+      "votes": 8,
+      "samples": 136,
+      "basis": "exact"
+    },
+    "2551": {
+      "name": "Ford FPV Limited Edition Pursuit Ute",
+      "year": 2014,
+      "votes": 5,
+      "samples": 112,
+      "basis": "exact"
+    },
+    "2552": {
+      "name": "Alumicraft Class 10 Race Car",
+      "year": 2015,
+      "basis": "exact",
+      "votes": 12,
+      "samples": 60
+    },
+    "2563": {
+      "name": "Reliant Supervan III",
+      "year": 1972,
+      "votes": 68,
+      "samples": 1072,
+      "basis": "exact"
+    },
+    "2566": {
+      "name": "Toyota FJ40",
+      "year": 1979,
+      "votes": 5,
+      "samples": 106,
+      "basis": "exact"
+    },
+    "2568": {
+      "name": "Volkswagen Class 5/1600 Baja Bug",
+      "year": 1969,
+      "votes": 1,
+      "samples": 50,
+      "basis": "exact"
+    },
+    "2569": {
+      "name": "Ultima Evolution Coupe 1020",
+      "year": 2015,
+      "votes": 177,
+      "samples": 3320,
+      "basis": "exact"
+    },
+    "2574": {
+      "name": "AMG Transport Dynamics M12S Warthog CST",
+      "year": 2554,
+      "votes": 15,
+      "samples": 223,
+      "basis": "exact"
+    },
+    "2577": {
+      "name": "Ferrari F12tdf",
+      "year": 2015,
+      "votes": 230,
+      "samples": 6850,
+      "basis": "exact"
+    },
+    "2613": {
+      "name": "GMC Jimmy",
+      "year": 1970,
+      "basis": "exact",
+      "votes": 58,
+      "samples": 290
+    },
+    "2614": {
+      "name": "Ford Mustang GT 2+2 Fastback",
+      "year": 1968,
+      "votes": 68,
+      "samples": 1186,
+      "basis": "exact"
+    },
+    "2616": {
+      "name": "Lamborghini Centenario LP 770-4",
+      "year": 2016,
+      "votes": 45,
+      "samples": 1214,
+      "basis": "exact"
+    },
+    "2618": {
+      "name": "Nissan GT-R (R35)",
+      "year": 2017,
+      "votes": 8,
+      "samples": 372,
+      "basis": "exact"
+    },
+    "2625": {
+      "name": "Bentley Bentayga",
+      "year": 2016,
+      "votes": 4,
+      "samples": 67,
+      "basis": "exact"
+    },
+    "2628": {
+      "name": "BMW M4 GTS",
+      "year": 2016,
+      "votes": 22,
+      "samples": 549,
+      "basis": "exact"
+    },
+    "2636": {
+      "name": "Toyota #1 T100 Baja Truck",
+      "year": 1993,
+      "votes": 3,
+      "samples": 40,
+      "basis": "exact"
+    },
+    "2647": {
+      "name": "Pagani Huayra BC Coupe",
+      "year": 2016,
+      "votes": 20,
+      "samples": 321,
+      "basis": "exact"
+    },
+    "2649": {
+      "name": "Ford Crown Victoria Police Interceptor",
+      "year": 2010,
+      "votes": 26,
+      "samples": 677,
+      "basis": "exact"
+    },
+    "2652": {
+      "name": "Mitsubishi Montero Evolution",
+      "year": 1997,
+      "votes": 16,
+      "samples": 372,
+      "basis": "exact"
+    },
+    "2654": {
+      "name": "Mercedes-AMG GT R",
+      "year": 2017,
+      "basis": "exact",
+      "votes": 206,
+      "samples": 1035
+    },
+    "2659": {
+      "name": "Nissan Silvia K's Aero",
+      "year": 1998,
+      "votes": 40,
+      "samples": 760,
+      "basis": "exact"
+    },
+    "2663": {
+      "name": "RJ Anderson #37 Polaris RZR Pro 2 Truck",
+      "year": 2016,
+      "basis": "exact",
+      "votes": 1,
+      "samples": 5
+    },
+    "2738": {
+      "name": "Nissan NISMO GT-R LM",
+      "year": 1995,
+      "votes": 36,
+      "samples": 738,
+      "basis": "exact"
+    },
+    "2739": {
+      "name": "Chevrolet Camaro ZL1",
+      "year": 2017,
+      "votes": 130,
+      "samples": 3463,
+      "basis": "exact"
+    },
+    "2740": {
+      "name": "Abarth 124 Spider",
+      "year": 2017,
+      "votes": 154,
+      "samples": 2964,
+      "basis": "exact"
+    },
+    "2742": {
+      "name": "Jeep Trailcat",
+      "year": 2016,
+      "votes": 8,
+      "samples": 121,
+      "basis": "exact"
+    },
+    "2743": {
+      "name": "Toyota Land Cruiser Arctic Trucks AT37",
+      "year": 2016,
+      "votes": 5,
+      "samples": 90,
+      "basis": "exact"
+    },
+    "2745": {
+      "name": "Honda Ridgeline Baja Trophy Truck",
+      "year": 2015,
+      "votes": 2,
+      "samples": 56,
+      "basis": "exact"
+    },
+    "2755": {
+      "name": "Porsche 911 GT2 RS",
+      "year": 2018,
+      "votes": 19,
+      "samples": 393,
+      "basis": "exact"
+    },
+    "2773": {
+      "name": "Porsche Cayenne Turbo",
+      "year": 2018,
+      "votes": 6,
+      "samples": 169,
+      "basis": "exact"
+    },
+    "2792": {
+      "name": "Ford #2 GT40 Mk II",
+      "year": 1966,
+      "votes": 9,
+      "samples": 367,
+      "basis": "exact"
+    },
+    "2793": {
+      "name": "Ferrari #24 Ferrari Spa 330 P4",
+      "year": 1967,
+      "votes": 24,
+      "samples": 678,
+      "basis": "exact"
+    },
+    "2794": {
+      "name": "Porsche 911 Turbo S Leichtbau",
+      "year": 1993,
+      "votes": 31,
+      "samples": 1261,
+      "basis": "exact"
+    },
+    "2801": {
+      "name": "Nissan #11 Tomica Skyline Turbo Super Silhouette",
+      "year": 1983,
+      "votes": 10,
+      "samples": 201,
+      "basis": "exact"
+    },
+    "2822": {
+      "name": "Nissan Safari Turbo",
+      "year": 1985,
+      "votes": 11,
+      "samples": 244,
+      "basis": "exact"
+    },
+    "2825": {
+      "name": "Lotus Elise GT1",
+      "year": 1997,
+      "votes": 15,
+      "samples": 613,
+      "basis": "exact"
+    },
+    "2841": {
+      "name": "Jeep Grand Cherokee Trackhawk",
+      "year": 2018,
+      "votes": 2,
+      "samples": 61,
+      "basis": "exact"
+    },
+    "2866": {
+      "name": "Exomotive Exocet Sport V8 XP-5",
+      "year": 2018,
+      "votes": 37,
+      "samples": 1123,
+      "basis": "exact"
+    },
+    "2870": {
+      "name": "Honda Civic Type R",
+      "year": 2018,
+      "votes": 15,
+      "samples": 405,
+      "basis": "exact"
+    },
+    "2871": {
+      "name": "Can-Am Maverick X RS Turbo R",
+      "year": 2018,
+      "votes": 9,
+      "samples": 162,
+      "basis": "exact"
+    },
+    "2872": {
+      "name": "Hyundai Veloster N",
+      "year": 2019,
+      "basis": "exact",
+      "votes": 28,
+      "samples": 140
+    },
+    "2909": {
+      "name": "Dodge Challenger SRT Demon",
+      "year": 2018,
+      "votes": 29,
+      "samples": 899,
+      "basis": "exact"
+    },
+    "2910": {
+      "name": "Koenigsegg Agera RS",
+      "year": 2017,
+      "votes": 22,
+      "samples": 397,
+      "basis": "exact"
+    },
+    "2935": {
+      "name": "Funco Motorsports F9",
+      "year": 2018,
+      "votes": 3,
+      "samples": 40,
+      "basis": "exact"
+    },
+    "2937": {
+      "name": "Ford #14 Rahal Letterman Lanigan Racing Fiesta",
+      "year": 2017,
+      "votes": 30,
+      "samples": 511,
+      "basis": "exact"
+    },
+    "2968": {
+      "name": "Aston Martin Valkyrie",
+      "year": 2023,
+      "votes": 25,
+      "samples": 493,
+      "basis": "exact"
+    },
+    "2974": {
+      "name": "Ferrari 812 Superfast",
+      "year": 2017,
+      "votes": 189,
+      "samples": 5211,
+      "basis": "exact"
+    },
+    "2986": {
+      "name": "Mercedes-Benz Unimog U5023",
+      "year": 2014,
+      "votes": 22,
+      "samples": 392,
+      "basis": "exact"
+    },
+    "2987": {
+      "name": "Peel P50",
+      "year": 1962,
+      "votes": 208,
+      "samples": 3789,
+      "basis": "exact"
+    },
+    "2992": {
+      "name": "Jaguar Lightweight E-Type",
+      "year": 1964,
+      "basis": "exact",
+      "votes": 8,
+      "samples": 40
+    },
+    "2993": {
+      "name": "TVR Griffith",
+      "year": 2018,
+      "votes": 7,
+      "samples": 115,
+      "basis": "exact"
+    },
+    "2995": {
+      "name": "Volkswagen Golf GTI",
+      "year": 1983,
+      "votes": 80,
+      "samples": 2071,
+      "basis": "exact"
+    },
+    "2996": {
+      "name": "Formula Drift #13 Ford Mustang",
+      "year": 2015,
+      "votes": 1,
+      "samples": 13,
+      "basis": "exact"
+    },
+    "3000": {
+      "name": "Formula Drift #777 Nissan 240SX",
+      "year": 1997,
+      "votes": 1,
+      "samples": 21,
+      "basis": "exact"
+    },
+    "3007": {
+      "name": "Volkswagen #34 Andretti Rally Cross Beetle",
+      "year": 2017,
+      "basis": "exact",
+      "votes": 5,
+      "samples": 25
+    },
+    "3031": {
+      "name": "Porsche #185 959 Prodrive Rally Raid",
+      "year": 1985,
+      "votes": 1,
+      "samples": 34,
+      "basis": "exact"
+    },
+    "3035": {
+      "name": "KTM X-Bow GT4",
+      "year": 2018,
+      "votes": 17,
+      "samples": 387,
+      "basis": "exact"
+    },
+    "3051": {
+      "name": "Ford M-Sport Fiesta RS",
+      "year": 2017,
+      "votes": 1,
+      "samples": 7
+    },
+    "3055": {
+      "name": "Jaguar C-X75",
+      "year": 2010,
+      "votes": 1,
+      "samples": 26,
+      "basis": "exact"
+    },
+    "3062": {
+      "name": "Ferrari 512 TR",
+      "year": 1992,
+      "basis": "exact",
+      "votes": 14,
+      "samples": 75
+    },
+    "3063": {
+      "name": "Mercedes-Benz X-Class",
+      "year": 2018,
+      "votes": 6,
+      "samples": 185,
+      "basis": "exact"
+    },
+    "3064": {
+      "name": "Mercedes-AMG GT 4-Door Coupé",
+      "year": 2018,
+      "votes": 7,
+      "samples": 42,
+      "basis": "exact"
+    },
+    "3072": {
+      "name": "Porsche 911 GT3 RS",
+      "year": 2019,
+      "votes": 25,
+      "samples": 493,
+      "basis": "exact"
+    },
+    "3082": {
+      "name": "Maserati MC12 Versione Corsa",
+      "year": 2008,
+      "votes": 16,
+      "samples": 302,
+      "basis": "exact"
+    },
+    "3087": {
+      "name": "McLaren 650S Spider",
+      "year": 2014,
+      "votes": 16,
+      "samples": 477,
+      "basis": "exact"
+    },
+    "3088": {
+      "name": "DeBerti Chevrolet Silverado 1500 Drift Truck",
+      "year": 2018,
+      "basis": "exact",
+      "votes": 1,
+      "samples": 5
+    },
+    "3091": {
+      "name": "Aston Martin Vantage",
+      "year": 2019,
+      "votes": 17,
+      "samples": 573,
+      "basis": "exact"
+    },
+    "3107": {
+      "name": "Mercedes-Benz G 63 AMG 6x6",
+      "year": 2014,
+      "votes": 3,
+      "samples": 48,
+      "basis": "exact"
+    },
+    "3108": {
+      "name": "Ford Mustang RTR Spec 5",
+      "year": 2018,
+      "basis": "exact",
+      "votes": 53,
+      "samples": 270
+    },
+    "3110": {
+      "name": "DeBerti Jeep Wrangler Unlimited",
+      "year": 2013,
+      "votes": 1,
+      "samples": 20,
+      "basis": "exact"
+    },
+    "3117": {
+      "name": "Porsche 718 Cayman GTS",
+      "year": 2018,
+      "votes": 42,
+      "samples": 1453,
+      "basis": "exact"
+    },
+    "3118": {
+      "name": "Chevrolet Corvette",
+      "year": 1953,
+      "votes": 7,
+      "samples": 350
+    },
+    "3120": {
+      "name": "Lamborghini Urus",
+      "year": 2019,
+      "votes": 29,
+      "samples": 560,
+      "basis": "exact"
+    },
+    "3123": {
+      "name": "Porsche 911 Carrera S",
+      "year": 2019,
+      "basis": "exact",
+      "votes": 17,
+      "samples": 85
+    },
+    "3128": {
+      "name": "Ford #25 'Brocky' Ultra4 Bronco RTR",
+      "year": 2017,
+      "votes": 1,
+      "samples": 27,
+      "basis": "exact"
+    },
+    "3129": {
+      "name": "Renault Mégane R26.R",
+      "year": 2008,
+      "votes": 39,
+      "samples": 846,
+      "basis": "exact"
+    },
+    "3132": {
+      "name": "MINI X-raid John Cooper Works Buggy",
+      "year": 2018,
+      "votes": 3,
+      "samples": 65,
+      "basis": "exact"
+    },
+    "3134": {
+      "name": "Renault Megane R.S.",
+      "year": 2018,
+      "votes": 28,
+      "samples": 593,
+      "basis": "exact"
+    },
+    "3141": {
+      "name": "Apollo Intensa Emozione",
+      "year": 2019,
+      "basis": "exact",
+      "votes": 51,
+      "samples": 265
+    },
+    "3149": {
+      "name": "Chevrolet Camaro ZL1 1LE",
+      "year": 2018,
+      "basis": "exact",
+      "votes": 59,
+      "samples": 295
+    },
+    "3153": {
+      "name": "McLaren 600LT Coupé",
+      "year": 2018,
+      "votes": 7,
+      "samples": 176,
+      "basis": "exact"
+    },
+    "3156": {
+      "name": "McLaren Speedtail",
+      "year": 2019,
+      "votes": 1,
+      "samples": 8
+    },
+    "3170": {
+      "name": "Ford Supervan 3",
+      "year": 1994,
+      "votes": 10,
+      "samples": 209,
+      "basis": "exact"
+    },
+    "3173": {
+      "name": "BMW Z4 Roadster",
+      "year": 2019,
+      "votes": 18,
+      "samples": 395,
+      "basis": "exact"
+    },
+    "3176": {
+      "name": "Mercedes-Benz AMG Hammer Coupe",
+      "year": 1987,
+      "votes": 53,
+      "samples": 1210,
+      "basis": "exact"
+    },
+    "3180": {
+      "name": "Peugeot 205 Rallye",
+      "year": 1991,
+      "votes": 16,
+      "samples": 325,
+      "basis": "exact"
+    },
+    "3184": {
+      "name": "Ford #5 Escort RS1800 MkII",
+      "year": 1977,
+      "votes": 14,
+      "samples": 265,
+      "basis": "exact"
+    },
+    "3185": {
+      "name": "Aston Martin DBS Superleggera",
+      "year": 2019,
+      "votes": 37,
+      "samples": 921,
+      "basis": "exact"
+    },
+    "3187": {
+      "name": "Porsche Macan LPR Rally Raid",
+      "year": 2018,
+      "votes": 4,
+      "samples": 65,
+      "basis": "exact"
+    },
+    "3189": {
+      "name": "Hennessey Ford F-150 VelociRaptor 6X6",
+      "year": 2019,
+      "votes": 5,
+      "samples": 75,
+      "basis": "exact"
+    },
+    "3190": {
+      "name": "Ford F-150 SVT Lightning",
+      "year": 2003,
+      "basis": "exact",
+      "votes": 11,
+      "samples": 55
+    },
+    "3198": {
+      "name": "De Tomaso Pantera GT5",
+      "year": 1984,
+      "votes": 195,
+      "samples": 4714,
+      "basis": "exact"
+    },
+    "3211": {
+      "name": "Aston Martin Vulcan AMR Pro",
+      "year": 2017,
+      "votes": 19,
+      "samples": 371,
+      "basis": "exact"
+    },
+    "3212": {
+      "name": "Zenvo TSR-S",
+      "year": 2019,
+      "votes": 36,
+      "samples": 668,
+      "basis": "exact"
+    },
+    "3214": {
+      "name": "Porsche #70 Porsche Motorsport 935",
+      "year": 2019,
+      "votes": 8,
+      "samples": 191,
+      "basis": "exact"
+    },
+    "3225": {
+      "name": "Ferrari Portofino",
+      "year": 2018,
+      "votes": 64,
+      "samples": 1533,
+      "basis": "exact"
+    },
+    "3226": {
+      "name": "Ferrari J50",
+      "year": 2017,
+      "votes": 5,
+      "samples": 144,
+      "basis": "exact"
+    },
+    "3227": {
+      "name": "Ferrari 488 Pista",
+      "year": 2019,
+      "votes": 19,
+      "samples": 439,
+      "basis": "exact"
+    },
+    "3228": {
+      "name": "Ford Racing Puma",
+      "year": 1999,
+      "votes": 22,
+      "samples": 493,
+      "basis": "exact"
+    },
+    "3235": {
+      "name": "Volkswagen Pickup LX",
+      "year": 1982,
+      "votes": 15,
+      "samples": 359,
+      "basis": "exact"
+    },
+    "3241": {
+      "name": "Subaru WRX STI ARX Supercar",
+      "year": 2018,
+      "votes": 26,
+      "samples": 446,
+      "basis": "exact"
+    },
+    "3249": {
+      "name": "Formula Drift #117 599 GTB Fiorano",
+      "year": 2007,
+      "votes": 2,
+      "samples": 33,
+      "basis": "exact"
+    },
+    "3250": {
+      "name": "Mercedes-AMG E 63 S",
+      "year": 2018,
+      "votes": 28,
+      "samples": 752,
+      "basis": "exact"
+    },
+    "3255": {
+      "name": "Jeep JT",
+      "year": 2020,
+      "votes": 9,
+      "samples": 162,
+      "basis": "exact"
+    },
+    "3257": {
+      "name": "Nissan Pulsar GTI-R",
+      "year": 1990,
+      "votes": 40,
+      "samples": 843,
+      "basis": "exact"
+    },
+    "3277": {
+      "name": "Ford Mustang Shelby GT500",
+      "year": 2020,
+      "votes": 4,
+      "samples": 78,
+      "basis": "exact"
+    },
+    "3282": {
+      "name": "Porsche #203 Porsche AG 961",
+      "year": 1987,
+      "votes": 7,
+      "samples": 156,
+      "basis": "exact"
+    },
+    "3287": {
+      "name": "Jaguar Sport XJR-15",
+      "year": 1991,
+      "votes": 18,
+      "samples": 332,
+      "basis": "exact"
+    },
+    "3288": {
+      "name": "Schuppan 962CR",
+      "year": 1993,
+      "votes": 11,
+      "samples": 345,
+      "basis": "exact"
+    },
+    "3289": {
+      "name": "Lamborghini Aventador SVJ",
+      "year": 2018,
+      "votes": 22,
+      "samples": 611,
+      "basis": "exact"
+    },
+    "3293": {
+      "name": "Jaguar XJ220S TWR",
+      "year": 1993,
+      "votes": 9,
+      "samples": 225,
+      "basis": "exact"
+    },
+    "3304": {
+      "name": "Alfa Romeo SE 048SP",
+      "year": 1990,
+      "votes": 430,
+      "samples": 10769,
+      "basis": "exact"
+    },
+    "3307": {
+      "name": "Nissan 370Z Nismo",
+      "year": 2019,
+      "basis": "exact",
+      "votes": 60,
+      "samples": 305
+    },
+    "3311": {
+      "name": "Ferrari FXX K",
+      "year": 2014,
+      "votes": 55,
+      "samples": 1179,
+      "basis": "exact"
+    },
+    "3312": {
+      "name": "Ferrari Monza SP2",
+      "year": 2019,
+      "votes": 41,
+      "samples": 1088,
+      "basis": "exact"
+    },
+    "3315": {
+      "name": "Koenigsegg Jesko",
+      "year": 2020,
+      "votes": 23,
+      "samples": 415,
+      "basis": "exact"
+    },
+    "3318": {
+      "name": "Audi RS 4 Avant",
+      "year": 2018,
+      "votes": 39,
+      "samples": 843,
+      "basis": "exact"
+    },
+    "3325": {
+      "name": "Aston Martin DB7 GT",
+      "year": 2003,
+      "votes": 149,
+      "samples": 2901,
+      "basis": "exact"
+    },
+    "3359": {
+      "name": "Audi RS e-tron GT",
+      "year": 2021,
+      "votes": 41,
+      "samples": 850,
+      "basis": "exact"
+    },
+    "3363": {
+      "name": "Nissan #23 Pennzoil NISMO Skyline GT-R",
+      "year": 1998,
+      "votes": 16,
+      "samples": 336,
+      "basis": "exact"
+    },
+    "3364": {
+      "name": "Aston Martin Valhalla Concept Car",
+      "year": 2019,
+      "votes": 18,
+      "samples": 364,
+      "basis": "exact"
+    },
+    "3367": {
+      "name": "Ferrari F8 Tributo",
+      "year": 2019,
+      "votes": 5,
+      "samples": 150,
+      "basis": "exact"
+    },
+    "3369": {
+      "name": "Chevrolet Corvette Stingray Coupe",
+      "year": 2020,
+      "votes": 277,
+      "samples": 19457,
+      "basis": "exact"
+    },
+    "3371": {
+      "name": "Lamborghini Huracán EVO",
+      "year": 2020,
+      "votes": 25,
+      "samples": 372,
+      "basis": "exact"
+    },
+    "3373": {
+      "name": "Toyota 4Runner TRD Pro",
+      "year": 2019,
+      "votes": 4,
+      "samples": 102,
+      "basis": "exact"
+    },
+    "3374": {
+      "name": "Toyota Tacoma TRD Pro",
+      "year": 2019,
+      "basis": "exact",
+      "votes": 23,
+      "samples": 115
+    },
+    "3395": {
+      "name": "Renault 8 Gordini",
+      "year": 1967,
+      "basis": "exact",
+      "votes": 10,
+      "samples": 50
+    },
+    "3400": {
+      "name": "Formula Drift #99 Mazda RX-8",
+      "year": 2009,
+      "votes": 2,
+      "samples": 27,
+      "basis": "exact"
+    },
+    "3402": {
+      "name": "Toyota GR Supra",
+      "year": 2020,
+      "votes": 126,
+      "samples": 3961,
+      "basis": "exact"
+    },
+    "3404": {
+      "name": "Ford #2069 Ford Performance Bronco R",
+      "year": 2020,
+      "votes": 1,
+      "samples": 21,
+      "basis": "exact"
+    },
+    "3411": {
+      "name": "Formula Drift #34 Toyota Supra MkIV",
+      "year": 1995,
+      "votes": 1,
+      "samples": 14,
+      "basis": "exact"
+    },
+    "3412": {
+      "name": "Subaru STI S209",
+      "year": 2019,
+      "votes": 31,
+      "samples": 697,
+      "basis": "exact"
+    },
+    "3413": {
+      "name": "Volkswagen Golf R",
+      "year": 2021,
+      "votes": 109,
+      "samples": 2498,
+      "basis": "exact"
+    },
+    "3414": {
+      "name": "Land Rover Defender 110 X",
+      "year": 2020,
+      "votes": 3,
+      "samples": 54,
+      "basis": "exact"
+    },
+    "3434": {
+      "name": "BMW M2 Competition Coupé",
+      "year": 2020,
+      "votes": 115,
+      "samples": 3750,
+      "basis": "exact"
+    },
+    "3439": {
+      "name": "DeBerti Ford Super Duty F-250 Lariat 'Transformer'",
+      "year": 2019,
+      "votes": 5,
+      "samples": 80,
+      "basis": "exact"
+    },
+    "3441": {
+      "name": "DeBerti Toyota Tacoma TRD ‘The Performance Truck’",
+      "year": 2019,
+      "basis": "exact",
+      "votes": 1,
+      "samples": 5
+    },
+    "3445": {
+      "name": "Porsche Taycan Turbo S",
+      "year": 2020,
+      "votes": 6,
+      "samples": 116,
+      "basis": "exact"
+    },
+    "3449": {
+      "name": "Lotus Evija",
+      "year": 2020,
+      "votes": 4,
+      "samples": 80,
+      "basis": "exact"
+    },
+    "3454": {
+      "name": "Audi RS 3 Sedan",
+      "year": 2020,
+      "votes": 21,
+      "samples": 482,
+      "basis": "exact"
+    },
+    "3476": {
+      "name": "Ford Super Duty F-450 DRW PLATINUM",
+      "year": 2020,
+      "basis": "exact",
+      "votes": 22,
+      "samples": 110
+    },
+    "3477": {
+      "name": "Chevrolet Silverado LT Trail Boss",
+      "year": 2020,
+      "votes": 11,
+      "samples": 182,
+      "basis": "exact"
+    },
+    "3482": {
+      "name": "McLaren 765LT Coupé",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 9,
+      "samples": 45
+    },
+    "3498": {
+      "name": "Saleen S7 LM",
+      "year": 2017,
+      "votes": 11,
+      "samples": 255,
+      "basis": "exact"
+    },
+    "3518": {
+      "name": "BMW M8 Competition Coupé",
+      "year": 2020,
+      "votes": 39,
+      "samples": 736,
+      "basis": "exact"
+    },
+    "3520": {
+      "name": "Lexus LC 500",
+      "year": 2021,
+      "votes": 55,
+      "samples": 1057,
+      "basis": "exact"
+    },
+    "3533": {
+      "name": "Volkswagen Golf R",
+      "year": 2022,
+      "votes": 46,
+      "samples": 923,
+      "basis": "exact"
+    },
+    "3534": {
+      "name": "MINI John Cooper Works GP",
+      "year": 2021,
+      "votes": 37,
+      "samples": 776,
+      "basis": "exact"
+    },
+    "3539": {
+      "name": "SIERRA Cars #23 Yokohama ALPHA",
+      "year": 2020,
+      "votes": 10,
+      "samples": 262,
+      "basis": "exact"
+    },
+    "3540": {
+      "name": "SIERRA Cars RX3",
+      "year": 2021,
+      "votes": 2,
+      "samples": 27,
+      "basis": "exact"
+    },
+    "3543": {
+      "name": "Pagani Huayra R",
+      "year": 2021,
+      "votes": 135,
+      "samples": 2440,
+      "basis": "exact"
+    },
+    "3548": {
+      "name": "Wuling Sunshine S",
+      "year": 2013,
+      "votes": 39,
+      "samples": 723,
+      "basis": "exact"
+    },
+    "3549": {
+      "name": "Alumicraft #122 Class 1 Buggy",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 10,
+      "samples": 50
+    },
+    "3554": {
+      "name": "Mitsubishi #1 Sierra Sierra Enterprises Lancer Evolution Time Attack",
+      "year": 2005,
+      "votes": 107,
+      "samples": 2273,
+      "basis": "exact"
+    },
+    "3580": {
+      "name": "Aston Martin DBX",
+      "year": 2021,
+      "votes": 14,
+      "samples": 239,
+      "basis": "exact"
+    },
+    "3583": {
+      "name": "Audi RS 6 Avant",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 31,
+      "samples": 155
+    },
+    "3584": {
+      "name": "Audi RS 7 Sportback",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 34,
+      "samples": 170
+    },
+    "3590": {
+      "name": "Chevrolet K-10 Custom",
+      "year": 1972,
+      "votes": 13,
+      "samples": 280,
+      "basis": "exact"
+    },
+    "3594": {
+      "name": "Ferrari Roma",
+      "year": 2020,
+      "votes": 85,
+      "samples": 2513,
+      "basis": "exact"
+    },
+    "3595": {
+      "name": "Ferrari SF90 Stradale",
+      "year": 2020,
+      "votes": 20,
+      "samples": 364,
+      "basis": "exact"
+    },
+    "3597": {
+      "name": "Ford F-150 XLT Lariat",
+      "year": 1986,
+      "votes": 15,
+      "samples": 333,
+      "basis": "exact"
+    },
+    "3599": {
+      "name": "Gordon Murray Automotive T.50",
+      "year": 2020,
+      "basis": "exact",
+      "votes": 7,
+      "samples": 35
+    },
+    "3600": {
+      "name": "Hennessey Venom F5",
+      "year": 2021,
+      "votes": 30,
+      "samples": 498,
+      "basis": "exact"
+    },
+    "3603": {
+      "name": "Casey Currie Motorsports #4402 Ultra 4 'Trophy Jeep'",
+      "year": 2019,
+      "votes": 1,
+      "samples": 13,
+      "basis": "exact"
+    },
+    "3604": {
+      "name": "Jimco #179 Hammerhead Class 1",
+      "year": 2020,
+      "votes": 1,
+      "samples": 13,
+      "basis": "exact"
+    },
+    "3605": {
+      "name": "Jimco #240 Fastball Racing Class 6100 Spec Trophy Truck",
+      "year": 2019,
+      "votes": 2,
+      "samples": 14
+    },
+    "3606": {
+      "name": "Lamborghini Essenza SCV12",
+      "year": 2020,
+      "votes": 260,
+      "samples": 4402,
+      "basis": "exact"
+    },
+    "3608": {
+      "name": "Lamborghini Sián Roadster",
+      "year": 2020,
+      "votes": 11,
+      "samples": 213,
+      "basis": "exact"
+    },
+    "3611": {
+      "name": "Maserati MC20",
+      "year": 2022,
+      "votes": 18,
+      "samples": 514,
+      "basis": "exact"
+    },
+    "3616": {
+      "name": "Mercedes-AMG GT Black Series",
+      "year": 2020,
+      "votes": 26,
+      "samples": 598,
+      "basis": "exact"
+    },
+    "3617": {
+      "name": "Mercedes-AMG SL 63",
+      "year": 2021,
+      "votes": 11,
+      "samples": 215,
+      "basis": "exact"
+    },
+    "3622": {
+      "name": "Nissan GT-R NISMO (R35)",
+      "year": 2020,
+      "votes": 47,
+      "samples": 1162,
+      "basis": "exact"
+    },
+    "3625": {
+      "name": "Rimac Nevera",
+      "year": 2021,
+      "votes": 6,
+      "samples": 93,
+      "basis": "exact"
+    },
+    "3629": {
+      "name": "Toyota GR Yaris",
+      "year": 2021,
+      "votes": 104,
+      "samples": 1977,
+      "basis": "exact"
+    },
+    "3631": {
+      "name": "Aston Martin Valkyrie AMR Pro",
+      "year": 2022,
+      "votes": 243,
+      "samples": 6150,
+      "basis": "exact"
+    },
+    "3645": {
+      "name": "BMW M4 Competition Coupé",
+      "year": 2021,
+      "votes": 30,
+      "samples": 773,
+      "basis": "exact"
+    },
+    "3650": {
+      "name": "Mercedes-AMG Mercedes-AMG ONE",
+      "year": 2021,
+      "votes": 66,
+      "samples": 2083,
+      "basis": "exact"
+    },
+    "3655": {
+      "name": "McLaren 620R",
+      "year": 2021,
+      "votes": 56,
+      "samples": 1844,
+      "basis": "exact"
+    },
+    "3657": {
+      "name": "Rivian R1T",
+      "year": 2022,
+      "votes": 1,
+      "samples": 20,
+      "basis": "exact"
+    },
+    "3661": {
+      "name": "Lotus Exige Cup 430",
+      "year": 2018,
+      "votes": 52,
+      "samples": 1418,
+      "basis": "exact"
+    },
+    "3662": {
+      "name": "RJ Anderson #37 Polaris RZR Pro 4 Truck",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 2,
+      "samples": 10
+    },
+    "3665": {
+      "name": "SIERRA Cars 700R",
+      "year": 2021,
+      "votes": 170,
+      "samples": 2774,
+      "basis": "exact"
+    },
+    "3667": {
+      "name": "Porsche 911 GT3",
+      "year": 2021,
+      "votes": 35,
+      "samples": 1007,
+      "basis": "exact"
+    },
+    "3668": {
+      "name": "McLaren Artura",
+      "year": 2023,
+      "votes": 5,
+      "samples": 172,
+      "basis": "exact"
+    },
+    "3670": {
+      "name": "Ford #4 Ford Focus RS",
+      "year": 2001,
+      "basis": "exact",
+      "votes": 8,
+      "samples": 40
+    },
+    "3672": {
+      "name": "Lamborghini Huracán STO",
+      "year": 2020,
+      "votes": 80,
+      "samples": 3347,
+      "basis": "exact"
+    },
+    "3678": {
+      "name": "Hyundai i30 N",
+      "year": 2020,
+      "votes": 9,
+      "samples": 252,
+      "basis": "exact"
+    },
+    "3686": {
+      "name": "Polaris RZR Pro XP Factory Racing Limited Edition",
+      "year": 2021,
+      "votes": 1,
+      "samples": 14,
+      "basis": "exact"
+    },
+    "3687": {
+      "name": "Polaris RZR Pro XP Ultimate",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 14,
+      "samples": 70
+    },
+    "3692": {
+      "name": "Ford F-150 Lightning",
+      "year": 2022,
+      "votes": 5,
+      "samples": 88,
+      "basis": "exact"
+    },
+    "3693": {
+      "name": "Alumicraft #6165 Trick Truck",
+      "year": 2022,
+      "votes": 3,
+      "samples": 77,
+      "basis": "exact"
+    },
+    "3698": {
+      "name": "Porsche Mission R",
+      "year": 2021,
+      "votes": 5,
+      "samples": 83,
+      "basis": "exact"
+    },
+    "3700": {
+      "name": "McLaren Sabre",
+      "year": 2021,
+      "votes": 51,
+      "samples": 1177,
+      "basis": "exact"
+    },
+    "3716": {
+      "name": "Lotus Emira",
+      "year": 2023,
+      "votes": 57,
+      "samples": 2192,
+      "basis": "exact"
+    },
+    "3719": {
+      "name": "Cadillac CT4-V Blackwing",
+      "year": 2022,
+      "votes": 2,
+      "samples": 188,
+      "basis": "exact"
+    },
+    "3720": {
+      "name": "Cadillac CT5-V Blackwing",
+      "year": 2022,
+      "votes": 5,
+      "samples": 130,
+      "basis": "exact"
+    },
+    "3722": {
+      "name": "GMC HUMMER EV Pickup",
+      "year": 2022,
+      "votes": 1,
+      "samples": 14,
+      "basis": "exact"
+    },
+    "3724": {
+      "name": "Ferrari 296 GTB",
+      "year": 2022,
+      "votes": 7,
+      "samples": 242,
+      "basis": "exact"
+    },
+    "3726": {
+      "name": "Acura Integra A-Spec",
+      "year": 2023,
+      "votes": 91,
+      "samples": 1913,
+      "basis": "exact"
+    },
+    "3728": {
+      "name": "Bentley Continental GT Convertible",
+      "year": 2021,
+      "basis": "exact",
+      "votes": 28,
+      "samples": 140
+    },
+    "3735": {
+      "name": "Subaru BRZ",
+      "year": 2022,
+      "votes": 34,
+      "samples": 972,
+      "basis": "exact"
+    },
+    "3736": {
+      "name": "Ford Bronco Raptor",
+      "year": 2022,
+      "votes": 12,
+      "samples": 205,
+      "basis": "exact"
+    },
+    "3737": {
+      "name": "BMW iX xDrive50",
+      "year": 2022,
+      "votes": 12,
+      "samples": 229,
+      "basis": "exact"
+    },
+    "3745": {
+      "name": "Audi R8 V10 performance",
+      "year": 2020,
+      "votes": 30,
+      "samples": 664,
+      "basis": "exact"
+    },
+    "3750": {
+      "name": "Mitsubishi Montero Exceed 2800 TD",
+      "year": 1995,
+      "votes": 2,
+      "samples": 51,
+      "basis": "exact"
+    },
+    "3753": {
+      "name": "Lamborghini Huracán Tecnica",
+      "year": 2022,
+      "votes": 31,
+      "samples": 603,
+      "basis": "exact"
+    },
+    "3755": {
+      "name": "Ford Supervan 4",
+      "year": 2022,
+      "votes": 6,
+      "samples": 112,
+      "basis": "exact"
+    },
+    "3759": {
+      "name": "Lamborghini Huracán EVO Spyder",
+      "year": 2022,
+      "votes": 3,
+      "samples": 115,
+      "basis": "exact"
+    },
+    "3760": {
+      "name": "Porsche 718 Cayman GT4 RS",
+      "year": 2022,
+      "votes": 54,
+      "samples": 1598,
+      "basis": "exact"
+    },
+    "3761": {
+      "name": "Toyota GR86",
+      "year": 2022,
+      "votes": 214,
+      "samples": 4741,
+      "basis": "exact"
+    },
+    "3763": {
+      "name": "BMW M2",
+      "year": 2023,
+      "votes": 20,
+      "samples": 643,
+      "basis": "exact"
+    },
+    "3764": {
+      "name": "BMW M5 CS",
+      "year": 2022,
+      "votes": 13,
+      "samples": 251,
+      "basis": "exact"
+    },
+    "3766": {
+      "name": "Chevrolet Corvette Z06",
+      "year": 2023,
+      "votes": 11,
+      "samples": 443,
+      "basis": "exact"
+    },
+    "3767": {
+      "name": "Acura NSX Type S",
+      "year": 2022,
+      "votes": 122,
+      "samples": 3107,
+      "basis": "exact"
+    },
+    "3771": {
+      "name": "Chevrolet Corvette E-Ray",
+      "year": 2024,
+      "votes": 36,
+      "samples": 962,
+      "basis": "exact"
+    },
+    "3773": {
+      "name": "Honda Civic Type R",
+      "year": 2023,
+      "votes": 104,
+      "samples": 2934,
+      "basis": "exact"
+    },
+    "3774": {
+      "name": "Lamborghini Countach LPI 800-4",
+      "year": 2021,
+      "votes": 15,
+      "samples": 384,
+      "basis": "exact"
+    },
+    "3775": {
+      "name": "Lamborghini Aventador LP 780-4 Ultimae",
+      "year": 2022,
+      "basis": "exact",
+      "votes": 53,
+      "samples": 265
+    },
+    "3781": {
+      "name": "Porsche 911 GT3 RS",
+      "year": 2023,
+      "votes": 187,
+      "samples": 4557,
+      "basis": "exact"
+    },
+    "3783": {
+      "name": "Volkswagen Rallye Golf",
+      "year": 1989,
+      "votes": 22,
+      "samples": 486,
+      "basis": "exact"
+    },
+    "3785": {
+      "name": "Toyota Soarer 2.5 GT-T",
+      "year": 1997,
+      "votes": 61,
+      "samples": 1341,
+      "basis": "exact"
+    },
+    "3789": {
+      "name": "Wuling Hongguang Mini EV",
+      "year": 2022,
+      "votes": 32,
+      "samples": 662,
+      "basis": "exact"
+    },
+    "3795": {
+      "name": "Meyers Manx 2.0",
+      "year": 2023,
+      "votes": 3,
+      "samples": 74,
+      "basis": "exact"
+    },
+    "3798": {
+      "name": "Mazda MX-5 Cup",
+      "year": 2017,
+      "votes": 106,
+      "samples": 2212,
+      "basis": "exact"
+    },
+    "3819": {
+      "name": "Subaru WRX",
+      "year": 2022,
+      "votes": 42,
+      "samples": 819,
+      "basis": "exact"
+    },
+    "3823": {
+      "name": "Mazda MX-5 Miata RF",
+      "year": 2022,
+      "votes": 85,
+      "samples": 2163,
+      "basis": "exact"
+    },
+    "3827": {
+      "name": "Hyundai IONIQ 5 N",
+      "year": 2023,
+      "votes": 8,
+      "samples": 194,
+      "basis": "exact"
+    },
+    "3829": {
+      "name": "Hyundai N Vision 74",
+      "year": 2022,
+      "votes": 9,
+      "samples": 268,
+      "basis": "exact"
+    },
+    "3840": {
+      "name": "Lamborghini Huracán Sterrato",
+      "year": 2022,
+      "votes": 14,
+      "samples": 250,
+      "basis": "exact"
+    },
+    "3846": {
+      "name": "Ford Mustang GT",
+      "year": 2024,
+      "votes": 77,
+      "samples": 603,
+      "basis": "exact"
+    },
+    "3847": {
+      "name": "Ford Mustang Dark Horse",
+      "year": 2024,
+      "votes": 70,
+      "samples": 2384,
+      "basis": "exact"
+    },
+    "3848": {
+      "name": "Toyota Camry TRD",
+      "year": 2023,
+      "votes": 75,
+      "samples": 1560,
+      "basis": "exact"
+    },
+    "3849": {
+      "name": "BMW M2 Forza Edition",
+      "year": 2023,
+      "votes": 1,
+      "samples": 29
+    },
+    "3850": {
+      "name": "Dodge Durango SRT Hellcat",
+      "year": 2021,
+      "votes": 7,
+      "samples": 171,
+      "basis": "exact"
+    },
+    "3851": {
+      "name": "Toyota Sera",
+      "year": 1991,
+      "votes": 83,
+      "samples": 12654,
+      "basis": "exact"
+    },
+    "3852": {
+      "name": "Honda Beat",
+      "year": 1991,
+      "votes": 1320,
+      "samples": 31004,
+      "basis": "exact"
+    },
+    "3854": {
+      "name": "Autozam AZ-1",
+      "year": 1993,
+      "votes": 141,
+      "samples": 4106,
+      "basis": "exact"
+    },
+    "3855": {
+      "name": "Nissan Figaro",
+      "year": 1991,
+      "votes": 39,
+      "samples": 1528,
+      "basis": "exact"
+    },
+    "3856": {
+      "name": "Nissan Be-1",
+      "year": 1987,
+      "votes": 67,
+      "samples": 2155,
+      "basis": "exact"
+    },
+    "3858": {
+      "name": "Nissan Stagea RS Four V",
+      "year": 1997,
+      "votes": 36,
+      "samples": 768,
+      "basis": "exact"
+    },
+    "3859": {
+      "name": "Honda City E II",
+      "year": 1984,
+      "votes": 260,
+      "samples": 6454,
+      "basis": "exact"
+    },
+    "3860": {
+      "name": "Nissan S-Cargo",
+      "year": 1989,
+      "votes": 26,
+      "samples": 764,
+      "basis": "exact"
+    },
+    "3865": {
+      "name": "Honda Acty",
+      "year": 1994,
+      "votes": 113,
+      "samples": 3174,
+      "basis": "exact"
+    },
+    "3880": {
+      "name": "Toyota GR Corolla",
+      "year": 2023,
+      "votes": 112,
+      "samples": 2194,
+      "basis": "exact"
+    },
+    "3886": {
+      "name": "Mitsubishi Lancer Evolution III GSR",
+      "year": 1995,
+      "votes": 69,
+      "samples": 1293,
+      "basis": "exact"
+    },
+    "3891": {
+      "name": "Lamborghini Revuelto",
+      "year": 2024,
+      "votes": 18,
+      "samples": 308,
+      "basis": "exact"
+    },
+    "3895": {
+      "name": "Mercedes-AMG SLC 43 Final Edition",
+      "year": 2020,
+      "votes": 10,
+      "samples": 317,
+      "basis": "exact"
+    },
+    "3903": {
+      "name": "Ford Fiesta ST",
+      "year": 2023,
+      "votes": 73,
+      "samples": 1603,
+      "basis": "exact"
+    },
+    "3904": {
+      "name": "Ford Focus ST",
+      "year": 2022,
+      "votes": 40,
+      "samples": 805,
+      "basis": "exact"
+    },
+    "3908": {
+      "name": "Honda e",
+      "year": 2022,
+      "votes": 43,
+      "samples": 1188,
+      "basis": "exact"
+    },
+    "3910": {
+      "name": "Porsche 911 Rallye",
+      "year": 2023,
+      "votes": 43,
+      "samples": 901,
+      "basis": "exact"
+    },
+    "3914": {
+      "name": "Toyota Chaser GT Twin Turbo",
+      "year": 1991,
+      "votes": 5,
+      "samples": 132,
+      "basis": "exact"
+    },
+    "3917": {
+      "name": "Audi R8 Coupé V10 GT RWD",
+      "year": 2023,
+      "votes": 50,
+      "samples": 1176,
+      "basis": "exact"
+    },
+    "3918": {
+      "name": "Nissan Gloria Gran Turismo",
+      "year": 1995,
+      "votes": 12,
+      "samples": 259,
+      "basis": "exact"
+    },
+    "3921": {
+      "name": "Nissan Z NISMO",
+      "year": 2024,
+      "votes": 35,
+      "samples": 1031,
+      "basis": "exact"
+    },
+    "3928": {
+      "name": "Hyundai i20 N",
+      "year": 2021,
+      "votes": 50,
+      "samples": 1039,
+      "basis": "exact"
+    },
+    "3929": {
+      "name": "Nissan PAO",
+      "year": 1989,
+      "votes": 34,
+      "samples": 1041,
+      "basis": "exact"
+    },
+    "3933": {
+      "name": "Toyota Chaser 2.5 Tourer V",
+      "year": 1997,
+      "votes": 19,
+      "samples": 400,
+      "basis": "exact"
+    },
+    "3937": {
+      "name": "Honda N600",
+      "year": 1970,
+      "votes": 2,
+      "samples": 29,
+      "basis": "exact"
+    },
+    "3950": {
+      "name": "Ferrari 275 GTB4 Spider",
+      "year": 1967,
+      "votes": 80,
+      "samples": 1493,
+      "basis": "exact"
+    },
+    "3953": {
+      "name": "Porsche 911 Turbo S",
+      "year": 2023,
+      "votes": 64,
+      "samples": 1723,
+      "basis": "exact"
+    },
+    "3954": {
+      "name": "Chevrolet Camaro ZL1",
+      "year": 2024,
+      "votes": 40,
+      "samples": 755,
+      "basis": "exact"
+    },
+    "3955": {
+      "name": "Ram 1500 TRX",
+      "year": 2024,
+      "votes": 31,
+      "samples": 516,
+      "basis": "exact"
+    },
+    "3959": {
+      "name": "Dodge Challenger SRT Super Stock",
+      "year": 2022,
+      "votes": 6,
+      "samples": 164,
+      "basis": "exact"
+    },
+    "3960": {
+      "name": "Subaru Vivio RX-R",
+      "year": 1994,
+      "votes": 68,
+      "samples": 2964,
+      "basis": "exact"
+    },
+    "3964": {
+      "name": "Toyota Prius Prime XSE Premium",
+      "year": 2024,
+      "votes": 134,
+      "samples": 2866,
+      "basis": "exact"
+    },
+    "3983": {
+      "name": "BMW X6 M Competition",
+      "year": 2024,
+      "votes": 12,
+      "samples": 257,
+      "basis": "exact"
+    },
+    "3999": {
+      "name": "Nissan Silvia Spec-R",
+      "year": 2002,
+      "votes": 43,
+      "samples": 1215,
+      "basis": "exact"
+    },
+    "4002": {
+      "name": "Lamborghini Temerario",
+      "year": 2024,
+      "votes": 68,
+      "samples": 1703,
+      "basis": "exact"
+    },
+    "4034": {
+      "name": "Honda Z GT",
+      "year": 1972,
+      "votes": 76,
+      "samples": 1735,
+      "basis": "exact"
+    },
+    "4038": {
+      "name": "Toyota Altezza RS200 Z EDITION",
+      "year": 1999,
+      "votes": 66,
+      "samples": 1332,
+      "basis": "exact"
+    },
+    "4055": {
+      "name": "Toyota Starlet Glanza V",
+      "year": 1996,
+      "votes": 53,
+      "samples": 985,
+      "basis": "exact"
+    },
+    "4057": {
+      "name": "Nissan Skyline GT-R V-Spec",
+      "year": 1997,
+      "votes": 51,
+      "samples": 1293,
+      "basis": "exact"
+    },
+    "4069": {
+      "name": "BMW M3",
+      "year": 1988,
+      "votes": 131,
+      "samples": 2776,
+      "basis": "exact"
+    },
+    "4081": {
+      "name": "Koenigsegg Gemera",
+      "year": 2024,
+      "votes": 21,
+      "samples": 304,
+      "basis": "exact"
+    },
+    "4084": {
+      "name": "Datsun #269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'",
+      "year": 1972,
+      "votes": 68,
+      "samples": 1480,
+      "basis": "exact"
+    },
+    "4085": {
+      "name": "Mitsubishi #269 Attacking the Clock Racing Minicab Time Attack",
+      "year": 1990,
+      "votes": 210,
+      "samples": 3657,
+      "basis": "exact"
+    },
+    "4090": {
+      "name": "Mitsubishi Lancer Evolution VI GSR TM Edition",
+      "year": 2001,
+      "votes": 125,
+      "samples": 2531,
+      "basis": "exact"
+    },
+    "4094": {
+      "name": "Nissan GT-R Nismo",
+      "year": 2024,
+      "votes": 86,
+      "samples": 1926,
+      "basis": "exact"
+    },
+    "4114": {
+      "name": "Nissan Skyline GT-R",
+      "year": 1992,
+      "votes": 120,
+      "samples": 2664,
+      "basis": "exact"
+    },
+    "4119": {
+      "name": "Nissan Skyline GT-R 40th Anniversary",
+      "year": 1998,
+      "basis": "exact",
+      "votes": 80,
+      "samples": 400
+    },
+    "4144": {
+      "name": "Mazda RX-7 Type R",
+      "year": 1992,
+      "votes": 161,
+      "samples": 4162,
+      "basis": "exact"
+    },
+    "4145": {
+      "name": "Mazda #123 Mad Mike 808 Wagon 'FURSTY'",
+      "year": 1974,
+      "votes": 3,
+      "samples": 89,
+      "basis": "exact"
+    },
+    "4147": {
+      "name": "Alfa Romeo Giulia GTAm",
+      "year": 2021,
+      "votes": 167,
+      "samples": 4514,
+      "basis": "exact"
+    },
+    "4156": {
+      "name": "Ferrari F80",
+      "year": 2025,
+      "basis": "exact",
+      "votes": 255,
+      "samples": 1300
+    },
+    "4158": {
+      "name": "Lexus LFA Forza Edition",
+      "year": 2010,
+      "votes": 130,
+      "samples": 2567,
+      "basis": "exact"
+    },
+    "4160": {
+      "name": "Nissan S-Cargo Forza Edition",
+      "year": 1989,
+      "votes": 427,
+      "samples": 3504,
+      "basis": "exact"
+    },
+    "4162": {
+      "name": "Toyota Sprinter Trueno GT Apex Forza Edition",
+      "year": 1985,
+      "votes": 129,
+      "samples": 3529,
+      "basis": "exact"
+    },
+    "4163": {
+      "name": "Wuling Sunshine S Forza Edition",
+      "year": 2013,
+      "votes": 166,
+      "samples": 4377,
+      "basis": "exact"
+    },
+    "4164": {
+      "name": "Subaru BRZ Forza Edition",
+      "year": 2022,
+      "votes": 19,
+      "samples": 272,
+      "basis": "exact"
+    },
+    "4165": {
+      "name": "Mazda RX-3 Forza Edition",
+      "year": 1973,
+      "votes": 112,
+      "samples": 2072,
+      "basis": "exact"
+    },
+    "4166": {
+      "name": "BMW M2 Forza Edition",
+      "year": 2023,
+      "votes": 197,
+      "samples": 5377,
+      "basis": "exact"
+    },
+    "4168": {
+      "name": "Ford Mustang GT 2+2 Fastback Forza Edition",
+      "year": 1968,
+      "votes": 11,
+      "samples": 215,
+      "basis": "exact"
+    },
+    "4169": {
+      "name": "Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition",
+      "year": 1990,
+      "votes": 128,
+      "samples": 3376,
+      "basis": "exact"
+    },
+    "4171": {
+      "name": "Ford F-150 XLT Lariat Forza Edition",
+      "year": 1986,
+      "votes": 4,
+      "samples": 62,
+      "basis": "exact"
+    },
+    "4175": {
+      "name": "Ford Super Duty F-450 DRW PLATINUM Forza Edition",
+      "year": 2020,
+      "votes": 9,
+      "samples": 212,
+      "basis": "exact"
+    },
+    "4179": {
+      "name": "Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC",
+      "year": 1990,
+      "votes": 9,
+      "samples": 180,
+      "basis": "exact"
+    },
+    "4197": {
+      "name": "Mazda MX-5 Miata Forza Edition",
+      "year": 1994,
+      "votes": 300,
+      "samples": 4497,
+      "basis": "exact"
+    },
+    "4198": {
+      "name": "Dodge Viper GTS ACR Forza Edition",
+      "year": 1999,
+      "votes": 13,
+      "samples": 242,
+      "basis": "exact"
+    },
+    "4199": {
+      "name": "Toyota Tacoma TRD Pro Forza Edition",
+      "year": 2019,
+      "votes": 263,
+      "samples": 10169,
+      "basis": "exact"
+    },
+    "4200": {
+      "name": "Lotus Evija Forza Edition",
+      "year": 2020,
+      "votes": 323,
+      "samples": 4747,
+      "basis": "exact"
+    },
+    "4205": {
+      "name": "Nissan Patrol",
+      "year": 1972,
+      "votes": 47,
+      "samples": 798,
+      "basis": "exact"
+    },
+    "4210": {
+      "name": "Lotus Scura Motorsports Exige WTAC",
+      "year": 2018,
+      "votes": 990,
+      "samples": 23933,
+      "basis": "exact"
+    },
+    "4211": {
+      "name": "Honda #19 101 Motorsport CRX WTAC",
+      "year": 1990,
+      "votes": 41,
+      "samples": 503,
+      "basis": "exact"
+    },
+    "4212": {
+      "name": "Nissan #32 Skyline WTAC 'Xtreme GTR'",
+      "year": 1993,
+      "votes": 92,
+      "samples": 2533,
+      "basis": "exact"
+    },
+    "4213": {
+      "name": "Nissan #36 Dream Project S15 Silvia WTAC",
+      "year": 2000,
+      "votes": 65,
+      "samples": 1678,
+      "basis": "exact"
+    },
+    "4214": {
+      "name": "Toyota J&J Motorsport Supra WTAC",
+      "year": 1995,
+      "votes": 4,
+      "samples": 125,
+      "basis": "exact"
+    },
+    "4221": {
+      "name": "GR GT Prototype",
+      "year": 2025,
+      "votes": 491,
+      "samples": 13833,
+      "basis": "exact"
+    },
+    "4222": {
+      "name": "Nissan Silvia K's",
+      "year": 1989,
+      "votes": 872,
+      "samples": 18028,
+      "basis": "exact"
+    },
+    "4223": {
+      "name": "Nissan Skyline GT-R V Spec II",
+      "year": 2000,
+      "votes": 119,
+      "samples": 2792,
+      "basis": "exact"
+    },
+    "4231": {
+      "name": "Honda #52 Evasive Motorsports S2000 WTAC",
+      "year": 2004,
+      "votes": 14,
+      "samples": 291,
+      "basis": "exact"
+    },
+    "4232": {
+      "name": "Porsche Cayman GT3 WTAC",
+      "year": 2005,
+      "votes": 119,
+      "samples": 3315,
+      "basis": "exact"
+    },
+    "4234": {
+      "name": "Honda Civic Type R (FD2)",
+      "year": 2008,
+      "votes": 97,
+      "samples": 1893,
+      "basis": "exact"
+    },
+    "4254": {
+      "name": "Honda #33 Integra WTAC",
+      "year": 2001,
+      "votes": 10,
+      "samples": 165,
+      "basis": "exact"
+    },
+    "4255": {
+      "name": "Toyota Crown Super Deluxe Taxi",
+      "year": 2005,
+      "votes": 31,
+      "samples": 691,
+      "basis": "exact"
+    },
+    "4257": {
+      "name": "Toyota JPN Taxi",
+      "year": 2017,
+      "votes": 77,
+      "samples": 2013,
+      "basis": "exact"
+    },
+    "4259": {
+      "name": "Toyota 86 Stories",
+      "year": 2013,
+      "votes": 27,
+      "samples": 644,
+      "basis": "exact"
+    },
+    "4264": {
+      "name": "Ferrari FXX-K Evo Welcome Pack",
+      "year": 2018,
+      "votes": 194,
+      "samples": 5023,
+      "basis": "exact"
+    },
+    "4265": {
+      "name": "Mercedes-AMG GT Black Series Welcome Pack",
+      "year": 2020,
+      "votes": 7,
+      "samples": 119,
+      "basis": "exact"
+    },
+    "4266": {
+      "name": "BMW M4 Competition Coupé Welcome Pack",
+      "year": 2021,
+      "votes": 54,
+      "samples": 1171,
+      "basis": "exact"
+    },
+    "4267": {
+      "name": "Mitsubishi Lancer Evolution VIII MR Welcome Pack",
+      "year": 2004,
+      "votes": 65,
+      "samples": 1021,
+      "basis": "exact"
+    },
+    "4268": {
+      "name": "Ford F-150 Raptor R Welcome Pack",
+      "year": 2023,
+      "votes": 61,
+      "samples": 944,
+      "basis": "exact"
+    },
+    "4277": {
+      "name": "Honda #21 Hardrace/JDMYard Civic WTAC",
+      "year": 1992,
+      "votes": 26,
+      "samples": 504,
+      "basis": "exact"
+    },
+    "4278": {
+      "name": "Toyota Land Cruiser",
+      "year": 2025,
+      "votes": 3,
+      "samples": 78,
+      "basis": "exact"
+    },
+    "4287": {
+      "name": "Subaru Vivio RX-R Forza Edition",
+      "year": 1994,
+      "votes": 18,
+      "samples": 432,
+      "basis": "exact"
+    },
+    "4313": {
+      "name": "Porsche #3 917 LH Forza Edition",
+      "year": 1970,
+      "votes": 79,
+      "samples": 1814,
+      "basis": "exact"
+    },
+    "4315": {
+      "name": "Peel P50 Trolli Edition",
+      "year": 1962,
+      "votes": 15,
+      "samples": 210,
+      "basis": "exact"
+    },
+    "4341": {
+      "name": "Ferrari J50",
+      "year": 2017,
+      "votes": 2,
+      "samples": 23
+    },
+    "4342": {
+      "name": "Toyota Sports 800 Fanta Edition",
+      "year": 1965,
+      "basis": "exact",
+      "votes": 29,
+      "samples": 145
+    }
+  }
+}

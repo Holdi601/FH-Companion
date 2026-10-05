@@ -1,0 +1,190 @@
+#fassung 12
+Læs dette én gang. Det forklarer, hvad programmet gør på din pc, hvad der forlader
+din computer, og hvorfor Windows måske advarer dig om det.
+
+
+HVAD DET GØR PÅ DIN PC
+
+  Læser telemetri fra spillet.
+      Forza Horizon 6 kan sende sin egen telemetri til din egen maskine via UDP.
+      Det slår du selv til i spillet under Indstillinger > HUD og Gameplay.
+      Programmet lytter på 127.0.0.1 -- din egen computer, ikke netværket -- og
+      bruger den til omgangsdeltaet, livekortet, dine omgangsrekorder og
+      controllerens vibration. Kun hvis du skifter programmet til "Xbox / 2. pc"
+      øverst i vinduet, lytter det i stedet på dit netværk, så Xboxen eller den
+      anden pc kan nå det. Hvis Windows Firewall blokerer det, tilføjer en knap i
+      Xbox-panelet én regel for præcis den UDP-port -- kun når du trykker på den,
+      og Windows beder først om din tilladelse.
+
+  Læser, hvad spillet viser på skærmen.
+      For at vide, hvilke baner skærmen Eventtilmelding tilbyder, hvilken bil der
+      er markeret i bilmenuen, hvilke biler der står på de "Mine biler"-sider, du
+      kigger på, og hvilken tune der sidder på en bil i dens tuneliste, tager
+      programmet billeder af spilvinduet og læser teksten med den
+      tekstgenkendelse, der er indbygget i Windows. Det sker på din pc; billederne
+      sendes ingen steder hen. I tilstanden "Xbox / 2. pc" tager det i stedet
+      billederne fra den kilde, du vælger: et capture-kort, OBS,
+      Xbox Remote Play-vinduet, Discord, en stream i din browser eller en
+      stream-adresse. Windows tegner så en gul ramme om et vindue, der optages.
+
+  Læser dine downloadede tunes fra spillets gemmemappe -- kun til læsning.
+      Fanen Tunes tæller dem og viser, hvilke ingen bil bruger. Gemmemappen bliver
+      aldrig ændret af dette.
+
+  Læser resultatlister og dine auktioner -- ved at trykke på taster i spillet.
+      På fanen Scan resultatlister styrer programmet spillets menuer hen til
+      de resultatlister, du sætter kryds ved, og læser dem fra skærmen. På
+      fanen Auktionshus kan det styre spillet hen til »Mine bud« og læse dine
+      auktioner; den liste bliver på denne computer. Det byder aldrig. Begge
+      stopper ved Alt+Tab, Pause-tasten eller Stop.
+
+  Får din controller til at vibrere -- og det dræner dens batteri hurtigere.
+      Mens Forza kører og sender telemetri, styrer programmet vibrationen i din
+      controller: dækgreb bliver til rumlen, et hjul, der låser, til en kort
+      summen. Det er slået til fra starten. En trådløs controller løber mærkbart
+      hurtigere tør for batteri, mens den vibrerer, og jo kraftigere og hurtigere
+      (højere frekvens) du indstiller vibrationen i Blueprint-editor, desto mere
+      strøm bruger den. Fjern fluebenet ved "Grafudgang slået til" i Blueprint
+      editor for at slå den fra; programmet husker det.
+
+  Holder øje med tastetryk.
+      Kun for at fange genvejstasterne -- F10 sætter en start-/mållinje i fri
+      kørsel. Det tjekker, om netop de taster er trykket ned. Det registrerer
+      ikke, hvad du skriver, og der findes ingen log over tastetryk nogen steder.
+
+  Tegner et overlay oven på spillet.
+      Omgangsdeltaet, kortene, bilnoterne og Rivals-panelerne er separate vinduer,
+      der tegnes over Forza. Når en omgang slår hjemmesidens tid, vises en kort
+      fejring med konfetti og en lyd i cirka fem sekunder; du kan slå den fra på
+      fanen Omgangsdelta-HUD.
+
+  Gemmer dine omgange -- på din disk.
+      Tider, positioner og hastigheder skrives ind i programmets egen mappe, så
+      det kan vise dig et delta mod din egen bedste tid. Kun en omgang, der slår
+      ranglisten, sendes nogen steder hen -- se nedenfor.
+
+
+HVAD DER FORLADER DIN COMPUTER
+
+  Programmet kontakter serveren til præcis seks ting:
+
+      1. For at spørge, om bilvurderingerne er nyere end dem, du har, og for at
+         hente dem, hvis de er.
+      2. For at spørge, om der findes en nyere version af dette program.
+      3. For at downloade den nye version, når du trykker på opdateringsknappen.
+      4. For at indsende en omgang, der SLÅR ranglisten -- SLÅET TIL, medmindre du
+         slår det fra.
+      5. For at hente listen over alle biler, og hvordan man får dem, til fanen
+         Bilsamling -- højst hver tolvte time, og kun mens den fane er åben.
+         Det sender intet; hvilke biler du ejer, bliver på denne computer.
+      6. For at sende en resultatliste, du har scannet på fanen Scan
+         resultatlister: pr. række placering, tid, bil, PI, træk, gearkasse og
+         hjælpemidler, plus rute, klasse og tidspunkt for scanningen og det
+         hashede id for denne pc -- ingen gamertags. Det sker efter hver
+         færdig resultatliste, så længe »Upload hver færdig resultatliste« er
+         afkrydset (det er det fra start), og indsendelse er slået til.
+
+  Om 4: en omgang sendes kun, hvis den er hurtigere end den bedste ranglistetid
+  for samme bil på den bane og i den klasse, og hurtigere end alt, hvad du
+  tidligere har sendt for den. Der sendes: bilen, banen, klassen, tiden og
+  omgangens FULDE telemetri -- hver pakke, spillet sendte under omgangen: position
+  og retning, hastighed, din gas, bremse, kobling og styring, gear, motor og for
+  hvert hjul dækkets temperatur, skrid og affjedring -- så serveren kan
+  kontrollere, at tiden er ægte, og et menneske kan se på en omgang, der virker
+  forkert. Desuden en hashet identifikator for denne pc, så misbrug kan
+  blokeres -- og dit gamertag, hvis du har angivet et på fanen Rivals. Et gamertag
+  er ikke påkrævet: uden et bliver omgangen stadig sendt og vises på hjemmesiden
+  under et midlertidigt spillernavn. Et gamertag, du angiver senere, erstatter det
+  på alle dine omgange, også de tidligere, og tømmer du feltet senere, bevares det
+  sidste navn. Serveren kontrollerer omgangen igen, før den viser den. Slå det fra
+  på fanen Rivals ("Indsend mine omgange ...") eller sæt "submit_laps": false i
+  config/overlay.json.
+
+  Omgange, du sender fra denne version, offentliggøres også med den telemetri:
+  På hjemmesiden kan alle ved siden af din tid downloade omgangens fulde
+  telemetri (som CSV-tabel og som rå fil) for at se, hvordan den blev kørt.
+  Omgange, du sendte før, forbliver private og bruges kun til at kontrollere
+  tiden.
+
+  En omgang, der slår ranglisten, men ikke kan sendes lige med det samme --
+  indsendelse slået fra, offline, eller serveren svarer ikke -- gemmes på denne
+  computer og sendes senere, når alt det er i orden igen, også uger senere. Før
+  den sendes, kontrolleres den endnu en gang mod den dags rangliste og kasseres,
+  hvis den ikke længere er hurtigere. Når du slår indsendelse til igen, sendes
+  altså også de bedste omgange, du kørte, mens den var slået fra. "Kassér ventende
+  omgange" på fanen Rivals sletter dem i stedet.
+
+  Intet andet sendes. Dine almindelige omgange uploades ikke. Din tune uploades
+  ikke. Der er ingen konto og intet at logge ind på.
+
+  Fordi din computer stiller de spørgsmål, ser serveren, at en eller anden
+  installation har spurgt -- det er uundgåeligt for ethvert program, der tjekker
+  for opdateringer. Det tælles, så vi nogenlunde ved, hvor mange der bruger dette,
+  og identifikatoren hashes med en hemmelighed, der bliver på serveren og slettes
+  efter 40 dage. Hvis det generer dig, så sæt "offline": true i
+  config/overlay.json, og programmet kontakter aldrig serveren igen -- det kører
+  så udelukkende på de data, der fulgte med downloaden, og alt undtagen opdatering
+  bliver ved med at virke.
+
+
+SÅDAN OPDATERER DET SIG SELV
+
+  Når du trykker på opdateringsknappen, downloader programmet en ZIP-fil,
+  verificerer udgiverens signatur, pakker den ud og erstatter sine egne filer. En
+  pakke, der ikke er signeret af udgiveren, afvises. Et lille konsolvindue vises,
+  mens det sker -- det vindue skal være synligt, så du kan se, hvad der bliver
+  erstattet. Din mappe med indstillinger bevares.
+
+  Intet bliver installeret. Intet bliver skrevet i Windows-registreringsdatabasen.
+  Slet mappen, så er programmet væk.
+
+
+HVORFOR WINDOWS MÅSKE KALDER DET EN TROJANER
+
+  Windows Defender melder måske dette program som Trojan:Win32/Bearfoos.A!ml og
+  blokerer det. Endelsen "!ml" betyder, at det ikke er et match mod nogen kendt
+  malware -- det er et gæt fra en maskinlæringsmodel om en fil, den aldrig har
+  set.
+
+  Den gætter sådan, fordi programmet ikke er kodesigneret, næsten ingen har det
+  endnu, og det gør de to ting, der er nævnt ovenfor: erstatter sine egne filer
+  og downloader fra internettet. Det er præcis den adfærd, modellen er trænet
+  til at mistro.
+
+  Hver udgivelse bliver scannet, før den offentliggøres, og downloadsiden viser en
+  kontrolsum, så du kan kontrollere, at den fil, du fik, er den fil, der blev
+  bygget. Vil du hellere ikke tage det på tillid, så lad være med at køre det --
+  det er et legitimt valg, og dette program vil ikke plage dig om det.
+
+
+GENVEJE, HVIS DU VIL HAVE DEM
+
+  Under denne tekst kan du bede om en genvej på skrivebordet, en post i
+  Start-menuen, og om at programmet starter med Forza. Alle tre er slået fra,
+  medmindre du sætter flueben ved dem, alle tre er blot en .lnk-fil i en mappe, og
+  du kan slette hver af dem senere uden at røre programmet.
+
+  "Start med Forza" lægger programmet i din autostart-mappe i Windows. Fra logon
+  venter det usynligt i meddelelsesområdet og åbner (minimeret), når Forza
+  starter; efter spillet går det tilbage dertil. Windows lader ikke et program
+  starte, når et andet program starter, uden administratorrettigheder -- at vente
+  i meddelelsesområdet kræver ingen og koster praktisk talt intet. Lukker du
+  vinduet, bliver det ved med at vente; højreklik på ikonet for at afslutte.
+  Knappen "Start med Forza" øverst til højre i hovedvinduet slår det til og fra.
+
+  Windows tillader ikke, at et program fastgør sig selv til proceslinjen -- det
+  har været forbeholdt dig siden Windows 10 version 1607, og at omgå det betyder
+  at forfalske en kontrolsum i registreringsdatabasen. Det gør dette program ikke.
+  Sæt flueben ved posten i Start-menuen, højreklik derefter på den, og vælg
+  "Fastgør til proceslinjen".
+
+
+INGEN GARANTI
+
+  Dette er et hobbyprojekt, der gives væk gratis, uden nogen form for garanti. Det
+  er ikke tilknyttet, godkendt af eller forbundet med Microsoft, Turn 10,
+  Playground Games eller Forza Horizon-serien.
+
+
+Du kan læse dette igen når som helst: linket "Hvad programmet gør" øverst i
+hovedvinduet.

@@ -1,0 +1,56 @@
+{
+  "launch": {
+    "command": "steam://rungameid/2483190",
+    "arguments": [],
+    "startup_wait_seconds": 0
+  },
+  "window": {
+    "process_names": [
+      "forzahorizon6"
+    ],
+    "title_regex": "^Forza Horizon 6$",
+    "focus_timeout_seconds": 30,
+    "refocus_timeout_seconds": 8,
+    "ensure_focus_before_actions": true,
+    "alt_tab_fallback": true
+  },
+  "display": {
+    "manage": false,
+    "mode_before_launch": "Windowed",
+    "restore_after": true,
+    "backup_root": "data/backups/forza_display"
+  },
+  "capture": {
+    "output_dir": "data/inbox/observe",
+    "state_dir": "data/inbox/observe/_state",
+    "prefix": "fh6_observe",
+    "clear_output_dir": false,
+    "dump_state_ocr": true,
+    "ocr_language": "en"
+  },
+  "steps": [
+    {
+      "action": "wait",
+      "seconds": 2,
+      "label": "after focus"
+    },
+    {
+      "action": "observe",
+      "name": "current_{index:000}.png"
+    }
+  ],
+  "extraction": {
+    "enabled": false,
+    "track": "",
+    "performance_class": "",
+    "pi_class": "",
+    "event_type": "Rivals",
+    "rivals_mode": "",
+    "profile": "config/fh6_rivals_1080p.json",
+    "output_dir": "data/processed",
+    "sqlite_path": "data/processed/leaderboard_entries.sqlite",
+    "parquet_path": "data/processed/leaderboard_entries.parquet",
+    "dump_ocr": false,
+    "keep_crops": false
+  }
+}

@@ -1,0 +1,200 @@
+#fassung 12
+Lue tämä kerran. Se kertoo, mitä ohjelma tekee PC:lläsi, mitä tietokoneeltasi
+lähtee ja miksi Windows saattaa varoittaa sinua siitä.
+
+
+MITÄ SE TEKEE PC:LLÄSI
+
+  Lukee telemetriaa pelistä.
+      Forza Horizon 6 voi lähettää omaa telemetriaansa omalle koneellesi UDP:n
+      kautta. Kytket sen itse päälle pelissä kohdassa
+      Asetukset > HUD- ja peliasetukset. Ohjelma kuuntelee osoitteessa
+      127.0.0.1 -- omalla tietokoneellasi, ei verkossa -- ja käyttää sitä
+      kierrosdeltaan, live-karttaan, kierrosennätyksiisi ja ohjaimen tärinään.
+      Vain jos vaihdat ohjelman ikkunan yläreunasta tilaan "Xbox / 2. PC", se
+      kuuntelee sen sijaan verkossasi, jotta Xbox tai toinen PC tavoittaa sen. Jos
+      Windowsin palomuuri estää sen, Xbox-paneelin painike lisää yhden säännön
+      täsmälleen sille UDP-portille -- vain kun painat sitä, ja Windows pyytää
+      ensin lupaasi.
+
+  Lukee, mitä peli näyttää näytöllä.
+      Tietääkseen, mitä ratoja Tapahtumailmoittautuminen-näyttö tarjoaa, mikä auto
+      on korostettuna autovalikossa, mitkä autot ovat katsomillasi
+      "Autoni"-sivuilla ja mikä viritys on autossa sen virityslistassa, ohjelma
+      ottaa kuvia peli-ikkunasta ja lukee tekstin Windowsiin sisäänrakennetulla
+      tekstintunnistuksella. Tämä tapahtuu PC:lläsi; kuvia ei lähetetä minnekään.
+      "Xbox / 2. PC" -tilassa se ottaa nuo kuvat sen sijaan valitsemastasi
+      lähteestä: kaappauskortilta, OBS:stä, Xbox Remote Play -ikkunasta,
+      Discordista, selaimesi striimistä tai striimin osoitteesta. Windows piirtää
+      silloin keltaisen kehyksen kaapatun ikkunan ympärille.
+
+  Lukee lataamasi viritykset pelin tallennuskansiosta -- vain lukua varten.
+      Tunes-välilehti laskee ne ja näyttää, mitä niistä mikään auto ei käytä. Tämä
+      ei koskaan muuta tallennuskansiota.
+
+  Lukee tulostauluja ja huutokauppojasi -- painamalla näppäimiä pelissä.
+      Skannaa tulostaulut -välilehdellä ohjelma ohjaa pelin valikot
+      valitsemiisi tulostauluihin ja lukee ne näytöltä.
+      Huutokauppa-välilehdellä se voi ohjata pelin kohtaan Omat tarjoukset ja
+      lukea huutokauppasi; se luettelo jää tälle tietokoneelle. Se ei koskaan
+      tee tarjouksia. Molemmat pysähtyvät Alt+Tabista, Pause-näppäimestä tai
+      Pysäytä-painikkeesta.
+
+  Saa ohjaimesi värisemään -- ja se kuluttaa sen akkua nopeammin.
+      Kun Forza on käynnissä ja lähettää telemetriaa, ohjelma ohjaa ohjaimesi
+      tärinää: renkaiden pidosta tulee jyrinää, lukkiutuvasta pyörästä lyhyt
+      surahdus. Tämä on päällä alusta alkaen. Langattoman ohjaimen akku loppuu
+      huomattavasti aiemmin, kun se värisee, ja mitä voimakkaammaksi ja
+      nopeammaksi (korkeampi taajuus) asetat tärinän
+      Kaavioeditori -välilehdellä, sitä enemmän virtaa se kuluttaa. Kytke se
+      pois poistamalla valinta kohdasta "Graafin ulostulo päällä"
+      Kaavioeditori -välilehdellä; ohjelma muistaa sen.
+
+  Tarkkailee näppäinpainalluksia.
+      Vain pikanäppäinten havaitsemiseksi -- F10 asettaa lähtö-/maaliviivan
+      vapaassa ajossa. Se tarkistaa, ovatko juuri ne näppäimet painettuina. Se ei
+      tallenna, mitä kirjoitat, eikä näppäinpainalluksista ole lokia missään.
+
+  Piirtää overlayn pelin päälle.
+      Kierrosdelta, kartat, automuistiinpanot ja Rivals-paneelit ovat erillisiä
+      ikkunoita, jotka piirretään Forzan päälle. Kun kierros lyö sivuston ajan,
+      lyhyt juhlinta konfettien ja äänen kera näkyy noin viiden sekunnin ajan;
+      voit kytkeä sen pois Kierrosdelta-HUD -välilehdellä.
+
+  Tallentaa kierroksesi -- levyllesi.
+      Ajat, sijainnit ja nopeudet kirjoitetaan ohjelman omaan kansioon, jotta se
+      voi näyttää sinulle deltan omaan parhaaseen aikaasi. Vain kierros, joka lyö
+      tulostaulun, lähetetään minnekään -- katso alta.
+
+
+MITÄ TIETOKONEELTASI LÄHTEE
+
+  Ohjelma ottaa yhteyttä palvelimeen täsmälleen kuutta asiaa varten:
+
+      1. Kysyäkseen, ovatko autojen arviot uudempia kuin sinulla olevat, ja
+         hakeakseen ne, jos ovat.
+      2. Kysyäkseen, onko tästä ohjelmasta uudempaa versiota.
+      3. Ladatakseen sen uuden version, kun painat päivityspainiketta.
+      4. Lähettääkseen kierroksen, joka LYÖ tulostaulun -- PÄÄLLÄ, ellet kytke
+         sitä pois.
+      5. Hakeakseen luettelon kaikista autoista ja siitä, miten ne saa,
+         Autokokoelma -välilehteä varten -- korkeintaan kahdentoista tunnin
+         välein ja vain, kun se välilehti on auki. Se ei lähetä mitään; se, mitkä
+         autot omistat, pysyy tällä tietokoneella.
+      6. Lähettääkseen tulostaulun, jonka skannasit Skannaa tulostaulut
+         -välilehdellä: riveittäin sijoitus, aika, auto, PI, veto, vaihteisto
+         ja avustimet sekä reitti, luokka ja skannauksen ajankohta ja tämän
+         tietokoneen tiivistetty tunniste -- ei pelaajatunnisteita. Se
+         tapahtuu jokaisen valmiin tulostaulun jälkeen niin kauan kuin Lähetä
+         jokainen valmis tulostaulu on valittuna (se on alusta asti) ja
+         lähettäminen on päällä.
+
+  Kohdasta 4: kierros lähetetään vain, jos se on nopeampi kuin saman auton paras
+  tulostaulun aika sillä radalla ja siinä luokassa, ja nopeampi kuin mikään, mitä
+  olet lähettänyt sille aiemmin. Lähetetään: auto, rata, luokka, aika ja
+  kierroksen TÄYSI telemetria -- jokainen paketti, jonka peli lähetti kierroksen
+  aikana: sijainti ja asento, nopeus, kaasusi, jarru, kytkin ja ohjaus, vaihde,
+  moottori sekä pyöräkohtaisesti renkaan lämpötila, luisto ja jousitus -- jotta
+  palvelin voi tarkistaa, että aika on aito, ja ihminen voi katsoa kierrosta, joka
+  vaikuttaa väärältä. Lisäksi tämän PC:n tunniste hajautusarvona, jotta
+  väärinkäyttö voidaan estää -- ja pelaajatunnuksesi, jos olet asettanut sellaisen
+  Rivals-välilehdellä. Pelaajatunnus ei ole pakollinen: ilman sitä kierros
+  lähetetään silti ja näkyy sivustolla väliaikaisella pelaajanimellä. Myöhemmin
+  asettamasi pelaajatunnus korvaa sen kaikissa kierroksissasi, myös aiemmissa, ja
+  jos tyhjennät kentän myöhemmin, viimeisin nimi säilyy. Palvelin tarkistaa
+  kierroksen uudelleen ennen kuin näyttää sen. Kytke se pois Rivals-välilehdellä
+  ("Lähetä kierrokseni ...") tai aseta "submit_laps": false tiedostossa
+  config/overlay.json.
+
+  Tästä versiosta alkaen lähettämäsi kierrokset julkaistaan myös tämän
+  telemetrian kanssa: verkkosivustolla kuka tahansa voi ladata aikasi vierestä
+  kierroksen täyden telemetrian (CSV-taulukkona ja raakatiedostona)
+  nähdäkseen, miten se ajettiin. Aiemmin lähettämäsi kierrokset pysyvät
+  yksityisinä, ja niitä käytetään vain ajan tarkistamiseen.
+
+  Kierros, joka lyö tulostaulun mutta jota ei voida lähettää juuri silloin --
+  lähettäminen pois päältä, ei verkkoyhteyttä tai palvelin ei vastaa --
+  säilytetään tällä tietokoneella ja lähetetään myöhemmin, kun kaikki on taas
+  kunnossa, jopa viikkoja myöhemmin. Ennen lähettämistä se tarkistetaan vielä
+  kerran sen päivän tulostaulua vasten ja hylätään, jos se ei ole enää nopeampi.
+  Lähettämisen kytkeminen takaisin päälle lähettää siis myös ne parhaat
+  kierrokset, jotka ajoit sen ollessa pois päältä. "Hylkää odottavat kierrokset"
+  Rivals-välilehdellä poistaa ne sen sijaan.
+
+  Mitään muuta ei lähetetä. Tavallisia kierroksiasi ei ladata palvelimelle.
+  Viritystäsi ei ladata palvelimelle. Tiliä ei ole, eikä mihinkään tarvitse
+  kirjautua.
+
+  Koska tietokoneesi esittää nuo kysymykset, palvelin näkee, että jokin asennus
+  kysyi -- se on väistämätöntä jokaiselle ohjelmalle, joka tarkistaa päivityksiä.
+  Se lasketaan, jotta tiedämme suunnilleen, kuinka moni tätä käyttää, ja tunniste
+  muunnetaan hajautusarvoksi salaisuudella, joka pysyy palvelimella ja poistetaan
+  40 päivän kuluttua. Jos tämä häiritsee sinua, aseta "offline": true tiedostossa
+  config/overlay.json, niin ohjelma ei enää koskaan ota yhteyttä palvelimeen -- se
+  toimii silloin kokonaan latauksen mukana tulleilla tiedoilla, ja kaikki paitsi
+  päivittäminen toimii edelleen.
+
+
+MITEN SE PÄIVITTÄÄ ITSENSÄ
+
+  Kun painat päivityspainiketta, ohjelma lataa ZIP-tiedoston, tarkistaa sen
+  julkaisijan allekirjoituksen, purkaa sen ja korvaa omat tiedostonsa. Paketti,
+  jota julkaisija ei ole allekirjoittanut, hylätään. Pieni konsoli-ikkuna ilmestyy
+  sen ajaksi -- ikkunan on tarkoitus näkyä, jotta näet, mitä korvataan.
+  Asetuskansiosi säilyy.
+
+  Mitään ei asenneta. Mitään ei kirjoiteta Windowsin rekisteriin. Poista kansio,
+  niin ohjelma on poissa.
+
+
+MIKSI WINDOWS SAATTAA KUTSUA SITÄ TROIJALAISEKSI
+
+  Windows Defender saattaa ilmoittaa tämän ohjelman nimellä
+  Trojan:Win32/Bearfoos.A!ml ja estää sen. Pääte "!ml" tarkoittaa, ettei kyse ole
+  osumasta mihinkään tunnettuun haittaohjelmaan -- se on koneoppimismallin arvaus
+  tiedostosta, jota se ei ole koskaan nähnyt.
+
+  Se arvaa niin, koska ohjelmaa ei ole koodiallekirjoitettu, lähes kenelläkään ei
+  vielä ole sitä ja se tekee kaksi yllä mainittua asiaa: korvaa omat
+  tiedostonsa ja lataa internetistä. Juuri tällaista toimintaa malli on
+  koulutettu epäilemään.
+
+  Jokainen versio skannataan ennen julkaisua, ja lataussivulla näkyy
+  tarkistussumma, jotta voit varmistaa, että saamasi tiedosto on sama tiedosto,
+  joka koottiin. Jos et halua luottaa siihen, älä suorita ohjelmaa -- se on
+  oikeutettu valinta, eikä tämä ohjelma nalkuta sinulle siitä.
+
+
+PIKAKUVAKKEET, JOS HALUAT NIITÄ
+
+  Tämän tekstin alla voit pyytää työpöydän pikakuvakkeen, Käynnistä-valikon
+  kohteen ja sen, että ohjelma käynnistyy Forzan kanssa. Kaikki kolme ovat pois
+  päältä, ellet valitse niitä, kaikki kolme ovat vain .lnk-tiedosto kansiossa, ja
+  voit poistaa minkä tahansa niistä myöhemmin koskematta ohjelmaan.
+
+  "Käynnistä Forzan kanssa" lisää ohjelman Windowsin Käynnistys-kansioon.
+  Kirjautumisesta alkaen se odottaa näkymättömänä ilmoitusalueella ja avautuu
+  (pienennettynä), kun Forza käynnistyy; pelin jälkeen se palaa sinne. Windows ei
+  anna ohjelman käynnistyä toisen ohjelman käynnistyessä ilman
+  järjestelmänvalvojan oikeuksia -- ilmoitusalueella odottaminen ei vaadi niitä
+  eikä kuluta käytännössä mitään. Ikkunan sulkeminen jättää sen odottamaan; lopeta
+  napsauttamalla kuvaketta hiiren kakkospainikkeella. Pääikkunan oikeassa
+  yläkulmassa oleva painike "Käynnistä Forzan kanssa" kytkee sen päälle ja pois.
+
+  Windows ei salli ohjelman kiinnittää itseään tehtäväpalkkiin -- se on ollut
+  varattu sinulle Windows 10:n versiosta 1607 lähtien, ja sen kiertäminen
+  tarkoittaa tarkistussumman väärentämistä rekisterissä. Tämä ohjelma ei tee niin.
+  Valitse Käynnistä-valikon kohde, napsauta sitä sitten hiiren kakkospainikkeella
+  ja valitse "Kiinnitä tehtäväpalkkiin".
+
+
+EI TAKUUTA
+
+  Tämä on harrasteprojekti, joka annetaan ilmaiseksi ilman minkäänlaista takuuta.
+  Se ei ole sidoksissa Microsoftiin, Turn 10:een, Playground Gamesiin tai
+  Forza Horizon -sarjaan, ne eivät ole hyväksyneet sitä, eikä sillä ole mitään
+  yhteyttä niihin.
+
+
+Voit lukea tämän uudelleen milloin tahansa: pääikkunan yläreunan linkki "Mitä tämä
+ohjelma tekee".

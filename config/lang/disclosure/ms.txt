@@ -1,0 +1,208 @@
+#fassung 12
+Sila baca ini sekali. Ia menerangkan apa yang dilakukan program ini pada PC
+anda, apa yang meninggalkan komputer anda, dan mengapa Windows mungkin memberi
+amaran kepada anda tentangnya.
+
+
+APA YANG DILAKUKANNYA PADA PC ANDA
+
+  Membaca telemetri daripada permainan.
+      Forza Horizon 6 boleh menghantar telemetrinya sendiri ke mesin anda
+      sendiri melalui UDP. Anda sendiri yang menghidupkannya dalam permainan di
+      bawah Settings > HUD and Gameplay. Program mendengar pada 127.0.0.1 --
+      komputer anda sendiri, bukan rangkaian -- dan menggunakannya untuk delta
+      pusingan, peta langsung, rekod pusingan anda dan getaran pengawal. Hanya
+      jika anda menukar program kepada "Xbox / PC ke-2" di bahagian atas
+      tetingkapnya barulah ia mendengar pada rangkaian anda sebaliknya, supaya
+      Xbox atau PC lain dapat mencapainya. Jika Windows Firewall menyekatnya,
+      satu butang dalam panel Xbox menambah satu peraturan untuk port UDP itu
+      sahaja -- hanya apabila anda menekannya, dan Windows meminta kebenaran
+      anda terlebih dahulu.
+
+  Membaca apa yang dipaparkan oleh permainan pada skrin.
+      Untuk mengetahui litar mana yang ditawarkan oleh skrin Event Sign Up,
+      kereta mana yang diserlahkan dalam menu kereta, kereta mana yang ada pada
+      halaman "My Cars" yang anda lihat dan tetapan mana yang ada pada sesebuah
+      kereta dalam senarai tetapannya, program mengambil gambar tetingkap
+      permainan dan membaca teksnya dengan pengecaman teks yang terbina dalam
+      Windows. Ini berlaku pada PC anda; gambar-gambar itu tidak dihantar ke
+      mana-mana. Dalam mod "Xbox / PC ke-2", ia mengambil gambar itu daripada
+      sumber yang anda pilih sebaliknya: kad tangkapan, OBS, tetingkap
+      Xbox Remote Play, Discord, strim dalam pelayar anda atau alamat strim.
+      Windows kemudian melukis bingkai kuning di sekeliling tetingkap yang
+      ditangkap.
+
+  Membaca tetapan muat turun anda dari folder simpanan permainan -- baca sahaja.
+      Tab Tunes mengiranya dan menunjukkan yang mana tidak digunakan oleh
+      mana-mana kereta. Folder simpanan tidak pernah diubah oleh perkara ini.
+
+  Membaca papan pendahulu dan lelongan anda -- dengan menekan kekunci dalam
+  permainan.
+      Dalam tab Imbas papan pendahulu, program menggerakkan menu permainan ke
+      papan pendahulu yang anda tandakan dan membacanya dari skrin. Dalam tab
+      Rumah Lelong, ia boleh membawa permainan ke “Bidaan saya” dan membaca
+      lelongan anda; senarai itu kekal di komputer ini. Ia tidak pernah
+      membida. Kedua-duanya berhenti dengan Alt+Tab, kekunci Pause atau Henti.
+
+  Membuat pengawal anda bergetar -- dan itu menghabiskan baterinya lebih cepat.
+      Semasa Forza berjalan dan menghantar telemetri, program mengawal getaran
+      pengawal anda: cengkaman tayar menjadi gegaran, roda yang terkunci menjadi
+      dengung pendek. Ini hidup sejak awal. Pengawal tanpa wayar akan kehabisan
+      bateri dengan ketara lebih cepat semasa ia bergetar, dan semakin kuat dan
+      semakin laju (frekuensi lebih tinggi) anda menetapkan getaran dalam
+      Penyunting Blueprint, semakin banyak kuasa yang digunakannya. Nyahtanda
+      "Keluaran graf dihidupkan" dalam Penyunting Blueprint untuk mematikannya;
+      program akan mengingatinya.
+
+  Memerhati tekanan kekunci.
+      Hanya untuk menangkap kekunci pintas -- F10 menetapkan garisan mula/tamat
+      dalam jelajah bebas. Ia menyemak sama ada kekunci-kekunci tertentu itu
+      sedang ditekan. Ia tidak merakam apa yang anda taip dan tiada log ketukan
+      kekunci di mana-mana.
+
+  Melukis overlay di atas permainan.
+      Delta pusingan, peta, nota kereta dan panel pesaing ialah tetingkap
+      berasingan yang dilukis di atas Forza. Apabila pusingan mengalahkan masa
+      di laman web, sambutan ringkas dengan konfeti dan bunyi muncul selama
+      kira-kira lima saat; anda boleh mematikannya dalam tab HUD delta pusingan.
+
+  Merakam pusingan anda -- pada cakera anda.
+      Masa, kedudukan dan kelajuan ditulis ke dalam folder program itu sendiri
+      supaya ia dapat menunjukkan delta berbanding rekod terbaik anda sendiri.
+      Hanya pusingan yang mengatasi papan pendahulu dihantar keluar -- lihat di
+      bawah.
+
+
+APA YANG MENINGGALKAN KOMPUTER ANDA
+
+  Program menghubungi pelayan untuk tepat enam perkara:
+
+      1. Untuk bertanya sama ada penilaian kereta lebih baharu daripada yang
+         anda ada, dan memuat turunnya jika ya.
+      2. Untuk bertanya sama ada versi program ini yang lebih baharu wujud.
+      3. Untuk memuat turun versi baharu itu, apabila anda menekan butang
+         kemas kini.
+      4. Untuk menghantar pusingan yang MENGATASI papan pendahulu -- HIDUP
+         melainkan anda mematikannya.
+      5. Untuk mendapatkan senarai semua kereta dan cara mendapatkannya, untuk
+         tab Koleksi kereta -- paling kerap setiap dua belas jam, dan hanya
+         semasa tab itu dibuka. Ia tidak menghantar apa-apa; kereta mana yang
+         anda miliki kekal pada komputer ini.
+      6. Untuk menghantar papan pendahulu yang anda imbas dalam tab Imbas
+         papan pendahulu: bagi setiap baris kedudukan, masa, kereta, PI,
+         pacuan, kotak gear dan bantuan, serta laluan, kelas dan masa imbasan
+         dan pengecam ber-hash PC ini -- tiada gamertag. Ia berlaku selepas
+         setiap papan yang selesai selagi “Muat naik setiap papan yang
+         selesai” ditanda (sejak mula) dan penghantaran dihidupkan.
+
+  Mengenai perkara 4: pusingan hanya dihantar jika ia lebih pantas daripada masa
+  terbaik papan pendahulu bagi kereta yang sama di litar dan kelas itu, dan
+  lebih pantas daripada apa-apa yang pernah anda hantar untuk kereta, litar dan
+  kelas itu sebelum ini. Yang dihantar ialah: kereta, litar, kelas, masa, dan
+  telemetri PENUH pusingan itu -- setiap paket yang dihantar oleh permainan
+  sepanjang pusingan itu: kedudukan dan orientasi, kelajuan, pendikit, brek,
+  klac dan stereng anda, gear, enjin, dan bagi setiap roda suhu tayar,
+  gelinciran dan suspensi -- supaya pelayan dapat menyemak bahawa masa itu tulen
+  dan seseorang boleh melihat pusingan yang kelihatan salah. Ditambah pula
+  pengecam PC ini yang telah di-hash supaya penyalahgunaan dapat disekat -- dan
+  gamertag anda, jika anda menetapkannya dalam tab Rivals. Gamertag tidak
+  diwajibkan: tanpanya pusingan tetap dihantar dan muncul di laman web di bawah
+  nama pemain sementara. Gamertag yang anda tetapkan kemudian akan menggantikan
+  nama itu pada semua pusingan anda, termasuk yang terdahulu, dan jika medan itu
+  dikosongkan kemudian, nama terakhir dikekalkan. Pelayan menyemak pusingan itu
+  sekali lagi sebelum memaparkannya. Matikannya dalam tab Rivals
+  ("Hantar pusingan saya ...") atau tetapkan "submit_laps": false dalam
+  config/overlay.json.
+
+  Pusingan yang anda hantar mulai versi ini juga diterbitkan bersama telemetri
+  itu: di laman web, di sebelah masa anda, sesiapa boleh memuat turun
+  telemetri penuh pusingan itu (sebagai jadual CSV dan sebagai fail mentah)
+  untuk mengkaji cara ia dipandu. Pusingan yang anda hantar sebelum ini kekal
+  peribadi dan hanya digunakan untuk menyemak masa.
+
+  Pusingan yang mengatasi papan pendahulu tetapi tidak dapat dihantar pada masa
+  itu -- penghantaran dimatikan, di luar talian, atau pelayan tidak menjawab --
+  disimpan pada komputer ini dan dihantar kemudian, sebaik semuanya kembali
+  baik, walaupun berminggu-minggu kemudian. Sebelum dihantar, ia disemak sekali
+  lagi dengan papan pendahulu hari itu dan dibuang jika tidak lagi lebih pantas.
+  Jadi, menghidupkan semula penghantaran juga menghantar pusingan terbaik yang
+  anda pandu semasa ia dimatikan. "Buang pusingan yang menunggu" dalam tab
+  Rivals memadamnya sebaliknya.
+
+  Tiada apa-apa lagi yang dihantar. Pusingan biasa anda tidak dimuat naik.
+  Tetapan anda tidak dimuat naik. Tiada akaun dan tiada apa-apa untuk log masuk.
+
+  Oleh sebab komputer anda bertanya soalan-soalan itu, pelayan nampak bahawa ada
+  pemasangan yang bertanya -- ini tidak dapat dielakkan bagi mana-mana program
+  yang menyemak kemas kini. Ia dikira supaya kami tahu secara kasar berapa ramai
+  orang menggunakan program ini, dan pengecam itu di-hash dengan kunci rahsia
+  yang kekal pada pelayan dan dipadam selepas 40 hari. Jika itu mengganggu anda,
+  tetapkan "offline": true dalam config/overlay.json dan program tidak akan
+  menghubungi pelayan lagi -- ia kemudian berjalan sepenuhnya dengan data yang
+  disertakan dalam muat turun, dan semuanya kecuali kemas kini terus berfungsi.
+
+
+BAGAIMANA IA MENGEMAS KINI DIRINYA
+
+  Apabila anda menekan butang kemas kini, program memuat turun sebuah ZIP,
+  mengesahkan tandatangan penerbitnya, membukanya, dan menggantikan failnya
+  sendiri. Pakej yang tidak ditandatangani oleh penerbit akan ditolak. Tetingkap
+  konsol kecil muncul semasa ini berlaku -- tetingkap itu memang sengaja
+  dipaparkan, supaya anda dapat melihat apa yang sedang diganti. Folder
+  konfigurasi anda dikekalkan.
+
+  Tiada apa-apa dipasang. Tiada apa-apa ditulis ke dalam registry Windows. Padam
+  folder itu dan program pun hilang.
+
+
+MENGAPA WINDOWS MUNGKIN MENGGELARNYA TROJAN
+
+  Windows Defender mungkin melaporkan program ini sebagai
+  Trojan:Win32/Bearfoos.A!ml dan menyekatnya. Akhiran "!ml" bermaksud ini bukan
+  padanan dengan mana-mana perisian hasad yang diketahui -- ia adalah tekaan
+  oleh model pembelajaran mesin tentang fail yang tidak pernah dilihatnya.
+
+  Ia meneka begitu kerana kod program ini tidak ditandatangani, hampir tiada
+  sesiapa memilikinya lagi, dan ia melakukan dua perkara yang disenaraikan di
+  atas: menggantikan failnya sendiri dan memuat turun dari internet. Itulah
+  tepat tingkah laku yang dilatih untuk dicurigai oleh model itu.
+
+  Setiap keluaran diimbas sebelum diterbitkan, dan halaman muat turun memaparkan
+  checksum supaya anda boleh mengesahkan bahawa fail yang anda terima ialah fail
+  yang telah dibina. Jika anda lebih suka tidak menerimanya bulat-bulat, jangan
+  jalankannya -- itu pilihan yang sah dan program ini tidak akan terus mendesak
+  anda tentangnya.
+
+
+PINTASAN, JIKA ANDA MAHU
+
+  Di bawah teks ini anda boleh meminta pintasan desktop, entri menu Mula, dan
+  supaya program bermula bersama Forza. Ketiga-tiganya dimatikan melainkan anda
+  menandanya, ketiga-tiganya hanyalah fail .lnk dalam sebuah folder, dan anda
+  boleh memadam mana-mana satu kemudian tanpa menyentuh program.
+
+  "Mula bersama Forza" meletakkan program dalam folder Startup Windows anda.
+  Sejak log masuk, ia menunggu tanpa kelihatan di kawasan pemberitahuan dan
+  dibuka (diminimumkan) apabila Forza bermula; selepas permainan ia kembali ke
+  sana. Windows tidak membenarkan program bermula apabila program lain bermula
+  tanpa hak pentadbir -- menunggu di kawasan pemberitahuan tidak memerlukannya
+  dan hampir tidak menggunakan apa-apa. Menutup tetingkap mengekalkannya
+  menunggu; klik kanan ikon untuk keluar. Butang "Mula bersama Forza" di
+  bahagian atas kanan tetingkap utama menghidupkan dan mematikannya.
+
+  Windows tidak membenarkan program menyemat dirinya sendiri pada bar tugas --
+  itu dikhaskan untuk anda sejak Windows 10 versi 1607, dan untuk mengelaknya
+  bermakna memalsukan checksum dalam registry. Program ini tidak melakukannya.
+  Tandakan entri menu Mula, kemudian klik kanan entri itu dan pilih
+  "Pin ke bar tugas".
+
+
+TIADA WARANTI
+
+  Ini ialah projek hobi, diberikan secara percuma, tanpa sebarang jenis waranti.
+  Ia tidak bergabung dengan, tidak disokong oleh, dan tidak berkaitan dengan
+  Microsoft, Turn 10, Playground Games atau siri Forza Horizon.
+
+
+Anda boleh membaca ini semula pada bila-bila masa: pautan
+"Apa yang dilakukan program ini" di bahagian atas tetingkap utama.

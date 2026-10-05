@@ -1,0 +1,4 @@
+{
+  "_": "Welche Laeufe die Auswertung NICHT sehen soll. Ausblenden statt loeschen: ein Lauf, der heute fehlerhaft aussieht, ist morgen vielleicht der einzige Beleg dafuer, WAS schiefging. Gepflegt ueber die Admin-Ansicht der Webseite oder von Hand. run_id ist der Verzeichnisname des Laufs.",
+  "hidden": []
+}

@@ -1,0 +1,4 @@
+{
+ "_": "Welche Teile der Schnittstelle offen sind. Diese Datei wird von deploy_gnas.py NICHT uebertragen -- sie muss auf dem Server selbst gesetzt werden. Fehlt sie, ist alles zu.",
+ "lap_submissions": false
+}

@@ -1,0 +1,500 @@
+# Selbst gefahrene Runden einreichen
+
+Spieler können eine eigene Rundenzeit an den Server schicken. Diese Seite sagt, wie
+das geht, was dabei entschieden wird und **was es ausdrücklich nicht leistet**.
+
+Stand 2026-09-13: Server und App-Client sind gebaut und geprüft. Die Endpunkte sind
+**noch nicht auf dem GNAS freigeschaltet** — das ist eine bewusste Entscheidung, die
+noch aussteht.
+
+## Warum nicht `contrib_format`
+
+Es gibt bereits ein Verfahren für Fremdbeiträge (siehe [Contributions](contributions.md)).
+Dort gibt ein **vorher eingetragener** Beitragender gescannte Bestenlisten ab, mit
+einem Geheimnis, das er von Hand bekommen hat.
+
+Hier ist die Lage umgekehrt: ein beliebiger Spieler reicht eine selbst gefahrene
+Runde ein, und **niemand kennt ihn**. Es gibt kein Geheimnis, das man ihm vorher
+geben könnte. Deshalb ein eigener Weg — und nicht eine aufgeweichte Fassung des
+bestehenden, denn zwei Ausweisverfahren im selben Rumpf sind genau die Stelle, an
+der später das falsche genommen wird.
+
+## Der Handschlag
+
+```
+POST /api/lap/register   {"hardware": "<SHA-256>", "gamertag": "..."}
+->                       {"install_id": "...", "secret": "..."}
+```
+
+Das Geheimnis wandert **einmal** durchs Netz und danach nie wieder. Jede Einreichung
+*rechnet* damit:
+
+```
+X-Forza-Install:   <install_id>
+X-Forza-Timestamp: <Unixzeit>
+X-Forza-Nonce:     <8-64 Zeichen>
+X-Forza-Signature: HMAC-SHA256(secret, METHODE \n PFAD \n ZEITSTEMPEL \n NONCE \n SHA256(Rumpf))
+```
+
+Jedes Stück hat einen Grund:
+
+| Bestandteil | verhindert |
+|---|---|
+| Pfad | dass eine Unterschrift an einem anderen Endpunkt gilt |
+| Zeitstempel | dass ein mitgeschnittener Aufruf morgen noch zählt (±300 s) |
+| Nonce | dass er innerhalb dieser 300 s hundertmal zählt |
+| Rumpf-Hash | dass unterwegs etwas verändert wird |
+
+Über einfaches HTTP liest jeder im selben Netz den ganzen Aufruf mit. Verborgen wird
+hier nichts — aber niemand kann sich als jemand anderes ausgeben, und nichts lässt
+sich unterwegs ändern.
+
+## Warum überhaupt unterschrieben wird
+
+**Nicht** um jemanden fernzuhalten — mitmachen soll jeder. Sondern damit eine
+Einreichung einem Konto **zuzuordnen** ist. Ohne das lässt sich niemand sperren, und
+ohne Sperre ist jede Bestenliste beliebig.
+
+Wer sich neu anmeldet, fängt neu an. Aber der Hardware-Hash bleibt, und darüber
+fällt eine Kette von Neuanmeldungen auf. Eine Maschine bekommt höchstens fünf
+Kennungen — genug für Neuinstallation, zweites Windows, zurückgesetztes Profil.
+
+> **Diese Grenze allein trägt nicht, und das ist kein Versehen.** Sie hängt am
+> Hardware-Hash, und den schickt der *Client*. Ein Skript setzt jedes Mal einen
+> anderen hinein und legt beliebig viele Konten an, bis die Schlüsseldatei platzt.
+> Sie hält Versehen ab, keinen Angriff.
+
+Die Grenze, die trägt, hängt an der **Absenderadresse**: fünf Anmeldungen je Stunde
+und zwanzig je Tag. Eine IP behauptet der Aufrufer nicht, sie entsteht an der
+Leitung — sie ist das Einzige an einer offenen Anmeldung, das sich nicht frei
+erfinden lässt. Gefragt wird **vor** der Prüfung der Eingaben: wer zu oft anklopft,
+soll nicht auch noch erfahren, was der Server erwartet.
+
+Was auch sie nicht kann: jemanden aufhalten, der über viele Adressen verfügt.
+Dagegen hilft nur, die Anmeldung ganz zuzumachen — dafür ist der Schalter da.
+
+## Der Hardware-Hash und der Pfeffer
+
+Die App bildet einen SHA-256 aus der Windows-MachineGuid und dem Rechnernamen und
+schickt **nie** die Kennung selbst. Der Server hasht das ein zweites Mal mit einem
+eigenen Geheimnis — dem *Pfeffer* — bevor er es ablegt.
+
+Der Grund ist nicht Misstrauen gegen die App, sondern gegen die eigene Datei: ein
+Hash ohne Pfeffer lässt sich durchprobieren, wenn man weiß, woraus er gebildet wurde.
+Mit Pfeffer geht das nur, wenn man auch den Pfeffer hat — und der liegt in
+`config/submit_keys.json`, die nie das Haus verlässt.
+
+> **Der Pfeffer darf sich nie ändern.** Alle abgelegten Hashes sind mit ihm gebildet.
+> Ein neuer Pfeffer macht jede Sperre wirkungslos, ohne dass irgendwo eine
+> Fehlermeldung erscheint — der Gesperrte wäre einfach wieder da.
+
+Der Gamertag steht dagegen im Klartext da. Er ist der Name, unter dem die Zeit
+erscheinen soll; ihn zu verbergen wäre sinnlos.
+
+**Der Gamertag ist freiwillig (seit 2026-09-27).** Gesperrt wird über Kennung und
+gepfefferten Hardware-Hash, nicht über einen Namen. Ohne Gamertag wird trotzdem
+eingereicht.
+
+- **Der Name reist mit jeder Einreichung.** Die App schickt ihn unterschrieben
+  (`"gamertag"` neben `"lap"`), und der Server übernimmt ihn für die Installation
+  (`set_gamertag`). Ein später eingetragener oder geänderter Name braucht so keine
+  neue Anmeldung. Früher kostete jeder neue Name eine Kennung, und nach fünf je
+  Maschine nahm der Server keine mehr an.
+- **Ein leeres Feld löscht nichts.** Der zuletzt geschickte Name bleibt.
+- **Ein Spieler ist ein Hardware-Hash.** Angezeigt wird der Name beim Ausliefern
+  der Liste (`spielernamen`, `mit_spielernamen`), nicht aus der abgelegten Runde:
+  der zuletzt geschickte Name unter allen Kennungen derselben Maschine. So tragen
+  nach einer Umbenennung auch die früheren Runden den neuen Namen, und eine
+  Neuinstallation bleibt derselbe Spieler.
+- **Ohne je einen Namen** zeigt die Seite einen vorläufigen, `Player-` und sechs
+  Hex-Zeichen aus einem weiteren Hash des gepfefferten Hardware-Hashes. Er bleibt
+  für diese Maschine gleich und führt nicht zum Hash zurück. Die Liste markiert ihn
+  mit `gamertag_temporary`, die Verwaltungsseite mit „(temporary)".
+- Weist der Server einen Namen wegen seiner Zeichen ab, meldet die App sich ohne
+  ihn an. Neuere Xbox-Gamertags mit Nummer (`Name#1234`) sind erlaubt.
+
+## Was als Betrugsschutz geprüft wird — und was nicht
+
+Die Prüfungen finden **Unmögliches**, nicht Unwahrscheinliches:
+
+- Schnitt über 600 km/h → abgewiesen
+- weniger als 10 Messpunkte → abgewiesen (ohne Telemetrie wird nichts angenommen)
+- Uhr läuft rückwärts, Weg wird kürzer → abgewiesen
+- Sprung über 300 m zwischen zwei Messpunkten → abgewiesen
+- zwei Punkte, die 600 km/h erfordern würden → abgewiesen
+- **Telemetrie endet bei einer anderen Zeit als behauptet** → abgewiesen
+
+Die letzte ist die wichtigste: sie fängt die einfachste denkbare Fälschung, nämlich
+die Telemetrie einer langsamen Runde unter eine schnelle Zeit zu legen.
+
+Was nur *merkwürdig* ist — Schneckentempo, fehlender Leistungsindex, Weglänge um
+über 10 % daneben — wird **abgelegt und gekennzeichnet**, nicht verworfen. Wer
+Merkwürdiges gleich wegwirft, verliert genau die Fälle, aus denen sich lernen ließe.
+
+> **Wer mit einem veränderten Spiel eine plausible Zeit fährt, kommt hier durch.**
+> Dagegen hilft nur ein Mensch, der sich die Telemetrie ansieht. Genau dafür wird sie
+> mitgespeichert.
+
+## Die volle Telemetrie reist mit (seit 2026-09-28)
+
+Die Messpunkte der Runde (`samples`: Zeit, Weg, Ort, Tempo, Eingaben, G, Gang) reichen
+für die Prüfungen oben — nicht aber, um eine verdächtige Zeit wirklich zu beurteilen.
+Darum schickt die App mit **jeder** eingereichten Runde ihre ganze `.tele.gz` mit:
+**alles, was das Spiel während der Runde geschickt hat** (Format 2, seit 2026-09-30) —
+jedes Paket (rund 110 je Sekunde), jedes der 88 Felder in voller Genauigkeit
+(Gleitkomma exakt, die Spieluhr `TimestampMS` als ganze Zahl), dazu jedes Byte ohne
+Feld als eigene Spalte (`Byte323`, bei längeren Paketen mehr). Pakete mit derselben
+Spielzeit wie das vorige bleiben drin; der Kopf zählt sie (`repeatedTimestamps`,
+davon Byte für Byte gleich: `identicalRepeats`).
+
+Seit 2026-10-01 sagt der Kopf auch, **welches Auto** und welche Strecke: `"car":
+{"ordinal": 1269, "name": "BMW 2002 Turbo '73", "class": "A", "pi": 700}`, `"track"`,
+`"lapSeconds"` — damit die Datei auch allein lesbar ist. Die Rundendatei trägt den
+Namen als `carName` neben `carOrdinal`; ältere Runden bekommen ihn beim Start der App
+nachgetragen, sobald eine Quelle das Auto kennt (vom Schirm gelernt, Datensatz der
+Bestenlisten, Autoliste). Ein Auto, das keine Quelle kennt, bleibt ohne Namen — nie ein
+geratener. Die Downloads der Seite heißen danach:
+`FH6_<Strecke>_<Auto>_<Klasse>_<Zeit>s_<Kennung>.csv`.
+
+Format 1 (bis 2026-09-30) nahm 73 ausgewählte Felder, rundete auf drei
+Nachkommastellen und verwarf jedes Paket mit wiederholter Spielzeit — in einer echten
+Runde 4 689 von 11 247. Gelesen wird eine Spur darum immer über die Spaltennamen im
+Kopf, nie über die Stelle; beide Formate stehen im Bestand nebeneinander.
+
+```json
+{"lap": {...}, "gamertag": "...",
+ "telemetry": {"encoding": "gzip+base64", "format": "fhc-tele-2", "data": "<Base64>"}}
+```
+
+Größe: rund 27 KB je Sekunde Runde gepackt — eine 3-Minuten-Runde ~5 MB, die
+18 Minuten, die die App höchstens aufhebt (120 000 Pakete), ~29 MB. Die App gibt einer
+großen Einreichung mehr Zeit (gerechnet mit 64 KB/s), sonst liefe eine lange Runde auf
+einer langsamen Leitung bei jedem Versuch in dieselbe Grenze.
+
+- **Ohne volle Telemetrie reicht die App keine Runde ein.** Der Schalter „volle
+  Telemetrie" betrifft nur das Archiv auf der Platte; für die Einreichung wird die
+  Spur trotzdem behalten. Eine wartende Runde legt sie als Nebendatei neben sich
+  (`pending_laps/<schlüssel>.tele.gz`). Gepackt wird abseits des UI-Threads — eine
+  lange Runde kostet Zehntelsekunden, und das wäre ein Ruckler an der Ziellinie.
+- **Der Server prüft sie wie die Runde selbst** (`pruefe_telemetrie`): gültiges
+  Base64, gepackt höchstens 32 MB (die ganze Anfrage 48 MB), **entpackt nie über
+  200 MB** (eine kleine Datei, die zu Gigabytes aufgeht, wird beim Entpacken gestoppt),
+  10 bis 150 000 Zeilen, jede
+  Zeile gleich breit und nur Zahlen, die Uhr `t` läuft vorwärts und **endet bei der
+  Rundenzeit**. Sonst: abgewiesen.
+- **Fehlt sie, wird die Runde angenommen, aber markiert** (`no full telemetry`) —
+  ältere Fassungen der App schicken sie nicht.
+- Abgelegt wird sie **unverändert neben** der Rundendatei (`<id>.tele.gz`); die Runde
+  trägt nur eine Kurzinfo (`fullTelemetry`: Zeilen, Spalten, Bytes). Die Listen lesen
+  sie nie.
+- Die Grenze für einen Rumpf liegt darum bei 16 MB (vorher 8). Eine 214-s-Runde sind
+  1,8 MB gepackt.
+- Der Zustimmungstext nennt das seit **Fassung 6** — wer 5 zugestimmt hatte, kannte
+  nur „positions and speeds".
+
+## Je Auto, Strecke und Klasse die zehn schnellsten — je Mensch eine (seit 2026-09-28)
+
+Nach jeder Annahme stutzt der Server die Gruppe (Strecke, Klasse, Auto — dieselbe
+Einteilung wie der Abgleich mit der Bestenliste) auf **zehn Runden**, und davon
+**höchstens eine je Mensch**. Mensch heißt: der gepfefferte Hardware-Hash der
+Installation. Eine Neuinstallation auf derselben Maschine ist also derselbe Mensch.
+
+Der Zweck: schickt jemand zehn gefälschte Runden, belegt er **einen** Platz, nicht
+alle. Wird seine Runde ausgeblendet oder er gesperrt, stehen die neun davor noch da.
+
+- **Ausgeblendete Runden zählen nicht mit und werden nie entfernt** — sie sind der
+  Beleg dafür, was ausgeblendet wurde.
+- Entfernt wird mit der Rundendatei auch ihre volle Telemetrie.
+- Fällt die gerade eingereichte Runde selbst heraus, antwortet der Server trotzdem
+  200, aber mit `"kept": false` — sie war gültig, nur nicht unter den zehn.
+
+Weil der Server ohnehin nur Runden annimmt, die schneller sind als alles, was für
+diese Gruppe schon eingereicht wurde, sind die zehn die letzten zehn Rekordhalter.
+
+## Verwalten
+
+```
+POST /api/admin/lap/hide     {"id": "...", "reason": "..."}
+POST /api/admin/lap/show     {"id": "..."}
+POST /api/admin/lap/ban      {"install_id": "...", "reason": "..."}
+POST /api/admin/lap/unban    {"install_id": "..."}
+POST /api/admin/lap/telemetry      {"id": "..."}   die Runde samt Messpunkten
+POST /api/admin/lap/fulltelemetry  {"id": "..."}   jedes Paket, alle Felder
+GET  /api/admin/installs
+```
+
+In der Admin-Ansicht stehen dafür je Runde drei Knöpfe: **full csv** (jedes Paket,
+alle Felder — nur, wenn die Runde ihre volle Telemetrie mitbrachte), **json** (die
+Runde, wie sie auf dem Server liegt) und **csv** (die Messpunkte, eine Zeile je
+Punkt).
+
+Alle mit Admin-Unterschrift (dasselbe Verfahren wie die übrige Admin-Ansicht).
+
+**Ausblenden, nie löschen** — dieselbe Regel wie bei den Scans. Was heute falsch
+aussieht, ist morgen vielleicht der einzige Beleg dafür, *was* schiefging; und wer
+eine Runde fälschlich ausgeblendet hat, soll das zurücknehmen können, ohne um eine
+erneute Fahrt bitten zu müssen.
+
+**Die nächste Zeit rückt von selbst auf.** Die Wertung baut sich aus den sichtbaren
+Runden; eine ausgeblendete ist für sie nicht da. Ein eigener „nachrücken"-Schritt
+wäre ein zweiter Ort, an dem dieselbe Entscheidung fällt.
+
+**Sperren nimmt die Runden mit**, sonst hätte eine Sperre keine Wirkung auf das, was
+schon auf der Seite steht. Entsperren bringt sie zurück — aber eine Runde, die aus
+einem *anderen* Grund ausgeblendet wurde, bleibt es. Sonst höbe eine Entsperrung
+stillschweigend ein Urteil auf, das mit ihr nichts zu tun hat.
+
+Die Admin-Liste gibt **nie** ein Geheimnis heraus und vom Hardware-Hash nur die
+ersten zwölf Zeichen: genug, um zwei Anmeldungen derselben Maschine zu erkennen, zu
+wenig, um damit sonst etwas anzufangen.
+
+## Runden, die warten (seit 2026-09-27)
+
+Eine Runde, die die Bestenliste schlägt, aber gerade nicht hinaus kann, geht nicht
+mehr verloren. Das gilt für ausgeschaltetes Einreichen, den Offline-Betrieb und
+einen Server, der nicht oder mit einem Fehler antwortet.
+Sie liegt dann in `pending_laps/` neben dem Buch (`LapQueue.cs`), eine Datei je
+Strecke, Klasse und Auto; nur die schnellste bleibt.
+
+- **Wann nachgereicht wird:** direkt nachdem der Server eine Datensatz-Abfrage
+  beantwortet hat. Das beweist die Erreichbarkeit, und die Bestenliste ist dann
+  die neueste. Solange Runden warten, fragt die App stündlich, außerdem beim
+  Einschalten des Einreichens.
+- **Vor dem Senden wird neu entschieden,** mit derselben reinen Prüfung wie nach
+  einer gefahrenen Runde (`Pruefen`), aber gegen die Bestenliste und das Buch
+  *dieses* Tages. Eine inzwischen überholte Runde fällt still weg, ohne Anfrage.
+- **Was eine Runde aus der Schlange nimmt:** angenommen (200), „nicht schneller"
+  (409, dann auch ins Buch) oder als ungültig abgelehnt (400/413/422). Alles
+  andere lässt sie liegen: keine Verbindung, 5xx, 429, 401/403 und eine
+  gescheiterte Anmeldung. Ein Verfallsdatum gibt es nicht.
+- **Die Bremse gegen Strafpunkte:** Jedes Nachreichen hält beim ersten Ergebnis
+  an, das kein Erfolg ist. Nach zwei Ablehnungen binnen 24 Stunden ruht es ganz,
+  bis die ältere aus dem Fenster fällt. Der Server sperrt nach fünf Strafpunkten
+  in 24 Stunden, und eine lange Schlange mit veraltetem Bild der Bestenliste
+  könnte sonst in wenigen Stunden dorthin laufen.
+- **Wer „aus" gewählt hatte,** erfährt es aus dem Hinweis beim ersten Start
+  (Fassung 5): Einschalten reicht die besten Runden aus der Zwischenzeit nach.
+  „Discard waiting laps" im Rivals-Tab wirft sie stattdessen weg.
+
+## Der Modus trennt die Wertung (seit 2026-09-28)
+
+Rivals und Horizon Play kennen keine Wandfahrten: Rivals erklärt eine Runde mit
+Wandkontakt für ungültig, Horizon Play bremst den Motor. In Solo- und
+Koop-Rennen und in der freien Fahrt ist die Wand dagegen oft die schnellste
+Linie. Die Seite rechnet darum nur Runden mit `mode` `rivals` oder
+`horizon-play` in die Wertung (`CLEAN_MODES` in `scripts/submitted_laps.js`).
+Alle anderen stehen in einer eigenen Tabelle unter „Data as it stands“ und
+verändern keine Platzierung.
+
+Die App erkennt den Modus am zuletzt gelesenen Menü:
+
+| Schirm | Modus |
+|---|---|
+| Rivals-Schirm (Überschrift „Rivals“, Klassen darunter) | `rivals`, dazu Strecke und Länge |
+| Anmeldeschirm mit „Joining Horizon Play …“ | `horizon-play` |
+| Anmeldeschirm ohne Reihe | `race` (Solo oder Koop, der Schirm sagt nicht welches) |
+| eigene Freiwelt-Uhr | `freeroam` |
+
+Ein Rivals-Schirm gilt zwei Stunden, eine Anmeldung 45 Minuten. Rivals nur, wenn
+in der Runde niemand vor einem lag (`RacePosition` 1): ein Platz dahinter heißt,
+es war ein Rennen, dessen Anmeldung nicht gelesen wurde, und der Modus bleibt
+`unknown` (`modeEvidence` `conflict:…`). Runden mit unbekanntem Modus sendet die
+App nicht; die Feier „schneller als die Website“ gibt es nur in der Wertung.
+
+## Wenn das Spiel das Auto anders nennt als die Bestenliste (seit 2026-10-03)
+
+Die Telemetrie nennt das Auto nur mit einer Nummer; der Datensatz der Bestenlisten
+hängt an jede Nummer einen Namen, über die Rundenzeiten zusammengefügt — und die
+Zuordnung kann falsch sein. Am 2026-10-02 fuhr der Nutzer die Corvette Z06 '15, die
+Telemetrie sagte 2177, der Datensatz nennt 2177 „Corvette '53" (14 Stimmen, keine
+exakte Zuordnung). Die App feierte den Rekord der '53 und reichte die Runde so ein.
+
+Darum liest die App nach jedem Rennen auf dem Ergebnisschirm die **eigene Zeile**
+(die mit dem Zielplatz der Telemetrie, nicht die schwarz markierte — die ist ein
+verschiebbarer Zeiger) und lernt, wenn die Zeit der Zeile zur Telemetrie passt:
+diese Nummer heißt so, wie das Spiel es dort schreibt. Das gilt ab dann überall
+(Rundendateien, Ordner, Feiern, Einreichung), auch rückwirkend für ältere Runden.
+
+**Widersprechen** sich gelernter Name und Datensatz-Name einer Nummer, gehört das
+Brett dieser Nummer nicht zu diesem Auto: die Runde wird als *neues Auto*
+eingereicht, nie als Rekord gegen ein fremdes Brett; die Zeile „to beat" nennt dann
+nichts. Der Server prüft dasselbe (`leaderboard_check.gleiches_auto`) und vermerkt
+`car name disagrees with the leaderboard's name for this id`. Die Seite zeigt den
+Namen, den die App schickt, vor dem des Datensatzes.
+
+## Geprüft wird auf drei Ebenen
+
+```
+python scripts/run_tests.py --nur lap
+```
+
+| Test | beweist |
+|---|---|
+| `test_lap_submissions.py` | die Logik — 35 Prüfungen von Anmelden bis Entsperren |
+| `test_lap_endpoints.py` | dass sie über **echtes HTTP** erreichbar ist, mit laufendem Server |
+| `test_lap_signature.py` | dass C# und Python **dieselbe** Unterschrift bilden |
+
+Der dritte ist der unscheinbarste und der wichtigste. Die Krypto selbst ist auf
+beiden Seiten eingebaut und sicher richtig; was schiefgehen kann, ist die
+*Nachricht* — Reihenfolge, Trennzeichen, Hex-Schreibweise, Kodierung. Und so ein
+Fehler meldet sich nicht als das, was er ist: er erzeugt eine Unterschrift, die der
+Server ablehnt, und das sieht aus wie „nicht angemeldet". Man sucht tagelang am
+falschen Ende.
+
+Der Test schneidet die Methode `Signature` bei jedem Lauf **frisch aus
+`LapSubmit.cs`** heraus — eine Kopie hier würde von der ausgelieferten Fassung
+abdriften, ohne dass es auffällt. Dasselbe Verfahren sichert im Projekt schon das
+JavaScript der Admin-Seite ab.
+
+## Rennergebnisse aus Horizon Play (seit 2026-10-02)
+
+Nach einem Horizon-Play-Rennen liest die App den Ergebnisschirm (RaceResultsReader):
+je Fahrer Platz, Mensch (Stufenabzeichen) / KI / verlassen, Auto, PI, auf Rundkursen
+die **beste Runde**, auf Strecken von A nach B den Fortschritt, und die Zeit im Ziel.
+Keine Gamertags. Gesendet an `POST /api/race/submit`, unterschrieben wie eine Runde,
+zusammen mit einem Bild des Ergebnisschirms (JPEG, 1280 breit) als Beleg:
+
+```json
+{"race": {"id": "...", "at": "2026-10-01T22:42:04", "track": "Daikoku Circuit",
+          "class": "S2", "mode": "horizon-play", "laps": 3, "drivers": 12,
+          "field": [{"place": 1, "kind": "human", "self": true, "car": 4277,
+                     "pi": 900, "bestLapMs": 47939, "ms": 153409}, ...]},
+ "proof": "<JPEG als Base64>"}
+```
+
+**Wann:** immer, wenn das Einreichen an ist (`submit_laps`, ab Werk an, im Reiter
+Rivals abschaltbar) — nicht nur, wenn eine Runde die Bestenliste schlägt. Ohne
+Anmeldung meldet sich die App dafür an wie für eine Runde.
+
+**Was daraus wird** (`server/race_submissions.py`, öffentlich unter `GET /api/race/hp`):
+je Strecke, Klasse und Auto die Zeiten aller **Menschen** — KI und wer verlassen hat,
+zählen nicht. Auf Rundkursen die beste Runde (vergleichbar mit einer Rivals-Runde),
+sonst die Zeit im Ziel. Genommen wird **nicht die schnellste**, sondern die an der
+1-%-Grenze: die Zeiten aufsteigend, die an Stelle ceil(1 % von N), ab 0 gezählt — so
+fällt immer mindestens die eine schnellste weg (ein Betrüger in einer Lobby). Mit nur
+einer Zeit gilt sie, aber als *unbestätigt*.
+
+**Verwalten:** `GET /api/admin/race/list` (alle Rennen, ohne install_id),
+`POST /api/admin/race/proof` (das Bild), `POST /api/admin/race/hide|show` mit
+`{"id", "place", "reason"}` — eine Zeile aus der Wertung nehmen. Dann rückt die
+nächste Zeit nach; auch die lässt sich ausblenden, bis es stimmt. Ausgeblendet, nie
+gelöscht.
+
+Geprüft: `scripts/test_race_endpoints.py` (Server über HTTP), `scripts/test_race_e2e_local.py
+<bild>` (die App liest ein echtes Ergebnisbild und sendet es an einen lokalen Server).
+
+## Bestenlisten-Scans aus der App (seit 2026-10-04)
+
+Der Scan-Reiter der App liest eine Rivals-Bestenliste vom Schirm (`Scan/BoardScanner.cs`) und
+legt einen Lauf ab wie das alte Python-Werkzeug: `state.json` + `rows.jsonl`. `Scan/ScanUpload.cs`
+schickt ihn an `POST /api/scan/submit`, unterschrieben wie eine Runde (dieselbe Anmeldung, eigener
+Pfad):
+
+```json
+{"state": {"run_id": "ocr_RoadRacing_idx03_A_20261004_031200", "track": "Festival Chase",
+           "performance_class": "A", "rivals_mode": "Road Racing", ...},
+ "rows": "{\"rank\":1,\"lap_time_seconds\":61.234,\"car_name\":\"BEAT\",\"pi\":650,...}\n..."}
+```
+
+**Keine Gamertags.** Der Scanner liest sie nicht, und jede Zeile wird vor dem Senden (App) und
+beim Annehmen (Server) auf eine feste Feldliste beschnitten (`scan_submissions.ZEILEN_FELDER`,
+gespiegelt in `ScanUpload.Felder`): Platz, Zeit, Auto, PI, Antrieb, Getriebe, Hilfen, die Rohzeile
+der Texterkennung ohne Namensspalte. Ein Feld `gamertag` kommt so nie auf die Platte.
+
+**Wann:** von selbst nach jedem Board, das fertig gelesen oder angehalten wurde (nicht nach
+einem `server_error`) — solange im Scan-Reiter „Upload each finished board" angehakt ist
+(`scan_upload`, **ab Werk an**), das Einreichen an ist (`submit_laps`, ab Werk an, im Reiter
+Rivals abschaltbar) und die App nicht offline ist — dasselbe Abschalten wie für Runden und
+Rennergebnisse. Einen eigenen Knopf zum Senden gibt es nicht. Ein angenommener Lauf bekommt
+`upload.json` in seinen Ordner und geht nicht ein zweites Mal hinaus.
+
+**Geprüft** mit den Regeln der Fremdbeiträge (`contrib_format.validate_rows` / `validate_state`:
+Platz 1 bis 10 Mio., Zeit 5 s bis 2 h, kein Platz doppelt, höchstens 60.000 Zeilen, Zustand mit
+run_id/track/performance_class/rivals_mode), dazu eine bekannte Klasse. Zeilenzahl und höchster
+Platz rechnet der Server aus den Zeilen selbst. Angenommen, aber markiert: Zeiten, die mit dem Platz
+fallen, ein PI außerhalb der Klasse, ein Board, das der Datensatz nicht kennt. Derselbe `run_id`
+zweimal: 409. Grenzen: 32 MB je Anfrage, 40 Läufe je Installation und Tag. Ein abgelehnter Scan
+kostet **keinen** Strafpunkt (ein Fehler im Scanner soll nicht zur Sperre führen).
+
+**Das Tor:** eine App meldet sich ohne Passwort an. Ihr Lauf wird darum immer abgelegt, geht aber
+nur dann **von selbst** in den Datensatz, wenn (`scan_submissions.freigabe`)
+
+- der Admin schon zwei zurückgehaltene Läufe dieser Installation mit „Show" freigegeben hat
+  (`VERTRAUEN_AB`; Grund sonst „new installation: its first scans are reviewed"). Alles andere,
+  was das Tor prüft, ist öffentlich — die Spitzenzeiten stehen in `/api/dataset`, das Ende
+  behauptet die App — und ließe sich abschreiben,
+- er mindestens 500 Zeilen hat, bei **jedem** Ende: auch `end_detected` oder `row_cap_reached`
+  schreibt die App nur hinein. Eine bewusste Grenze (`row_cap_reached`) zählt nur ab 500 Plätzen
+  und zu 80 % gelesen. Ein wirklich kurzes Board wartet damit auf den Admin,
+- sein Board — Kategorie, Strecke, Klasse — im gebauten Datensatz steht (`data/analytics/laps.json`,
+  dieselbe Datei, die `/api/dataset` ausliefert),
+- mindestens die Hälfte der 20 schnellsten gültigen Zeiten des Datensatzes für dieses Board auch
+  im Lauf steht, auf 1 ms genau (verglichen wird der Wert, nicht der Platz; bevorzugt die Zeiten,
+  die beim letzten Scan auf der Liste standen),
+- sein Ende bewiesen ist — wie beim alten Werkzeug: ein unbewiesenes Ende (`stopped`,
+  `game_crashed`, `truncated`, …) mit weniger als 500 Zeilen oder weniger als 80 % der geschätzten
+  Länge ist ein Abbruch; ein `server_error` zählt nie.
+
+Sonst steht er vom ersten Augenblick an auf der Sichtbarkeitsliste, mit dem Grund („unknown board",
+„times do not match", „end not proven …", „dataset not readable"), und der Admin gibt ihn mit
+„Show" frei. Ist der Datensatz nicht lesbar: ausgeblendet. Eine Bestzeit mehr als 2 % unter der
+des Datensatzes ist nur eine Markierung — der Datensatz lässt Zeilen weg, deren Auto er nicht
+zuordnen kann (am echten Scan von Festival Chase A fehlten ihm so die Plätze 1–3).
+
+Die Boardgröße (`implied_total`) nimmt der Datensatzbau aus einem App-Lauf nur, wenn kein anderer
+Lauf das Board misst; welcher Lauf eines Boards der neueste ist („current"), vergleicht er als
+Zeitpunkt, nicht als Text (der Server in UTC schreibt `+00:00`, lokale Läufe `+02:00`).
+
+**Wohin:** genau dorthin, wo `import_contrib.py` die Läufe der Freunde ablegt —
+`data/memory_scans/contrib/app-<kurz>/app-<kurz>_<run_id>/` (`<kurz>`: 10 Hex aus dem Hash der
+Installationskennung) mit
+`state.json`, `rows.jsonl` und `leaderboard_entries.parquet` (dieselbe Schreibfunktion,
+`import_contrib.write_run`). Erst fertig in `data/submissions/scans/_eingang/`, dann in einem Zug
+an den Platz: `deploy_gnas.py` holt jeden Lauf nur einmal. Daneben ein Eingangsbuch
+`data/submissions/scans/<kennung>.json` mit der Installationskennung (Kontingent, Sperren); es
+bleibt auf dem Server.
+
+**Wie er in den Datensatz kommt:** gebaut wird nicht auf dem Server, sondern auf dem Rechner mit
+dem Spiel. `deploy_gnas.py --apply` holt zuerst `data/memory_scans/contrib` vom GNAS
+(`HOLEN_BAEUME`, nur Läufe, die es hier noch nicht gibt), dann liest
+`build_analytics_dataset.py` `contrib/*/*/state.json` — ein App-Scan geht denselben Weg wie ein
+Fremdbeitrag und steht nach dem nächsten Bau und Deploy auf der Seite, unter der Herkunft
+`app-…`.
+
+**Verwalten:** `GET /api/admin/scan/list` (alle Scans, ohne install_id, mit Sichtbarkeit und dem
+Grund des Tors, `held` — er bleibt stehen, auch nach dem Freigeben), im
+Admin-Bereich unter „Leaderboard scans from the app". Ausblenden über die Sichtbarkeitsliste wie
+jeden Lauf (`POST /api/admin/visibility` mit `{"run_id", "hidden", "reason"}`); es wirkt mit dem
+nächsten Bau. Ausgeblendet, nie gelöscht. Hinter demselben Schalter wie die Runden
+(`lap_submissions` in `config/features.json`).
+
+**Angehalten ist nicht verloren:** Stop, Pause-Taste oder ein anderes Fenster vorn, nachdem der
+Scanner die Liste erreicht hat: das Gelesene wird als Lauf mit `status`/`end_status` „stopped"
+abgelegt, steht so im Reiter und geht hinaus wie ein fertiges Board (das Tor entscheidet). Ein
+Absturzdialog des Spiels ist `game_crashed` und hält die Warteschlange sofort an; ein „Server
+Error" bleibt `server_error` mit acht Minuten Pause und einem zweiten Versuch.
+
+Geprüft: `scripts/test_scan_endpoints.py` (Server über HTTP, Wegwerfverzeichnisse, das Tor mit
+allen Gründen), in der App `--edge-case-test` (ScanUploadBody: Feldliste, kaputte Zeilen,
+Quittung; ScanStopKeepsRows: angehaltene Läufe, Absturz gegen Server-Fehler).
+
+## Was noch fehlt
+
+- ~~Die Oberfläche in der App~~ und ~~der Auslöser~~: seit 2026-09-24 gebaut.
+  `LapAutoSubmit.cs` reicht eine Runde nach dem Fahren selbst ein, wenn sie die
+  Bestenliste schlägt. Der Streckenname kommt vom Anmeldeschirm oder aus dem
+  gesammelten Kursnamen.
+- **Neue Autos gegen die fh6cars-Liste abgleichen.**
+Beides ist inzwischen gebaut:
+
+- **Die Bremse je Absenderadresse** (2026-09-14).
+- **Das Aufräumen alter Hardware-Hashes** (2026-09-14): zwölf Monate ohne
+  Einreichung, dann wird der Eintrag entfernt. Gesperrte bleiben drei Jahre — sonst
+  höbe sich jede Sperre nach einem Jahr lautlos auf. Ohne lesbares Datum wird nichts
+  gelöscht: unbekanntes Alter heißt behalten. Es läuft bei jeder Anmeldung mit, denn
+  ein Wartungsskript, das jemand von Hand starten müsste, läuft nie.
+
+Die Bremse je Absenderadresse war die Bedingung dafür, die Endpunkte überhaupt
+öffentlich zu machen. Sie ist seit dem 2026-09-14 gebaut und geprüft — der Schalter
+in `config/features.json` steht trotzdem weiter auf `false`, bis jemand das
+ausdrücklich ändert.

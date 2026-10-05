@@ -1,0 +1,206 @@
+#fassung 12
+Bitte lies das einmal durch. Es erklärt, was das Programm auf deinem PC tut, was
+deinen Rechner verlässt und warum Windows dich davor warnen könnte.
+
+
+WAS ES AUF DEINEM PC TUT
+
+  Liest die Telemetrie des Spiels.
+      Forza Horizon 6 kann seine eigene Telemetrie per UDP an deinen eigenen
+      Rechner senden. Das schaltest du selbst im Spiel ein, unter
+      Einstellungen > HUD und Gameplay. Das Programm lauscht auf 127.0.0.1 --
+      deinem eigenen Computer, nicht dem Netzwerk -- und nutzt sie für das
+      Runden-Delta, die Live-Karte, deine Rundenaufzeichnungen und die Vibration
+      des Controllers. Nur wenn du das Programm oben in seinem Fenster auf
+      "Xbox / 2. PC" umschaltest, lauscht es stattdessen in deinem Netzwerk, damit
+      die Xbox oder der andere PC es erreichen kann. Wenn die Windows-Firewall das
+      blockiert, fügt ein Knopf im Xbox-Bereich eine Regel für genau diesen
+      UDP-Port hinzu -- nur wenn du ihn drückst, und Windows fragt vorher nach
+      deiner Erlaubnis.
+
+  Liest, was das Spiel auf dem Bildschirm zeigt.
+      Um zu wissen, welche Strecken der Bildschirm "REGISTRIERUNG FÜR DAS EVENT"
+      anbietet, welches Auto im Automenü markiert ist, welche Autos auf den Seiten
+      von "Meine Autos" stehen, die du dir ansiehst, und welches Tune laut der
+      Tune-Liste eines Autos auf ihm liegt, macht das Programm Bilder vom
+      Spielfenster und liest den Text mit der in Windows eingebauten
+      Texterkennung. Das geschieht auf deinem PC; die Bilder werden nirgendwohin
+      gesendet. Im Modus "Xbox / 2. PC" nimmt es diese Bilder stattdessen aus der
+      Quelle, die du wählst: einer Capture-Karte, OBS, dem Fenster von
+      Xbox Remote Play, Discord, einem Stream in deinem Browser oder einer
+      Stream-Adresse. Windows zeichnet dann einen gelben Rahmen um ein
+      aufgenommenes Fenster.
+
+  Liest deine heruntergeladenen Tunes aus dem Spielstand-Ordner -- nur lesend.
+      Der Reiter Tunes zählt sie und zeigt, welche davon kein Auto benutzt. Der
+      Spielstand-Ordner wird dabei nie verändert.
+
+  Liest Bestenlisten und deine Auktionen -- mit Tastendrücken im Spiel.
+      Im Reiter Bestenlisten scannen steuert das Programm die Menüs des Spiels
+      zu den Bestenlisten, die du ankreuzt, und liest sie vom Bildschirm. Im
+      Reiter Auktionshaus kann es das Spiel zu „Meine Gebote“ steuern und
+      deine Auktionen lesen; diese Liste bleibt auf diesem Rechner. Es bietet
+      nie. Beides hört bei Alt+Tab, der Pause-Taste oder Stopp auf.
+
+  Lässt deinen Controller vibrieren -- und das leert seinen Akku schneller.
+      Solange Forza läuft und Telemetrie sendet, steuert das Programm die
+      Vibration deines Controllers: Die Reifenhaftung wird zu einem Rumpeln, ein
+      blockierendes Rad zu einem kurzen Brummen. Das ist von Anfang an
+      eingeschaltet. Ein kabelloser Controller hat spürbar früher einen leeren
+      Akku, während er vibriert, und je stärker und schneller (höhere Frequenz) du
+      die Vibration im Blueprint-Editor einstellst, desto mehr Strom verbraucht
+      er. Entferne im Blueprint-Editor den Haken bei "Graph-Ausgabe aktiv", um sie
+      auszuschalten; das Programm merkt sich das.
+
+  Achtet auf Tastendrücke.
+      Nur um die Tastenkürzel zu erkennen -- F10 setzt im freien Fahren eine
+      Start-Ziel-Linie. Es prüft, ob genau diese Tasten gedrückt sind. Es zeichnet
+      nicht auf, was du tippst, und es gibt nirgends ein Protokoll der
+      Tastenanschläge.
+
+  Zeichnet ein Overlay über das Spiel.
+      Das Runden-Delta, die Karten, die Autonotizen und die Rivalen-Panels sind
+      eigene Fenster, die über Forza gezeichnet werden. Wenn eine Runde die Zeit
+      der Website schlägt, erscheint für etwa fünf Sekunden eine kurze Feier mit
+      Konfetti und einem Ton; du kannst sie im Reiter Rundendelta-HUD ausschalten.
+
+  Zeichnet deine Runden auf -- auf deiner Festplatte.
+      Zeiten, Positionen und Geschwindigkeiten werden in den eigenen Ordner des
+      Programms geschrieben, damit es dir ein Delta zu deiner eigenen Bestzeit
+      zeigen kann. Nur eine Runde, die die Bestenliste schlägt, wird irgendwohin
+      gesendet -- siehe unten.
+
+
+WAS DEINEN RECHNER VERLÄSST
+
+  Das Programm kontaktiert den Server für genau sechs Dinge:
+
+      1. Um zu fragen, ob die Autobewertungen neuer sind als die, die du hast, und
+         um sie zu holen, wenn ja.
+      2. Um zu fragen, ob es eine neuere Version dieses Programms gibt.
+      3. Um diese neue Version herunterzuladen, wenn du den Update-Knopf drückst.
+      4. Um eine Runde einzureichen, die die Bestenliste SCHLÄGT -- AN, außer du
+         schaltest es aus.
+      5. Um die Liste aller Autos zu holen, samt der Angabe, wie man an sie kommt,
+         für den Reiter Autosammlung -- höchstens alle zwölf Stunden und nur,
+         solange dieser Reiter offen ist. Es sendet nichts; welche Autos du
+         besitzt, bleibt auf diesem Rechner.
+      6. Um eine Bestenliste zu senden, die du im Reiter Bestenlisten scannen
+         gelesen hast: je Zeile Platz, Zeit, Auto, PI, Antrieb, Getriebe und
+         Fahrhilfen, dazu Strecke, Klasse und Zeitpunkt des Scans und die
+         gehashte Kennung dieses PCs -- keine Gamertags. Das geschieht nach
+         jedem fertigen Board, solange „Jedes fertige Board hochladen“
+         angehakt ist (das ist es von Anfang an) und das Einreichen an ist.
+
+  Zu 4: Eine Runde wird nur gesendet, wenn sie schneller ist als die beste Zeit
+  der Bestenliste für dasselbe Auto auf dieser Strecke und in dieser Klasse, und
+  schneller als alles, was du dafür vorher gesendet hast. Gesendet werden: das
+  Auto, die Strecke, die Klasse, die Zeit und die VOLLE Telemetrie der Runde --
+  jedes Paket, das das Spiel während dieser Runde gesendet hat: Position und
+  Ausrichtung, Geschwindigkeit, dein Gas, deine Bremse, Kupplung und Lenkung,
+  Gang, Motor und je Rad Reifentemperatur, Schlupf und Federung -- damit der
+  Server prüfen kann, dass die Zeit echt ist, und ein Mensch sich eine Runde
+  ansehen kann, die falsch wirkt. Dazu eine gehashte Kennung dieses PCs, damit
+  Missbrauch gesperrt werden kann -- und dein Gamertag, wenn du einen im Reiter
+  Rivals eingetragen hast. Ein Gamertag ist nicht nötig: Ohne ihn wird die Runde
+  trotzdem gesendet und erscheint auf der Website unter einem vorläufigen
+  Spielernamen. Ein Gamertag, den du später einträgst, ersetzt ihn bei allen
+  deinen Runden, auch bei den früheren, und wenn du das Feld später leerst, bleibt
+  der letzte Name. Der Server prüft die Runde noch einmal, bevor er sie zeigt.
+  Schalte es im Reiter Rivals aus ("Meine Runden einreichen ...") oder setze
+  "submit_laps": false in config/overlay.json.
+
+  Runden, die du ab dieser Fassung sendest, werden mit dieser Telemetrie auch
+  veröffentlicht: Auf der Website kann jeder neben deiner Zeit die volle
+  Telemetrie der Runde herunterladen (als CSV-Tabelle und als Rohdatei), um
+  nachzuvollziehen, wie sie gefahren wurde. Runden, die du vorher gesendet
+  hast, bleiben privat und dienen nur der Prüfung der Zeit.
+
+  Eine Runde, die die Bestenliste schlägt, aber gerade nicht gesendet werden
+  kann -- Einreichen ausgeschaltet, offline oder der Server antwortet nicht --,
+  wird auf diesem Rechner aufbewahrt und später gesendet, sobald das alles wieder
+  in Ordnung ist, auch Wochen später. Bevor sie hinausgeht, wird sie noch einmal
+  gegen die Bestenliste dieses Tages geprüft und verworfen, wenn sie nicht mehr
+  schneller ist. Schaltest du das Einreichen wieder ein, werden also auch die
+  besten Runden gesendet, die du gefahren bist, während es aus war.
+  "Wartende Runden verwerfen" im Reiter Rivals löscht sie stattdessen.
+
+  Sonst wird nichts gesendet. Deine gewöhnlichen Runden werden nicht hochgeladen.
+  Dein Tune wird nicht hochgeladen. Es gibt kein Konto und keine Anmeldung.
+
+  Weil dein Rechner diese Fragen stellt, sieht der Server, dass irgendeine
+  Installation gefragt hat -- das ist bei jedem Programm unvermeidlich, das nach
+  Updates sucht. Das wird gezählt, damit wir ungefähr wissen, wie viele Leute das
+  hier benutzen, und die Kennung wird mit einem Geheimnis gehasht, das auf dem
+  Server bleibt und nach 40 Tagen gelöscht wird. Wenn dich das stört, setze
+  "offline": true in config/overlay.json, und das Programm kontaktiert den Server
+  nie wieder -- es läuft dann ganz mit den Daten, die mit dem Download kamen, und
+  alles außer dem Aktualisieren funktioniert weiter.
+
+
+WIE ES SICH SELBST AKTUALISIERT
+
+  Wenn du den Update-Knopf drückst, lädt das Programm ein ZIP herunter, prüft die
+  Signatur seines Herausgebers, entpackt es und ersetzt seine eigenen Dateien. Ein
+  Paket, das nicht vom Herausgeber signiert ist, wird abgelehnt. Währenddessen
+  erscheint ein kleines Konsolenfenster -- dieses Fenster soll sichtbar sein,
+  damit du sehen kannst, was ersetzt wird. Dein Einstellungsordner bleibt
+  erhalten.
+
+  Es wird nichts installiert. Es wird nichts in die Windows-Registrierung
+  geschrieben. Lösche den Ordner, und das Programm ist weg.
+
+
+WARUM WINDOWS ES VIELLEICHT EINEN TROJANER NENNT
+
+  Windows Defender meldet dieses Programm möglicherweise als
+  Trojan:Win32/Bearfoos.A!ml und blockiert es. Die Endung "!ml" bedeutet, dass
+  dies kein Treffer für irgendeine bekannte Schadsoftware ist -- es ist eine
+  Vermutung eines Machine-Learning-Modells über eine Datei, die es noch nie
+  gesehen hat.
+
+  Es vermutet das, weil das Programm nicht codesigniert ist, fast noch niemand es
+  hat und es die zwei oben genannten Dinge tut: Es ersetzt seine eigenen Dateien
+  und lädt aus dem Internet herunter. Das sind genau die Verhaltensweisen,
+  denen zu misstrauen das Modell trainiert wurde.
+
+  Jede Version wird vor der Veröffentlichung gescannt, und die Download-Seite
+  zeigt eine Prüfsumme, damit du prüfen kannst, dass die Datei, die du bekommen
+  hast, die Datei ist, die gebaut wurde. Wenn du dich darauf lieber nicht
+  verlassen willst, starte es nicht -- das ist eine legitime Entscheidung, und
+  dieses Programm wird dich deswegen nicht bedrängen.
+
+
+VERKNÜPFUNGEN, WENN DU SIE WILLST
+
+  Unter diesem Text kannst du eine Desktop-Verknüpfung, einen Startmenü-Eintrag
+  und den Start des Programms mit Forza anfordern. Alle drei sind aus, solange du
+  sie nicht ankreuzt, alle drei sind nur eine .lnk-Datei in einem Ordner, und du
+  kannst jede davon später löschen, ohne das Programm anzurühren.
+
+  "Mit Forza starten" legt das Programm in deinen Windows-Autostart-Ordner. Ab der
+  Anmeldung wartet es unsichtbar im Infobereich und öffnet sich (minimiert), wenn
+  Forza startet; nach dem Spiel geht es dorthin zurück. Windows lässt ein Programm
+  ohne Administratorrechte nicht starten, wenn ein anderes Programm startet -- im
+  Infobereich zu warten braucht keine und kostet praktisch nichts. Wenn du das
+  Fenster schließt, wartet es weiter; zum Beenden klicke mit der rechten Maustaste
+  auf das Symbol. Der Knopf "Mit Forza starten" oben rechts im Hauptfenster
+  schaltet es ein und aus.
+
+  Windows erlaubt einem Programm nicht, sich selbst an die Taskleiste
+  anzuheften -- das ist dir seit Windows 10 Version 1607 vorbehalten, und es zu
+  umgehen hieße, eine Prüfsumme in der Registrierung zu fälschen. Dieses Programm
+  tut das nicht. Kreuze den Startmenü-Eintrag an, klicke ihn dann mit der rechten
+  Maustaste an und wähle "An Taskleiste anheften".
+
+
+KEINE GEWÄHRLEISTUNG
+
+  Dies ist ein Hobbyprojekt, kostenlos verschenkt, ohne Gewährleistung jeglicher
+  Art. Es ist nicht mit Microsoft, Turn 10, Playground Games oder der Reihe
+  Forza Horizon verbunden, wird nicht von ihnen unterstützt und steht in keiner
+  Beziehung zu ihnen.
+
+
+Du kannst das jederzeit wieder lesen: über den Link "Was dieses Programm tut" oben
+im Hauptfenster.

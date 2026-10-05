@@ -1,0 +1,198 @@
+#fassung 12
+Kérlek, olvasd el ezt egyszer. Elmagyarázza, mit csinál a program a PC-den, mi
+hagyja el a számítógépedet, és miért figyelmeztethet emiatt a Windows.
+
+
+MIT CSINÁL A PC-DEN
+
+  Telemetriát olvas a játékból.
+      A Forza Horizon 6 képes a saját telemetriáját UDP-n keresztül a saját
+      gépedre küldeni. Ezt te magad kapcsolod be a játékban, a
+      Beállítások > HUD és játékmenet alatt. A program a 127.0.0.1 címen figyel --
+      a saját számítógépeden, nem a hálózaton -- és a kördeltához, az élő
+      térképhez, a körrekordjaidhoz és a kontroller rezgéséhez használja. Csak ha
+      az ablak tetején "Xbox / 2. PC" módra váltod a programot, akkor figyel
+      helyette a hálózatodon, hogy az Xbox vagy a másik PC elérje. Ha a Windows
+      tűzfal ezt blokkolja, az Xbox panelen egy gomb felvesz egy szabályt pontosan
+      arra az UDP-portra -- csak ha megnyomod, és a Windows előbb az engedélyedet
+      kéri.
+
+  Olvassa, amit a játék a képernyőn mutat.
+      Hogy tudja, milyen pályákat kínál a Feliratkozás az eseményre képernyő,
+      melyik autó van kijelölve az autómenüben, milyen autók vannak az általad
+      megnézett "Saját autók" oldalakon, és melyik tuning van egy autón a
+      tuninglistájában, a program képeket készít a játék ablakáról, és a Windowsba
+      beépített szövegfelismeréssel olvassa ki a szöveget. Ez a PC-den történik; a
+      képeket sehova sem küldi el. "Xbox / 2. PC" módban ezeket a képeket helyette
+      az általad választott forrásból veszi: capture kártyáról, OBS-ből, az
+      Xbox Remote Play ablakából, Discordból, a böngésződben futó streamből vagy
+      egy streamcímről. A Windows ekkor sárga keretet rajzol a rögzített ablak
+      köré.
+
+  Olvassa a letöltött tuningjaidat a játék mentési mappájából -- csak olvasásra.
+      A Tunes lap megszámolja őket, és megmutatja, melyiket nem használja egyetlen
+      autó sem. A mentési mappát ez soha nem módosítja.
+
+  Ranglistákat és az aukcióidat olvassa -- billentyűket nyomva a játékban.
+      A Ranglisták beolvasása lapon a program a játék menüin át eljut a
+      bejelölt ranglistákig, és leolvassa őket a képernyőről. Az Aukciósház
+      lapon el tudja vinni a játékot a „Saját licitek” részhez, és beolvassa
+      az aukcióidat; ez a lista ezen a gépen marad. Soha nem licitál. Mindkettő
+      leáll Alt+Tabra, a Pause billentyűre vagy a Leállításra.
+
+  Rezegteti a kontrolleredet -- és ez gyorsabban meríti az akkumulátorát.
+      Amíg a Forza fut és telemetriát küld, a program vezérli a kontrollered
+      rezgését: a gumik tapadásából dübörgés lesz, a blokkoló kerékből rövid
+      zümmögés. Ez kezdettől be van kapcsolva. Egy vezeték nélküli kontroller
+      észrevehetően hamarabb lemerül, amíg rezeg, és minél erősebbre és gyorsabbra
+      (magasabb frekvenciára) állítod a rezgést a Tervrajz-szerkesztő lapon, annál
+      több energiát fogyaszt. A kikapcsoláshoz a Tervrajz-szerkesztő lapon vedd ki a
+      pipát az "A gráf kimenete bekapcsolva" elől; a program ezt megjegyzi.
+
+  Figyeli a billentyűleütéseket.
+      Csak a gyorsbillentyűk észleléséhez -- az F10 start-/célvonalat állít be
+      szabad felfedezésben. Azt ellenőrzi, hogy éppen ezek a billentyűk le
+      vannak-e nyomva. Nem rögzíti, amit gépelsz, és sehol sincs napló a
+      billentyűleütésekről.
+
+  Overlayt rajzol a játék fölé.
+      A kördelta, a térképek, az autós jegyzetek és a Rivals panelek külön
+      ablakok, amelyek a Forza fölé rajzolódnak. Amikor egy kör megveri a weboldal
+      idejét, körülbelül öt másodpercre rövid ünneplés jelenik meg konfettivel és
+      hanggal; ezt a Kördelta HUD lapon kapcsolhatod ki.
+
+  Rögzíti a köreidet -- a lemezedre.
+      Az időket, pozíciókat és sebességeket a program a saját mappájába írja, hogy
+      deltát mutathasson a saját legjobb idődhöz képest. Csak az a kör megy el
+      bárhová, amelyik megveri a ranglistát -- lásd lent.
+
+
+MI HAGYJA EL A SZÁMÍTÓGÉPEDET
+
+  A program pontosan hat dolog miatt lép kapcsolatba a szerverrel:
+
+      1. Hogy megkérdezze, újabbak-e az autóértékelések, mint amelyek nálad
+         vannak, és hogy letöltse őket, ha igen.
+      2. Hogy megkérdezze, létezik-e a program újabb verziója.
+      3. Hogy letöltse ezt az új verziót, amikor megnyomod a frissítés gombot.
+      4. Hogy beküldjön egy kört, amely MEGVERI a ranglistát -- BE van kapcsolva,
+         hacsak ki nem kapcsolod.
+      5. Hogy lekérje az összes autó listáját és azt, hogyan lehet megszerezni
+         őket, a Autógyűjtemény laphoz -- legfeljebb tizenkét óránként, és csak
+         amíg az a lap nyitva van. Semmit sem küld; hogy mely autók a tieid, az
+         ezen a számítógépen marad.
+      6. Hogy elküldjön egy ranglistát, amelyet a Ranglisták beolvasása lapon
+         olvastál be: soronként a helyezést, az időt, az autót, a PI-t, a
+         hajtást, a váltót és a segítségeket, továbbá a pályát, a kategóriát
+         és a beolvasás idejét, valamint ennek a gépnek a hash-elt
+         azonosítóját -- gamertageket nem. Ez minden kész ranglista után
+         megtörténik, amíg a „Minden kész ranglista feltöltése” be van jelölve
+         (kezdettől az) és a beküldés be van kapcsolva.
+
+  A 4. ponthoz: egy kör csak akkor megy el, ha gyorsabb, mint ugyanannak az
+  autónak a legjobb ranglistaideje azon a pályán és abban az osztályban, és
+  gyorsabb bárminél, amit korábban beküldtél rá. Elküldésre kerül: az autó, a
+  pálya, az osztály, az idő és a kör TELJES telemetriája -- minden csomag, amelyet
+  a játék a kör alatt küldött: pozíció és tájolás, sebesség, a gázadásod,
+  fékezésed, kuplungod és kormányzásod, sebességfokozat, motor, valamint
+  kerekenként a gumihőmérséklet, a csúszás és a felfüggesztés -- hogy a szerver
+  ellenőrizhesse, valódi-e az idő, és egy ember megnézhessen egy hibásnak tűnő
+  kört. Továbbá ennek a PC-nek egy hashelt azonosítója, hogy a visszaélés
+  letiltható legyen -- és a gamertaged, ha megadtál egyet a Rivals lapon. Gamertag
+  nem kötelező: nélküle is elmegy a kör, és ideiglenes játékosnévvel jelenik meg a
+  weboldalon. Egy később megadott gamertag az összes körödnél lecseréli, a
+  korábbiaknál is, és ha később kiüríted a mezőt, az utolsó név megmarad. A
+  szerver újra ellenőrzi a kört, mielőtt megjeleníti. Kapcsold ki a Rivals lapon
+  ("Köreim beküldése ...") vagy állítsd be a "submit_laps": false értéket a
+  config/overlay.json fájlban.
+
+  Az ettől a változattól elküldött köreid ezzel a telemetriával együtt
+  nyilvánosak is lesznek: a weboldalon az időd mellett bárki letöltheti a kör
+  teljes telemetriáját (CSV-táblázatként és nyers fájlként), hogy megnézze,
+  hogyan ment. A korábban elküldött köreid privátok maradnak, és csak az idő
+  ellenőrzésére szolgálnak.
+
+  Az a kör, amely megveri a ranglistát, de éppen nem küldhető el -- mert a
+  beküldés ki van kapcsolva, offline vagy, vagy a szerver nem válaszol --, ezen a
+  számítógépen marad, és később megy el, amint minden újra rendben van, akár
+  hetekkel később is. Mielőtt elmegy, a program még egyszer összeveti az aznapi
+  ranglistával, és elveti, ha már nem gyorsabb. A beküldés visszakapcsolása tehát
+  azokat a legjobb köröket is elküldi, amelyeket akkor mentél, amikor ki volt
+  kapcsolva. A Rivals lapon a "Várakozó körök elvetése" ehelyett törli őket.
+
+  Semmi más nem megy el. A szokásos köreidet nem tölti fel. A tuningodat nem tölti
+  fel. Nincs fiók, és nincs hova bejelentkezni.
+
+  Mivel a számítógéped felteszi ezeket a kérdéseket, a szerver látja, hogy
+  valamelyik telepítés kérdezett -- ez elkerülhetetlen minden olyan programnál,
+  amely frissítéseket keres. Ezt megszámoljuk, hogy nagyjából tudjuk, hányan
+  használják, és az azonosítót egy titokkal hasheljük, amely a szerveren marad, és
+  40 nap után törlődik. Ha ez zavar, állítsd be az "offline": true értéket a
+  config/overlay.json fájlban, és a program soha többé nem lép kapcsolatba a
+  szerverrel -- ekkor teljes egészében a letöltéssel érkezett adatokkal fut, és a
+  frissítésen kívül minden tovább működik.
+
+
+HOGYAN FRISSÍTI SAJÁT MAGÁT
+
+  Amikor megnyomod a frissítés gombot, a program letölt egy ZIP-fájlt, ellenőrzi a
+  kiadója aláírását, kicsomagolja, és lecseréli a saját fájljait. Azt a csomagot,
+  amelyet nem a kiadó írt alá, elutasítja. Egy kis konzolablak jelenik meg, amíg
+  ez zajlik -- ennek az ablaknak szándékosan kell látszania, hogy lásd, mi
+  cserélődik le. A beállításaid mappája megmarad.
+
+  Semmi sem települ. Semmi sem kerül a Windows beállításjegyzékébe. Töröld a
+  mappát, és a program eltűnik.
+
+
+MIÉRT NEVEZHETI A WINDOWS TRÓJAINAK
+
+  A Windows Defender jelentheti ezt a programot Trojan:Win32/Bearfoos.A!ml néven,
+  és blokkolhatja. A "!ml" utótag azt jelenti, hogy ez nem egyezés egyetlen ismert
+  kártevővel sem -- hanem egy gépi tanulási modell tippje egy olyan fájlról,
+  amelyet még soha nem látott.
+
+  Azért tippel így, mert a program nincs kódaláírással ellátva, szinte még
+  senkinek sincs meg, és azt a két dolgot teszi, amelyek fent szerepelnek:
+  lecseréli a saját fájljait, és az internetről tölt le. Pontosan ezekkel a
+  viselkedésekkel szembeni bizalmatlanságra tanították a modellt.
+
+  Minden kiadás átvizsgáláson megy át a közzététel előtt, és a letöltési oldal
+  ellenőrzőösszeget mutat, hogy ellenőrizhesd, a kapott fájl pontosan az-e, amely
+  elkészült. Ha ezt inkább nem hinnéd el látatlanban, ne futtasd -- ez jogos
+  döntés, és ez a program nem fog emiatt nyaggatni.
+
+
+PARANCSIKONOK, HA SZERETNÉD
+
+  E szöveg alatt kérhetsz asztali parancsikont, Start menü bejegyzést, és azt,
+  hogy a program a Forzával induljon. Mindhárom ki van kapcsolva, hacsak be nem
+  jelölöd őket, mindhárom csupán egy .lnk fájl egy mappában, és bármelyiket később
+  törölheted anélkül, hogy a programhoz nyúlnál.
+
+  Az "Indítás a Forzával" beteszi a programot a Windows Indítópult mappájába.
+  Bejelentkezéstől láthatatlanul vár az értesítési területen, és (kis méretben)
+  megnyílik, amikor a Forza elindul; a játék után visszatér oda. A Windows
+  rendszergazdai jogok nélkül nem engedi, hogy egy program akkor induljon el,
+  amikor egy másik program elindul -- az értesítési területen várakozáshoz nem
+  kell ilyen jog, és gyakorlatilag semmibe sem kerül. Az ablak bezárása után
+  tovább vár; a kilépéshez kattints jobb gombbal az ikonra. A főablak jobb felső
+  sarkában lévő "Indítás a Forzával" gomb be- és kikapcsolja.
+
+  A Windows nem engedi, hogy egy program saját magát rögzítse a tálcán -- ez a
+  Windows 10 1607-es verziója óta csak neked van fenntartva, és a megkerülése egy
+  ellenőrzőösszeg hamisítását jelenti a beállításjegyzékben. Ez a program ezt nem
+  teszi. Jelöld be a Start menü bejegyzést, majd kattints rá jobb gombbal, és
+  válaszd a "Rögzítés a tálcán" lehetőséget.
+
+
+NINCS GARANCIA
+
+  Ez egy ingyenesen közreadott hobbiprojekt, mindenféle garancia nélkül. Nem áll
+  társulásban a Microsofttal, a Turn 10-zel, a Playground Gamesszel vagy a
+  Forza Horizon sorozattal, nem ők hagyták jóvá, és semmilyen módon nem
+  kapcsolódik hozzájuk.
+
+
+Ezt bármikor újra elolvashatod: a főablak tetején lévő "Mit csinál ez a program"
+hivatkozással.

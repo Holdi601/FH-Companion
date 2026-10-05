@@ -1,0 +1,193 @@
+#fassung 12
+Läs det här en gång. Det förklarar vad programmet gör på din dator, vad som lämnar
+din dator och varför Windows kan varna dig för det.
+
+
+VAD DET GÖR PÅ DIN DATOR
+
+  Läser telemetri från spelet.
+      Forza Horizon 6 kan skicka sin egen telemetri till din egen maskin via UDP.
+      Det slår du själv på i spelet under Inställningar > Gränssnitt och spel.
+      Programmet lyssnar på 127.0.0.1 -- din egen dator, inte nätverket -- och
+      använder den för varvdeltat, livekartan, dina varvrekord och handkontrollens
+      vibration. Bara om du växlar programmet till "Xbox / 2:a dator" högst upp i
+      fönstret lyssnar det i stället på ditt nätverk, så att Xboxen eller den
+      andra datorn kan nå det. Om Windows-brandväggen blockerar det lägger en
+      knapp i Xbox-panelen till en regel för exakt den UDP-porten -- bara när du
+      trycker på den, och Windows ber först om ditt tillstånd.
+
+  Läser vad spelet visar på skärmen.
+      För att veta vilka banor skärmen Eventanmälan erbjuder, vilken bil som är
+      markerad i bilmenyn, vilka bilar som finns på de "Mina bilar"-sidor du
+      tittar på och vilken tune som sitter på en bil i dess tunelista, tar
+      programmet bilder av spelfönstret och läser texten med den textigenkänning
+      som är inbyggd i Windows. Det sker på din dator; bilderna skickas
+      ingenstans. I läget "Xbox / 2:a dator" tar det i stället bilderna från den
+      källa du väljer: ett capture-kort, OBS, Xbox Remote Play-fönstret, Discord,
+      en stream i din webbläsare eller en streamadress. Windows ritar då en gul
+      ram runt ett fönster som fångas.
+
+  Läser dina nedladdade tunes från spelets sparmapp -- endast läsning.
+      Fliken Tunes räknar dem och visar vilka som ingen bil använder. Sparmappen
+      ändras aldrig av detta.
+
+  Läser topplistor och dina auktioner -- genom att trycka på tangenter i spelet.
+      På fliken Skanna topplistor styr programmet spelets menyer till de
+      topplistor du kryssar i och läser dem från skärmen. På fliken
+      Auktionshus kan det styra spelet till ”Mina bud” och läsa dina
+      auktioner; den listan stannar på den här datorn. Det bjuder aldrig.
+      Båda stoppar vid Alt+Tab, Pause-tangenten eller Stoppa.
+
+  Får din handkontroll att vibrera -- och det tömmer dess batteri snabbare.
+      Medan Forza körs och skickar telemetri styr programmet vibrationen i din
+      handkontroll: däckgrepp blir till mullrande, ett hjul som låser sig blir
+      till ett kort surr. Det är på från början. En trådlös handkontroll får slut
+      på batteri märkbart tidigare medan den vibrerar, och ju starkare och
+      snabbare (högre frekvens) du ställer in vibrationen i Blueprint-redigerare,
+      desto mer ström drar den. Avmarkera "Grafutgång på" i Blueprint-redigerare för
+      att stänga av den; programmet kommer ihåg det.
+
+  Håller koll på tangenttryckningar.
+      Bara för att fånga snabbtangenterna -- F10 sätter en start-/mållinje i fri
+      körning. Det kontrollerar om just de tangenterna är nedtryckta. Det
+      registrerar inte vad du skriver, och det finns ingen logg över
+      tangenttryckningar någonstans.
+
+  Ritar ett overlay ovanpå spelet.
+      Varvdeltat, kartorna, bilanteckningarna och Rivals-panelerna är separata
+      fönster som ritas över Forza. När ett varv slår webbplatsens tid visas ett
+      kort firande med konfetti och ett ljud i ungefär fem sekunder; du kan stänga
+      av det på fliken Varvdelta-HUD.
+
+  Sparar dina varv -- på din disk.
+      Tider, positioner och hastigheter skrivs till programmets egen mapp så att
+      det kan visa dig ett delta mot din egen bästa tid. Bara ett varv som slår
+      topplistan skickas någonstans -- se nedan.
+
+
+VAD SOM LÄMNAR DIN DATOR
+
+  Programmet kontaktar servern för exakt sex saker:
+
+      1. För att fråga om bilbetygen är nyare än de du har, och för att hämta dem
+         om de är det.
+      2. För att fråga om det finns en nyare version av det här programmet.
+      3. För att ladda ned den nya versionen när du trycker på
+         uppdateringsknappen.
+      4. För att skicka in ett varv som SLÅR topplistan -- PÅ om du inte stänger
+         av det.
+      5. För att hämta listan över alla bilar och hur man får tag på dem, för
+         fliken Bilsamling -- högst var tolfte timme, och bara medan den
+         fliken är öppen. Det skickar ingenting; vilka bilar du äger stannar på
+         den här datorn.
+      6. För att skicka en topplista som du skannat på fliken Skanna
+         topplistor: per rad placering, tid, bil, PI, drivlina, växellåda och
+         hjälpmedel, plus bana, klass och tidpunkt för skanningen och det
+         hashade id:t för den här datorn -- inga gamertags. Det sker efter
+         varje färdig topplista så länge ”Ladda upp varje färdig topplista” är
+         ikryssad (det är den från början) och inskickning är på.
+
+  Om 4: ett varv skickas bara om det är snabbare än den bästa topplistetiden för
+  samma bil på den banan och i den klassen, och snabbare än allt du har skickat
+  för den tidigare. Det som skickas är: bilen, banan, klassen, tiden och varvets
+  FULLSTÄNDIGA telemetri -- varje paket som spelet skickade under varvet: position
+  och riktning, hastighet, din gas, broms, koppling och styrning, växel, motor och
+  för varje hjul däckets temperatur, slirning och fjädring -- så att servern kan
+  kontrollera att tiden är äkta och en människa kan titta på ett varv som verkar
+  fel. Dessutom en hashad identifierare för den här datorn så att missbruk kan
+  blockeras -- och din gamertag, om du har angett en på fliken Rivals. En gamertag
+  krävs inte: utan en skickas varvet ändå och visas på webbplatsen under ett
+  tillfälligt spelarnamn. En gamertag som du anger senare ersätter det på alla
+  dina varv, även de tidigare, och om du senare tömmer fältet behålls det senaste
+  namnet. Servern kontrollerar varvet igen innan den visar det. Stäng av det på
+  fliken Rivals ("Skicka mina varv ...") eller ställ in "submit_laps": false i
+  config/overlay.json.
+
+  Varv som du skickar från den här versionen publiceras också med den
+  telemetrin: på webbplatsen kan vem som helst bredvid din tid ladda ner
+  varvets fullständiga telemetri (som CSV-tabell och som råfil) för att se hur
+  det kördes. Varv som du skickade tidigare förblir privata och används bara
+  för att kontrollera tiden.
+
+  Ett varv som slår topplistan men inte kan skickas just då -- inskickning
+  avstängd, offline eller servern svarar inte -- sparas på den här datorn och
+  skickas senare, när allt det fungerar igen, även veckor senare. Innan det
+  skickas kontrolleras det en gång till mot den dagens topplista och kastas om det
+  inte längre är snabbare. Att slå på inskickningen igen skickar alltså även de
+  bästa varv du körde medan den var avstängd. "Släng väntande varv" på fliken
+  Rivals tar i stället bort dem.
+
+  Inget annat skickas. Dina vanliga varv laddas inte upp. Din tune laddas inte
+  upp. Det finns inget konto och inget att logga in på.
+
+  Eftersom din dator ställer de frågorna ser servern att någon installation har
+  frågat -- det är oundvikligt för alla program som söker efter uppdateringar. Det
+  räknas så att vi ungefär vet hur många som använder det här, och identifieraren
+  hashas med en hemlighet som stannar på servern och raderas efter 40 dagar. Om
+  det stör dig, ställ in "offline": true i config/overlay.json, så kontaktar
+  programmet aldrig servern igen -- det körs då helt på de data som följde med
+  nedladdningen, och allt utom uppdatering fortsätter att fungera.
+
+
+HUR DET UPPDATERAR SIG SJÄLVT
+
+  När du trycker på uppdateringsknappen laddar programmet ned en ZIP-fil,
+  verifierar utgivarens signatur, packar upp den och ersätter sina egna filer. Ett
+  paket som inte är signerat av utgivaren avvisas. Ett litet konsolfönster visas
+  medan det pågår -- det fönstret ska synas, så att du kan se vad som ersätts. Din
+  mapp med inställningar behålls.
+
+  Inget installeras. Inget skrivs till Windows-registret. Ta bort mappen, så är
+  programmet borta.
+
+
+VARFÖR WINDOWS KAN KALLA DET EN TROJAN
+
+  Windows Defender kan rapportera det här programmet som
+  Trojan:Win32/Bearfoos.A!ml och blockera det. Ändelsen "!ml" betyder att det inte
+  är en träff mot någon känd skadlig kod -- det är en gissning av en
+  maskininlärningsmodell om en fil som den aldrig har sett.
+
+  Den gissar så eftersom programmet inte är kodsignerat, nästan ingen har det än
+  och det gör de två saker som nämns ovan: ersätter sina egna filer och laddar
+  ned från internet. Det är exakt de beteenden som modellen har tränats att
+  misstro.
+
+  Varje utgåva skannas innan den publiceras, och nedladdningssidan visar en
+  kontrollsumma så att du kan kontrollera att filen du fick är den fil som
+  byggdes. Om du hellre inte vill ta det på förtroende, kör det inte -- det är ett
+  legitimt val, och det här programmet kommer inte att tjata på dig om det.
+
+
+GENVÄGAR, OM DU VILL HA DEM
+
+  Under den här texten kan du be om en genväg på skrivbordet, en post i
+  Start-menyn och att programmet startar med Forza. Alla tre är avstängda om du
+  inte kryssar i dem, alla tre är bara en .lnk-fil i en mapp, och du kan ta bort
+  vilken som helst av dem senare utan att röra programmet.
+
+  "Starta med Forza" lägger programmet i din autostartmapp i Windows. Från
+  inloggningen väntar det osynligt i meddelandefältet och öppnas (minimerat) när
+  Forza startar; efter spelet går det tillbaka dit. Windows låter inte ett program
+  starta när ett annat program startar utan administratörsbehörighet -- att vänta
+  i meddelandefältet kräver ingen och kostar praktiskt taget ingenting. Om du
+  stänger fönstret fortsätter det att vänta; högerklicka på ikonen för att
+  avsluta. Knappen "Starta med Forza" uppe till höger i huvudfönstret slår på och
+  av det.
+
+  Windows tillåter inte att ett program fäster sig självt i aktivitetsfältet --
+  det har varit förbehållet dig sedan Windows 10 version 1607, och att kringgå det
+  innebär att förfalska en kontrollsumma i registret. Det gör inte det här
+  programmet. Kryssa i posten i Start-menyn, högerklicka sedan på den och välj
+  "Fäst i aktivitetsfältet".
+
+
+INGEN GARANTI
+
+  Det här är ett hobbyprojekt som ges bort gratis, utan någon som helst garanti.
+  Det är inte knutet till, godkänt av eller förbundet med Microsoft, Turn 10,
+  Playground Games eller Forza Horizon-serien.
+
+
+Du kan läsa det här igen när som helst: länken "Vad programmet gör" högst upp i
+huvudfönstret.

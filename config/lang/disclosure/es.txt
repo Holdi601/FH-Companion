@@ -1,0 +1,201 @@
+#fassung 12
+Lee esto una vez, por favor. Explica qué hace el programa en tu PC, qué sale de tu
+ordenador y por qué Windows puede advertirte sobre él.
+
+
+QUÉ HACE EN TU PC
+
+  Lee la telemetría del juego.
+      Forza Horizon 6 puede enviar su propia telemetría a tu propio equipo por
+      UDP. Eso lo activas tú mismo en el juego, en
+      Ajustes > Interfaz y experiencia de juego. El programa escucha en
+      127.0.0.1 -- tu propio ordenador, no la red -- y la usa para el delta de
+      vuelta, el mapa en vivo, el registro de tus vueltas y la vibración del
+      mando. Solo si cambias el programa a "Xbox / 2.º PC" arriba en su ventana
+      escucha en cambio en tu red, para que la Xbox o el otro PC puedan llegar a
+      él. Si el firewall de Windows lo bloquea, un botón del panel Xbox añade una
+      regla para exactamente ese puerto UDP -- solo cuando lo pulsas, y Windows te
+      pide permiso antes.
+
+  Lee lo que el juego muestra en pantalla.
+      Para saber qué rutas ofrece la pantalla "Inscripción al evento", qué coche
+      está resaltado en el menú de coches, qué coches hay en las páginas de
+      "Mis coches" que miras y qué reglaje lleva un coche en su lista de reglajes,
+      el programa toma imágenes de la ventana del juego y lee el texto con el
+      reconocimiento de texto integrado en Windows. Esto ocurre en tu PC; las
+      imágenes no se envían a ninguna parte. En el modo "Xbox / 2.º PC" toma esas
+      imágenes en su lugar de la fuente que elijas: una capturadora, OBS, la
+      ventana de Xbox Remote Play, Discord, un stream en tu navegador o una
+      dirección de stream. Windows dibuja entonces un marco amarillo alrededor de
+      una ventana capturada.
+
+  Lee tus reglajes descargados de la carpeta de guardado del juego (solo lectura).
+      La pestaña Tunes los cuenta y muestra cuáles no usa ningún coche. La carpeta
+      de guardado nunca se modifica por ello.
+
+  Lee clasificaciones y tus subastas -- pulsando teclas en el juego.
+      En la pestaña Escanear clasificaciones, el programa lleva los menús del
+      juego hasta las clasificaciones que marques y las lee de la pantalla. En
+      la pestaña Casa de subastas puede llevar el juego hasta «Mis pujas» y
+      leer tus subastas; esa lista se queda en este ordenador. Nunca puja.
+      Ambos se detienen con Alt+Tab, la tecla Pausa o Detener.
+
+  Hace vibrar tu mando -- y eso agota su batería más rápido.
+      Mientras Forza está en marcha y envía telemetría, el programa controla la
+      vibración de tu mando: el agarre de los neumáticos se convierte en un
+      retumbo, una rueda que se bloquea en un zumbido breve. Esto está activado
+      desde el principio. Un mando inalámbrico se quedará sin batería notablemente
+      antes mientras vibra, y cuanto más fuerte y más rápida (mayor frecuencia)
+      ajustes la vibración en el Editor Blueprint, más energía consume. Desmarca
+      "Salida del grafo activada" en el Editor Blueprint para desactivarla; el
+      programa lo recuerda.
+
+  Vigila las pulsaciones de teclas.
+      Solo para captar las teclas de acceso rápido -- F10 fija una línea de
+      salida/meta en el mundo libre. Comprueba si esas teclas concretas están
+      pulsadas. No registra lo que escribes y no existe ningún registro de
+      pulsaciones en ninguna parte.
+
+  Dibuja un overlay sobre el juego.
+      El delta de vuelta, los mapas, las notas de coche y los paneles de Rivales
+      son ventanas independientes dibujadas sobre Forza. Cuando una vuelta supera
+      el tiempo de la web, aparece durante unos cinco segundos una breve
+      celebración con confeti y un sonido; puedes desactivarla en la pestaña
+      HUD de delta por vuelta.
+
+  Registra tus vueltas -- en tu disco.
+      Los tiempos, las posiciones y las velocidades se escriben en la carpeta
+      propia del programa para que pueda mostrarte un delta respecto a tu propio
+      mejor tiempo. Solo una vuelta que supere la clasificación se envía a alguna
+      parte -- ver más abajo.
+
+
+QUÉ SALE DE TU ORDENADOR
+
+  El programa contacta con el servidor para exactamente seis cosas:
+
+      1. Para preguntar si las valoraciones de los coches son más recientes que
+         las que tienes, y para descargarlas si lo son.
+      2. Para preguntar si existe una versión más reciente de este programa.
+      3. Para descargar esa nueva versión, cuando pulsas el botón de actualizar.
+      4. Para enviar una vuelta que SUPERA la clasificación -- ACTIVADO salvo que
+         lo desactives.
+      5. Para obtener la lista de todos los coches y cómo conseguirlos, para la
+         pestaña Colección de coches -- como mucho cada doce horas, y solo mientras esa
+         pestaña está abierta. No envía nada; qué coches tienes se queda en este
+         ordenador.
+      6. Para enviar una clasificación que escaneaste en la pestaña Escanear
+         clasificaciones: por fila el puesto, el tiempo, el coche, el PI, la
+         tracción, la caja de cambios y las ayudas, además del circuito, la
+         clase y la hora del escaneo, y el identificador cifrado de este PC --
+         ningún gamertag. Ocurre tras cada clasificación terminada mientras
+         «Subir cada clasificación terminada» esté marcado (lo está desde el
+         principio) y el envío esté activado.
+
+  Sobre el 4: una vuelta solo se envía si es más rápida que el mejor tiempo de la
+  clasificación de ese mismo coche en esa ruta y clase, y más rápida que todo lo
+  que hayas enviado antes para ello. Se envían: el coche, la ruta, la clase, el
+  tiempo y la telemetría COMPLETA de la vuelta -- cada paquete que el juego envió
+  durante esa vuelta: posición y orientación, velocidad, tu acelerador, freno,
+  embrague y dirección, marcha, motor y, por rueda, la temperatura del neumático,
+  el deslizamiento y la suspensión -- para que el servidor pueda comprobar que el
+  tiempo es real y una persona pueda revisar una vuelta que parezca incorrecta.
+  Además, un identificador de este PC convertido en hash para poder bloquear
+  abusos -- y tu gamertag, si has puesto uno en la pestaña Rivals. El gamertag no
+  es obligatorio: sin él, la vuelta se envía igualmente y aparece en la web con un
+  nombre de jugador provisional. Un gamertag que pongas más tarde lo sustituye en
+  todas tus vueltas, también en las anteriores, y vaciar el campo más tarde
+  conserva el último nombre. El servidor vuelve a comprobar la vuelta antes de
+  mostrarla. Desactívalo en la pestaña Rivals ("Enviar mis vueltas ...") o pon
+  "submit_laps": false en config/overlay.json.
+
+  Las vueltas que envíes a partir de esta versión también se publican con esa
+  telemetría: en la web, junto a tu tiempo, cualquiera puede descargar la
+  telemetría completa de la vuelta (como tabla CSV y como archivo sin
+  procesar) para estudiar cómo se condujo. Las vueltas que enviaste antes
+  siguen siendo privadas y solo sirven para comprobar el tiempo.
+
+  Una vuelta que supera la clasificación pero no puede enviarse en ese momento --
+  envío desactivado, sin conexión o el servidor no responde -- se guarda en este
+  ordenador y se envía más tarde, en cuanto todo eso vuelva a estar bien, incluso
+  semanas después. Antes de salir, se comprueba una vez más contra la
+  clasificación de ese día y se descarta si ya no es más rápida. Así que volver a
+  activar el envío también envía las mejores vueltas que hiciste mientras estaba
+  desactivado. "Descartar vueltas en espera" en la pestaña Rivals las borra en su
+  lugar.
+
+  No se envía nada más. Tus vueltas normales no se suben. Tu reglaje no se sube.
+  No hay cuenta ni nada en lo que iniciar sesión.
+
+  Como tu ordenador hace esas preguntas, el servidor ve que alguna instalación ha
+  preguntado -- eso es inevitable en cualquier programa que busque
+  actualizaciones. Se cuenta para que sepamos aproximadamente cuánta gente lo usa,
+  y el identificador se convierte en hash con un secreto que se queda en el
+  servidor y se borra a los 40 días. Si eso te molesta, pon "offline": true en
+  config/overlay.json y el programa no volverá a contactar nunca con el
+  servidor -- entonces funciona solo con los datos que venían en la descarga, y
+  todo salvo la actualización sigue funcionando.
+
+
+CÓMO SE ACTUALIZA
+
+  Cuando pulsas el botón de actualizar, el programa descarga un ZIP, verifica la
+  firma de su editor, lo descomprime y sustituye sus propios archivos. Un paquete
+  que no esté firmado por el editor se rechaza. Mientras ocurre, aparece una
+  pequeña ventana de consola -- esa ventana está pensada para ser visible, para
+  que puedas ver qué se sustituye. Tu carpeta de ajustes se conserva.
+
+  No se instala nada. No se escribe nada en el registro de Windows. Borra la
+  carpeta y el programa desaparece.
+
+
+POR QUÉ WINDOWS PUEDE LLAMARLO TROYANO
+
+  Windows Defender puede señalar este programa como Trojan:Win32/Bearfoos.A!ml y
+  bloquearlo. El sufijo "!ml" significa que no es una coincidencia con ningún
+  malware conocido -- es una conjetura de un modelo de aprendizaje automático
+  sobre un archivo que nunca ha visto.
+
+  Lo supone porque el programa no tiene firma de código, casi nadie lo tiene
+  todavía y hace las dos cosas mencionadas arriba: sustituye sus propios
+  archivos y descarga de internet. Esos son exactamente los comportamientos de
+  los que el modelo fue entrenado para desconfiar.
+
+  Cada versión se analiza antes de publicarse, y la página de descarga muestra una
+  suma de comprobación para que puedas verificar que el archivo que recibiste es
+  el archivo que se compiló. Si prefieres no fiarte de eso, no lo ejecutes -- es
+  una elección legítima y este programa no te molestará con ello.
+
+
+ACCESOS DIRECTOS, SI LOS QUIERES
+
+  Debajo de este texto puedes pedir un acceso directo en el escritorio, una
+  entrada en el menú Inicio y que el programa se inicie con Forza. Los tres están
+  desactivados salvo que los marques, los tres son solo un archivo .lnk en una
+  carpeta, y puedes borrar cualquiera de ellos más tarde sin tocar el programa.
+
+  "Iniciar con Forza" pone el programa en tu carpeta de Inicio de Windows. Desde
+  el inicio de sesión espera invisible en el área de notificación y se abre
+  (minimizado) cuando se inicia Forza; después del juego vuelve allí. Windows no
+  permite que un programa se inicie cuando se inicia otro programa sin derechos de
+  administrador -- esperar en el área de notificación no necesita ninguno y no
+  cuesta prácticamente nada. Cerrar la ventana lo mantiene esperando; haz clic
+  derecho en el icono para salir. El botón "Iniciar con Forza" arriba a la derecha
+  de la ventana principal lo activa y lo desactiva.
+
+  Windows no permite que un programa se ancle a sí mismo a la barra de tareas --
+  eso está reservado para ti desde Windows 10 versión 1607, y saltárselo supone
+  falsificar una suma de comprobación en el registro. Este programa no lo hace.
+  Marca la entrada del menú Inicio, luego haz clic derecho en ella y elige
+  "Anclar a la barra de tareas".
+
+
+SIN GARANTÍA
+
+  Es un proyecto de aficionado, regalado gratis, sin garantía de ningún tipo. No
+  está afiliado a Microsoft, Turn 10, Playground Games ni a la serie
+  Forza Horizon, ni respaldado por ellos, ni relacionado con ellos.
+
+
+Puedes volver a leer esto en cualquier momento: el enlace "Qué hace este programa"
+arriba en la ventana principal.

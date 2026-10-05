@@ -1,0 +1,5 @@
+opencv-python-headless>=4.13
+pandas>=2.3
+pyarrow>=22.0
+rapidocr>=3.0
+onnxruntime-gpu>=1.26

@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin &middot; FH Companion Rivals Car Ratings</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1e2228; --line: #2b313a;
+    --ink: #e9edf3; --dim: #93a0b4; --accent: #7ee78b;
+    --warn: #ffb454; --bad: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 22px 80px; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+  h2 { font-size: 15px; margin: 30px 0 8px; font-weight: 600; }
+  p.lead { color: var(--dim); margin: 0 0 22px; max-width: 62ch; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin-bottom: 18px; max-width: 1100px;
+  }
+  label { display: block; color: var(--dim); font-size: 13px; margin-bottom: 5px; }
+  input[type=password], input[type=text] {
+    background: #0f1114; border: 1px solid var(--line); border-radius: 6px;
+    color: var(--ink); padding: 8px 10px; font: inherit; width: 100%;
+  }
+  button {
+    background: #2a3038; border: 1px solid var(--line); border-radius: 6px;
+    color: var(--ink); padding: 8px 14px; font: inherit; cursor: pointer;
+  }
+  button:hover { border-color: #48525f; }
+  button.danger { border-color: #6b3030; color: var(--warn); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+  .row > div { flex: 1 1 260px; }
+  .muted { color: var(--dim); font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--dim); font-weight: 600; }
+  tr.hidden-run td { opacity: .45; }
+  tr.hidden-run td.state { opacity: 1; color: var(--warn); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .note { border-left: 3px solid var(--warn); padding: 8px 12px; margin: 12px 0;
+          background: #241f16; border-radius: 0 6px 6px 0; }
+  .note.bad { border-color: var(--bad); background: #2a1a1a; }
+  .note.good { border-color: var(--accent); background: #16241a; }
+  code, .mono { font-family: Consolas, "SF Mono", monospace; font-size: 12.5px; }
+  .secret { word-break: break-all; background: #0f1114; padding: 10px;
+            border-radius: 6px; border: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<h1>FH Companion Rivals Car Ratings &mdash; Admin</h1>
+<p class="lead">
+  Take runs out of the analysis, and renew the upload password. The admin secret is
+  <strong>never transmitted</strong>: every call is signed with it, and the server
+  recomputes the signature.
+</p>
+
+<div class="card">
+  <div class="row">
+    <div>
+      <label for="secret">Admin secret</label>
+      <input id="secret" type="password" autocomplete="off"
+             placeholder="from: python server/contrib_keys.py admin">
+    </div>
+    <div style="flex: 0 0 auto">
+      <button id="load">Load runs</button>
+    </div>
+    <div style="flex: 0 0 auto">
+      <label><input type="checkbox" id="remember"> remember for this session</label>
+    </div>
+  </div>
+  <p class="muted" id="conn"></p>
+</div>
+
+<div id="messages"></div>
+
+<h2>Runs</h2>
+<div class="card">
+  <div class="row" style="margin-bottom: 12px">
+    <div style="flex: 0 0 auto"><button id="only-hidden">hidden only</button></div>
+    <div style="flex: 0 0 auto"><button id="only-contrib">contributions only</button></div>
+    <div style="flex: 0 0 auto"><button id="all">all</button></div>
+    <div class="muted" id="count"></div>
+  </div>
+  <div class="scroll">
+    <table id="runs">
+      <thead><tr>
+        <th>Track</th><th>Cls</th><th>by</th><th class="num">Rows</th>
+        <th class="num">Max rank</th><th>End</th><th>when</th>
+        <th>State</th><th></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+
+<h2>Package for a friend</h2>
+<div class="card">
+  <p class="muted" style="max-width: 68ch">
+    Builds the tool <strong>with their credentials</strong> and downloads it here.
+    Whoever holds this file can feed data in &mdash; so send it over a channel you
+    trust. The version with <strong>no</strong> credentials sits publicly at
+    <a href="/download/tool">/download/tool</a> and may be linked freely.
+  </p>
+  <div class="row">
+    <div>
+      <label for="who">Contributor name</label>
+      <input id="who" type="text" placeholder="lowercase, e.g. kai" autocomplete="off">
+    </div>
+    <div style="flex: 0 0 auto"><button id="make">Build and download</button></div>
+  </div>
+  <p class="muted" id="pkg"></p>
+</div>
+
+<h2>Upload password</h2>
+<div class="card">
+  <p class="muted" style="max-width: 68ch">
+    The long password sits inside every friend package handed out, and is computed
+    into the upload, never sent along. Rotating it is the emergency switch:
+    <strong>every package handed out so far becomes invalid</strong> and has to be
+    rebuilt. To cut off a single contributor instead, use
+    <code>contrib_keys.py revoke &lt;name&gt;</code>.
+  </p>
+  <button id="rotate" class="danger">Rotate upload password</button>
+  <div id="rotated"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- SHA-256 und HMAC, by Hand ----------
+   crypto.subtle gibt es nur in einem "sicheren Kontext" -- also über HTTPS oder auf
+   localhost. Diese Seite wird über einfaches HTTP by einer duckdns-Adresse geladen,
+   dort ist crypto.subtle schlicht undefined. Ohne eigene Umsetzung müsste das
+   Admin secret im Klartext mitgeschickt werden, und genau das soll es nicht.     */
+
+const K = [
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+
+function sha256(bytes) {
+  const h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,
+             0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const bitLength = bytes.length * 8;
+  // Die Nachricht braucht ein 0x80-Byte und acht Byte Länge, aufgerundet auf volle
+  // 64er-Blöcke: also (L + 8) >> 6, plus eins. Mit (L + 9) -- nahe genug, um richtig
+  // auszusehen -- hängt bei einer Länge by 55 mod 64 ein überzähliger Block dran und
+  // die Längenangabe steht 64 Byte zu weit hinten. Zwei Prüffälle mit 63 und 64 Byte
+  // gehen daran vorbei; 55 und 56 fangen es.
+  const padded = new Uint8Array((((bytes.length + 8) >> 6) + 1) << 6);
+  padded.set(bytes);
+  padded[bytes.length] = 0x80;
+  // Die Länge ist 64 Bit; JavaScript-Zahlen tragen 53 sicher, und mehr als 2^53 Bit
+  // wird hier nie signiert -- die oberen vier Bytes bleiben darum null.
+  new DataView(padded.buffer).setUint32(padded.length - 4, bitLength >>> 0);
+  new DataView(padded.buffer).setUint32(padded.length - 8, Math.floor(bitLength / 4294967296));
+
+  const w = new Uint32Array(64);
+  const view = new DataView(padded.buffer);
+  for (let block = 0; block < padded.length; block += 64) {
+    for (let i = 0; i < 16; i++) w[i] = view.getUint32(block + i * 4);
+    for (let i = 16; i < 64; i++) {
+      const a = w[i - 15], b = w[i - 2];
+      const s0 = ((a >>> 7) | (a << 25)) ^ ((a >>> 18) | (a << 14)) ^ (a >>> 3);
+      const s1 = ((b >>> 17) | (b << 15)) ^ ((b >>> 19) | (b << 13)) ^ (b >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+    }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i++) {
+      const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (hh + S1 + ch + K[i] + w[i]) >>> 0;
+      const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) >>> 0;
+      hh = g; g = f; f = e; e = (d + t1) >>> 0;
+      d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    h[0] = (h[0] + a) >>> 0; h[1] = (h[1] + b) >>> 0;
+    h[2] = (h[2] + c) >>> 0; h[3] = (h[3] + d) >>> 0;
+    h[4] = (h[4] + e) >>> 0; h[5] = (h[5] + f) >>> 0;
+    h[6] = (h[6] + g) >>> 0; h[7] = (h[7] + hh) >>> 0;
+  }
+  const out = new Uint8Array(32);
+  const outView = new DataView(out.buffer);
+  h.forEach((value, index) => outView.setUint32(index * 4, value));
+  return out;
+}
+
+const encoder = new TextEncoder();
+const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+
+function hmacSha256(secret, message) {
+  let key = encoder.encode(secret);
+  if (key.length > 64) key = sha256(key);
+  const inner = new Uint8Array(64), outer = new Uint8Array(64);
+  inner.set(key); outer.set(key);
+  for (let i = 0; i < 64; i++) { inner[i] ^= 0x36; outer[i] ^= 0x5c; }
+  const body = encoder.encode(message);
+  const first = new Uint8Array(64 + body.length);
+  first.set(inner); first.set(body, 64);
+  const digest = sha256(first);
+  const second = new Uint8Array(64 + 32);
+  second.set(outer); second.set(digest, 64);
+  return hex(sha256(second));
+}
+
+/* ---------- Aufrufe ---------- */
+
+const $ = id => document.getElementById(id);
+let runs = [];
+let filter = "all";
+
+function secret() { return $("secret").value.trim(); }
+
+function say(text, kind = "") {
+  const box = document.createElement("div");
+  box.className = "note " + kind;
+  box.textContent = text;
+  $("messages").prepend(box);
+  setTimeout(() => box.remove(), 12000);
+}
+
+async function signedFetch(method, path, bodyObject) {
+  const key = secret();
+  if (!key) { say("No admin secret entered.", "bad"); return null; }
+  const body = bodyObject === undefined ? "" : JSON.stringify(bodyObject);
+  const stamp = String(Math.floor(Date.now() / 1000));
+  const bodyHash = hex(sha256(encoder.encode(body)));
+  const signature = hmacSha256(key, [method, path, stamp, bodyHash].join("\n"));
+  const response = await fetch(path, {
+    method,
+    headers: {
+      "X-Forza-Timestamp": stamp,
+      "X-Forza-Signature": signature,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body || undefined,
+  });
+  let data;
+  try { data = await response.json(); } catch { data = { error: "no JSON in the reply" }; }
+  if (!response.ok) {
+    say(`${response.status}: ${data.error || "refused"}`, "bad");
+    return null;
+  }
+  return data;
+}
+
+async function loadRuns() {
+  $("conn").textContent = "asking the server ...";
+  const data = await signedFetch("GET", "/api/admin/runs");
+  if (!data) { $("conn").textContent = "not loaded."; return; }
+  runs = data.runs || [];
+  $("conn").textContent = `${runs.length} run(s) loaded.`;
+  if ($("remember").checked) sessionStorage.setItem("forzaAdmin", secret());
+  render();
+  checkStale();
+}
+
+async function checkStale() {
+  try {
+    const summary = await (await fetch("/api/summary")).json();
+    if (summary.stale) {
+      say("The served dataset is older than the hidden list — a run hidden just "
+        + "now only takes effect after the next site build. Until then, tools still "
+        + "download the previous state.", "");
+    }
+  } catch { /* die Übersicht ist ein Zusatz, kein Muss */ }
+}
+
+function render() {
+  const body = $("runs").querySelector("tbody");
+  body.textContent = "";
+  const shown = runs.filter(run =>
+    filter === "hidden" ? run.hidden :
+    filter === "contrib" ? run.by !== "local" : true);
+  $("count").textContent =
+    `${shown.length} of ${runs.length} shown · `
+    + `${runs.filter(r => r.hidden).length} hidden · `
+    + `${runs.filter(r => r.by !== "local").length} contributed`;
+
+  for (const run of shown) {
+    const tr = document.createElement("tr");
+    if (run.hidden) tr.className = "hidden-run";
+    const cells = [
+      run.track || "?", run.class || "?", run.by,
+      (run.rows || 0).toLocaleString("de-DE"),
+      (run.maxRank || 0).toLocaleString("de-DE"),
+      run.endStatus || run.status || "", (run.when || "").replace("T", " "),
+    ];
+    cells.forEach((value, index) => {
+      const td = document.createElement("td");
+      if (index === 3 || index === 4) td.className = "num";
+      td.textContent = value;
+      tr.append(td);
+    });
+
+    const state = document.createElement("td");
+    state.className = "state";
+    state.textContent = run.hidden ? ("hidden" + (run.reason ? ` — ${run.reason}` : "")) : "visible";
+    tr.append(state);
+
+    const action = document.createElement("td");
+    const button = document.createElement("button");
+    button.textContent = run.hidden ? "wieder einblenden" : "ausblenden";
+    button.onclick = () => toggle(run, button);
+    action.append(button);
+    tr.append(action);
+
+    // Der Laufname ist lang und für den Blick nutzlos, aber er ist die Kennung --
+    // darum als Hinweistext an der Zeile statt in einer eigenen Spalte.
+    tr.title = run.run_id;
+    body.append(tr);
+  }
+}
+
+async function toggle(run, button) {
+  let reason = run.reason || "";
+  if (!run.hidden) {
+    reason = prompt(`"${run.track} ${run.class}" will be hidden.\n\n`
+      + "Why? (it shows up in the list later and tells you, six months from now, "
+      + "what was wrong with this run)", "") ?? "";
+  }
+  button.disabled = true;
+  const data = await signedFetch("POST", "/api/admin/visibility", {
+    run_id: run.run_id, hidden: !run.hidden, reason,
+  });
+  button.disabled = false;
+  if (!data) return;
+  run.hidden = data.hidden;
+  run.reason = data.reason || "";
+  render();
+  say(`${run.track} ${run.class}: ${run.hidden ? "hidden" : "visible again"}. `
+    + "Takes effect in the page and the download after the next build.", "good");
+}
+
+$("load").onclick = loadRuns;
+$("only-hidden").onclick = () => { filter = "hidden"; render(); };
+$("only-contrib").onclick = () => { filter = "contrib"; render(); };
+$("all").onclick = () => { filter = "all"; render(); };
+
+
+$("make").onclick = async () => {
+  const who = $("who").value.trim();
+  if (!who) { say("No name entered.", "bad"); return; }
+  const key = secret();
+  if (!key) { say("No admin secret entered.", "bad"); return; }
+  $("pkg").textContent = "building ...";
+  // Ein unterschriebener Aufruf statt eines Links: ein Link wandert weiter,
+  // bevor jemand darüber nachdenkt, und diese Datei trägt das Geheimnis.
+  const path = "/api/admin/package";
+  const body = JSON.stringify({ contributor: who });
+  const stamp = String(Math.floor(Date.now() / 1000));
+  const bodyHash = hex(sha256(encoder.encode(body)));
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      "X-Forza-Timestamp": stamp,
+      "X-Forza-Signature": hmacSha256(key, ["POST", path, stamp, bodyHash].join("
+")),
+      "X-Forza-For": who,
+      "Content-Type": "application/json",
+    },
+    body,
+  });
+  if (!response.ok) {
+    let detail = "";
+    try { detail = (await response.json()).error || ""; } catch {}
+    $("pkg").textContent = "";
+    say(`${response.status}: ${detail || "abgelehnt"}`, "bad");
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `forza-contrib-${who}.zip`;
+  link.click();
+  URL.revokeObjectURL(url);
+  $("pkg").textContent = `${(blob.size / 1024).toFixed(0)} KB built and downloaded.`;
+  say(`Package for ${who} built. It carries their secret — do not store it publicly.`,
+      "good");
+};
+
+$("rotate").onclick = async () => {
+  if (!confirm("Rotate the upload password?\n\n"
+      + "Every package handed out so far becomes invalid and has to be rebuilt "
+      + "and redistributed. To revoke a single contributor, use "
+      + "contrib_keys.py revoke instead.")) return;
+  const data = await signedFetch("POST", "/api/admin/rotate-gate", {});
+  if (!data) return;
+  const box = document.createElement("div");
+  box.className = "note";
+  const heading = document.createElement("p");
+  heading.innerHTML = "<strong>New upload password (" + data.length
+    + " characters).</strong> It is stored in the key file from now on; this is the "
+    + "only time it is shown. Put it into every new friend package.";
+  const value = document.createElement("div");
+  value.className = "secret mono";
+  value.textContent = data.upload_password;
+  box.append(heading, value);
+  $("rotated").textContent = "";
+  $("rotated").append(box);
+  say(data.warning, "");
+};
+
+const remembered = sessionStorage.getItem("forzaAdmin");
+if (remembered) { $("secret").value = remembered; $("remember").checked = true; }
+</script>
+</body>
+</html>

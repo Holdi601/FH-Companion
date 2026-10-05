@@ -1,0 +1,2156 @@
+using ForzaHaptics.Tester.Rivals;
+
+namespace ForzaHaptics.Tester;
+
+/// <summary>
+/// Ein Fenster nur zum Abbilden: ausserhalb des Schirms, ohne Fokus, ohne Taskleiste.
+/// </summary>
+/// <remarks>
+/// Die Vorschau-Befehle zeigten bis zum 2026-09-25 ein gewoehnliches Fenster -- das
+/// nimmt den Fokus und holt einen Spieler aus einem Vollbild-Spiel heraus. So geschehen
+/// waehrend einer Partie Counter-Strike. DrawToBitmap braucht nur ein Fenster, keinen
+/// Platz auf dem Schirm.
+/// </remarks>
+internal sealed class VorschauForm : Form
+{
+    public VorschauForm()
+    {
+        ShowInTaskbar = false;
+        StartPosition = FormStartPosition.Manual;
+        Location = new Point(-32000, -32000);
+    }
+
+    protected override bool ShowWithoutActivation => true;
+
+    /// <summary>"x2" unter den Argumenten: das Bild doppelt so gross, fuer 4K.</summary>
+    internal static float Faktor(string[] args) =>
+        args.Contains("x2", StringComparer.OrdinalIgnoreCase) ? 2f : 1f;
+
+    /// <summary>
+    /// Alles um den Faktor f groesser zeichnen -- Schriften, Spalten, Abstaende.
+    /// Die Schriften werden vorher eingesammelt: eine geerbte Schrift wuerde beim
+    /// Kind sonst ein zweites Mal vergroessert.
+    /// </summary>
+    internal void Vergroessern(float f)
+    {
+        if (Math.Abs(f - 1f) < 0.01f) { return; }
+        var alle = new List<(Control C, Font F)>();
+        void Sammeln(Control c)
+        {
+            alle.Add((c, c.Font));
+            foreach (Control k in c.Controls) { Sammeln(k); }
+        }
+        Sammeln(this);
+        SuspendLayout();
+        foreach (var (c, schrift) in alle)
+        {
+            c.Font = new Font(schrift.FontFamily, schrift.Size * f, schrift.Style, schrift.Unit);
+            if (c.MaximumSize != Size.Empty)
+            {
+                c.MaximumSize = new Size((int)(c.MaximumSize.Width * f), (int)(c.MaximumSize.Height * f));
+            }
+            if (c is ListView liste)
+            {
+                foreach (ColumnHeader kopf in liste.Columns) { kopf.Width = (int)(kopf.Width * f); }
+            }
+        }
+        Scale(new SizeF(f, f));
+        ResumeLayout(true);
+    }
+}
+
+internal static class Program
+{
+    [System.Runtime.InteropServices.DllImport("gdi32.dll", EntryPoint = "BitBlt")]
+    private static extern bool ProbeBitBlt(IntPtr hdcDest, int x, int y, int w, int h,
+                                           IntPtr hdcSrc, int x1, int y1, int rop);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "GetDC")]
+    private static extern IntPtr ProbeGetDC(IntPtr hWnd);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "ReleaseDC")]
+    private static extern int ProbeReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+    private static int ScanBoardCli(string[] args)
+    {
+        var i = Array.FindIndex(args, a => string.Equals(a, "--scan-board", StringComparison.OrdinalIgnoreCase));
+        var rest = args.Skip(i + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
+        if (rest.Length < 3)
+        {
+            Console.WriteLine("--scan-board <category> <route index|name> <class> [--rows N] [--out dir] [--from-board] [--frames]");
+            return 2;
+        }
+        Scan.ScanRoutes routen;
+        try { routen = Scan.ScanRoutes.Laden(); }
+        catch (Exception e) { Console.WriteLine(e.Message); return 2; }
+        var kat = routen.Finde(rest[0]);
+        if (kat is null) { Console.WriteLine($"Unknown category '{rest[0]}'."); return 2; }
+        if (!int.TryParse(rest[1], out var index))
+        {
+            index = kat.Strecken.ToList().FindIndex(s => string.Equals(s, rest[1], StringComparison.OrdinalIgnoreCase));
+        }
+        if (index < 0 || index >= kat.Strecken.Count) { Console.WriteLine($"Unknown route '{rest[1]}' in {kat.Name}."); return 2; }
+        string? Wert(string flag)
+        {
+            var k = Array.FindIndex(args, a => string.Equals(a, flag, StringComparison.OrdinalIgnoreCase));
+            return k >= 0 && k + 1 < args.Length ? args[k + 1] : null;
+        }
+        var zeilen = int.TryParse(Wert("--rows"), out var z) ? z : 0;
+        var wurzel = Wert("--out") ?? Path.Combine(AppInfo.DataFolder, "scans");
+        var bilder = args.Contains("--frames", StringComparer.OrdinalIgnoreCase) ? Path.Combine(AppInfo.TempFolder, "scan_frames") : null;
+        Console.WriteLine($"Target: {kat.Name} / route {index} '{kat.Strecken[index]}' / class {rest[2].ToUpperInvariant()}"
+                          + (zeilen > 0 ? $", first {zeilen} ranks" : ", whole board") + $" -> {wurzel}");
+        if (args.Contains("--focus", StringComparer.OrdinalIgnoreCase))
+        {
+            Console.WriteLine(Scan.ScanEingabe.SpielNachVorn() ? "Brought the game to the front." : "Could not bring the game to the front.");
+        }
+        Console.WriteLine("Waiting for the game in front (the Pause key stops) ...");
+        var treffer = 0;
+        var bis = DateTime.UtcNow.AddMinutes(30);
+        while (treffer < 3)
+        {
+            treffer = GameWatch.ForegroundProcessName() == GameWatch.DefaultProcessName ? treffer + 1 : 0;
+            if (DateTime.UtcNow > bis) { Console.WriteLine("The game never came to the front."); return 3; }
+            Thread.Sleep(700);
+        }
+        using var griff = Scan.SpielSperre.Nehmen("board scan (command line)");
+        if (griff is null) { Console.WriteLine("Another automation is driving the game. Nothing was pressed."); return 3; }
+        var scanner = new Scan.BoardScanner(routen, s => Console.WriteLine($"  {DateTime.Now:HH:mm:ss} {s}"), CancellationToken.None, bilder)
+        {
+            Obergrenze = zeilen,
+            Schritt = int.TryParse(Wert("--step"), out var st) ? st : 9,
+            TasteNach = int.TryParse(Wert("--key-gap"), out var kg) ? kg : 15,
+            Ruhe = int.TryParse(Wert("--settle"), out var se) ? se : 140,
+            UngueltigeMitlesen = args.Contains("--include-invalid", StringComparer.OrdinalIgnoreCase),
+        };
+        try
+        {
+            var e = scanner.Scanne(new Scan.ScanNavigator.Ziel(kat.Name, index, rest[2].ToUpperInvariant()),
+                                   args.Contains("--from-board", StringComparer.OrdinalIgnoreCase), wurzel);
+            Console.WriteLine($"Done: {e.Status}, {e.Zeilen} rows up to rank {e.HoechsterPlatz} in {e.Dauer.TotalMinutes:0.0} min -> {e.Ordner}");
+            return e.Status is "server_error" or "game_crashed" ? 1 : 0;
+        }
+        catch (Scan.ScanNavigator.Abbruch a)
+        {
+            Console.WriteLine("STOPPED: " + a.Message);
+            if (a.Lauf is { } lauf)
+            {
+                Console.WriteLine($"Kept: {lauf.Zeilen} rows up to rank {lauf.HoechsterPlatz} in {lauf.Dauer.TotalMinutes:0.0} min -> {lauf.Ordner}");
+            }
+            return 1;
+        }
+    }
+
+    private static int ScanNavCli(string[] args)
+    {
+        var i = Array.FindIndex(args, a => string.Equals(a, "--scan-nav", StringComparison.OrdinalIgnoreCase));
+        var rest = args.Skip(i + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
+        if (rest.Length < 3)
+        {
+            Console.WriteLine("--scan-nav <category> <route index|route name> <class> [--from-board] [--frames]");
+            return 2;
+        }
+        Scan.ScanRoutes routen;
+        try { routen = Scan.ScanRoutes.Laden(); }
+        catch (Exception e) { Console.WriteLine(e.Message); return 2; }
+        var kat = routen.Finde(rest[0]);
+        if (kat is null)
+        {
+            Console.WriteLine($"Unknown category '{rest[0]}'. Known: {string.Join(", ", routen.Kategorien.Select(k => k.Name))}");
+            return 2;
+        }
+        if (!int.TryParse(rest[1], out var index))
+        {
+            index = kat.Strecken.ToList().FindIndex(s => string.Equals(s, rest[1], StringComparison.OrdinalIgnoreCase));
+            if (index < 0) { Console.WriteLine($"Unknown route '{rest[1]}' in {kat.Name}."); return 2; }
+        }
+        if (index < 0 || index >= kat.Strecken.Count) { Console.WriteLine($"Route index {index} is outside 0..{kat.Strecken.Count - 1}."); return 2; }
+        var klasse = rest[2].ToUpperInvariant();
+        var vomBoard = args.Contains("--from-board", StringComparer.OrdinalIgnoreCase);
+        var bilder = args.Contains("--frames", StringComparer.OrdinalIgnoreCase) ? Path.Combine(AppInfo.TempFolder, "scan_frames") : null;
+        Console.WriteLine($"Target: {kat.Name} / route {index} '{kat.Strecken[index]}' / class {klasse}"
+                          + (vomBoard ? " (leaving the previous board first)" : string.Empty));
+        Console.WriteLine("Waiting for the game in front (the Pause key stops) ...");
+        var treffer = 0;
+        var bis = DateTime.UtcNow.AddMinutes(30);
+        while (treffer < 3)
+        {
+            treffer = GameWatch.ForegroundProcessName() == GameWatch.DefaultProcessName ? treffer + 1 : 0;
+            if (DateTime.UtcNow > bis) { Console.WriteLine("The game never came to the front."); return 3; }
+            Thread.Sleep(700);
+        }
+        Console.WriteLine("Game in front -- navigating.");
+        using var griff = Scan.SpielSperre.Nehmen("navigation (command line)");
+        if (griff is null) { Console.WriteLine("Another automation is driving the game. Nothing was pressed."); return 3; }
+        var nav = new Scan.ScanNavigator(routen, s => Console.WriteLine($"  {DateTime.Now:HH:mm:ss} {s}"), CancellationToken.None, bilder);
+        try
+        {
+            var e = nav.Fahre(new Scan.ScanNavigator.Ziel(kat.Name, index, klasse), vomBoard);
+            Console.WriteLine($"Reached: {e.Kategorie} / route {e.RouteIndex} '{kat.Strecken[index]}' (read as '{e.StreckeGelesen}') / class {e.Klasse}"
+                              + $" in {e.Dauer.TotalSeconds:0} s, {e.Zyklen} looks.");
+            if (bilder is not null) { Console.WriteLine("Frames: " + bilder); }
+            return 0;
+        }
+        catch (Scan.ScanNavigator.Abbruch a)
+        {
+            Console.WriteLine("STOPPED: " + a.Message);
+            if (bilder is not null) { Console.WriteLine("Frames: " + bilder); }
+            return 1;
+        }
+    }
+
+
+    [STAThread]
+    private static void Main(string[] args)
+    {
+        if (Erweiterung.Befehl(args)) { return; }
+        // Headless paths run BEFORE any WinForms setup: this is a GUI-subsystem
+        // binary, so an exception after Initialize() puts up a modal dialog that
+        // nothing will ever click, and the caller waits for ever.
+        if (args.Contains(RivalsDump.Flag, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                Environment.Exit(RivalsDump.Run(args));
+            }
+            catch (Exception exception)
+            {
+                RivalsDump.WriteFailure(args, exception);
+                Environment.Exit(3);
+            }
+        }
+
+        if (args.Contains(RivalsDump.SourceFlag, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                Environment.Exit(RivalsDump.DatasetSource(args));
+            }
+            catch (Exception exception)
+            {
+                RivalsDump.WriteFailure(args, exception, RivalsDump.SourceFlag);
+                Environment.Exit(3);
+            }
+        }
+
+        if (args.Contains(RivalsDump.ReadFlag, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                Environment.Exit(RivalsDump.ReadImage(args));
+            }
+            catch (Exception exception)
+            {
+                RivalsDump.WriteFailure(args, exception, "--out");
+                Environment.Exit(3);
+            }
+        }
+
+        // Vor dem Fensteraufbau: dieser Befehl braucht kein WinForms und darf
+        // auch keinen Dialog aufmachen, den niemand wegklickt.
+        if (args.Contains("--free-roam-replay", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.Exit(Rivals.FreeRoamReplay.Run(args));
+        }
+
+        // Die Startaufstellung aus einem Bild lesen, wie es die App im Menue tut -- zum
+        // Pruefen an Aufnahmen (Bild 1080p oder 4K; verkleinert wird hier wie dort).
+        // Ein gespeichertes Ergebnisbild lesen und an EINEN SERVER schicken (lokaler Test: nie der echte).
+        // Anmeldung in FORZA_SUBMIT_HOME, damit die des Nutzers unberuehrt bleibt.
+        if (args.Contains("--race-submit", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--race-submit", StringComparison.OrdinalIgnoreCase));
+            if (i + 2 >= args.Length || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("FORZA_SUBMIT_HOME")))
+            {
+                Console.WriteLine("--race-submit <server> <results.jpg> [track]   (needs FORZA_SUBMIT_HOME)");
+                Environment.Exit(2);
+            }
+            using var gross = new Bitmap(args[i + 2]);
+            using var hd = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(hd)) { g.DrawImage(gross, new Rectangle(0, 0, 1920, 1080)); }
+            using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height,
+                                         System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using (var g = Graphics.FromImage(klein))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+            }
+            if (Rivals.RaceGrid.ReadResults(klein) is not { } roh) { Console.WriteLine("no results screen"); Environment.Exit(1); return; }
+            var e = Rivals.RaceGrid.MitAbbruechen(hd, roh);
+            var feld = Rivals.RaceResultsReader.Lies(hd, e);
+            var rennen = new Rivals.RaceRecord
+            {
+                Id = "cli-" + Path.GetFileNameWithoutExtension(args[i + 2]), At = DateTime.Now,
+                Track = i + 3 < args.Length ? args[i + 3] : "Festival Chase",
+                Klass = Rivals.LapArchive.ClassOf(feld.FirstOrDefault(f => f.Pi is not null)?.Pi ?? 0),
+                Mode = "horizon-play", Laps = 1, Drivers = e.Drivers, Field = feld,
+            };
+            try
+            {
+                var wer = Rivals.LapSubmit.RegisterAsync(args[i + 1], "CliTester", TimeSpan.FromSeconds(20)).GetAwaiter().GetResult();
+                Console.WriteLine(Rivals.RaceSubmit.SendenAsync(wer, rennen, Rivals.RaceSubmit.Beleg(hd), TimeSpan.FromSeconds(20))
+                                       .GetAwaiter().GetResult());
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("failed: " + ex.Message);
+                Environment.Exit(1);
+            }
+        }
+
+        // Das Feld vom Ergebnisschirm, an gespeicherten Bildern: Auto, PI, Fortschritt, Zeit je Zeile.
+        if (args.Contains("--results-read", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--results-read", StringComparison.OrdinalIgnoreCase));
+            var ablage = Array.FindIndex(args, a => string.Equals(a, "--dump", StringComparison.OrdinalIgnoreCase));
+            if (ablage >= 0 && ablage + 1 < args.Length) { Rivals.RaceResultsReader.Ablage = args[ablage + 1]; }
+            foreach (var datei in args.Skip(i + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)))
+            {
+                using var gross = new Bitmap(datei);
+                using var hd = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                using (var g = Graphics.FromImage(hd)) { g.DrawImage(gross, new Rectangle(0, 0, 1920, 1080)); }
+                using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height,
+                                             System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                using (var g = Graphics.FromImage(klein))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                    g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+                }
+                if (Rivals.RaceGrid.ReadResults(klein) is not { } roh)
+                {
+                    Console.WriteLine($"{Path.GetFileName(datei)}: kein Ergebnisschirm");
+                    continue;
+                }
+                var e = Rivals.RaceGrid.MitAbbruechen(hd, roh);
+                var uhr = System.Diagnostics.Stopwatch.StartNew();
+                var feld = Rivals.RaceResultsReader.Lies(hd, e);
+                Console.WriteLine($"{Path.GetFileName(datei)}: {feld.Count} Zeilen in {uhr.ElapsedMilliseconds} ms");
+                foreach (var f in feld)
+                {
+                    Console.WriteLine($"  {f.Place,2} {f.Kind,-5}{(f.Self ? "*" : " ")} {f.CarShort ?? "?",-22} -> "
+                                      + $"{(f.CarName ?? "?"),-40} id {f.Car?.ToString() ?? "-",-5} PI {f.Pi?.ToString() ?? "-",-4} "
+                                      + $"{(f.Progress is { } p ? p + "%" : "-"),-5} best {(f.BestLapMs is { } bl ? TimeSpan.FromMilliseconds(bl).ToString(@"m\:ss\.fff") : "-"),-9} "
+                                      + $"time {(f.Ms is { } ms ? TimeSpan.FromMilliseconds(ms).ToString(@"m\:ss\.fff") : "-")}");
+                }
+            }
+            Environment.Exit(0);
+        }
+
+        if (args.Contains("--grid-read", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--grid-read", StringComparison.OrdinalIgnoreCase));
+            var rc = 0;
+            foreach (var datei in args.Skip(i + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)))
+            {
+                try
+                {
+                    using var gross = new Bitmap(datei);
+                    using var klein = new Bitmap(Rivals.RaceGrid.Aufnahme.Width, Rivals.RaceGrid.Aufnahme.Height,
+                                                 System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                    using (var g = Graphics.FromImage(klein))
+                    {
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                        g.DrawImage(gross, new Rectangle(0, 0, klein.Width, klein.Height));
+                    }
+                    var r = Rivals.RaceGrid.Read(klein);
+                    var e = r is null ? Rivals.RaceGrid.ReadResults(klein) : null;
+                    if (e is { } roh)
+                    {
+                        using var hd = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                        using (var g = Graphics.FromImage(hd)) { g.DrawImage(gross, new Rectangle(0, 0, 1920, 1080)); }
+                        e = Rivals.RaceGrid.MitAbbruechen(hd, roh);
+                    }
+                    Console.WriteLine($"{Path.GetFileName(datei)}: "
+                                      + (r is { } g2 ? $"START GRID, {g2.Drivers} drivers, rows {g2.Rows}, cursor {g2.Cursor?.ToString() ?? "-"}"
+                                         : e is { } e2 ? $"RESULTS, {e2.Drivers} drivers, rows {e2.Rows}, cursor {e2.Cursor?.ToString() ?? "-"}"
+                                         : "-"));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"{Path.GetFileName(datei)}: {e.Message}");
+                    rc = 1;
+                }
+            }
+            Environment.Exit(rc);
+        }
+
+        // Die Rennstatistik ohne Fenster: aeltere Rennen nachbauen (in eine eigene Datei,
+        // der Bestand wird nur gelesen) und die Kennzahlen je Modus ausgeben.
+        if (args.Contains("--race-stats", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--race-stats", StringComparison.OrdinalIgnoreCase));
+            var ziel = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)
+                ? Path.GetFullPath(args[i + 1]) : Rivals.RaceLog.ArchivePath;
+            var live = Rivals.RaceLog.LoadLive();
+            var uhr = System.Diagnostics.Stopwatch.StartNew();
+            var alt = Rivals.RaceArchive.Update(Rivals.LapArchive.Root, ziel,
+                new HashSet<string>(live.Select(r => r.Id), StringComparer.Ordinal));
+            Console.WriteLine($"{live.Count} live, {alt.Count} rebuilt in {uhr.Elapsed.TotalSeconds:0.0} s -> {ziel}");
+            Rivals.RivalsAdvisor? berater = null;
+            try
+            {
+                if (Rivals.DatasetSync.LocalBest().Path is { } datensatz && File.Exists(datensatz))
+                {
+                    berater = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz));
+                }
+            }
+            catch (Exception) { }
+            foreach (var schaetzen in new[] { false, true })
+            {
+                foreach (var g in live.Concat(alt).GroupBy(r => r.Mode).OrderBy(g => g.Key))
+                {
+                    var s = Rivals.RaceStats.Summarize(g.Where(r => r.Finished).ToList(), schaetzen,
+                                                        r => Rivals.RaceStats.MetaVon(r, berater));
+                    Console.WriteLine($"  {(schaetzen ? "est" : "known")} {g.Key,-13} races {s.Races,4}  placed {s.Placed,4}  wins {s.WinRate:P0}  "
+                                      + $"finish {s.AvgFinishPct:P0} (P{s.AvgFinish:0.0})  start {s.AvgStartPct:P0} (P{s.AvgStart:0.0})  "
+                                      + $"field {s.AvgField:0.0} n={s.WithField}  podium {s.PodiumRate:P0} of {s.PodiumRaces}"
+                                      + (s.MetaRaces > 0 ? $"  meta high {s.MetaHigh} low {s.MetaLow} of {s.MetaRaces}" : string.Empty)
+                                      + (s.MetaAvgRank is { } ar ? $"  car rank #{ar:0.0} top {s.MetaAvgTop:P0} n={s.MetaRanked}" : string.Empty));
+                }
+            }
+            Environment.Exit(0);
+        }
+
+        // Den Rundenbestand aufraeumen wie beim Start: Abbrueche verlegen, Namen
+        // nachtragen oder berichtigen, Ordner benennen. Mit einem Pfad fuer eine Kopie.
+        if (args.Contains("--tidy-laps", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--tidy-laps", StringComparison.OrdinalIgnoreCase));
+            var wurzel = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)
+                ? Path.GetFullPath(args[i + 1]) : Rivals.LapArchive.Root;
+            Console.WriteLine($"Rundenbestand: {wurzel}");
+            Console.WriteLine($"  nach {Rivals.LapArchive.UnfertigOrdner} verlegt: {Rivals.LapArchive.UnfertigeAussortieren(wurzel)}");
+            Console.WriteLine($"  Namen nachgetragen oder berichtigt: {Rivals.LapArchive.NamenNachtragen(wurzel)}");
+            Console.WriteLine($"  Ordner benannt: {Rivals.LapArchive.OrdnerBenennen(wurzel)}");
+            Rivals.RivalsAdvisor? berater = null;
+            try
+            {
+                if (Rivals.DatasetSync.LocalBest().Path is { } datensatz && File.Exists(datensatz))
+                {
+                    berater = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz));
+                }
+            }
+            catch (Exception) { }
+            var autoliste = Rivals.CarCollection.Laden();
+            var gelernt = new Rivals.OrdinalMap();
+            Console.WriteLine("  Autonamen nachgetragen: " + Rivals.AutoNamen.Nachtragen(
+                wurzel, o => Rivals.AutoNamen.Fuer(o, berater, autoliste, gelernt), pauseMs: 0));
+            Console.WriteLine("  Autoordner benannt: " + Rivals.LapArchive.AutoOrdnerBenennen(
+                o => Rivals.AutoNamen.Fuer(o, berater, autoliste, gelernt), wurzel));
+            Environment.Exit(0);
+        }
+
+        // Was "Delete slower laps" loeschen wuerde -- nur lesen, nie loeschen.
+        if (args.Contains("--lap-cleanup-plan", StringComparer.OrdinalIgnoreCase))
+        {
+            var i = Array.FindIndex(args, a => string.Equals(a, "--lap-cleanup-plan", StringComparison.OrdinalIgnoreCase));
+            var wurzel = i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal)
+                ? Path.GetFullPath(args[i + 1]) : Rivals.LapArchive.Root;
+            var plan = Rivals.LapCleanup.Planen(wurzel);
+            Console.WriteLine($"Rundenbestand: {wurzel}");
+            Console.WriteLine($"  behalten (je Kurs, Klasse, Auto, Start, Art, Modus): {plan.Behalten}");
+            Console.WriteLine($"  langsamere Runden: {plan.Langsamere.Count}");
+            Console.WriteLine($"  abgebrochene Laeufe: {plan.Unfertige.Count}");
+            Console.WriteLine($"  Platz: {Rivals.LapCleanup.Anzeige(plan.Bytes)}");
+            Environment.Exit(0);
+        }
+
+        // Kopflos pruefbar machen, was sonst nur am Fenster zu sehen waere: welche
+        // Sprache gewaehlt wurde, wie viele Saetze vorliegen und wie eine Auswahl
+        // tatsaechlich uebersetzt wird. Ohne das bleibt "die Sprache funktioniert"
+        // eine Behauptung, die nur jemand mit dem passenden Windows pruefen kann.
+        if (args.Contains("--lang-report", StringComparer.OrdinalIgnoreCase))
+        {
+            var lr = Array.FindIndex(args, a =>
+                string.Equals(a, "--lang-report", StringComparison.OrdinalIgnoreCase));
+            var wunsch = lr + 1 < args.Length && !args[lr + 1].StartsWith("--")
+                ? args[lr + 1] : null;
+            if (wunsch is not null) { Loc.Waehle(wunsch); }
+
+            Console.WriteLine("Systemsprache: "
+                + System.Globalization.CultureInfo.CurrentUICulture.Name);
+            Console.WriteLine("gewaehlt:      " + Loc.Sprache);
+            Console.WriteLine("Saetze:        " + Loc.Bekannt);
+            Console.WriteLine("vorhanden:     " + string.Join(", ", Loc.Verfuegbar()));
+            Console.WriteLine();
+            foreach (var probe in new[] { "Stop now", "Always on Top", "Ready",
+                                          "What this program does, and what leaves your computer" })
+            {
+                Console.WriteLine($"  {probe,-56} -> {Loc.T(probe)}");
+            }
+            Environment.Exit(0);
+        }
+
+        // Die eigene Auto-Spalte kopflos pruefbar machen. Ohne das laesst sich
+        // "liest der Rundenbestand richtig" nur im laufenden Spiel im Menue
+        // nachsehen -- und dort sieht man nicht, WARUM eine Zeile leer bleibt.
+        // Was die App ueber die Zustimmung denkt -- kopflos, ohne Fenster.
+        // Sehen, was die Vordergrund-Erkennung sieht. Ohne das laesst sich die
+        // Win32-Abfrage nur mit laufendem Forza pruefen -- und dann weiss man bei
+        // einem Fehlschlag nicht, ob die Abfrage falsch ist oder das Fenster.
+        if (args.Contains("--foreground", StringComparer.OrdinalIgnoreCase))
+        {
+            var fg = Array.FindIndex(args, a =>
+                string.Equals(a, "--foreground", StringComparison.OrdinalIgnoreCase));
+            var gesucht = fg + 1 < args.Length && !args[fg + 1].StartsWith("--")
+                ? args[fg + 1] : GameWatch.DefaultProcessName;
+            var wache = new GameWatch(gesucht);
+            Console.WriteLine($"gesucht wird:  {gesucht}");
+            Console.WriteLine();
+            for (var i = 0; i < 6; i++)
+            {
+                Console.WriteLine($"  vorne: {GameWatch.ForegroundProcessName(),-24} "
+                                  + $"laeuft={wache.Running,-5} "
+                                  + $"istVorne={wache.IsForeground}");
+                System.Threading.Thread.Sleep(700);
+            }
+            Environment.Exit(0);
+        }
+
+        if (args.Contains("--disclosure-state", StringComparer.OrdinalIgnoreCase))
+        {
+            var s = Rivals.OverlaySettings.Load();
+            Console.WriteLine($"Einstellungsdatei: {s.Path ?? "(keine gefunden)"}");
+            Console.WriteLine($"disclosure_ack:    {s.DisclosureAcknowledged}");
+            Console.WriteLine($"verlangte Fassung: {Disclosure.Fassung}");
+            Console.WriteLine($"wuerde fragen:     "
+                              + (s.DisclosureAcknowledged >= Disclosure.Fassung
+                                 ? "nein" : "JA"));
+            Environment.Exit(0);
+        }
+
+        if (args.Contains("--overlay-capture-probe", StringComparer.OrdinalIgnoreCase))
+        {
+            // KOMMT EIN OVERLAY AUF DEN SCHIRM? Jedes der drei Fenster einzeln zeigen,
+            // in reinem Gruen und OHNE Aufnahme-Ausblendung, den ganzen Hauptschirm
+            // fotografieren (BitBlt mit CAPTUREBLT) und gruene Punkte zaehlen.
+            // Gebaut am 2026-09-25, als Umriss und Notiz im Spiel fehlten und sich
+            // aus keiner Aufnahme belegen liess, woran es lag.
+            var schirm = Screen.PrimaryScreen!.Bounds;
+            // Nie ueber einem laufenden Vollbild-Spiel: dort misst die Aufnahme nichts,
+            // und die Probefenster stoeren (so geschehen am 2026-09-25, zweimal).
+            if (GameArea.VollbildVorne(out var vorne))
+            {
+                Console.WriteLine($"refused: {vorne} fills the screen -- close or minimise it first");
+                return;
+            }
+            var s = new Rivals.OverlaySettings
+            {
+                HudBackground = "#ff00ff00", CarNoteBack = "#00ff00", CarNoteBackAlpha = 255,
+                CourseShapeBack = "#00ff00", CourseShapeBackAlpha = 255,
+            };
+            int Gruen()
+            {
+                using var b = new Bitmap(schirm.Width, schirm.Height);
+                using (var g = Graphics.FromImage(b))
+                {
+                    var ziel = g.GetHdc();
+                    var quelle = ProbeGetDC(IntPtr.Zero);
+                    ProbeBitBlt(ziel, 0, 0, b.Width, b.Height, quelle, schirm.X, schirm.Y, 0x00CC0020 | 0x40000000);
+                    ProbeReleaseDC(IntPtr.Zero, quelle);
+                    g.ReleaseHdc(ziel);
+                }
+                var n = 0;
+                for (var y = 0; y < b.Height; y += 4)
+                    for (var x = 0; x < b.Width; x += 4)
+                    {
+                        var p = b.GetPixel(x, y);
+                        if (p.G > 225 && p.R < 40 && p.B < 40) { n++; }
+                    }
+                return n;
+            }
+            void Warte() { for (var i = 0; i < 20; i++) { Application.DoEvents(); Thread.Sleep(50); } }
+            Console.WriteLine($"screen {schirm}, green before: {Gruen()}");
+            // Vergleichsfenster: ein gewoehnliches und ein ueber Opacity geschichtetes.
+            // Fehlt schon das gewoehnliche, liegt es an der Aufnahme, nicht an den Overlays.
+            foreach (var deckung in new[] { 1.0, 0.99 })
+            {
+                using var f = new Form
+                {
+                    FormBorderStyle = FormBorderStyle.None, BackColor = Color.Lime, TopMost = true,
+                    ShowInTaskbar = false, StartPosition = FormStartPosition.Manual,
+                    Bounds = new Rectangle(schirm.X + 200, schirm.Y + 200, 300, 200), Opacity = deckung,
+                };
+                f.Show();
+                Warte();
+                Console.WriteLine($"plain form opacity={deckung}: green {Gruen()}");
+                if (deckung == 1.0)
+                {
+                    using var b = new Bitmap(schirm.Width / 4, schirm.Height / 4);
+                    using var voll = new Bitmap(schirm.Width, schirm.Height);
+                    using (var g = Graphics.FromImage(voll))
+                    {
+                        var ziel = g.GetHdc();
+                        var quelle = ProbeGetDC(IntPtr.Zero);
+                        ProbeBitBlt(ziel, 0, 0, voll.Width, voll.Height, quelle, schirm.X, schirm.Y, 0x00CC0020 | 0x40000000);
+                        ProbeReleaseDC(IntPtr.Zero, quelle);
+                        g.ReleaseHdc(ziel);
+                    }
+                    using (var g = Graphics.FromImage(b)) { g.DrawImage(voll, 0, 0, b.Width, b.Height); }
+                    var pfad = Path.Combine(Path.GetTempPath(), "forza-overlay", "probe-screen.png");
+                    b.Save(pfad);
+                    Console.WriteLine("screen capture: " + pfad);
+                }
+                f.Hide();
+            }
+            using (var hud = new Rivals.DeltaHud(schirm, s))
+            {
+                hud.Show();
+                hud.Update(-0.734f, "probe", 12.4f, 0.286f, "probe");
+                Warte();
+                Console.WriteLine($"DeltaHud visible={hud.Visible} bounds={hud.Bounds}: green {Gruen()}");
+                hud.Hide();
+            }
+            using (var note = new Rivals.CarNoteHud(s, schirm))
+            {
+                note.AllowCaptureForTest();
+                note.SetNote("probe", "overlay capture probe");
+                note.Show();
+                Warte();
+                Console.WriteLine($"CarNoteHud visible={note.Visible} bounds={note.Bounds} pushFailed={note.LastPushFailed}: green {Gruen()}");
+                note.Hide();
+            }
+            using (var umriss = new Rivals.CourseShapeHud(s, schirm))
+            {
+                umriss.AllowCaptureForTest();
+                umriss.SetCourses(new List<(string, Rivals.CourseShape.Outline?)> { ("probe", null) });
+                umriss.Show();
+                Warte();
+                Console.WriteLine($"CourseShapeHud visible={umriss.Visible} bounds={umriss.Bounds} pushFailed={umriss.LastPushFailed}: green {Gruen()}");
+                umriss.Hide();
+            }
+            return;
+        }
+
+        if (args.Contains("--hud-editor-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--hud-editor-preview carnote 150": den Reiter "Lap delta HUD" mit diesem
+            // Stueck ausgewaehlt und in dieser Groesse zeichnen. Auf einer KOPIE der
+            // Einstellungen -- eine Vorschau schreibt nie in die echte Datei.
+            var hp = Array.FindIndex(args, a =>
+                string.Equals(a, "--hud-editor-preview", StringComparison.OrdinalIgnoreCase));
+            var teil = Rivals.HudPart.CarNote;
+            if (hp + 1 < args.Length && Enum.TryParse<Rivals.HudPart>(args[hp + 1], true, out var t)) { teil = t; }
+            var kopie = Path.Combine(Path.GetTempPath(), "forza-hud-preview-settings.json");
+            var echt = Rivals.OverlaySettings.Load();
+            if (echt.Path is not null && File.Exists(echt.Path)) { File.Copy(echt.Path, kopie, overwrite: true); }
+            var einst = Rivals.OverlaySettings.Load(kopie);
+            if (hp + 2 < args.Length && int.TryParse(args[hp + 2], out var prozent))
+            {
+                einst.SetScale(teil, prozent / 100.0);
+            }
+            // Eine vierte Zahl ist die Hoehe -- damit auch das Ende der Seitenleiste ins Bild kommt.
+            var hoehe = hp + 3 < args.Length && int.TryParse(args[hp + 3], out var h) ? h : 820;
+            var breite = hp + 5 < args.Length && int.TryParse(args[hp + 5], out var fb) ? fb : 1400;
+            using var form = new VorschauForm { Width = breite, Height = hoehe, Text = "HUD editor" };
+            var tab = new Rivals.HudTab(einst, () => { }, _ => { });
+            form.Controls.Add(tab);
+            form.Show();
+            // Eine fuenfte Zahl ist die Breite der Einstellungen rechts (Teiler).
+            if (hp + 4 < args.Length && int.TryParse(args[hp + 4], out var seite)) { tab.SeitenBreite(seite); }
+            Application.DoEvents();
+            tab.ShowPart(teil);
+            tab.KlickAuf(teil);
+            Application.DoEvents();
+            using var bild = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
+            tab.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));
+            var ziel = Path.Combine(Path.GetTempPath(),
+                                    $"forza-hud-editor-{teil.ToString().ToLowerInvariant()}.png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            return;
+        }
+
+        if (args.Contains("--tab-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--tab-preview scan|collection [besitz.json] [x2]": einen Reiter allein zeichnen -- fuer
+            // Bilder (Trailer, Anleitung). "x2" doppelt so gross, fuer 4K.
+            var tp = Array.FindIndex(args, a => string.Equals(a, "--tab-preview", StringComparison.OrdinalIgnoreCase));
+            var welcher = tp + 1 < args.Length ? args[tp + 1].ToLowerInvariant() : "scan";
+            var besitz = tp + 2 < args.Length && args[tp + 2].EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? args[tp + 2] : null;
+            Rivals.RivalsAdvisor? rat = null;
+            var dp = Rivals.RivalsDataset.FindDefaultPath();
+            if (dp is not null) { rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dp)); }
+            using var form = new VorschauForm { Width = 1500, Height = 900, Text = welcher };
+            Control reiter = welcher == "collection"
+                ? new Rivals.CarCollectionTab(() => null, () => null, () => rat, false, besitzPfad: besitz)
+                : new Scan.ScanTab(Rivals.OverlaySettings.Load(), () => false);
+            form.Controls.Add(reiter);
+            form.Show();
+            if (reiter is Rivals.CarCollectionTab sammlung) { sammlung.Zeigen(); }
+            for (var i = 0; i < 30; i++) { Application.DoEvents(); Thread.Sleep(50); }
+            form.Vergroessern(VorschauForm.Faktor(args));
+            Application.DoEvents();
+            using var bild = new Bitmap(form.Width, form.Height);
+            form.DrawToBitmap(bild, new Rectangle(0, 0, form.Width, form.Height));
+            var ziel = Path.Combine(Path.GetTempPath(), $"forza-tab-{welcher}.png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            return;
+        }
+
+        if (args.Contains("--mytimes-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--mytimes-preview de": in einer bestimmten Sprache zeichnen, damit
+            // die Uebersetzung am Bild geprueft wird und nicht nur in der JSON-Datei.
+            var mp = Array.FindIndex(args, a =>
+                string.Equals(a, "--mytimes-preview", StringComparison.OrdinalIgnoreCase));
+            if (mp + 1 < args.Length && !args[mp + 1].StartsWith("--")) { Loc.Waehle(args[mp + 1]); }
+            Rivals.RivalsAdvisor? rat = null;
+            var dp = Rivals.RivalsDataset.FindDefaultPath();
+            if (dp is not null) { rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dp)); }
+            using var form = new VorschauForm { Width = 1500, Height = 820, Text = "My times" };
+            var tab = new Rivals.OwnTimesTab(() => rat);
+            form.Controls.Add(tab);
+            form.Show();
+            tab.Reload();
+            // "--mytimes-preview de points" / "... en time": die Wertung statt der Runden.
+            var ansicht = mp + 2 < args.Length ? args[mp + 2].ToLowerInvariant() : "";
+            if (ansicht == "points") { tab.ShowView(1); }
+            if (ansicht == "time") { tab.ShowView(2); }
+            form.Vergroessern(VorschauForm.Faktor(args));
+            Application.DoEvents();
+            using var bild = new Bitmap(form.Width, form.Height);
+            form.DrawToBitmap(bild, new Rectangle(0, 0, form.Width, form.Height));
+            var ziel = Path.Combine(Path.GetTempPath(),
+                                    "forza-mytimes" + (ansicht.Length > 0 ? "-" + ansicht : "") + ".png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            return;
+        }
+
+        if (args.Contains("--own-times-check", StringComparer.OrdinalIgnoreCase))
+        {
+            // Die Filter des Reiters "My times" gegen den ECHTEN Bestand pruefen.
+            // Jeder Filter muss etwas tun: ein Filter, der alles durchlaesst, sieht
+            // in der Oberflaeche genauso aus wie einer, der funktioniert.
+            Rivals.RivalsAdvisor? rat = null;
+            var dpfad = Rivals.RivalsDataset.FindDefaultPath();
+            if (dpfad is not null) { rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dpfad)); }
+            var uhr = System.Diagnostics.Stopwatch.StartNew();
+            var laps = Rivals.OwnTimes.All();
+            Console.WriteLine($"{laps.Count} Runden gelesen in {uhr.ElapsedMilliseconds} ms");
+            var fehler = 0;
+            void Pruefe(bool gut, string text)
+            {
+                Console.WriteLine((gut ? "  ok   " : "  FEHL ") + text);
+                if (!gut) { fehler++; }
+            }
+            int Zahl(Action<Rivals.OwnTimes.Filter> setze, bool beste = false)
+            {
+                var f = new Rivals.OwnTimes.Filter { BestOnly = beste };
+                setze(f);
+                return Rivals.OwnTimes.Query(laps, f, rat).Count;
+            }
+
+            var alle = Zahl(_ => { });
+            Pruefe(alle == laps.Count, $"ohne Filter alle Runden ({alle} von {laps.Count})");
+
+            var beste = Zahl(_ => { }, beste: true);
+            Pruefe(beste > 0 && beste < alle, $"nur beste je Auto+Kurs: {beste} (weniger als {alle})");
+
+            var nurB = Zahl(f => f.Classes.Add("B"));
+            var echtB = laps.Count(l => l.Klass == "B");
+            Pruefe(nurB == echtB && nurB > 0, $"Klasse B: {nurB} (erwartet {echtB})");
+
+            var stehend = Zahl(f => f.Start = "standing");
+            var fliegend = Zahl(f => f.Start = "flying");
+            Pruefe(stehend + fliegend == alle && stehend > 0 && fliegend > 0,
+                   $"stehend {stehend} + fliegend {fliegend} = {alle}");
+
+            var sprint = Zahl(f => f.Kind = "sprint");
+            var runde = Zahl(f => f.Kind = "lap");
+            Pruefe(sprint + runde == alle, $"Sprint {sprint} + Runde {runde} = {alle}");
+
+            var modi = laps.Select(l => l.Mode).Distinct().ToList();
+            Console.WriteLine("       Modi im Bestand: " + string.Join(", ", modi));
+            var einModus = modi.First();
+            var mitModus = Zahl(f => f.Modes.Add(einModus));
+            Pruefe(mitModus == laps.Count(l => l.Mode == einModus),
+                   $"Modus '{einModus}': {mitModus}");
+
+            // Kein Ordnername darf als Kursname durchgehen -- weder in der Anzeige
+            // noch beim Sortieren, das benannte Kurse vor unbenannte stellt.
+            var roh = laps.Where(l => Rivals.OwnTimes.CourseText(l.Course, l.CourseName)
+                                          .StartsWith("course_", StringComparison.Ordinal)
+                                      || l.CourseName.StartsWith("course_", StringComparison.Ordinal))
+                          .Select(l => l.Course).Distinct().ToList();
+            var unbenannt = laps.Where(l => l.CourseName.Length == 0).Select(l => l.Course)
+                                .Distinct().Count();
+            Pruefe(roh.Count == 0,
+                   $"kein roher Ordnername als Kursname ({unbenannt} unbenannte Kurse, etwa '"
+                   + (laps.FirstOrDefault(l => l.CourseName.Length == 0) is { } ohne ? Rivals.OwnTimes.CourseText(ohne.Course, null) : "-") + "'"
+                   + (roh.Count > 0 ? $", roh: {roh[0]}" : string.Empty) + ")");
+
+            var einKurs = laps.First().Course;
+            var mitKurs = Zahl(f => f.Courses.Add(einKurs));
+            Pruefe(mitKurs == laps.Count(l => l.Course == einKurs) && mitKurs < alle,
+                   $"ein Kurs: {mitKurs} Runde(n)");
+
+            if (rat is not null)
+            {
+                // Marke: eine, die im Bestand vorkommt.
+                var marke = laps.Select(l => rat.CarIndexForId(l.Ordinal))
+                    .Where(i => i is not null && i < rat.Data.CarMeta.Count)
+                    .Select(i => rat.Data.CarMeta[i!.Value]?.Make)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m));
+                if (marke is not null)
+                {
+                    var mitMarke = Zahl(f => f.Makes.Add(marke));
+                    Pruefe(mitMarke > 0 && mitMarke < alle, $"Marke '{marke}': {mitMarke}");
+                }
+                var tunes = Zahl(f => f.Tunes.Add("same")) + Zahl(f => f.Tunes.Add("up"))
+                            + Zahl(f => f.Tunes.Add("down"));
+                Pruefe(tunes > 0 && tunes <= alle, $"Abstimmung same+up+down: {tunes} von {alle}");
+                var kat = Rivals.OwnTimes.Query(laps, new Rivals.OwnTimes.Filter { BestOnly = false }, rat)
+                    .Select(r => r.Category).FirstOrDefault(c => c is not null);
+                if (kat is not null)
+                {
+                    var mitKat = Zahl(f => f.Categories.Add(kat));
+                    Pruefe(mitKat > 0 && mitKat <= alle, $"Kategorie '{kat}': {mitKat}");
+                }
+            }
+            var unsinn = Zahl(f => f.CarSearch = "zzzz-gibt-es-nicht");
+            Pruefe(unsinn == 0, "Suche nach Unsinn findet nichts");
+
+            Console.WriteLine(fehler == 0 ? "Alle Filter greifen." : $"{fehler} Filter fehlerhaft.");
+            Environment.ExitCode = fehler == 0 ? 0 : 1;
+            return;
+        }
+
+        if (args.Contains("--scan-nav", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--scan-nav <category> <route index|route name> <class> [--from-board] [--frames]":
+            // Stufe 1 des Scanners -- das Spiel zu einer Bestenliste fuehren, ohne Fenster.
+            // Wartet, bis das Spiel vorn ist; die Pause-Taste haelt an.
+            Environment.Exit(ScanNavCli(args));
+        }
+
+        if (args.Contains("--scan-board", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--scan-board <category> <route index|name> <class> [--rows N] [--out dir] [--from-board] [--frames]":
+            // hinfahren und die Liste ablesen; legt einen Lauf im Format des alten Werkzeugs ab.
+            Environment.Exit(ScanBoardCli(args));
+        }
+
+        if (args.Contains("--board-check", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--board-check <lauf> [N] [--dump <ordner>]": den Zeilenleser an den Belegbildern eines
+            // fertigen Laufs des alten Werkzeugs pruefen (proof.zip + rows.jsonl).
+            var bp = Array.FindIndex(args, a => string.Equals(a, "--board-check", StringComparison.OrdinalIgnoreCase));
+            var lauf = bp + 1 < args.Length ? args[bp + 1] : ".";
+            var anzahl = bp + 2 < args.Length && int.TryParse(args[bp + 2], out var n) ? n : 220;
+            var dp = Array.FindIndex(args, a => string.Equals(a, "--dump", StringComparison.OrdinalIgnoreCase));
+            Environment.ExitCode = Scan.BoardReaderCheck.Run(lauf, anzahl, dp >= 0 && dp + 1 < args.Length ? args[dp + 1] : null);
+            return;
+        }
+
+        if (args.Contains("--auction-check", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--auction-check": zum Auktionshaus fahren und "My Bids" einmal lesen. Geboten wird nie.
+            // OHNE TAKT: sonst warnte dieser Prozess neben der laufenden App ein zweites Mal.
+            Auction.AuctionWatch.OhneTakt = true;
+            var wache = Auction.AuctionWatch.Jetzt;
+            using var griff = Scan.SpielSperre.Nehmen("auction check (command line)");
+            if (griff is null)
+            {
+                Console.WriteLine("Another automation is driving the game. Nothing was pressed.");
+                Environment.Exit(3);
+            }
+            var bieter = new Auction.AuctionBidder(wache, s => Console.WriteLine($"  {DateTime.Now:HH:mm:ss} {s}"), CancellationToken.None);
+            var ende = bieter.Laufe();
+            Console.WriteLine("end: " + ende);
+            foreach (var a in wache.Store.Auktionen)
+            {
+                Console.WriteLine($"{a.Auto} pi={a.Pi} {a.Status} bid={a.Gebot} buyout={a.Sofortkauf} ends={a.EndeUtc:HH:mm} UTC result={a.Ergebnis}");
+            }
+            Environment.Exit(0);
+        }
+
+        if (args.Contains("--auction-learn", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--auction-learn <ziel.json> <bild.png ...>": den Grundstock der Ziffernvorlagen aus
+            // Bildschirmbildern bauen (Betraege, die die Texterkennung liest).
+            var al = Array.FindIndex(args, a => string.Equals(a, "--auction-learn", StringComparison.OrdinalIgnoreCase));
+            var ziel = args[al + 1];
+            Auction.AuctionReader.LernenNurImSpeicher = true;
+            var ocr = new Rivals.WindowsOcr();
+            for (var i = al + 2; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                using var skaliert = new Bitmap(bild, new Size(1920, 1080));
+                if (Auction.AuctionReader.Einordnen(ocr.Read(skaliert)) != Auction.AuktionsSchirm.Liste) { continue; }
+                Auction.AuctionReader.LiesKarten(skaliert, ocr);
+            }
+            Auction.AuctionDigits.Speichern(ziel);
+            Console.WriteLine($"{Auction.AuctionDigits.Bekannt} digits known -> {ziel}");
+            return;
+        }
+
+        if (args.Contains("--auction-read", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--auction-read <bild.png ...>": Auktionshaus-Schirm und Karten aus Bildschirmbildern.
+            var ar = Array.FindIndex(args, a => string.Equals(a, "--auction-read", StringComparison.OrdinalIgnoreCase));
+            var ocr = new Rivals.WindowsOcr();
+            for (var i = ar + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                using var skaliert = new Bitmap(bild, new Size(1920, 1080));
+                var zeilen = ocr.Read(skaliert);
+                Console.WriteLine($"== {Path.GetFileName(args[i])}: {Auction.AuctionReader.Einordnen(zeilen)}, next bid {Auction.AuctionReader.NaechstesGebot(zeilen)}");
+                foreach (var k in Auction.AuctionReader.LiesKarten(skaliert, ocr))
+                {
+                    Console.WriteLine($"  {k.Platz} {k.Auto} pi={k.Pi} status={k.Status} bid={k.Gebot} buyout={k.Sofortkauf} "
+                                      + $"min={k.RestMinuten}{(k.BaldZuEnde ? " soon" : "")}{(k.Eigen ? " owned" : "")}{(k.Markiert ? " SELECTED" : "")}{(k.Verblasst ? " faded" : "")}"
+                                      + Environment.NewLine + $"     raw: {k.Roh}");
+                }
+            }
+            return;
+        }
+
+        if (args.Contains("--scrollbar", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--scrollbar <bild.png ...>": den Scrollbalken der Bestenliste messen (Lage des Daumens, Ende?).
+            var sb = Array.FindIndex(args, a => string.Equals(a, "--scrollbar", StringComparison.OrdinalIgnoreCase));
+            for (var i = sb + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                using var skaliert = new Bitmap(bild, new Size(1920, 1080));
+                var m = Scan.ScanScrollbar.Messen(skaliert);
+                Console.WriteLine($"{Path.GetFileName(args[i])}: " + (m is null ? "no bar"
+                    : $"bar {m.BalkenOben}-{m.BalkenUnten}, thumb {m.DaumenOben}-{m.DaumenUnten}, position {m.Position}, bottom {m.Unten}"));
+            }
+            return;
+        }
+
+        if (args.Contains("--board-read", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--board-read <bild.png ...>": die Zeilen einer Bestenliste aus Bildschirmbildern.
+            var br = Array.FindIndex(args, a => string.Equals(a, "--board-read", StringComparison.OrdinalIgnoreCase));
+            var ocr = new Rivals.WindowsOcr();
+            for (var i = br + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                using var skaliert = new Bitmap(bild, new Size(1920, 1080));
+                Console.WriteLine("== " + Path.GetFileName(args[i]));
+                foreach (var r in Scan.BoardReader.Lies(skaliert, ocr))
+                {
+                    Console.WriteLine($"  {r.Zeile,2} rank={r.Rank} car={r.Car} pi={r.Pi} {r.Drivetrain} ms={r.Ms} gear={r.Gearbox} "
+                                      + $"abs={r.Abs} tcs={r.Tcs} stm={r.Stm}{(r.Cursor ? " CURSOR" : "")}");
+                }
+            }
+            return;
+        }
+
+        if (args.Contains("--scan-screens", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--scan-screens <ordner|bild.png ...>": gespeicherte Schirme einordnen, wie es der
+            // Scanner beim Navigieren taete -- Schirm, Strecke, Klasse, Rahmenkachel je Bild.
+            var sp = Array.FindIndex(args, a => string.Equals(a, "--scan-screens", StringComparison.OrdinalIgnoreCase));
+            var ocr = new Rivals.WindowsOcr();
+            var dateien = new List<string>();
+            for (var i = sp + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                if (Directory.Exists(args[i]))
+                {
+                    dateien.AddRange(Directory.GetFiles(args[i], "*.png").Concat(Directory.GetFiles(args[i], "*.jpg")).OrderBy(f => f));
+                }
+                else { dateien.Add(args[i]); }
+            }
+            Scan.ScanRoutes? routen = null;
+            try { routen = Scan.ScanRoutes.Laden(); } catch (Exception) { }
+            foreach (var datei in dateien)
+            {
+                using var bild = new Bitmap(datei);
+                using var skaliert = new Bitmap(bild, new Size(1920, 1080));
+                var l = Scan.ScanScreen.Lies(ocr, skaliert);
+                var rahmen = l.Schirm == Scan.ScanSchirm.Kategorien ? Scan.ScanScreen.KategorieRahmen(skaliert) : null;
+                // Wo steht das Karussell -- in jeder Kategorie, die die Lesung unterbringt.
+                var orte = routen is null || l.Schirm is not (Scan.ScanSchirm.Streckenliste or Scan.ScanSchirm.Klassenschirm or Scan.ScanSchirm.RivalDetail)
+                    ? "-"
+                    : string.Join(";", routen.Kategorien.Select(k => (k.Name, Ort: k.Verorte(l))).Where(x => x.Ort.Index >= 0)
+                                                     .Select(x => $"{x.Name}#{x.Ort.Index}:{x.Ort.Beleg}"));
+                var leiste = string.Join("|", l.Leiste.Select(v => v is { } d ? d.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "_"));
+                Console.WriteLine($"{datei}\t{l.Schirm}\troute={l.Titel ?? "-"}\tclass={l.Klasse ?? "-"}"
+                                  + $"\tframe={(rahmen is { } r ? $"{r.Zeile},{r.Spalte}" : "-")}"
+                                  + $"\tkm={(l.Laenge is { } km ? km.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "-")}"
+                                  + $"\tstrip={leiste}\tplace={(orte.Length > 0 ? orte : "none")}");
+            }
+            return;
+        }
+
+
+        if (args.Contains("--tune-ui-test", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--tune-ui-test ordner [muster]": jede Aufnahme so auswerten, wie es das
+            // automatische Loeschen taete -- Schirm, markierter Eintrag, gelesenes Tune.
+            var tp = Array.FindIndex(args, a => string.Equals(a, "--tune-ui-test", StringComparison.OrdinalIgnoreCase));
+            var ordner = args[tp + 1];
+            var muster = tp + 2 < args.Length ? args[tp + 2] : "*.png";
+            var ocr = new Rivals.WindowsOcr();
+            foreach (var datei in Directory.GetFiles(ordner, muster).OrderBy(f => f))
+            {
+                using var bild = new Bitmap(datei);
+                using var b = new Bitmap(bild, new Size(1920, 1080));
+                var z = ocr.Read(b);
+                var s = Tuning.TuneList.Einordnen(z);
+                var info = string.Empty;
+                if (s is Tuning.TuneList.Schirm.CarsMenu or Tuning.TuneList.Schirm.Upgrades
+                        or Tuning.TuneList.Schirm.FileOptions or Tuning.TuneList.Schirm.DeleteConfirm
+                        or Tuning.TuneList.Schirm.ActionMenu)
+                {
+                    info = "marked: " + string.Join(", ", z.Where(l => Tuning.TuneList.Markiert(b, l)).Select(l => l.Text));
+                }
+                if (s == Tuning.TuneList.Schirm.TunesList)
+                {
+                    var l = Tuning.TuneList.LiesListe(z, b);
+                    info = $"tune '{l.Name}' by '{l.Creator}' created '{l.Datum}' car '{l.AutoZeile}' tile {l.Kachel} icon {l.Symbol}";
+                }
+                if (s == Tuning.TuneList.Schirm.FileOptions)
+                {
+                    var d = Tuning.TuneList.LiesDialog(z);
+                    info += $"  dialog '{d.Name}' by '{d.Creator}' car '{d.Auto}'";
+                }
+                Console.WriteLine($"{Path.GetFileName(datei)} {s,-13} {info}");
+            }
+            return;
+        }
+
+        if (args.Contains("--ocr-lines", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--ocr-lines bild.png ...": jede erkannte Zeile mit Lage (1080p-Bezug) --
+            // zum Vermessen neuer Spielschirme.
+            var op = Array.FindIndex(args, a => string.Equals(a, "--ocr-lines", StringComparison.OrdinalIgnoreCase));
+            var ocr = new Rivals.WindowsOcr();
+            // "--raw": das Bild so lesen, wie es ist (Ausschnitte), statt es auf 1080p zu ziehen.
+            var roh = args.Contains("--raw", StringComparer.OrdinalIgnoreCase);
+            for (var i = op + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                using var skaliert = roh ? new Bitmap(bild) : new Bitmap(bild, new Size(1920, 1080));
+                Console.WriteLine("== " + Path.GetFileName(args[i]));
+                foreach (var z in ocr.Read(skaliert).OrderBy(z => z.Y).ThenBy(z => z.X))
+                {
+                    Console.WriteLine($"  {z.X,5:0} {z.Y,5:0}  {z.Text}");
+                }
+            }
+            return;
+        }
+
+        if (args.Contains("--trailer-celebration", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.ExitCode = TrailerHud.Feier(args);
+            return;
+        }
+        if (args.Contains("--trailer-carnote", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.ExitCode = TrailerHud.Notiz(args);
+            return;
+        }
+        if (args.Contains("--trailer-hud", StringComparer.OrdinalIgnoreCase))
+        {
+            // Die Overlays einer aufgezeichneten Runde als Einzelbilder -- fuer Videos
+            // (Rivals/TrailerHud.cs). Die Overlays selbst halten sich aus Aufnahmen heraus.
+            Environment.ExitCode = TrailerHud.Run(args);
+            return;
+        }
+
+        if (args.Contains("--screen-read", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--screen-read bild.png ...": den Leser auf Aufnahmen laufen lassen, genau wie
+            // im Spiel -- Strecken, Klasse, Reihe, und seit 2026-09-28 die Ueberschrift
+            // (Rivals-Schirm) samt Strecke und Laenge.
+            var sp = Array.FindIndex(args, a => string.Equals(a, "--screen-read", StringComparison.OrdinalIgnoreCase));
+            var pfad = Rivals.RivalsDataset.FindDefaultPath();
+            if (pfad is null) { Console.WriteLine("no dataset"); return; }
+            var einst = Rivals.OverlaySettings.Load();
+            var leser = new Rivals.RivalsScreenReader(new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad)), einst);
+            for (var i = sp + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                var st = leser.ReadBitmap(bild);
+                Console.WriteLine($"{Path.GetFileName(args[i])}: head \"{st.Kopf}\" rivals={st.IsRivalsMenu} "
+                                  + $"route={st.RivalsRoute ?? "-"} km={st.RivalsKm} | offer={st.IsOffer} "
+                                  + $"tracks=[{string.Join(", ", st.Tracks)}] class={st.Klass ?? "-"} "
+                                  + $"series={st.Series ?? "-"} hp={st.IsHorizonPlay} ({st.ReadMilliseconds:0} ms)");
+            }
+            return;
+        }
+
+        if (args.Contains("--delta-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // Den Delta-Streifen mit einer Beschriftung zeichnen -- ohne Fenster.
+            var dp = Array.FindIndex(args, a => string.Equals(a, "--delta-preview", StringComparison.OrdinalIgnoreCase));
+            var text = dp + 1 < args.Length ? args[dp + 1] : "same PI class · Toyota GR Supra '20";
+            var zweite = dp + 2 < args.Length ? args[dp + 2] : string.Empty;
+            var einst = Rivals.OverlaySettings.Load();
+            var schirm = new Rectangle(0, 0, 3840, 2160);
+            using var streifen = new Rivals.DeltaHud(schirm, einst);
+            streifen.Update(-0.734f, text, -30f, zweite.Length > 0 ? 1.212f : null, zweite);
+            using var bild = new Bitmap(schirm.Width, schirm.Height);
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.FromArgb(40, 46, 54));
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                streifen.PaintInto(g);
+            }
+            var ziel = Path.Combine(Path.GetTempPath(), "forza-delta.png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            return;
+        }
+
+        if (args.Contains("--video-sources", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--video-sources": was dieser Rechner als Spielbild anbieten kann -- Videogeraete
+            // (Aufnahmekarte, OBS Virtual Camera), Fenster, ffmpeg.
+            // "--video-sources <device|obs|window|url> <name> <out.png>": ein Bild davon holen.
+            var vp = Array.FindIndex(args, a => string.Equals(a, "--video-sources", StringComparison.OrdinalIgnoreCase));
+            if (vp + 3 < args.Length)
+            {
+                var s = new Rivals.OverlaySettings { ConsoleMode = true, VideoSource = args[vp + 1] };
+                switch (args[vp + 1])
+                {
+                    case "window": s.VideoWindow = args[vp + 2]; break;
+                    case "url": s.VideoUrl = args[vp + 2]; break;
+                    default: s.VideoDevice = args[vp + 2]; break;
+                }
+                using var quelle = Rivals.Bildquellen.Erzeuge(s);
+                if (quelle is null) { Console.WriteLine("no source for these settings"); return; }
+                Bitmap? bild = null;
+                for (var i = 0; i < 80 && bild is null; i++)
+                {
+                    Thread.Sleep(100);
+                    bild = quelle.Neuestes();
+                }
+                Console.WriteLine(quelle.Beschreibung);
+                if (bild is null) { Console.WriteLine("no picture within 8 s"); return; }
+                bild.Save(args[vp + 3], System.Drawing.Imaging.ImageFormat.Png);
+                Console.WriteLine($"{bild.Width}x{bild.Height} -> {args[vp + 3]}");
+                return;
+            }
+            Console.WriteLine("video devices:");
+            foreach (var n in Rivals.Bildquellen.GeraeteAsync().GetAwaiter().GetResult()) { Console.WriteLine("  " + n); }
+            Console.WriteLine("windows (graphics capture " + (Rivals.FensterQuelle.Unterstuetzt ? "available" : "NOT available") + "):");
+            foreach (var (_, t) in Rivals.Fenster.Sichtbare()) { Console.WriteLine("  " + t); }
+            Console.WriteLine("ffmpeg: " + (Rivals.Ffmpeg.Finden(null) ?? "not found"));
+            return;
+        }
+
+
+
+        if (args.Contains("--tune-list-read", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--tune-list-read bild.png ...": die Tunes-Liste aus einer Aufnahme lesen -- einmal wie der
+            // Loescher (Umriss, strenge Farbe), einmal wie die Autonotiz (Form).
+            var tp = Array.FindIndex(args, a => string.Equals(a, "--tune-list-read", StringComparison.OrdinalIgnoreCase));
+            var ocr = new Rivals.WindowsOcr();
+            for (var i = tp + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var roh = new Bitmap(args[i]);
+                using var bild = new Bitmap(roh, new Size(1920, 1080));
+                var zeilen = ocr.Read(bild);
+                var loescher = Tuning.TuneList.LiesListe(zeilen, bild);
+                var notiz = Tuning.TuneList.LiesListe(zeilen, bild, nachForm: true);
+                Console.WriteLine($"{Path.GetFileName(args[i])}: screen {Tuning.TuneList.Einordnen(zeilen)}, '{notiz.Name}' by '{notiz.Creator}'");
+                Console.WriteLine($"  deleter: tile {loescher.Kachel} icon {loescher.Symbol}");
+                Console.WriteLine($"  car note: tile {notiz.Kachel} icon {notiz.Symbol}");
+            }
+            return;
+        }
+
+        if (args.Contains("--car-grid-read", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--car-grid-read bild.png": das Automenue aus einer Aufnahme lesen, genau wie
+            // im Spiel -- Rahmen suchen, Titel lesen, Auto bestimmen.
+            var gp = Array.FindIndex(args, a =>
+                string.Equals(a, "--car-grid-read", StringComparison.OrdinalIgnoreCase));
+            var dpfad = Rivals.RivalsDataset.FindDefaultPath();
+            if (dpfad is null || gp + 1 >= args.Length)
+            {
+                Console.WriteLine(dpfad is null ? "no dataset" : "usage: --car-grid-read <png>");
+                return;
+            }
+            var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dpfad));
+            var leser = new Rivals.RivalsScreenReader(rat, Rivals.OverlaySettings.Load());
+            for (var i = gp + 1; i < args.Length && !args[i].StartsWith("--"); i++)
+            {
+                using var bild = new Bitmap(args[i]);
+                var r = Rivals.CarGridReader.LiesBild(bild, leser.ReadLines, rat);
+                Console.WriteLine(r is null
+                    ? $"{Path.GetFileName(args[i])}: no frame"
+                    : $"{Path.GetFileName(args[i])}: frame {r.Value.Rahmen} read \"{r.Value.Gelesen}\" -> "
+                      + (r.Value.Auto is { } a ? $"{a.Name} (car {a.Ordinal})" : "no car"));
+            }
+            return;
+        }
+
+        if (args.Contains("--shape-hud-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // Den Umriss-Streifen so zeichnen, wie er im Spiel liegt.
+            //
+            // Dahinter Schalter, die nur fuer DIESES Bild gelten (gespeichert wird nichts):
+            //   source=rivals|telemetry|auto  style=image|line  layout=vertical|horizontal
+            //   smooth=0..100  width=2.5  scale=1.5  out=datei.png
+            //   routes="Daikoku Circuit;Hakone Nanamagari"  (Rivals-Karten nach Namen)
+            var einst = Rivals.OverlaySettings.Load();
+            string? Wert(string schluessel) => args.Select(a => a.Split('=', 2))
+                .Where(t => t.Length == 2 && string.Equals(t[0], schluessel, StringComparison.OrdinalIgnoreCase))
+                .Select(t => t[1]).LastOrDefault();
+            if (Wert("source") is { } q) { einst.CourseShapeSource = q; }
+            if (Wert("style") is { } st) { einst.CourseRivalsStyle = st; }
+            if (Wert("layout") is { } la) { einst.CourseShapeLayout = la; }
+            if (int.TryParse(Wert("smooth"), out var gl)) { einst.CourseShapeSmooth = gl; }
+            if (double.TryParse(Wert("width"), System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out var br)) { einst.CourseShapeWidth = br; }
+            if (double.TryParse(Wert("scale"), System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out var sk)) { einst.HudCourseScale = sk; }
+            einst.CourseShapes = true;
+            var schirm = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+            using var hud = new Rivals.CourseShapeHud(einst, schirm);
+            var wurzel = Rivals.LapArchive.Root;
+            var drei = new List<(string, Rivals.CourseShape.Outline?)>();
+            if (Wert("routes") is { } routen)
+            {
+                foreach (var r in routen.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    drei.Add((r, Rivals.CourseShape.ForRoute(r, einst.ShapeSourceChoice)));
+                }
+            }
+            else
+            {
+                foreach (var ordner in Rivals.LapArchive.KursOrdner(wurzel))
+                {
+                    var kurs = Rivals.LapArchive.KennungAus(Path.GetFileName(ordner)) ?? Path.GetFileName(ordner);
+                    var u = Rivals.CourseShape.For(kurs, einst.ShapeSourceChoice, wurzel);
+                    if (u is null || u.IsEmpty) { continue; }
+                    var name = Rivals.CourseShape.KursName(wurzel, kurs);
+                    drei.Add((string.IsNullOrEmpty(name) ? kurs : name, u));
+                    if (drei.Count >= 3) { break; }
+                }
+            }
+            // Eine Strecke absichtlich ohne Umriss: der Kasten "not driven yet"
+            // muss auch stimmen, und der faellt sonst nie auf.
+            if (Wert("sample") != "0") { drei.Add(("Never Driven Circuit", null)); }
+            // states=done,now,next -- der Stand einer Meisterschaft, je Kachel.
+            var stati = (Wert("states") ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => Enum.TryParse<Rivals.CourseShapeHud.TileState>(x, true, out var st) ? st : Rivals.CourseShapeHud.TileState.None)
+                .ToList();
+            hud.SetCourses(drei, stati);
+            using var bild = new Bitmap(schirm.Width, schirm.Height);
+            using (var g = Graphics.FromImage(bild))
+            {
+                // bg=none: durchsichtig, zum Unterlegen in Videos.
+                g.Clear(Wert("bg") == "none" ? Color.Transparent : Color.FromArgb(40, 46, 54));
+                hud.Paint(g);
+            }
+            var ziel = Wert("out") ?? Path.Combine(Path.GetTempPath(), "forza-shape-hud.png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine($"{drei.Count} Kacheln gezeichnet");
+            Console.WriteLine(ziel);
+            return;
+        }
+
+        // SCHLUESSEL UND UNTERSCHRIFT FUER UPDATES -- siehe Rivals.UpdateSignature.
+        //   --update-key-new [pfad]          einmalig: Schluesselpaar anlegen
+        //   --update-sign <zip> [schluessel]  Unterschrift (Base64) ausgeben
+        //   --update-verify <zip> <sig>       0 = gueltig
+        if (args.Length >= 1 && string.Equals(args[0], "--update-key-new", StringComparison.OrdinalIgnoreCase))
+        {
+            var pfad = args.Length > 1 ? args[1] : Rivals.UpdateSignature.DefaultKeyPath;
+            Console.WriteLine(Rivals.UpdateSignature.NewKey(pfad));
+            Environment.Exit(0);
+        }
+        if (args.Length >= 2 && string.Equals(args[0], "--update-sign", StringComparison.OrdinalIgnoreCase))
+        {
+            var schluessel = args.Length > 2 ? args[2] : Rivals.UpdateSignature.DefaultKeyPath;
+            Console.WriteLine(Rivals.UpdateSignature.Sign(args[1], schluessel));
+            Environment.Exit(0);
+        }
+        if (args.Length >= 3 && string.Equals(args[0], "--update-verify", StringComparison.OrdinalIgnoreCase))
+        {
+            var gut = Rivals.UpdateSignature.Verify(args[1], args[2]);
+            Console.WriteLine(gut ? "valid" : "INVALID");
+            Environment.Exit(gut ? 0 : 1);
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--submit-lap", StringComparison.OrdinalIgnoreCase))
+        {
+            // DENSELBEN WEG GEHEN WIE NACH EINER GEFAHRENEN RUNDE -- nur mit einer
+            // Runde aus dem Archiv. Prueft Entscheidung, Anmeldung und Einreichung.
+            //   --submit-lap <runde.json> [--dry-run] [--gamertag X] [--server URL]
+            string? Opt(string name)
+            {
+                var i = Array.FindIndex(args, a => string.Equals(a, name, StringComparison.OrdinalIgnoreCase));
+                return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+            }
+            var pfad = Path.GetFullPath(args[1]);
+            // Das Archiv legt {"Course", "Tag", "Class", "Lap": {...}} ab; eine blanke
+            // Runde geht auch.
+            var knoten = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(pfad))
+                         ?? throw new InvalidDataException("kein JSON in " + pfad);
+            var lapKnoten = knoten["Lap"] ?? knoten;
+            var lap = System.Text.Json.JsonSerializer.Deserialize<Rivals.RecordedLap>(lapKnoten)
+                      ?? throw new InvalidDataException("keine Runde in " + pfad);
+            // laps/<kurs>/<klasse>/car<n>/<tune>/<tag>/<datei>
+            var kursOrdner = new DirectoryInfo(Path.GetDirectoryName(pfad)!).Parent?.Parent?.Parent?.Parent;
+            var kurs = (string?)knoten["Course"] ?? Rivals.LapArchive.KennungAus(kursOrdner?.Name) ?? kursOrdner?.Name ?? string.Empty;
+            var wurzel = kursOrdner?.Parent?.FullName ?? Rivals.LapArchive.Root;
+            // Der Kurs aus der Datei, und falls der (alter Schluessel) nichts hergibt,
+            // der Ordner, in dem sie heute liegt.
+            var strecke = Rivals.LapAutoSubmit.RouteName(lap, wurzel, kurs, kursOrdner?.Name ?? string.Empty);
+            var einst = Rivals.OverlaySettings.Load();
+            if (Opt("--gamertag") is { } gt) { einst.Gamertag = gt; }
+            if (Opt("--server") is { } sv) { einst.DatasetUrl = sv; }
+            einst.SubmitLaps = true;
+            Rivals.RivalsAdvisor? rat = null;
+            var dp = Rivals.RivalsDataset.FindDefaultPath();
+            if (dp is not null) { rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dp)); }
+            Console.WriteLine($"lap {lap.LapSeconds:0.000} s, car {lap.CarOrdinal}, class {lap.CarClass}, route '{strecke}', course {kurs}");
+            var ergebnis = new Rivals.LapAutoSubmit(() => rat, einst, _ => { })
+                .ConsiderAsync(lap, kurs, strecke, dryRun: args.Contains("--dry-run", StringComparer.OrdinalIgnoreCase))
+                .GetAwaiter().GetResult();
+            Console.WriteLine(ergebnis);
+            Environment.Exit(ergebnis.StartsWith("submitted") || ergebnis.StartsWith("would submit") ? 0 : 3);
+        }
+
+        if (args.Contains("--update-security-check", StringComparer.OrdinalIgnoreCase))
+        {
+            // Die Schutzregeln des Updaters, jede so gebaut, dass sie ohne die Regel
+            // fehlschluege.
+            var fehler = 0;
+            void Pruefe(bool gut, string text)
+            {
+                Console.WriteLine((gut ? "  ok   " : "  FEHL ") + text);
+                if (!gut) { fehler++; }
+            }
+            var ordner = Path.Combine(Path.GetTempPath(), "forza-update-check");
+            Directory.CreateDirectory(ordner);
+            var datei = Path.Combine(ordner, "paket.zip");
+            File.WriteAllBytes(datei, System.Security.Cryptography.RandomNumberGenerator.GetBytes(4096));
+            var schluessel = Rivals.UpdateSignature.DefaultKeyPath;
+            if (File.Exists(schluessel))
+            {
+                var sig = Rivals.UpdateSignature.Sign(datei, schluessel);
+                Pruefe(Rivals.UpdateSignature.Verify(datei, sig), "richtig unterschriebenes Paket gilt");
+                var falsch = Path.Combine(ordner, "veraendert.zip");
+                var bytes = File.ReadAllBytes(datei); bytes[1234] ^= 0x01;
+                File.WriteAllBytes(falsch, bytes);
+                Pruefe(!Rivals.UpdateSignature.Verify(falsch, sig), "ein veraendertes Byte macht die Unterschrift ungueltig");
+            }
+            else
+            {
+                Console.WriteLine("  (kein privater Schluessel auf diesem Rechner -- Signieren nicht geprueft)");
+            }
+            Pruefe(!Rivals.UpdateSignature.Verify(datei, null), "ohne Unterschrift wird nichts angenommen");
+            Pruefe(!Rivals.UpdateSignature.Verify(datei, "AAAA"), "eine Unsinns-Unterschrift wird abgelehnt");
+            var boese = new Rivals.AppUpdate.Fassung { Name = @"..\..\..\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\x.cmd" };
+            Pruefe(Rivals.AppUpdate.ZielName(boese) == "fh-companion.zip", "Pfad im Paketnamen wird nicht als Pfad benutzt");
+            var gut = new Rivals.AppUpdate.Fassung { Name = "fh-companion-20260924.zip" };
+            Pruefe(Rivals.AppUpdate.ZielName(gut) == "fh-companion-20260924.zip", "ein normaler Paketname bleibt");
+            try
+            {
+                Rivals.AppUpdate.DownloadUri("https://updates.example.org:8787", new Rivals.AppUpdate.Fassung { Url = "http://evil.example/x.zip" });
+                Pruefe(false, "Download von einem fremden Rechner abgelehnt");
+            }
+            catch (InvalidDataException) { Pruefe(true, "Download von einem fremden Rechner abgelehnt"); }
+            try
+            {
+                // Seit HTTPS (2026-09-25): eine Metadatei, die auf DENSELBEN Rechner,
+                // aber ueber http:// verweist, wuerde den Download herabstufen.
+                Rivals.AppUpdate.DownloadUri("https://updates.example.org:8787", new Rivals.AppUpdate.Fassung { Url = "http://updates.example.org:8787/download/haptics" });
+                Pruefe(false, "ein Download-Verweis auf http:// bei HTTPS-Server abgelehnt");
+            }
+            catch (InvalidDataException) { Pruefe(true, "ein Download-Verweis auf http:// bei HTTPS-Server abgelehnt"); }
+            var eigene = Rivals.AppUpdate.DownloadUri("https://updates.example.org:8787", new Rivals.AppUpdate.Fassung { Url = "/download/haptics" });
+            Pruefe(eigene.ToString() == "https://updates.example.org:8787/download/haptics", "der eigene Download-Pfad bleibt erlaubt (und bleibt HTTPS)");
+            // Die Vorgabe kommt beim Bauen aus config/local.json; ohne sie gibt es
+            // keine alte http-Vorgabe, die zu heben waere.
+            if (Rivals.OverlaySettings.OldDefaultServer is { } altServer)
+            {
+                Pruefe(Rivals.OverlaySettings.UpgradeServer(altServer + "/") == Rivals.OverlaySettings.DefaultServer
+                       && Rivals.OverlaySettings.DefaultServer.StartsWith("https://"),
+                       "die alte http-Vorgabe wird beim Laden auf HTTPS gehoben");
+            }
+            else
+            {
+                Console.WriteLine("  (ohne eingebaute Server-Vorgabe gebaut -- Anhebung nicht geprueft)");
+            }
+            Pruefe(Rivals.OverlaySettings.UpgradeServer("http://192.168.1.5:8787") == "http://192.168.1.5:8787",
+                   "eine selbst eingetragene Adresse bleibt, wie sie ist");
+            Pruefe(Rivals.ServerHttp.SameServer("http://updates.example.org:8787", "https://updates.example.org:8787/")
+                   && !Rivals.ServerHttp.SameServer("https://updates.example.org:8787", "https://evil.example:8787")
+                   && !Rivals.ServerHttp.SameServer("https://updates.example.org:8787", "https://updates.example.org:8788"),
+                   "derselbe Server ueber http und https behaelt seine Anmeldung, ein anderer nicht");
+            Console.WriteLine(fehler == 0 ? "Alle Update-Regeln greifen." : $"{fehler} Regel(n) greifen NICHT.");
+            Environment.Exit(fehler == 0 ? 0 : 1);
+        }
+
+        if (args.Contains("--rivals-maps-check", StringComparer.OrdinalIgnoreCase))
+        {
+            // Hat JEDE Rivalen-Strecke des Katalogs eine Karte, nach ihrem Namen --
+            // auch die nie gefahrenen? Genau so fragen die Kacheln vor dem Rennen.
+            var katalogPfad = new[] { "config", Path.Combine("..", "config") }
+                .Select(p => Path.Combine(AppContext.BaseDirectory, p, "fh6_board_catalogue.json"))
+                .Concat(new[] { Path.Combine(Directory.GetCurrentDirectory(), "config", "fh6_board_catalogue.json") })
+                .FirstOrDefault(File.Exists);
+            if (katalogPfad is null) { Console.WriteLine("kein Katalog gefunden"); Environment.Exit(2); }
+            using var katalog = System.Text.Json.JsonDocument.Parse(File.ReadAllText(katalogPfad));
+            var uhr = System.Diagnostics.Stopwatch.StartNew();
+            int alle = 0, mit = 0;
+            foreach (var kat in katalog.RootElement.GetProperty("tracks").EnumerateObject())
+            {
+                var fehlt = new List<string>();
+                int n = 0, da = 0;
+                foreach (var e in kat.Value.GetProperty("verified").EnumerateArray())
+                {
+                    var name = e.GetProperty("name").GetString() ?? string.Empty;
+                    n++;
+                    if (Rivals.CourseShape.ForRoute(name, Rivals.ShapeSource.Rivals) is not null) { da++; }
+                    else { fehlt.Add(name); }
+                }
+                alle += n; mit += da;
+                Console.WriteLine($"  {kat.Name,-14} {da,2}/{n}" + (fehlt.Count > 0 ? "  fehlt: " + string.Join(", ", fehlt) : ""));
+            }
+            Console.WriteLine($"{mit} von {alle} Strecken mit Karte, {uhr.ElapsedMilliseconds} ms");
+            Environment.Exit(mit == alle ? 0 : 1);
+        }
+
+        if (args.Contains("--shape-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // Jeden Kurs des Bestands als Umriss zeichnen, in ein Blatt.
+            // Zum Hinsehen: eine Form, die falsch herum oder verzerrt ist, faellt
+            // nur im Bild auf, nicht in einer Zahl.
+            var sp = Array.FindIndex(args, a =>
+                string.Equals(a, "--shape-preview", StringComparison.OrdinalIgnoreCase));
+            var quelleWahl = sp + 1 < args.Length
+                ? args[sp + 1].ToLowerInvariant() switch
+                  {
+                      "rivals" => Rivals.ShapeSource.Rivals,
+                      "telemetry" => Rivals.ShapeSource.Telemetry,
+                      _ => Rivals.ShapeSource.Auto,
+                  }
+                : Rivals.ShapeSource.Auto;
+            var wurzel = Rivals.LapArchive.Root;
+            var kurse = Directory.Exists(wurzel)
+                ? Rivals.LapArchive.KursOrdner(wurzel).Select(d => Rivals.LapArchive.KennungAus(Path.GetFileName(d)) ?? Path.GetFileName(d))
+                           .Where(k => !string.IsNullOrEmpty(k)).OrderBy(k => k).ToList()
+                : new List<string?>();
+            const int Kachel = 190, Spalten = 8, Rand = 10;
+            var reihen = Math.Max(1, (kurse.Count + Spalten - 1) / Spalten);
+            using var blatt = new Bitmap(Spalten * Kachel, reihen * Kachel);
+            using (var g = Graphics.FromImage(blatt))
+            {
+                g.Clear(Color.FromArgb(12, 16, 22));
+                using var schrift = new Font("Segoe UI", 7f);
+                using var text = new SolidBrush(Color.Gainsboro);
+                var treffer = 0;
+                for (var i = 0; i < kurse.Count; i++)
+                {
+                    var kurs = kurse[i]!;
+                    // Quelle ueber die Kommandozeile waehlbar: --shape-preview rivals
+            var u = Rivals.CourseShape.For(kurs, quelleWahl, wurzel);
+                    var x = (i % Spalten) * Kachel;
+                    var y = (i / Spalten) * Kachel;
+                    var kasten = new RectangleF(x + Rand, y + Rand + 12,
+                                                Kachel - (2 * Rand), Kachel - (2 * Rand) - 22);
+                    if (u is not null && !u.IsEmpty)
+                    {
+                        treffer++;
+                        Rivals.CourseShape.Draw(g, u, kasten,
+                            u.Source == Rivals.ShapeSource.Telemetry
+                                ? Color.FromArgb(120, 200, 255) : Color.FromArgb(230, 90, 200),
+                            2.0f, Color.FromArgb(255, 210, 90));
+                    }
+                    var name = Rivals.CourseShape.KursName(wurzel, kurs);
+                    g.DrawString(string.IsNullOrEmpty(name) ? kurs : name,
+                                 schrift, text, x + 4, y + 2);
+                }
+                Console.WriteLine($"{treffer} von {kurse.Count} Kursen haben einen Umriss");
+            }
+            var ziel = Path.Combine(Path.GetTempPath(), "forza-course-shapes.png");
+            blatt.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            return;
+        }
+
+        if (args.Contains("--own-cars", StringComparer.OrdinalIgnoreCase))
+        {
+            var oc = Array.FindIndex(args, a =>
+                string.Equals(a, "--own-cars", StringComparison.OrdinalIgnoreCase));
+            var klasse = oc + 1 < args.Length && !args[oc + 1].StartsWith("--")
+                ? args[oc + 1] : null;
+            var karte = new Rivals.OrdinalMap();
+            // Den Ratgeber mitladen, damit dieser Bericht DENSELBEN Rueckfall zeigt
+            // wie das Overlay: erst das Gelernte, dann das Ordinal als car_id.
+            // Ohne ihn saehe hier alles unzugeordnet aus, waehrend im Spiel Namen
+            // stuenden -- ein Bericht, der etwas anderes prueft als den Ernstfall.
+            Rivals.RivalsAdvisor? ratgeber = null;
+            try
+            {
+                var pfad = Rivals.RivalsDataset.FindDefaultPath();
+                if (pfad is not null)
+                {
+                    ratgeber = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad));
+                }
+            }
+            catch (Exception fehler)
+            {
+                Console.WriteLine($"Datensatz nicht ladbar: {fehler.Message}");
+            }
+
+            string Name(int ordinal)
+            {
+                var e = karte.Lookup(ordinal);
+                if (e is not null) { return e.Name + "  [gelernt]"; }
+                var idx = ratgeber?.CarIndexForId(ordinal);
+                return idx is not null
+                    ? ratgeber!.CarName(idx.Value) + "  [angenommen]"
+                    : "(nicht zugeordnet)";
+            }
+
+            Console.WriteLine($"Rundenbestand: {Rivals.LapArchive.Root}");
+            Console.WriteLine($"Runden gesamt: {Rivals.OwnCars.TotalLaps()}");
+            Console.WriteLine();
+
+            foreach (var k in klasse is null
+                         ? new[] { "D", "C", "B", "A", "S1", "S2", "R" }
+                         : new[] { klasse })
+            {
+                var besten = Rivals.OwnCars.Bests(k);
+                if (besten.Count == 0) { continue; }
+                Console.WriteLine($"Klasse {k}: {besten.Count} Auto(s)");
+                foreach (var b in besten)
+                {
+                    Console.WriteLine(
+                        $"  {Rivals.OwnCars.TimeText(b.BestSeconds),9}  "
+                        + $"{Rivals.OwnCars.ConditionText(b.Standing, b.Sprint),-15} "
+                        + $"ordinal {b.Ordinal,-6} "
+                        + $"{b.Laps,3} Runde(n) auf {b.Courses,2} Kurs(en)  "
+                        + Name(b.Ordinal));
+                }
+                foreach (var d in Rivals.OwnCars.Duels(k))
+                {
+                    Console.WriteLine(
+                        $"  Direktvergleich {d.Course} "
+                        + $"({Rivals.OwnCars.ConditionText(d.Standing, d.Sprint)}): "
+                        + string.Join(" > ", d.Order.Select(
+                            o => Name(o.Ordinal).Split("  [")[0]
+                                 + " " + Rivals.OwnCars.TimeText(o.Seconds))));
+                }
+                Console.WriteLine();
+            }
+            Environment.Exit(0);
+        }
+
+
+        ApplicationConfiguration.Initialize();
+
+        // DAS PANEL ALS BILD. Eine Aenderung an der Darstellung laesst sich sonst
+        // nur mit laufendem Spiel beurteilen -- und genau dort faellt zu spaet auf,
+        // dass ein langer Autoname in die Zahlenspalte laeuft.
+        if (args.Contains("--main-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--main-preview <out.png> [tab=<Reitername>] [w=1400] [h=900]": das Hauptfenster
+            // als Bild, fuer Anleitungen. Ausserhalb des Schirms, ohne Fokus, ohne das, was
+            // am ersten Zeigen haengt (Controller, Empfang, Dashboard) -- MainForm.NurVorschau.
+            // Die Einstellungen kommen wie immer aus config/overlay.json neben der EXE: fuer
+            // saubere Bilder eine Kopie der App mit eigener Einstellungsdatei benutzen.
+            var mp = Array.FindIndex(args, a => string.Equals(a, "--main-preview", StringComparison.OrdinalIgnoreCase));
+            string? Wert(string name) => args.FirstOrDefault(a => a.StartsWith(name + "=", StringComparison.OrdinalIgnoreCase))?[(name.Length + 1)..];
+            var ziel = mp + 1 < args.Length ? args[mp + 1] : Path.Combine(Path.GetTempPath(), "forza-main.png");
+            Loc.Waehle(Rivals.OverlaySettings.Load().Language);
+            MainForm.NurVorschau = true;
+            using var fenster = new MainForm(false)
+            {
+                StartPosition = FormStartPosition.Manual,
+                Location = new Point(-32000, -32000),
+                ShowInTaskbar = false,
+                Size = new Size(int.TryParse(Wert("w"), out var w) ? w : 1400, int.TryParse(Wert("h"), out var h) ? h : 900),
+            };
+            fenster.Show();
+            if (Wert("tab") is { } reiter)
+            {
+                var tabs = new Stack<Control>(new Control[] { fenster });
+                while (tabs.Count > 0)
+                {
+                    var c = tabs.Pop();
+                    if (c is TabControl t)
+                    {
+                        foreach (TabPage seite in t.TabPages)
+                        {
+                            if (seite.Text.Contains(reiter, StringComparison.OrdinalIgnoreCase)) { t.SelectedTab = seite; }
+                        }
+                    }
+                    foreach (Control k in c.Controls) { tabs.Push(k); }
+                }
+            }
+            if (Wert("estimate") == "1")
+            {
+                var alle = new Stack<Control>(new Control[] { fenster });
+                while (alle.Count > 0)
+                {
+                    var c = alle.Pop();
+                    if (c is Rivals.RaceStatsTab rs) { rs.SetEstimate(true); }
+                    foreach (Control k in c.Controls) { alle.Push(k); }
+                }
+            }
+            for (var i = 0; i < 15; i++) { Application.DoEvents(); Thread.Sleep(100); }
+            using var bild = new Bitmap(fenster.Width, fenster.Height);
+            fenster.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(ziel);
+            fenster.Close();
+            Rivals.Bildquellen.Aktiv = null;
+            return;
+        }
+
+        if (args.Contains("--disclosure-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            // Das Zustimmungsfenster abbilden, ohne es zu bedienen. Seit dem
+            // 2026-09-16 stehen dort drei Angebote und ein erklaerender Absatz
+            // untereinander; ob die noch nebeneinander passen, sieht man nur.
+            string? ziel = null;
+            Disclosure.BeimZeigen = f =>
+            {
+                using var bild = new Bitmap(f.Width, f.Height);
+                f.DrawToBitmap(bild, new Rectangle(0, 0, f.Width, f.Height));
+                ziel = Path.Combine(Path.GetTempPath(), "forza-disclosure.png");
+                bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+                f.DialogResult = DialogResult.Cancel;
+                f.Close();
+            };
+            Disclosure.Zeigen(erstesMal: true, out _);
+            Disclosure.BeimZeigen = null;
+            Console.WriteLine(ziel ?? "nichts gezeichnet");
+            return;
+        }
+
+        if (args.Contains("--panel-preview", StringComparer.OrdinalIgnoreCase))
+        {
+            var pv = Array.FindIndex(args, a =>
+                string.Equals(a, "--panel-preview", StringComparison.OrdinalIgnoreCase));
+            var klasse = pv + 1 < args.Length && !args[pv + 1].StartsWith("--")
+                ? args[pv + 1] : "B";
+
+            var einst = Rivals.OverlaySettings.Load();
+            var karte = new Rivals.OrdinalMap();
+            Rivals.RivalsAdvisor? rat = null;
+            try
+            {
+                var dpfad = Rivals.RivalsDataset.FindDefaultPath();
+                if (dpfad is not null)
+                {
+                    rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(dpfad));
+                }
+            }
+            catch (Exception fehler)
+            {
+                Console.WriteLine("Datensatz nicht ladbar: " + fehler.Message);
+            }
+
+            var zeilen = new List<Rivals.PanelLine>();
+            // DIE STRECKEN DES ANMELDESCHIRMS, so wie sie dort stehen:
+            //   --panel-preview B "Sunflower Scramble:8.5:3" "Kinkaku-ji Trail:5.5"
+            // Name, Gesamtstrecke in km, Rundenzahl. Ohne Angabe die drei aus dem
+            // Bildschirmfoto vom 2026-09-16, an dem der Fehler auffiel.
+            var routen = new List<(string Name, double LapMetres)>();
+            var namen = new List<string>();
+            for (var a = pv + 2; a < args.Length; a++)
+            {
+                var stueck = args[a].Split(':');
+                if (stueck.Length < 2) { continue; }
+                if (!double.TryParse(stueck[1], System.Globalization.NumberStyles.Float,
+                                     System.Globalization.CultureInfo.InvariantCulture,
+                                     out var km))
+                {
+                    continue;
+                }
+                var runden = stueck.Length > 2
+                             && int.TryParse(stueck[2], out var r) && r > 0 ? r : 1;
+                routen.Add((stueck[0], km * 1000.0 / runden));
+                namen.Add(stueck[0]);
+            }
+            if (routen.Count == 0)
+            {
+                routen.Add(("Sunflower Scramble", 8500.0 / 3));
+                routen.Add(("Kinkaku-ji Trail", 5500.0));
+                routen.Add(("Bamboo Forest Scramble", 15000.0 / 3));
+                namen.AddRange(routen.Select(x => x.Name));
+            }
+
+            // GENAU DERSELBE AUFBAU WIE IN RenderAdvice. Eine Vorschau, die die
+            // Zeilen anders baut als das Overlay, prueft ihre eigene Erfindung.
+            static string Kurz(string name)
+            {
+                if (name.Length <= 12) { return name; }
+                var raum = name.IndexOf(' ');
+                return raum > 0 ? name[..raum] : name;
+            }
+
+            var tabelle = Rivals.OwnCars.Table(klasse, routen);
+            var kopf = new string[routen.Count];
+            for (var i = 0; i < kopf.Length; i++)
+            {
+                kopf[i] = Kurz(tabelle.Courses[i].Label);
+            }
+            zeilen.Add(new Rivals.PanelLine(
+                $"YOUR TIMES ON THESE ROUTES ({klasse})",
+                string.Empty, Rivals.OverlayPanel.Bar, Small: true, Cells: kopf));
+
+            if (tabelle.Rows.Count == 0)
+            {
+                var mehrdeutig = tabelle.Courses.Any(c => c.Ambiguous);
+                zeilen.Add(new Rivals.PanelLine(
+                    mehrdeutig
+                        ? "several of your courses share these lengths — cannot tell them apart"
+                        : "you have no recorded laps on these routes",
+                    string.Empty, Rivals.OverlayPanel.Muted, Small: true, Indent: 10));
+            }
+
+            var platz = 1;
+            foreach (var zeile in tabelle.Rows.Take(12))
+            {
+                var e = karte.Lookup(zeile.Ordinal);
+                var ix = e?.CarIndex ?? rat?.CarIndexForId(zeile.Ordinal);
+                // Dieselbe Regel wie im Overlay: nur echte Namen, sonst gar nichts.
+                var name = (Rivals.RivalsAdvisor.IsRealCarName(e?.Name) ? e!.Name : null)
+                           ?? (ix is { } kx && rat is not null
+                               ? rat.RealCarName(kx) : null);
+                if (name is null) { continue; }
+                if (e is null && ix is not null) { name = "~" + name; }
+                if (platz <= 3) { name = $"#{platz * 7} {name}"; }
+
+                var zellen = new string[tabelle.Courses.Count];
+                for (var i = 0; i < zellen.Length; i++)
+                {
+                    var key = tabelle.Courses[i].Key;
+                    zellen[i] = key.Length > 0
+                                && zeile.ByCourse.TryGetValue(key, out var s)
+                        ? Rivals.OwnCars.TimeText(s)
+                        : "–";
+                }
+                zeilen.Add(new Rivals.PanelLine(
+                    name, string.Empty, Rivals.OverlayPanel.Ink,
+                    Small: true, Indent: 10, Cells: zellen));
+                platz++;
+            }
+            zeilen.Add(new Rivals.PanelLine("by points · 3 route(s)", string.Empty,
+                                            Rivals.OverlayPanel.Bar, Heading: true));
+            if (rat is not null)
+            {
+                // Echte Autonamen aus dem Datensatz, damit die Laengen stimmen.
+                for (var i = 0; i < 14; i++)
+                {
+                    var name = rat.CarName(i);
+                    zeilen.Add(new Rivals.PanelLine(
+                        $"{i + 1,2}. {name}", $"{900 - (i * 30)} pts",
+                        Rivals.OverlayPanel.Ink,
+                        Mine: i % 4 == 0 ? "~1:08.09" : string.Empty));
+                }
+            }
+
+            var schirm = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+            // Dieselbe Breite wie das echte Panel, sonst prueft die Vorschau eine
+            // Spaltenaufteilung, die es so gar nicht gibt.
+            var breite = (int)(schirm.Width * einst.SideWidthFraction);
+            var hoehe = schirm.Height;
+            // AUSSERHALB DES SCHIRMS (seit 2026-09-28): das Panel ist ein echtes,
+            // oberstes Overlay-Fenster. An (0,0) blitzte es beim Erzeugen der
+            // Trailer-Bilder ueber dem Schirm auf -- mitten in dem, was der Nutzer
+            // gerade tat. DrawToBitmap braucht nur das Fenster, nicht den Platz.
+            using var panel = new Rivals.OverlayPanel(
+                new Rectangle(-32000, -32000, breite, hoehe), 1.0);
+            panel.SetContent($"Class {klasse} – what to drive",
+                             string.Join(" · ", namen), zeilen,
+                             "your best lap on each of the three routes above");
+            panel.Show();
+            Application.DoEvents();
+            using var bild = new Bitmap(panel.Width, panel.Height);
+            panel.DrawToBitmap(bild, new Rectangle(0, 0, panel.Width, panel.Height));
+            var ziel = Path.Combine(Path.GetTempPath(),
+                                    $"forza-panel-{klasse}.png");
+            bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);
+            panel.Hide();
+            Console.WriteLine($"{zeilen.Count} Zeilen, {breite}x{hoehe} Pixel");
+            Console.WriteLine(ziel);
+            Environment.Exit(0);
+        }
+
+        // "Car collection" am echten Reiter: Fenster abseits des Schirms, Haken, Filter,
+        // Sortierung, Doppelklick, eigener kleiner Server. NICHT waehrend gespielt wird.
+        if (args.Contains("--car-collection-ui-test", StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                CarCollectionUiTest.Run();
+                Console.WriteLine("Car collection UI OK.");
+                Environment.Exit(0);
+            }
+            catch (Exception ausnahme)
+            {
+                Console.WriteLine(ausnahme.ToString());
+                Environment.Exit(1);
+            }
+        }
+
+        // Proben gegen die Wirklichkeit, ohne etwas Persoenliches auszugeben.
+        if (args.Contains("--stream-window-probe", StringComparer.OrdinalIgnoreCase))
+        {
+            var h = Rivals.Fenster.BrowserStrom();
+            var titel = h == IntPtr.Zero ? null : Rivals.Fenster.Sichtbare().FirstOrDefault(f => f.Handle == h).Titel;
+            Console.WriteLine(h == IntPtr.Zero ? "stream window: none"
+                                               : "stream window: found, platform " + Rivals.Fenster.StromPlattform(titel ?? ""));
+            Environment.Exit(0);
+        }
+        if (args.Contains("--car-list-probe", StringComparer.OrdinalIgnoreCase))
+        {
+            var ziel = Path.Combine(Path.GetTempPath(), "fhc-car-list-probe.json");
+            var liste = Rivals.CarCollection.VomServerAsync(Rivals.OverlaySettings.Load().ServerUrl, null, default, ziel)
+                .GetAwaiter().GetResult();
+            Console.WriteLine(liste is null ? "car list: none"
+                              : $"car list: {liste.Autos.Count} cars, built {liste.Gebaut}, list {liste.ListeStand}, "
+                                + $"{liste.Autos.Count(a => a.AlleIds.Count > 0)} with car id");
+            Environment.Exit(liste is null ? 1 : 0);
+        }
+
+        // Nur die Grenzfaelle: kein Fenster, keine Overlays -- darf laufen, waehrend
+        // jemand spielt (der volle Selbsttest zeigt Overlays auf dem Schirm).
+        if (args.Contains("--edge-case-test", StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                EdgeCaseTest.Run();
+                Console.WriteLine("Edge cases OK.");
+                Environment.Exit(0);
+            }
+            catch (Exception ausnahme)
+            {
+                Console.WriteLine(ausnahme.Message);
+                Environment.Exit(1);
+            }
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--blueprint-preview", StringComparison.OrdinalIgnoreCase))
+        {
+            // Den Blueprint-Editor mit dem Standardgraphen und Live-Werten abbilden --
+            // ausserhalb des Schirms (VorschauForm), fuer Anleitung und Trailer.
+            //   --blueprint-preview <datei.png> [breite hoehe]
+            var breite = args.Length >= 4 && int.TryParse(args[2], out var bw) ? bw : 1600;
+            var hoehe = args.Length >= 4 && int.TryParse(args[3], out var bh) ? bh : 900;
+            using var form = new VorschauForm { ClientSize = new Size(breite, hoehe) };
+            var graph = SignalGraph.CreateDefault();
+            var editor = new BlueprintEditor(graph, ForzaPacket.AllDescriptors) { Dock = DockStyle.Fill };
+            form.Controls.Add(editor);
+            form.Show();
+            Application.DoEvents();
+            if (ForzaPacket.TryParse(SelfTest.LapPacket(1, 1, 1234f, 45.6f, 0f, 2542, 700, 3), out var paket))
+            {
+                editor.SetLiveValues(new SignalGraphEvaluator().Evaluate(graph, paket, DateTime.UtcNow).NodeValues);
+            }
+            Application.DoEvents();
+            using var bild = new Bitmap(breite, hoehe);
+            editor.DrawToBitmap(bild, new Rectangle(0, 0, breite, hoehe));
+            bild.Save(Path.GetFullPath(args[1]), System.Drawing.Imaging.ImageFormat.Png);
+            Console.WriteLine(Path.GetFullPath(args[1]));
+            return;
+        }
+
+        if (args.Contains("--perf-bench", StringComparer.OrdinalIgnoreCase))
+        {
+            // WAS KOSTET FHC, WAEHREND FORZA LAEUFT? (seit 2026-09-28)
+            // Der Delta-Streifen in der Groesse des Hauptschirms -- ausserhalb des
+            // Schirms, also unsichtbar -- und die beiden periodischen Bildschirmgriffe.
+            // Gemessen wird Wandzeit und Prozessorzeit je Vorgang.
+            var schirm = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+            var proc = System.Diagnostics.Process.GetCurrentProcess();
+            (double Wand, double Cpu) Messe(int n, Action tun)
+            {
+                tun();
+                proc.Refresh();
+                var cpu0 = proc.TotalProcessorTime;
+                var uhr = System.Diagnostics.Stopwatch.StartNew();
+                for (var i = 0; i < n; i++) { tun(); }
+                uhr.Stop();
+                proc.Refresh();
+                return (uhr.Elapsed.TotalMilliseconds / n, (proc.TotalProcessorTime - cpu0).TotalMilliseconds / n);
+            }
+            var einst = new OverlaySettings { HudInputs = true };
+            using (var hud = new DeltaHud(new Rectangle(-32000, -32000, schirm.Width, schirm.Height), einst))
+            {
+                hud.Show();
+                Application.DoEvents();
+                var i = 0;
+                var (wand, cpu) = Messe(150, () =>
+                {
+                    i++;
+                    hud.PushInputs((i % 10) / 10f, 0f, 0f, (float)Math.Sin(i / 5.0), 3, null, null);
+                    hud.Update(-0.3f + (i % 7) * 0.01f, "same car, same tune", 20f, null, string.Empty,
+                               "to beat: 39.325 -- website best, this car");
+                });
+                Console.WriteLine($"Delta-Streifen {schirm.Width}x{schirm.Height}, je Telemetrie-Takt: {wand:0.00} ms Wand, {cpu:0.00} ms CPU -- Spur {hud.SpurBereich.Width}x{hud.SpurBereich.Height}"
+                                  + $" -- uebergeben {hud.Bereich.Width}x{hud.Bereich.Height} statt {schirm.Width}x{schirm.Height}");
+                hud.Hide();
+            }
+            using (var hud = new DeltaHud(new Rectangle(-32000, -32000, schirm.Width, schirm.Height), new OverlaySettings { HudInputs = false }))
+            {
+                hud.Show();
+                Application.DoEvents();
+                var i = 0;
+                var (wand, cpu) = Messe(150, () =>
+                {
+                    i++;
+                    hud.Update(-0.3f + (i % 7) * 0.01f, "same car, same tune", 20f, null, string.Empty,
+                               "to beat: 39.325 -- website best, this car");
+                });
+                Console.WriteLine($"  ohne Eingabespuren: {wand:0.00} ms Wand, {cpu:0.00} ms CPU");
+                hud.Hide();
+            }
+            // DER TELEMETRIE-INSPEKTOR, zehnmal je Sekunde gefuettert -- sichtbar und versteckt.
+            if (ForzaPacket.TryParse(SelfTest.LapPacket(1, 1, 1234f, 45.6f, 0f, 2542, 700, 3), out var paket))
+            {
+                using var form = new VorschauForm { ClientSize = new Size(1100, 700) };
+                var inspektor = new TelemetryInspector(ForzaPacket.AllDescriptors) { Dock = DockStyle.Fill };
+                form.Controls.Add(inspektor);
+                form.Show();
+                Application.DoEvents();
+                var ausgaben = new[] { new HapticOutputState(0, "Left", 0.4, 120, true), new HapticOutputState(1, "Right", 0.2, 80, true) };
+                var (wi, ci) = Messe(60, () => { inspektor.UpdateValues(paket, ausgaben, null, 60); Application.DoEvents(); });
+                inspektor.Visible = false;
+                var (wv, cv) = Messe(60, () => { inspektor.UpdateValues(paket, ausgaben, null, 60); Application.DoEvents(); });
+                Console.WriteLine($"Telemetrie-Inspektor je Aktualisierung (10/s): sichtbar {wi:0.00} ms Wand / {ci:0.00} ms CPU, versteckt {wv:0.00} / {cv:0.00}");
+
+                // DER BLUEPRINT-EDITOR, 50-mal je Sekunde mit Live-Werten -- ein Bild erzwungen.
+                using var form2 = new VorschauForm { ClientSize = new Size(1600, 900) };
+                var graph = SignalGraph.CreateDefault();
+                var editor = new BlueprintEditor(graph, ForzaPacket.AllDescriptors) { Dock = DockStyle.Fill };
+                form2.Controls.Add(editor);
+                form2.Show();
+                Application.DoEvents();
+                var auswerter = new SignalGraphEvaluator();
+                using var bild = new Bitmap(1600, 900);
+                var (wb, cb) = Messe(40, () =>
+                {
+                    var ergebnis = auswerter.Evaluate(graph, paket, DateTime.UtcNow);
+                    editor.SetLiveValues(ergebnis.NodeValues);
+                    editor.DrawToBitmap(bild, new Rectangle(0, 0, 1600, 900));
+                });
+                Console.WriteLine($"Blueprint-Editor je Bild (bis 50/s, wenn sein Reiter offen ist): {wb:0.00} ms Wand / {cb:0.00} ms CPU");
+            }
+            var ganz = GameArea.Capture(schirm, new Size(1, 1));
+            ganz.Dispose();
+            var hoehe = Math.Max(1, CarGridReader.Suchbreite * schirm.Height / schirm.Width);
+            var (w1, c1) = Messe(20, () => GameArea.Capture(schirm, new Size(CarGridReader.Suchbreite, hoehe)).Dispose());
+            Console.WriteLine($"Automenue-Griff (ganzer Schirm -> {CarGridReader.Suchbreite} px), alle 500 ms: {w1:0.00} ms Wand, {c1:0.00} ms CPU");
+            var region = new Rectangle(schirm.X + schirm.Width / 20, schirm.Y + schirm.Height / 10, schirm.Width * 7 / 20, schirm.Height * 9 / 20);
+            var (w2, c2) = Messe(40, () => GameArea.Capture(region, new Size(160, 160 * region.Height / region.Width)).Dispose());
+            Console.WriteLine($"Vergleichsbild (Streckenliste -> 160 px), je Abfrage: {w2:0.00} ms Wand, {c2:0.00} ms CPU");
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--trailer-overlays", StringComparison.OrdinalIgnoreCase))
+        {
+            // STUECKE FUER DEN TRAILER, vom echten Code gezeichnet: durchsichtig auf
+            // 1920x1080, damit sie sich ueber jedes Spielbild legen lassen. Autonotiz,
+            // Meldung, und beide Feiern als ganze Folge mit 30 Bildern je Sekunde.
+            //   --trailer-overlays <ordner>
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var flaeche = new System.Drawing.Size(1920, 1080);
+            var einst = new OverlaySettings();
+            void Zeichne(string datei, Action<System.Drawing.Graphics> malen)
+            {
+                using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
+                                                           System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using (var g = System.Drawing.Graphics.FromImage(bild))
+                {
+                    g.Clear(System.Drawing.Color.Transparent);
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    malen(g);
+                }
+                bild.Save(Path.Combine(ordner, datei), System.Drawing.Imaging.ImageFormat.Png);
+            }
+            Zeichne("carnote.png", g => CarNoteHud.Male(g, einst, flaeche,
+                "Nissan Skyline GT-R V-Spec '93  ·  PI 998  ·  R",
+                "Late apex into the hairpin -- the rear steps out on cold tyres.\nTune: Touge Grip v2 (your own)",
+                auchWennAus: true));
+            Zeichne("message.png", g => MessageHud.Male(g, flaeche, "Tune storage almost full",
+                "962 of 1000 tunes -- 38 free. The app's Tunes tab lists the ones that are on no car.",
+                System.Drawing.Color.FromArgb(255, 210, 90)));
+            var feiern = new (string Name, CelebrationHud.Anlass Anlass)[]
+            {
+                ("rekord", new CelebrationHud.Anlass("You beat the leaderboard!", "39.108", 0.217,
+                    "Website best 39.325", "Irokawa Circuit · Alfa Romeo Giulia Quadrifoglio '17 · A 700")),
+                ("neu", new CelebrationHud.Anlass("New car on the leaderboard!", "1:12.904", 0,
+                    "Its first time here on the website -- thanks to you!",
+                    "Hakone Nanamagari · Mazda MX-5 Miata '94 · B 600",
+                    CelebrationHud.FeierArt.NeuesAuto, "NEW")),
+            };
+            foreach (var (name, anlass) in feiern)
+            {
+                var konfetti = new CelebrationHud.Konfetti(1234, anlass.Art);
+                var bilder = (int)Math.Floor(CelebrationHud.Dauer * 30);
+                for (var i = 0; i < bilder; i++)
+                {
+                    Zeichne($"{name}_{i:0000}.png", g => CelebrationHud.Male(g, flaeche, anlass, konfetti, i / 30.0));
+                }
+            }
+            File.WriteAllBytes(Path.Combine(ordner, "rekord.wav"), CelebrationSound.Wav);
+            File.WriteAllBytes(Path.Combine(ordner, "neu.wav"), CelebrationSound.WavNeuesAuto);
+            Console.WriteLine(ordner);
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--celebration-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // DIE FEIER ALS EINZELBILDER -- zum Ansehen, ohne ein Fenster ueber das
+            // Spiel zu legen ("never test windows while gaming"). Dieselbe Zeichnung
+            // wie im Fenster (CelebrationHud.Male), dazu der Ton als WAV.
+            //   --celebration-frames <ordner> [hintergrund.png]
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var flaeche = new System.Drawing.Size(1920, 1080);
+            using var grund = args.Length >= 3 && File.Exists(args[2])
+                ? new System.Drawing.Bitmap(System.Drawing.Image.FromFile(args[2]), flaeche)
+                : null;
+            var anlass = new CelebrationHud.Anlass("You beat the leaderboard!", "1:23.456", 0.556,
+                                                   "Website best 1:24.012", "Goliath · Porsche 911 GT3 RS '19 · S1 900");
+            var neu = new CelebrationHud.Anlass("New car on the leaderboard!", "1:31.208", 0,
+                                                "Its first time here on the website -- thanks to you!",
+                                                "Goliath \u00b7 Toyota Supra RZ '98 \u00b7 A 800",
+                                                CelebrationHud.FeierArt.NeuesAuto, "NEW");
+            var pb = new CelebrationHud.Anlass("Personal best in class A!", "1:02.345", 0.412,
+                                               "Your previous best here: 1:02.757",
+                                               "Legend Island Circuit · Toyota Supra RZ '98 · A · Rivals",
+                                               CelebrationHud.FeierArt.Persoenlich);
+            var rep = new CelebrationHud.Anlass("New car on your list", "1:04.120", 0, "P3 of 7 on your list",
+                                                "Legend Island Circuit · Mazda RX-7 '97 · A",
+                                                CelebrationHud.FeierArt.Repertoire, "NEW");
+            foreach (var (name, anlassJetzt) in new[] { ("feier", anlass), ("neu", neu), ("pb", pb), ("rep", rep) })
+            foreach (var t in new[] { 0.08, 0.2, 0.35, 0.6, 0.9, 1.4, 2.0, 2.8, 3.6, 4.6, 5.0 })
+            {
+                var konfetti = new CelebrationHud.Konfetti(1234, anlassJetzt.Art);
+                using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
+                                                           System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using var g = System.Drawing.Graphics.FromImage(bild);
+                if (grund is not null) { g.DrawImage(grund, 0, 0); }
+                else
+                {
+                    // Himmel ueber Asphalt -- genug, um Farben und Lesbarkeit zu beurteilen.
+                    using var himmel = new System.Drawing.Drawing2D.LinearGradientBrush(
+                        new System.Drawing.Rectangle(0, 0, flaeche.Width, flaeche.Height),
+                        System.Drawing.Color.FromArgb(120, 170, 215), System.Drawing.Color.FromArgb(58, 62, 68), 90f);
+                    g.FillRectangle(himmel, 0, 0, flaeche.Width, flaeche.Height);
+                }
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                CelebrationHud.Male(g, flaeche, anlassJetzt, konfetti, t);
+                bild.Save(Path.Combine(ordner, $"{name}_{t:0.00}.png".Replace(',', '.')));
+            }
+            File.WriteAllBytes(Path.Combine(ordner, "feier.wav"), CelebrationSound.Wav);
+            File.WriteAllBytes(Path.Combine(ordner, "neu.wav"), CelebrationSound.WavNeuesAuto);
+            Console.WriteLine(ordner);
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--tyre-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // DIE REIFENUEBERSICHT ALS BILD -- wie oben ohne Fenster ueber dem Spiel.
+            // Dieselbe Zeichnung (TyreHud.Male): das Beispiel und ein ruhiger Zustand,
+            // auf drei Aufloesungen.
+            //   --tyre-frames <ordner> [hintergrund.png]
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var s = new OverlaySettings { HudTyres = true };
+            var ruhig = new TyreHud.Rad(93f, 0.05f, 0.05f, 0.1f, 0.5f, 0.06f, 0f, false, 0f, 0.9f, 0f);
+            foreach (var (name, zustand) in new[] { ("beispiel", TyreHud.Beispiel()),
+                                                    ("ruhig", new TyreHud.Zustand(ruhig, ruhig, ruhig, ruhig)) })
+            foreach (var flaeche in new[] { new System.Drawing.Size(1920, 1080), new System.Drawing.Size(2560, 1440),
+                                            new System.Drawing.Size(3840, 2160) })
+            {
+                using var grund = args.Length >= 3 && File.Exists(args[2])
+                    ? new System.Drawing.Bitmap(System.Drawing.Image.FromFile(args[2]), flaeche)
+                    : null;
+                using var bild = new System.Drawing.Bitmap(flaeche.Width, flaeche.Height,
+                                                           System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using var g = System.Drawing.Graphics.FromImage(bild);
+                if (grund is not null) { g.DrawImage(grund, 0, 0); }
+                else { g.Clear(System.Drawing.Color.FromArgb(70, 76, 84)); }
+                TyreHud.Male(g, s, flaeche, zustand);
+                bild.Save(Path.Combine(ordner, $"{name}_{flaeche.Height}.png"));
+            }
+            Console.WriteLine(ordner);
+            return;
+        }
+
+        if (args.Contains("--self-test", StringComparer.OrdinalIgnoreCase))
+        {
+            SelfTest.Run();
+            return;
+        }
+
+        // ERST ERKLAEREN, DANN LAUFEN. Das Programm liest fremden Prozessspeicher,
+        // tauscht sich selbst aus und holt Daten von einem Server. Keines davon darf
+        // geschehen, bevor der Nutzer weiss, dass es geschieht -- und ein Text, den
+        // niemand liest, ist keine Erklaerung. Siehe Disclosure.
+        //
+        // Vor `new MainForm()`, weil RivalsTab die Einstellungen im Konstruktor
+        // laedt: die Zustimmung steht dann schon in der Datei.
+        //
+        // Davor der Umzug vom alten Namen (siehe AppInfo): die Einstellungen der
+        // Overlays liegen im Datenordner, und der muss schon am neuen Platz sein.
+        _ = AppInfo.DataFolder;
+
+        // EIN FENSTER JE KOPIE (siehe Einzelinstanz). Laeuft diese Kopie schon --
+        // etwa unsichtbar im Infobereich, weil sie mit Forza startet --, holt ein
+        // zweiter Start sie nach vorne und endet. Vor der Erklaerung: die hat die
+        // erste Instanz schon gezeigt.
+        var imHintergrund = args.Contains(Shortcuts.TrayArgument, StringComparer.OrdinalIgnoreCase);
+        using var instanz = Einzelinstanz.Anmelden();
+        if (!instanz.Erste)
+        {
+            if (!imHintergrund) { instanz.ErsteWecken(); }
+            return;
+        }
+
+        // DAS SPIEL GEHT VOR (seit 2026-09-28). Wird die Prozessorzeit knapp, bekommt
+        // Forza sie, nicht diese App: Overlay, Haptik und Rundenaufzeichnung vertragen
+        // ein paar Millisekunden Verspaetung, ein Bild des Spiels nicht. Die Telemetrie
+        // geht dabei nicht verloren -- der Socket puffert, bis sie abgeholt wird.
+        try
+        {
+            System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
+                System.Diagnostics.ProcessPriorityClass.BelowNormal;
+        }
+        catch (Exception)
+        {
+        }
+
+        var einstellungen = Rivals.OverlaySettings.Load();
+
+        // Die Sprache VOR dem ersten Fenster. WinForms liest die Beschriftungen
+        // beim Aufbau, nicht laufend -- wer sie danach setzt, aendert nichts mehr.
+        Loc.Waehle(einstellungen.Language);
+
+        if (!Disclosure.SicherstellenAkzeptiert(einstellungen))
+        {
+            return;
+        }
+
+        AppInfo.Aufraeumen();
+
+        try
+        {
+            var fenster = new MainForm(imHintergrund);
+            instanz.Horchen(() =>
+            {
+                try { fenster.BeginInvoke(fenster.VonAussenZeigen); }
+                catch (Exception) { }
+            });
+            Application.Run(fenster);
+        }
+        finally
+        {
+            Sdl.QuitGamepads();
+        }
+    }
+}

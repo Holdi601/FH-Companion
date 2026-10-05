@@ -1,0 +1,68 @@
+{
+  "launch": {
+    "command": "steam://rungameid/2483190",
+    "arguments": [],
+    "startup_wait_seconds": 90
+  },
+  "window": {
+    "process_names": [
+      "forzahorizon6"
+    ],
+    "title_regex": "^Forza Horizon 6$",
+    "focus_timeout_seconds": 120,
+    "refocus_timeout_seconds": 8,
+    "ensure_focus_before_actions": true,
+    "alt_tab_fallback": true
+  },
+  "display": {
+    "manage": false,
+    "mode_before_launch": "Windowed",
+    "restore_after": true,
+    "backup_root": "data/backups/forza_display"
+  },
+  "capture": {
+    "output_dir": "data/inbox/auto",
+    "prefix": "fh6_rivals",
+    "clear_output_dir": false
+  },
+  "steps": [
+    {
+      "action": "wait",
+      "seconds": 3,
+      "label": "settle after focus"
+    },
+    {
+      "action": "screenshot",
+      "name": "calibration_000.png"
+    },
+    {
+      "action": "repeat",
+      "count": 20,
+      "steps": [
+        {
+          "action": "screenshot",
+          "name": "leaderboard_{index:000}.png"
+        },
+        {
+          "action": "key",
+          "key": "PAGEDOWN",
+          "delay_ms": 900
+        }
+      ]
+    }
+  ],
+  "extraction": {
+    "enabled": true,
+    "track": "REPLACE_WITH_TRACK_NAME",
+    "performance_class": "S1",
+    "pi_class": "S1",
+    "event_type": "Rivals",
+    "rivals_mode": "Road Racing",
+    "profile": "config/fh6_rivals_1080p.json",
+    "output_dir": "data/processed",
+    "sqlite_path": "data/processed/leaderboard_entries.sqlite",
+    "parquet_path": "data/processed/leaderboard_entries.parquet",
+    "dump_ocr": true,
+    "keep_crops": false
+  }
+}

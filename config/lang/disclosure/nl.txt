@@ -1,0 +1,201 @@
+#fassung 12
+Lees dit één keer. Het legt uit wat het programma op je pc doet, wat je computer
+verlaat en waarom Windows je ervoor kan waarschuwen.
+
+
+WAT HET OP JE PC DOET
+
+  Leest telemetrie uit de game.
+      Forza Horizon 6 kan zijn eigen telemetrie via UDP naar je eigen machine
+      sturen. Dat zet je zelf aan in de game onder
+      Instellingen > Scherminfo en gameplay. Het programma luistert op 127.0.0.1
+      -- je eigen computer, niet het netwerk -- en gebruikt die voor de
+      rondedelta, de live-kaart, je ronderecords en de trilling van de controller.
+      Alleen als je het programma bovenaan zijn venster op ‘Xbox / 2e pc’ zet,
+      luistert het in plaats daarvan op je netwerk, zodat de Xbox of de andere pc
+      het kan bereiken. Als Windows Firewall dat blokkeert, voegt een knop in het
+      Xbox-paneel één regel toe voor precies die UDP-poort -- alleen als je erop
+      drukt, en Windows vraagt je eerst om toestemming.
+
+  Leest wat de game op het scherm toont.
+      Om te weten welke routes het scherm Aanmelden event aanbiedt, welke auto in
+      het automenu gemarkeerd is, welke auto's op de pagina's van ‘Mijn auto's’
+      staan die je bekijkt en welke tune op een auto staat in zijn tunelijst,
+      maakt het programma afbeeldingen van het gamevenster en leest het de tekst
+      met de tekstherkenning die in Windows is ingebouwd. Dit gebeurt op je pc; de
+      afbeeldingen worden nergens naartoe gestuurd. In de modus ‘Xbox / 2e pc’
+      neemt het die afbeeldingen in plaats daarvan van de bron die je kiest: een
+      capturekaart, OBS, het venster van Xbox Remote Play, Discord, een stream in
+      je browser of een streamadres. Windows tekent dan een geel kader rond een
+      vastgelegd venster.
+
+  Leest je gedownloade tunes uit de savemap van de game -- alleen-lezen.
+      Het tabblad Tunes telt ze en toont welke door geen enkele auto worden
+      gebruikt. De savemap wordt hierdoor nooit gewijzigd.
+
+  Leest ranglijsten en je veilingen -- met toetsaanslagen in de game.
+      Op het tabblad Ranglijsten scannen stuurt het programma de menu's van de
+      game naar de ranglijsten die je aanvinkt en leest ze van het scherm. Op
+      het tabblad Veilinghuis kan het de game naar 'Mijn biedingen' sturen en
+      je veilingen lezen; die lijst blijft op deze computer. Het biedt nooit.
+      Beide stoppen bij Alt+Tab, de Pause-toets of Stoppen.
+
+  Laat je controller trillen -- en dat maakt de batterij sneller leeg.
+      Zolang Forza draait en telemetrie verstuurt, stuurt het programma de
+      trilling van je controller aan: bandengrip wordt gerommel, een blokkerend
+      wiel een kort gezoem. Dit staat vanaf het begin aan. Een draadloze
+      controller heeft merkbaar eerder een lege batterij zolang hij trilt, en hoe
+      sterker en sneller (hogere frequentie) je de trilling in de Blueprint-editor
+      instelt, hoe meer stroom hij verbruikt. Vink ‘Grafiekuitvoer aan’ uit in de
+      Blueprint-editor om het uit te zetten; het programma onthoudt dat.
+
+  Let op toetsaanslagen.
+      Alleen om de sneltoetsen op te vangen -- F10 zet een start-/finishlijn in
+      vrij rijden. Het controleert of die specifieke toetsen ingedrukt zijn. Het
+      legt niet vast wat je typt en er is nergens een logboek van toetsaanslagen.
+
+  Tekent een overlay boven op de game.
+      De rondedelta, de kaarten, de autonotities en de rivalenpanelen zijn aparte
+      vensters die over Forza heen worden getekend. Als een ronde de tijd van de
+      website verslaat, verschijnt ongeveer vijf seconden lang een korte viering
+      met confetti en een geluid; je kunt die uitzetten op het tabblad
+      Rondedelta-HUD.
+
+  Legt je ronden vast -- op je schijf.
+      Tijden, posities en snelheden worden in de eigen map van het programma
+      geschreven, zodat het je een delta ten opzichte van je eigen beste tijd kan
+      tonen. Alleen een ronde die de ranglijst verslaat, wordt ergens naartoe
+      gestuurd -- zie hieronder.
+
+
+WAT JE COMPUTER VERLAAT
+
+  Het programma neemt voor precies zes dingen contact op met de server:
+
+      1. Om te vragen of de autobeoordelingen nieuwer zijn dan die je hebt, en om
+         ze op te halen als dat zo is.
+      2. Om te vragen of er een nieuwere versie van dit programma bestaat.
+      3. Om die nieuwe versie te downloaden, als je op de updateknop drukt.
+      4. Om een ronde in te sturen die de ranglijst VERSLAAT -- AAN, tenzij je het
+         uitzet.
+      5. Om de lijst van alle auto's op te halen en hoe je ze krijgt, voor het
+         tabblad Autocollectie -- hoogstens eens per twaalf uur, en alleen zolang
+         dat tabblad open is. Het stuurt niets; welke auto's je bezit, blijft op
+         deze computer.
+      6. Om een ranglijst te versturen die je op het tabblad Ranglijsten
+         scannen hebt gelezen: per regel plaats, tijd, auto, PI, aandrijving,
+         versnellingsbak en rijhulpen, plus route, klasse en tijdstip van de
+         scan, en de gehashte ID van deze pc -- geen gamertags. Dat gebeurt na
+         elke voltooide ranglijst zolang 'Elke voltooide ranglijst uploaden'
+         is aangevinkt (dat is het vanaf het begin) en insturen aan staat.
+
+  Over 4: een ronde wordt alleen verstuurd als die sneller is dan de beste
+  ranglijsttijd van diezelfde auto op die route en in die klasse, en sneller dan
+  alles wat je er eerder voor hebt verstuurd. Verstuurd worden: de auto, de route,
+  de klasse, de tijd en de VOLLEDIGE telemetrie van de ronde -- elk pakket dat de
+  game tijdens die ronde stuurde: positie en oriëntatie, snelheid, je gas, rem,
+  koppeling en stuur, versnelling, motor en per wiel de bandentemperatuur, slip en
+  vering -- zodat de server kan controleren dat de tijd echt is en een mens een
+  ronde kan bekijken die niet lijkt te kloppen. Plus een gehashte identificatie
+  van deze pc, zodat misbruik kan worden geblokkeerd -- en je gamertag, als je die
+  op het tabblad Rivals instelt. Een gamertag is niet verplicht: zonder gamertag
+  wordt de ronde toch verstuurd en verschijnt ze op de website onder een
+  tijdelijke spelersnaam. Een gamertag die je later instelt, vervangt die bij al
+  je ronden, ook de eerdere, en als je het veld later leegmaakt, blijft de laatste
+  naam staan. De server controleert de ronde opnieuw voordat hij ze toont. Zet het
+  uit op het tabblad Rivals (‘Mijn ronden insturen ...’) of zet
+  "submit_laps": false in config/overlay.json.
+
+  Ronden die je vanaf deze versie verstuurt, worden ook met die telemetrie
+  gepubliceerd: op de website kan iedereen naast je tijd de volledige
+  telemetrie van de ronde downloaden (als CSV-tabel en als ruw bestand) om te
+  bekijken hoe die gereden is. Ronden die je eerder verstuurde, blijven privé
+  en dienen alleen om de tijd te controleren.
+
+  Een ronde die de ranglijst verslaat maar op dat moment niet kan worden verstuurd
+  -- insturen uitgeschakeld, offline, of de server antwoordt niet -- wordt op deze
+  computer bewaard en later verstuurd, zodra dat allemaal weer in orde is, zelfs
+  weken later. Voordat ze vertrekt, wordt ze nog één keer vergeleken met de
+  ranglijst van die dag en weggegooid als ze niet meer sneller is. Als je het
+  insturen weer aanzet, worden dus ook de beste ronden verstuurd die je reed
+  terwijl het uit stond. ‘Wachtende ronden weggooien’ op het tabblad Rivals
+  verwijdert ze in plaats daarvan.
+
+  Verder wordt niets verstuurd. Je gewone ronden worden niet geüpload. Je tune
+  wordt niet geüpload. Er is geen account en nergens om in te loggen.
+
+  Omdat je computer die vragen stelt, ziet de server dat een of andere installatie
+  iets heeft gevraagd -- dat is onvermijdelijk voor elk programma dat op updates
+  controleert. Dat wordt geteld, zodat we ongeveer weten hoeveel mensen dit
+  gebruiken, en de identificatie wordt gehasht met een geheim dat op de server
+  blijft en na 40 dagen wordt verwijderd. Als je dat vervelend vindt, zet dan
+  "offline": true in config/overlay.json en het programma neemt nooit meer contact
+  op met de server -- het werkt dan volledig met de gegevens die bij de download
+  zaten, en alles behalve updaten blijft werken.
+
+
+HOE HET ZICHZELF BIJWERKT
+
+  Als je op de updateknop drukt, downloadt het programma een ZIP, controleert het
+  de handtekening van de uitgever ervan, pakt het de ZIP uit en vervangt het zijn
+  eigen bestanden. Een pakket dat niet door de uitgever is ondertekend, wordt
+  geweigerd. Terwijl dat gebeurt, verschijnt een klein consolevenster -- dat
+  venster is bewust zichtbaar, zodat je kunt zien wat er wordt vervangen. Je map
+  met instellingen blijft behouden.
+
+  Er wordt niets geïnstalleerd. Er wordt niets naar het Windows-register
+  geschreven. Verwijder de map en het programma is weg.
+
+
+WAAROM WINDOWS HET EEN TROJAN KAN NOEMEN
+
+  Windows Defender kan dit programma melden als Trojan:Win32/Bearfoos.A!ml en het
+  blokkeren. Het achtervoegsel ‘!ml’ betekent dat dit geen overeenkomst met
+  bekende malware is -- het is een gok van een machinelearningmodel over een
+  bestand dat het nog nooit heeft gezien.
+
+  Het gokt zo omdat het programma geen codehandtekening heeft, bijna niemand het
+  nog heeft, en het de twee dingen doet die hierboven staan: het vervangt zijn
+  eigen bestanden en downloadt van internet. Dat is precies het gedrag dat het
+  model heeft leren wantrouwen.
+
+  Elke release wordt gescand voordat die wordt gepubliceerd, en de downloadpagina
+  toont een controlesom, zodat je kunt nagaan dat het bestand dat je kreeg het
+  bestand is dat werd gebouwd. Als je dat liever niet op goed vertrouwen aanneemt,
+  voer het dan niet uit -- dat is een legitieme keuze en dit programma zal je er
+  niet over lastigvallen.
+
+
+SNELKOPPELINGEN, ALS JE ZE WILT
+
+  Onder deze tekst kun je vragen om een snelkoppeling op het bureaublad, een
+  vermelding in het Startmenu en om het programma met Forza te laten starten. Alle
+  drie staan uit tenzij je ze aanvinkt, alle drie zijn gewoon een .lnk-bestand in
+  een map, en je kunt elk ervan later verwijderen zonder het programma aan te
+  raken.
+
+  ‘Starten met Forza’ zet het programma in je opstartmap van Windows. Vanaf het
+  aanmelden wacht het onzichtbaar in het systeemvak en opent het (geminimaliseerd)
+  zodra Forza start; na de game gaat het daar weer naar terug. Zonder
+  beheerdersrechten laat Windows een programma niet starten wanneer een ander
+  programma start -- wachten in het systeemvak heeft die rechten niet nodig en
+  kost vrijwel niets. Als je het venster sluit, blijft het wachten; klik met
+  rechts op het pictogram om af te sluiten. De knop ‘Starten met Forza’
+  rechtsboven in het hoofdvenster zet het aan en uit.
+
+  Windows staat niet toe dat een programma zichzelf aan de taakbalk vastmaakt --
+  dat is sinds Windows 10 versie 1607 aan jou voorbehouden, en dat omzeilen
+  betekent een controlesom in het register vervalsen. Dit programma doet dat niet.
+  Vink de vermelding in het Startmenu aan, klik er dan met rechts op en kies
+  ‘Aan taakbalk vastmaken’.
+
+
+GEEN GARANTIE
+
+  Dit is een hobbyproject, gratis weggegeven, zonder enige vorm van garantie. Het
+  is niet gelieerd aan, goedgekeurd door of verbonden met Microsoft, Turn 10,
+  Playground Games of de serie Forza Horizon.
+
+
+Je kunt dit op elk moment opnieuw lezen: de link ‘Wat dit programma doet’ bovenaan
+het hoofdvenster.

@@ -1,0 +1,77 @@
+{
+  "name": "FH6 Rivals leaderboard 1080p default",
+  "description": "Default crop and column ratios for 16:9 screenshots. Adjust after checking raw OCR JSON.",
+  "ocr_language": "en",
+  "leaderboard_crop": {
+    "left": 0.04,
+    "top": 0.17,
+    "right": 0.96,
+    "bottom": 0.90
+  },
+  "min_row_height_px": 18,
+  "row_merge_tolerance_px": null,
+  "table_body": {
+    "top": 0.13,
+    "bottom": 0.88
+  },
+  "rows_per_page": 11,
+  "infer_rank_from_page": false,
+  "columns": {
+    "rank": [0.00, 0.075],
+    "player_level": [0.075, 0.11],
+    "gamertag": [0.11, 0.30],
+    "car": [0.30, 0.44],
+    "car_class": [0.44, 0.47],
+    "pi": [0.47, 0.53],
+    "drivetrain": [0.53, 0.65],
+    "time": [0.65, 0.75],
+    "abs": [0.75, 0.79],
+    "tcs": [0.79, 0.84],
+    "stm": [0.84, 0.895],
+    "gear": [0.895, 1.00]
+  },
+  "checkbox_centers": {
+    "abs": 0.755,
+    "tcs": 0.810,
+    "stm": 0.866
+  },
+  "cell_ocr": {
+    "enabled": true,
+    "columns": ["gamertag", "drivetrain", "gear"],
+    "padding_x_px": 20,
+    "padding_y_px": 20,
+    "scale": 3,
+    "bounds": {
+      "gamertag": [0.11, 0.30],
+      "drivetrain": [0.53, 0.65],
+      "gear": [0.90, 0.94]
+    },
+    "keep_crops": false
+  },
+  "gamertag_ocr": {
+    "enabled": true,
+    "trigger_score_below": 6,
+    "trigger_on_icon_suffix": true,
+    "accept_score": 10,
+    "scale": 5,
+    "variants": [
+      { "name": "short_raw", "bounds": [0.108, 0.155], "preprocess": "text_raw", "scale": 5, "trim": true },
+      { "name": "short_threshold", "bounds": [0.108, 0.155], "preprocess": "text_threshold", "scale": 5, "trim": true },
+      { "name": "medium_raw", "bounds": [0.108, 0.170], "preprocess": "text_raw", "scale": 5, "trim": true },
+      { "name": "medium_threshold", "bounds": [0.108, 0.170], "preprocess": "text_threshold", "scale": 5, "trim": true },
+      { "name": "wide_raw", "bounds": [0.105, 0.240], "preprocess": "text_raw", "scale": 4, "trim": true },
+      { "name": "wide_threshold", "bounds": [0.105, 0.240], "preprocess": "text_threshold", "scale": 4, "trim": true },
+      { "name": "full_raw", "bounds": [0.105, 0.300], "preprocess": "text_raw", "scale": 4, "trim": true }
+    ]
+  },
+  "time_patterns": [
+    "\\b\\d{1,2}:\\d{2}\\.\\d{3}\\b",
+    "\\b\\d{1,2}\\.\\d{3}\\b"
+  ],
+  "dirty_markers": [
+    "dirty",
+    "flagged",
+    "!",
+    "penalty"
+  ]
+}
