@@ -22,6 +22,7 @@ Geprueft wird:
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import json
@@ -42,7 +43,8 @@ import analytics_api as api            # noqa: E402
 import build_analytics_dataset as bau  # noqa: E402
 import import_contrib                  # noqa: E402
 import lap_submissions as laps         # noqa: E402
-import scan_submissions as scans       # noqa: E402
+import scan_submissions as scans  # noqa: E402
+import submit_tickets as tickets       # noqa: E402
 import serve_analytics as srv          # noqa: E402
 
 fehler = 0
@@ -80,10 +82,15 @@ def ruf(port: int, method: str, pfad: str, body: bytes | None = None, kopf: dict
             return e.code, {"_roh": roh[:200]}
 
 
-def unterschrieben(secret: str, install_id: str, pfad: str, body: bytes, nonce: str) -> dict:
+def unterschrieben(secret: str, install_id: str, pfad: str, body: bytes, nonce: str,
+                   ticket: tuple | None = None) -> dict:
     stamp = str(int(time.time()))
-    return {"X-Forza-Install": install_id, "X-Forza-Timestamp": stamp, "X-Forza-Nonce": nonce,
+    kopf = {"X-Forza-Install": install_id, "X-Forza-Timestamp": stamp, "X-Forza-Nonce": nonce,
             "X-Forza-Signature": laps.signature(secret, "POST", pfad, stamp, nonce, body)}
+    if ticket is not None:
+        kopf["X-Forza-Ticket"] = ticket[0]
+        kopf["X-Forza-Ticket-Signature"] = tickets.unterschrift_mit(ticket[1], "POST", pfad, stamp, nonce, body)
+    return kopf
 
 
 def admin_kopf(secret: str, method: str, pfad: str, body: bytes) -> dict:
@@ -192,10 +199,19 @@ with tempfile.TemporaryDirectory() as tmp:
             """Der Name auf dem Server: im Namensraum der Installation."""
             return "%s_%s" % (wer, run_id)
 
-        def einreichen(zustand: dict, zeilen: str, geheimnis: str | None = None):
+        def ticket_holen(geheimnis: str, kennung: str, zweck: str = PFAD) -> tuple:
+            b = json.dumps({"for": zweck}).encode("utf-8")
+            st, a = ruf(port, "POST", "/api/lap/ticket", b,
+                        unterschrieben(geheimnis, kennung, "/api/lap/ticket", b, next(nonce)))
+            if st != 200:
+                return ("kein-ticket", b"")
+            return (a["ticket"], base64.b64decode(a["key"]))
+
+        def einreichen(zustand: dict, zeilen: str, geheimnis: str | None = None, ticket: tuple | None = None):
             b = json.dumps({"state": zustand, "rows": zeilen}).encode("utf-8")
+            t = ticket or ticket_holen(geheimnis or secret, install_id)
             return ruf(port, "POST", PFAD, b,
-                       unterschrieben(geheimnis or secret, install_id, PFAD, b, next(nonce)))
+                       unterschrieben(geheimnis or secret, install_id, PFAD, b, next(nonce), t))
 
         print("\nEinreichen")
         zustand, zeilen = ein_lauf("ocr_RoadRacing_idx03_A_20261004_031200")
@@ -505,13 +521,49 @@ with tempfile.TemporaryDirectory() as tmp:
         neu_id, neu_geheim = antwort2.get("install_id", ""), antwort2.get("secret", "")
         z_n, r_n = ein_lauf("ocr_first_1")
         b_n = json.dumps({"state": z_n, "rows": r_n}).encode("utf-8")
-        st_n, a_n = ruf(port, "POST", PFAD, b_n, unterschrieben(neu_geheim, neu_id, PFAD, b_n, next(nonce)))
+        st_n, a_n = ruf(port, "POST", PFAD, b_n, unterschrieben(neu_geheim, neu_id, PFAD, b_n, next(nonce),
+                                                                ticket_holen(neu_geheim, neu_id)))
         pruefe(st_n == 200 and a_n.get("held") is False,
                "der erste Lauf einer neuen Installation geht von selbst durch (%s)" % a_n.get("reason"))
 
         def zeigen(name: str) -> int:
             k = json.dumps({"run_id": name, "hidden": False}).encode("utf-8")
             return ruf(port, "POST", "/api/admin/visibility", k, admin_kopf(ADMIN, "POST", "/api/admin/visibility", k))[0]
+
+        print("\nEinmal-Tickets")
+        t_1 = ticket_holen(secret, install_id)
+        z_k, r_k = ein_lauf("ocr_ticket_1")
+        st_k, a_k = einreichen(z_k, r_k, ticket=t_1)
+        pruefe(st_k == 200, "mit Ticket angenommen (%d, %s)" % (st_k, a_k.get("error")))
+        z_k, r_k = ein_lauf("ocr_ticket_2")
+        st_k, a_k = einreichen(z_k, r_k, ticket=t_1)
+        pruefe(st_k == 401 and "used" in a_k.get("error", ""), "dasselbe Ticket ein zweites Mal: 401 (%d, %s)" % (st_k, a_k.get("error")))
+        st_k, a_k = einreichen(z_k, r_k, ticket=("0" * 32, b"x" * 32))
+        pruefe(st_k == 401, "ein erfundenes Ticket: 401 (%d)" % st_k)
+        st_k, a_k = einreichen(z_k, r_k, ticket=ticket_holen(secret, install_id, "/api/lap/submit"))
+        pruefe(st_k == 401 and "another" in a_k.get("error", ""), "ein Ticket fuer Runden taugt nicht fuer Scans (%d, %s)" % (st_k, a_k.get("error")))
+        t_alt = ticket_holen(secret, install_id)
+        with tickets._SCHLOSS:
+            inst, zweck, schl, _ = tickets._OFFEN[t_alt[0]]
+            tickets._OFFEN[t_alt[0]] = (inst, zweck, schl, time.time() - 1)
+        st_k, a_k = einreichen(z_k, r_k, ticket=t_alt)
+        pruefe(st_k == 401 and "expired" in a_k.get("error", ""), "ein abgelaufenes Ticket: 401 (%d, %s)" % (st_k, a_k.get("error")))
+        t_falsch = ticket_holen(secret, install_id)
+        st_k, a_k = einreichen(z_k, r_k, ticket=(t_falsch[0], b"y" * 32))
+        pruefe(st_k == 401 and "signature" in a_k.get("error", ""), "falscher Ticket-Schluessel: 401 (%d)" % st_k)
+        st_k, a_k = einreichen(z_k, r_k, ticket=t_falsch)
+        pruefe(st_k == 401 and "used" in a_k.get("error", ""), "auch ein Fehlversuch verbraucht das Ticket (%d)" % st_k)
+        b_k = json.dumps({"state": z_k, "rows": r_k}).encode("utf-8")
+        st_k, a_k = ruf(port, "POST", PFAD, b_k, unterschrieben(secret, install_id, PFAD, b_k, next(nonce)))
+        pruefe(st_k == 401 and "ticket" in a_k.get("error", ""), "ohne Ticket: 401 (%d, %s)" % (st_k, a_k.get("error")))
+        b_f = json.dumps({"for": "/api/admin/visibility"}).encode("utf-8")
+        st_k, a_k = ruf(port, "POST", "/api/lap/ticket", b_f,
+                        unterschrieben(secret, install_id, "/api/lap/ticket", b_f, next(nonce)))
+        pruefe(st_k == 400, "kein Ticket fuer fremde Endpunkte (%d)" % st_k)
+        offene = [ticket_holen(secret, install_id) for _ in range(tickets.OFFEN_JE_INSTALLATION + 1)]
+        pruefe(offene[-1][0] == "kein-ticket", "hoechstens %d offene Tickets je Installation" % tickets.OFFEN_JE_INSTALLATION)
+        with tickets._SCHLOSS:
+            tickets._OFFEN.clear()
 
         print("\nDie automatischen Pruefungen")
         # Ein neues Board, lang genug, ohne Nachbarklassen: von selbst sichtbar.
@@ -546,7 +598,9 @@ with tempfile.TemporaryDirectory() as tmp:
         tor("ocr_auto_fall_1", "lap times fall", "20 Zeiten springen je 0,1 s zurueck", None, fallend)
         tor("ocr_auto_pi_1", "PI outside", "der PI einer anderen Klasse", None,
             lambda t: t.replace('"pi": 650', '"pi": 450'))
-        tor("ocr_auto_fast_1", "more than 5%", "eine Bestzeit 6,7 % unter dem Datensatz", None,
+        tor("ocr_auto_fast_1", "more than 10%", "eine Bestzeit 11,7 % unter dem Datensatz", None,
+            lambda t: t.replace('"lap_time_seconds": 60.0,', '"lap_time_seconds": 53.0,', 1))
+        tor("ocr_auto_fast_2", None, "eine Bestzeit 6,7 % unter dem Datensatz (eine Abkuerzung)", None,
             lambda t: t.replace('"lap_time_seconds": 60.0,', '"lap_time_seconds": 56.0,', 1))
         tor("ocr_auto_car_1", "new top times for one car", "fuenf neue Spitzenzeiten fuer ein Auto",
             {"basis": 60.5, "n": 10}, vorn_fremd(5))

@@ -57,6 +57,7 @@ import ip_bans  # noqa: E402
 import lap_submissions as laps  # noqa: E402
 import race_submissions as rennen_api  # noqa: E402
 import scan_submissions as scans  # noqa: E402
+import submit_tickets as tickets  # noqa: E402
 import leaderboard_check as bestenliste  # noqa: E402
 import usage  # noqa: E402
 
@@ -583,9 +584,21 @@ def lap_endpunkt(method: str, path: str, headers, body: bytes,
                                               d.get("gamertag", ""), now=now,
                                               client=client))
 
+        if method == "POST" and path == "/api/lap/ticket":
+            # Ein Einmal-Ticket fuer die naechste Einreichung (submit_tickets).
+            try:
+                install_id, _ = laps.verify(headers, method, path, body, now=now)
+            except laps.SubmitError as e:
+                if e.status == 401:
+                    ip_bans.fehlversuch(client, "ticket signature", now)
+                raise
+            return as_json(200, tickets.ausstellen(install_id, str(rumpf().get("for") or ""), now=now))
+
         if method == "POST" and path == "/api/lap/submit":
             try:
                 install_id, eintrag = laps.verify(headers, method, path, body, now=now)
+                # DAS EINMAL-TICKET (seit 2026-10-11, submit_tickets): kurz gueltig, einmal.
+                tickets.einloesen(headers, install_id, method, path, body, now=now)
             except laps.SubmitError as e:
                 # Eine falsche Unterschrift ist ein fehlgeschlagener Anmeldeversuch.
                 if e.status == 401:
@@ -757,6 +770,7 @@ def race_endpunkt(method: str, path: str, headers, body: bytes,
         if method == "POST" and path == "/api/race/submit":
             try:
                 install_id, _ = laps.verify(headers, method, path, body, now=now)
+                tickets.einloesen(headers, install_id, method, path, body, now=now)
             except laps.SubmitError as e:
                 if e.status == 401:
                     ip_bans.fehlversuch(client, "race signature", now)
@@ -840,6 +854,7 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
         if method == "POST" and path == "/api/scan/submit":
             try:
                 install_id, _ = laps.verify(headers, method, path, body, now=now)
+                tickets.einloesen(headers, install_id, method, path, body, now=now)
             except laps.SubmitError as e:
                 if e.status == 401:
                     ip_bans.fehlversuch(client, "scan signature", now)

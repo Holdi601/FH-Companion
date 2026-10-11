@@ -36,6 +36,7 @@ QUELLE = WORKSPACE / "haptics/ForzaHaptics.Tester/Rivals/LapSubmit.cs"
 sys.path.insert(0, str(WORKSPACE / "server"))
 
 import lap_submissions as laps  # noqa: E402
+import submit_tickets as tickets  # noqa: E402
 
 # Faelle, an denen eine Zusammensetzung wirklich bricht: leerer Rumpf, Umlaute,
 # Zeilenumbrueche IM Rumpf (die koennten mit dem Trennzeichen verwechselt werden),
@@ -62,6 +63,8 @@ internal static class Pruef
 {
 __SIGNATURE__
 
+__TICKET__
+
     private static void Main()
     {
         var roh = Console.In.ReadToEnd();
@@ -72,6 +75,11 @@ __SIGNATURE__
             raus.Add(Signature(
                 f[0].GetString()!, f[1].GetString()!, f[2].GetString()!,
                 f[3].GetString()!, f[4].GetString()!,
+                Convert.FromBase64String(f[5].GetString()!)));
+            // Dasselbe mit einem Ticket-Schluessel (Bytes): SHA-256 des Geheimnisses als Probe.
+            raus.Add(TicketSignature(
+                SHA256.HashData(Encoding.UTF8.GetBytes(f[0].GetString()!)), f[1].GetString()!,
+                f[2].GetString()!, f[3].GetString()!, f[4].GetString()!,
                 Convert.FromBase64String(f[5].GetString()!)));
         }
         Console.Out.Write(JsonSerializer.Serialize(raus));
@@ -93,9 +101,9 @@ CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">
 """
 
 
-def schneide_signature(text: str) -> str:
-    """Die Methode `Signature` aus dem Quelltext holen -- samt ihrer Klammern."""
-    anfang = text.index("public static string Signature(")
+def schneide_signature(text: str, kopf: str = "public static string Signature(") -> str:
+    """Eine Methode aus dem Quelltext holen -- samt ihrer Klammern."""
+    anfang = text.index(kopf)
     # Von dort bis zur schliessenden Klammer, mit Zaehlwerk.
     i = text.index("{", anfang)
     tiefe = 0
@@ -115,13 +123,15 @@ def main() -> int:
         return 1
     quelltext = QUELLE.read_text(encoding="utf-8")
     methode = schneide_signature(quelltext)
-    print("Signature aus LapSubmit.cs geschnitten: %d Zeichen" % len(methode))
+    ticket = schneide_signature(quelltext, "public static string TicketSignature(")
+    print("Signature und TicketSignature aus LapSubmit.cs geschnitten: %d + %d Zeichen" % (len(methode), len(ticket)))
 
     with tempfile.TemporaryDirectory() as tmp:
         ordner = Path(tmp)
         (ordner / "pruef.csproj").write_text(CSPROJ, encoding="utf-8")
         (ordner / "Program.cs").write_text(
-            PROGRAMM.replace("__SIGNATURE__", "    " + methode), encoding="utf-8")
+            PROGRAMM.replace("__SIGNATURE__", "    " + methode).replace("__TICKET__", "    " + ticket),
+            encoding="utf-8")
 
         import base64
         eingabe = json.dumps([[s, m, p, t, n, base64.b64encode(b).decode("ascii")]
@@ -139,9 +149,14 @@ def main() -> int:
             print("Unbrauchbare Ausgabe:\n" + lauf.stdout[-1500:])
             return 1
 
+    import hashlib
     fehler = 0
-    for (s, m, p, t, n, b), aus_cs in zip(FAELLE, aus_csharp):
-        aus_py = laps.signature(s, m, p, t, n, b)
+    paare = []
+    for i, (s, m, p, t, n, b) in enumerate(FAELLE):
+        paare.append(((s, m, p, t, n, b), aus_csharp[2 * i], laps.signature(s, m, p, t, n, b)))
+        paare.append(((s, m, p, t, n + " (Ticket)", b), aus_csharp[2 * i + 1],
+                      tickets.unterschrift_mit(hashlib.sha256(s.encode("utf-8")).digest(), m, p, t, n, b)))
+    for (s, m, p, t, n, b), aus_cs, aus_py in paare:
         gleich = aus_cs == aus_py
         fehler += not gleich
         print("  %s %-28s Rumpf %5d B  %s" % (
@@ -152,9 +167,9 @@ def main() -> int:
 
     print()
     if fehler:
-        print("%d von %d Faellen stimmen NICHT ueberein." % (fehler, len(FAELLE)))
+        print("%d von %d Faellen stimmen NICHT ueberein." % (fehler, len(paare)))
         return 1
-    print("alle %d Faelle stimmen ueberein -- alles bestanden" % len(FAELLE))
+    print("alle %d Faelle stimmen ueberein -- alles bestanden" % len(paare))
     return 0
 
 

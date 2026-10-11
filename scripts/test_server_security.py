@@ -21,6 +21,9 @@ WS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(WS / "server"))
 
 import analytics_api as api  # noqa: E402
+import submit_tickets  # noqa: E402
+# Die Einmal-Tickets prueft test_scan_endpoints.py; hier geht es um anderes.
+submit_tickets.PFLICHT = False
 import ip_bans  # noqa: E402
 import lap_submissions as laps  # noqa: E402
 

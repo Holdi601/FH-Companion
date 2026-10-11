@@ -349,7 +349,7 @@ row: rank, time, car, PI, drivetrain, gearbox and assists. Gamertags are not rea
   - at least 3,000 ranks, or the whole board if it is shorter (90 % of the depth the
     website already knows); keep **First ranks only** at 0 or at least 3,000;
   - its fastest times match the ones already known for that board, and the best lap
-    is not more than 5 % under the known one; a new board must fit between the
+    is not more than 10 % under the known one; a new board must fit between the
     neighbouring classes of the same route;
   - it reads like a real board: times rise with the rank, PI values belong to the
     class, the reading speed is one the app can reach, and no single car brings a

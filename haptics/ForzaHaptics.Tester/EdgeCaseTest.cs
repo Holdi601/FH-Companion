@@ -2615,6 +2615,7 @@ internal static class EdgeCaseTest
         var antworten = new System.Collections.Concurrent.ConcurrentQueue<int>();
         var einreichungen = 0;
         var ohneSpur = 0;
+        var ohneTicket = 0;
         string? angemeldetAls = null;
         string? eingereichtAls = null;
         using var hoerer = new System.Net.HttpListener();
@@ -2641,8 +2642,19 @@ internal static class EdgeCaseTest
                                           : """{"error":"'gamertag' enthaelt unerlaubte Zeichen."}""";
                     if (status == 200) { angemeldetAls = name; }
                 }
+                else if (pfad.EndsWith("/api/lap/ticket"))
+                {
+                    // Das Einmal-Ticket (seit 2026-10-11): wie der echte Server, ein Schluessel in Base64.
+                    status = 200;
+                    rumpf = """{"ticket":"0123456789abcdef0123456789abcdef","key":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=","expires_in":120}""";
+                }
                 else
                 {
+                    if (string.IsNullOrEmpty(k.Request.Headers["X-Forza-Ticket"])
+                        || string.IsNullOrEmpty(k.Request.Headers["X-Forza-Ticket-Signature"]))
+                    {
+                        Interlocked.Increment(ref ohneTicket);
+                    }
                     eingereichtAls = name;
                     Interlocked.Increment(ref einreichungen);
                     // Jede Einreichung traegt ihre volle Telemetrie (seit 2026-09-28).
@@ -2719,6 +2731,7 @@ internal static class EdgeCaseTest
             // SERVER GESUND: raus, ins Buch, aus der Schlange.
             Nachreichen();
             Soll(Rivals.LapQueue.Anzahl() == 0 && einreichungen == 2, "die wartende Runde ging nicht hinaus");
+            Soll(ohneTicket == 0, $"{ohneTicket} Einreichung(en) ohne Einmal-Ticket");
             Soll(Rivals.LapAutoSubmit.LedgerLaden().TryGetValue("test circuit|A|1234", out var imBuch) && imBuch == 58500,
                  "die nachgereichte Runde steht nicht im Buch");
 

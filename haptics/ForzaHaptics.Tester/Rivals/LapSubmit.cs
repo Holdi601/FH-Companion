@@ -195,6 +195,84 @@ internal static class LapSubmit
                       .ToLowerInvariant();
     }
 
+    /// <summary>Die Unterschrift mit einem Ticket-Schluessel -- dieselbe Zeile wie <see cref="Signature"/>.</summary>
+    public static string TicketSignature(byte[] schluessel, string method, string pfad,
+                                         string stamp, string nonce, byte[] body)
+    {
+        var rumpfHash = Convert.ToHexString(SHA256.HashData(body ?? Array.Empty<byte>()))
+                               .ToLowerInvariant();
+        var text = string.Join("\n", method.ToUpperInvariant(), pfad, stamp, nonce, rumpfHash);
+        using var hmac = new HMACSHA256(schluessel);
+        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(text)))
+                      .ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Ein Einmal-Ticket des Servers (seit 2026-10-11, server/submit_tickets.py): gilt zwei
+    /// Minuten, fuer einen Endpunkt, einmal.
+    /// </summary>
+    /// <remarks>
+    /// Der Schluessel steht nur in diesem Objekt, als Bytes -- nie als Zeichenkette, nie auf der
+    /// Platte -- und wird beim Dispose ueberschrieben. Der Nutzer: "den RAM nicht verlassen ...
+    /// und nach dem Submit invalide". Ungueltig macht ihn der Server, sobald er eingeloest ist.
+    /// </remarks>
+    internal sealed class Ticket : IDisposable
+    {
+        private readonly byte[] _schluessel;
+
+        public Ticket(string id, byte[] schluessel)
+        {
+            Id = id;
+            _schluessel = schluessel;
+        }
+
+        public string Id { get; }
+
+        /// <summary>Die zwei Koepfe, die eine Einreichung mit diesem Ticket traegt.</summary>
+        public void Anheften(HttpRequestMessage anfrage, string pfad, string stamp, string nonce, byte[] rumpf)
+        {
+            anfrage.Headers.Add("X-Forza-Ticket", Id);
+            anfrage.Headers.Add("X-Forza-Ticket-Signature", TicketSignature(_schluessel, "POST", pfad, stamp, nonce, rumpf));
+        }
+
+        public void Dispose() => CryptographicOperations.ZeroMemory(_schluessel);
+    }
+
+    /// <summary>Ein Ticket fuer genau eine Einreichung an <paramref name="zweck"/> holen.</summary>
+    internal static async Task<Ticket> TicketAsync(Identity wer, string zweck, TimeSpan timeout)
+    {
+        const string pfad = "/api/lap/ticket";
+        var rumpf = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string> { ["for"] = zweck });
+        var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
+        using var client = Client(timeout);
+        using var inhalt = new ByteArrayContent(rumpf);
+        inhalt.Headers.ContentType = new("application/json") { CharSet = "utf-8" };
+        using var anfrage = new HttpRequestMessage(HttpMethod.Post, An(wer.Server!, pfad)) { Content = inhalt };
+        anfrage.Headers.Add("X-Forza-Install", wer.InstallId);
+        anfrage.Headers.Add("X-Forza-Timestamp", stamp);
+        anfrage.Headers.Add("X-Forza-Nonce", nonce);
+        anfrage.Headers.Add("X-Forza-Signature", Signature(wer.Secret!, "POST", pfad, stamp, nonce, rumpf));
+        using var antwort = await client.SendAsync(anfrage).ConfigureAwait(false);
+        var roh = await antwort.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+        try
+        {
+            if (!antwort.IsSuccessStatusCode)
+            {
+                throw new Rejected((int)antwort.StatusCode, Fehlertext(antwort.StatusCode, Encoding.UTF8.GetString(roh)));
+            }
+            using var doc = JsonDocument.Parse(roh);
+            var id = doc.RootElement.GetProperty("ticket").GetString()
+                     ?? throw new InvalidOperationException("the server sent no ticket");
+            // Direkt in Bytes, ohne Zeichenkette dazwischen: die liesse sich nicht ueberschreiben.
+            return new Ticket(id, doc.RootElement.GetProperty("key").GetBytesFromBase64());
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(roh);
+        }
+    }
+
     /// <summary>Eine Runde einreichen. Gibt die Antwort des Servers als Text zurueck.</summary>
     /// <param name="gamertag">
     /// Der Name, unter dem die Runde erscheinen soll -- leer fuer keinen, null fuer
@@ -234,6 +312,11 @@ internal static class LapSubmit
         anfrage.Headers.Add("X-Forza-Nonce", nonce);
         anfrage.Headers.Add("X-Forza-Signature",
                             Signature(wer.Secret!, "POST", pfad, stamp, nonce, rumpf));
+        // Das Einmal-Ticket erst jetzt: es gilt zwei Minuten und lebt nur bis zum Senden.
+        using (var ticket = await TicketAsync(wer, pfad, TimeSpan.FromSeconds(20)).ConfigureAwait(false))
+        {
+            ticket.Anheften(anfrage, pfad, stamp, nonce, rumpf);
+        }
 
         using var antwort = await client.SendAsync(anfrage).ConfigureAwait(false);
         var text = await antwort.Content.ReadAsStringAsync().ConfigureAwait(false);

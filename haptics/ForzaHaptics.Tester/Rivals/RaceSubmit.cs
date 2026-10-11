@@ -83,6 +83,10 @@ internal static class RaceSubmit
         anfrage.Headers.Add("X-Forza-Timestamp", stamp);
         anfrage.Headers.Add("X-Forza-Nonce", nonce);
         anfrage.Headers.Add("X-Forza-Signature", LapSubmit.Signature(wer.Secret!, "POST", Pfad, stamp, nonce, rumpf));
+        using (var ticket = await LapSubmit.TicketAsync(wer, Pfad, TimeSpan.FromSeconds(20)).ConfigureAwait(false))
+        {
+            ticket.Anheften(anfrage, Pfad, stamp, nonce, rumpf);
+        }
         using var antwort = await client.SendAsync(anfrage).ConfigureAwait(false);
         var text = await antwort.Content.ReadAsStringAsync().ConfigureAwait(false);
         if (!antwort.IsSuccessStatusCode)

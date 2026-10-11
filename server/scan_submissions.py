@@ -349,8 +349,9 @@ HALT_PI = 0.01
 # Gelesen werden rund 16 Zeilen je Sekunde (dieselben Laeufe: 15,8 und 15,9).
 HALT_TEMPO = 40.0
 # Bis 2 % schneller als der Datensatz: nur markiert (Festival Chase A, 2026-10-04: 2,2 % und
-# richtig). Ab 5 %: zurueckgehalten.
-HALT_SCHNELLER = 0.05
+# richtig). Ab 10 %: zurueckgehalten -- 5 % waren dem Nutzer zu eng (eine neu gefundene
+# Abkuerzung kann eine Strecke deutlich schneller machen).
+HALT_SCHNELLER = 0.10
 # So viele Spitzenzeiten (unter der 20. bekannten), die der Datensatz nicht kennt, darf ein
 # einziges Auto mitbringen. Eine erfundene Liste, die ein Auto nach vorn schieben soll, braucht
 # davon viele; echte neue Bestzeiten verteilen sich.
