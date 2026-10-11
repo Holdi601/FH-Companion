@@ -3194,7 +3194,18 @@ internal sealed class OverlayController : IDisposable
             if (m.Modus == "race" && alter <= SchirmGilt) { return true; }
             // Horizon Play belegt: dann gilt keine Aufstellung als Gegenbeweis -- eine wurde
             // dort schon einmal "AHHHHHHHH" gelesen, und das hiesse sonst Koop.
-            if (m.Modus == "horizon-play" && alter <= SchirmGilt) { return false; }
+            if (m.Modus == "horizon-play" && alter <= SchirmGilt)
+            {
+                // ... AUSSER ein spaeteres Ergebnis zeigt ein Rennen gegen die KI: am 2026-10-08
+                // folgten auf "Horizon Play Drift" acht Koop-Rennen, deren Anmeldung nicht gelesen
+                // wurde -- alle galten als Horizon Play.
+                return _ergebnis is { } e && e.Utc > m.Seen && jetzt - e.Utc < TimeSpan.FromMinutes(20)
+                       && RaceGrid.KiRennen(e.Read);
+            }
+        }
+        if (_ergebnis is { } letztes && jetzt - letztes.Utc < TimeSpan.FromMinutes(20) && RaceGrid.KiRennen(letztes.Read))
+        {
+            return true;
         }
         return raster is not null && RaceGrid.Modus("race", raster.Read.Rows, null, null) is "solo" or "coop";
     }
@@ -3210,6 +3221,14 @@ internal sealed class OverlayController : IDisposable
         if (lap.Mode != "unknown" || _modusSchirm is not { } beleg) { return; }
         var alter = DateTime.UtcNow - beleg.Seen;
         if (alter > (beleg.Modus == "rivals" ? RivalsGilt : SchirmGilt)) { return; }
+        // Nach dem Schirm ein Ergebnis voller KI (seit 2026-10-11): das war Koop, dessen Anmeldung
+        // nicht gelesen wurde -- kein "Horizon Play" vom alten Schirm, und damit keine Einreichung.
+        if (beleg.Modus == "horizon-play" && _ergebnis is { } erg && erg.Utc > beleg.Seen
+            && RaceGrid.KiRennen(erg.Read))
+        {
+            lap.ModeEvidence = "conflict:horizon-play-screen-but-ai-result";
+            return;
+        }
         if (beleg.Modus == "rivals" && platzMax > 1)
         {
             lap.ModeEvidence = $"conflict:rivals-screen-but-position-{platzMax}";
@@ -3737,6 +3756,10 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Die zuletzt gelesene Startaufstellung -- ein Verweis, damit Lesen und Schreiben nie zerreissen.</summary>
     private sealed record RasterStand(GridRead Read, DateTime Utc);
     private volatile RasterStand? _raster;
+    /// <summary>Das zuletzt gelesene Ergebnis (seit 2026-10-11, fuer den Geister-Countdown).</summary>
+    private volatile RasterStand? _ergebnis;
+    /// <summary>Das zuletzt gespeicherte Bild einer Aufstellung -- es wird aufgehoben, wenn das Rennen eines gegen die KI war.</summary>
+    private volatile string? _letzteAufstellung;
     /// <summary>Das zuletzt abgelegte Rennen, bis sein Ergebnisschirm gelesen ist (hoechstens eine Minute).</summary>
     private sealed record OffenesRennen(RaceRecord Race, DateTime Utc);
     private volatile OffenesRennen? _offen;
@@ -3824,7 +3847,9 @@ internal sealed class OverlayController : IDisposable
                             catch (Exception) { }
                         }
                         ErgebnisNachtragen(offen.Race, e);
+                        _ergebnis = new RasterStand(e, DateTime.UtcNow);
                         if (voll is not null) { RennbildSpeichern(voll, "results", offen.Race.Id); }
+                        if (RaceGrid.KiRennen(e)) { KiBelegeAufheben(voll, offen.Race.Id); }
                         // AN DEN SERVER (seit 2026-10-02): Horizon Play, mit Beleg, nur wenn Runden
                         // eingereicht werden (submit_laps, ab Werk an). Im Hintergrund, nie im Weg.
                         if (voll is not null && _settings.SubmitLaps && RaceSubmit.Lohnt(offen.Race))
@@ -3888,7 +3913,49 @@ internal sealed class OverlayController : IDisposable
         if (art == "grid" && DateTime.UtcNow - _rennbildZuletzt < TimeSpan.FromSeconds(10)) { return; }
         if (art == "grid") { _rennbildZuletzt = DateTime.UtcNow; }
         using var voll = Vollbild(flaeche);
-        if (voll is not null) { RennbildSpeichern(voll, art, rennen); }
+        if (voll is null) { return; }
+        var pfad = RennbildSpeichern(voll, art, rennen);
+        if (art != "grid") { return; }
+        _letzteAufstellung = pfad;
+        // AUFSTELLUNGEN EINE WOCHE LANG (seit 2026-10-11): die 60 oben waren nach zwei Tagen
+        // ueberschrieben, und mit ihnen die einzigen Bilder einer Koop-Aufstellung. Hier eins je
+        // zwei Minuten, hoechstens 400 -- genug fuer eine Woche Rennen.
+        if (DateTime.UtcNow - _aufstellungAufgehoben >= TimeSpan.FromMinutes(2))
+        {
+            _aufstellungAufgehoben = DateTime.UtcNow;
+            BildSpeichern(voll, Path.Combine(RennbildOrdner, "grids"), "grid", null, 400);
+        }
+    }
+
+    private DateTime _aufstellungAufgehoben = DateTime.MinValue;
+
+    /// <summary>Wo die Bilder von Rennen gegen die KI bleiben -- ausserhalb der 60, die rotieren.</summary>
+    internal static string KiBildOrdner => Path.Combine(RennbildOrdner, "ki");
+
+    /// <summary>
+    /// Aufstellung und Ergebnis eines Rennens gegen die KI aufheben (seit 2026-10-11).
+    /// </summary>
+    /// <remarks>
+    /// Das Drivatar-Symbol der KI und die zwei Teamfarben im Koop sind auf der Aufstellung noch
+    /// nicht lesbar -- dafuer braucht es Bilder, und die 60 im Hauptordner waren nach zwei Tagen
+    /// ueberschrieben. Hier hoechstens 100, nur auf dieser Platte.
+    /// </remarks>
+    private void KiBelegeAufheben(Bitmap? voll, string rennen)
+    {
+        try
+        {
+            Directory.CreateDirectory(KiBildOrdner);
+            if (_letzteAufstellung is { } raster && File.Exists(raster))
+            {
+                var ziel = Path.Combine(KiBildOrdner, Path.GetFileName(raster));
+                if (!File.Exists(ziel)) { File.Copy(raster, ziel); }
+            }
+            if (voll is not null) { BildSpeichern(voll, KiBildOrdner, "results", rennen, 100); }
+            LogLap("race against the AI: grid and result kept in race_screens\\ki");
+        }
+        catch (Exception)
+        {
+        }
     }
 
     /// <summary>Der Spielbereich auf 1080p gebracht -- darauf sind die Leser geeicht.</summary>
@@ -3980,10 +4047,10 @@ internal sealed class OverlayController : IDisposable
         catch (Exception) { }
     }
 
-    private static void RennbildSpeichern(Bitmap voll, string art, string? rennen) =>
+    private static string? RennbildSpeichern(Bitmap voll, string art, string? rennen) =>
         BildSpeichern(voll, RennbildOrdner, art, rennen, RennbilderHoechstens);
 
-    private static void BildSpeichern(Bitmap voll, string ordner, string art, string? kennungRoh, int hoechstens)
+    private static string? BildSpeichern(Bitmap voll, string ordner, string art, string? kennungRoh, int hoechstens)
     {
         try
         {
@@ -4001,10 +4068,12 @@ internal sealed class OverlayController : IDisposable
             {
                 alt.Delete();
             }
+            return pfad;
         }
         catch (Exception)
         {
             // Ein Bild ist nie den Preis eines Fehlers im Menue wert.
+            return null;
         }
     }
 
@@ -4108,6 +4177,9 @@ internal sealed class OverlayController : IDisposable
         {
             r.ResultRows = e.Rows;
             r.Drivers ??= e.Drivers;
+            // Ein Ergebnis voller KI ist kein Horizon Play, was der Schirm auch sagte (seit 2026-10-11):
+            // sonst ginge es als Horizon-Play-Rennen an den Server.
+            RaceLog.ModusNachErgebnis(r);
             if (r.Finish is { } ziel && ziel >= 1 && ziel <= e.Rows.Length)
             {
                 var vorn = e.Rows[..(ziel - 1)].Count(c => c == 'H');

@@ -2201,9 +2201,16 @@ internal static class EdgeCaseTest
         var ohneGeist = typ.GetMethod("OhneGeist", flags)!;
         var rasterFeld = typ.GetField("_raster", flags)!;
         var rasterTyp = typ.GetNestedType("RasterStand", System.Reflection.BindingFlags.NonPublic)!;
-        bool Geistlos(string? modus, TimeSpan alter, string? reihen = null, TimeSpan? rasterAlter = null)
+        var ergebnisFeld = typ.GetField("_ergebnis", flags)!;
+        bool Geistlos(string? modus, TimeSpan alter, string? reihen = null, TimeSpan? rasterAlter = null,
+                      string? ergebnis = null, TimeSpan? ergebnisAlter = null)
         {
             var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+            if (ergebnis is not null)
+            {
+                ergebnisFeld.SetValue(roh, Activator.CreateInstance(rasterTyp,
+                    new Rivals.GridRead(ergebnis.Length, null, ergebnis), DateTime.UtcNow - (ergebnisAlter ?? TimeSpan.Zero)));
+            }
             if (modus is not null)
             {
                 (string, DateTime, string?, double)? beleg = (modus, DateTime.UtcNow - alter, null, 0);
@@ -2225,6 +2232,27 @@ internal static class EdgeCaseTest
              "Horizon Play mit einer falsch gelesenen Zeile: der Countdown fehlt");
         Soll(Geistlos(null, TimeSpan.Zero, "AAAAAAAAAAAH"), "Solo-Aufstellung (KI vorn, man selbst hinten): Countdown steht da");
         Soll(!Geistlos(null, TimeSpan.Zero), "ohne jeden Beleg muss der Countdown bleiben");
+        Soll(Geistlos("horizon-play", TimeSpan.FromMinutes(20), ergebnis: "AHAAAAAAAAA", ergebnisAlter: TimeSpan.FromMinutes(3)),
+             "Koop nach Horizon Play (Ergebnis voller KI nach dem Schirm): der Geister-Countdown steht da");
+        Soll(!Geistlos("horizon-play", TimeSpan.FromMinutes(2), ergebnis: "AHAAAAAAAAA", ergebnisAlter: TimeSpan.FromMinutes(5)),
+             "neue Horizon-Play-Anmeldung NACH dem KI-Ergebnis: der Countdown fehlt");
+        Soll(!Geistlos("horizon-play", TimeSpan.FromMinutes(20), ergebnis: "HHHHHHHHHAAA", ergebnisAlter: TimeSpan.FromMinutes(3)),
+             "Horizon Play mit drei Ausgestiegenen hinten gilt als Rennen gegen die KI");
+        {
+            // Die Runde nach einem KI-Ergebnis bekommt kein "Horizon Play" vom alten Schirm.
+            var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+            (string, DateTime, string?, double)? hp = ("horizon-play", DateTime.UtcNow - TimeSpan.FromMinutes(20), null, 0);
+            feld.SetValue(roh, hp);
+            ergebnisFeld.SetValue(roh, Activator.CreateInstance(rasterTyp,
+                new Rivals.GridRead(11, null, "AHAAAAAAAAA"), DateTime.UtcNow - TimeSpan.FromMinutes(3)));
+            var koop = Runde(1880f);
+            roh.ModusAusSchirm(koop, 1);
+            Soll(koop.Mode == "unknown" && koop.ModeEvidence.Contains("ai-result"),
+                 $"Koop-Runde nach Horizon-Play-Schirm und KI-Ergebnis: {koop.Mode}/{koop.ModeEvidence}");
+        }
+        Soll(Rivals.RaceGrid.KiRennen(new Rivals.GridRead(10, null, "AHAAAAADDD"))
+             && !Rivals.RaceGrid.KiRennen(new Rivals.GridRead(10, null, "HHHHHAAAAA")),
+             "KI-Rennen am Ergebnis: Koop vom 2026-10-08 und Horizon Play mit fuenf Ausgestiegenen");
         Soll(!Geistlos(null, TimeSpan.Zero, "AAAAAAAAAAAH", TimeSpan.FromMinutes(10)),
              "eine zehn Minuten alte Aufstellung gilt noch");
 

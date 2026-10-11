@@ -151,7 +151,21 @@ internal static class RaceLog
         catch (Exception)
         {
         }
+        foreach (var r in raus) { ModusNachErgebnis(r); }
         return raus;
+    }
+
+    /// <summary>
+    /// Ein "Horizon Play" mit einem Ergebnis voller KI war Koop oder Solo (seit 2026-10-11) --
+    /// auch fuer schon abgelegte Rennen: am 2026-10-08 galten acht Koop-Rennen als Horizon Play.
+    /// </summary>
+    internal static void ModusNachErgebnis(RaceRecord r)
+    {
+        if (r.Mode == "horizon-play" && r.ResultRows is { Length: > 0 } zeilen
+            && RaceGrid.KiRennen(new GridRead(zeilen.Length, null, zeilen)))
+        {
+            r.Mode = zeilen.Count(c => c == 'H') >= 2 ? "coop" : "solo";
+        }
     }
 }
 
@@ -308,6 +322,18 @@ internal static class RaceGrid
             bild.UnlockBits(daten);
         }
     }
+
+    /// <summary>
+    /// Ein Rennen gegen die KI, am Ergebnis erkannt (seit 2026-10-11): mindestens fuenf Fahrer,
+    /// hoechstens ein Drittel davon mit Abzeichen.
+    /// </summary>
+    /// <remarks>
+    /// Auf der Aufstellung traegt die KI ein Drivatar-Symbol, das sich wie ein Abzeichen liest
+    /// (Koop am 2026-10-08: zehnmal "HHHHHHHHHH"); auf dem Ergebnis steht sie ohne
+    /// ("AHAAAAAAAAA"). In Horizon Play stehen Zeilen ohne Abzeichen nur hinten -- wer
+    /// ausgestiegen ist -- und nie mehr als ein Drittel (am meisten: "HHHHHAAAAA").
+    /// </remarks>
+    public static bool KiRennen(GridRead ergebnis) => ergebnis.Drivers >= 5 && ergebnis.Humans * 3 <= ergebnis.Drivers;
 
     /// <summary>Das Ergebnis nach dem Rennen -- oder null.</summary>
     public static GridRead? ReadResults(Bitmap bild) => Lies(bild, ergebnis: true);
