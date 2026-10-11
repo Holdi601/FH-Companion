@@ -96,6 +96,8 @@ CODE = [
     "server/scan_submissions.py",
     # Das Siegel der App-Laeufe (seit 2026-10-11): der Server siegelt, der Bau hier prueft.
     "server/run_seal.py",
+    # Die Einmal-Tickets vor jeder Einreichung (seit 2026-10-11).
+    "server/submit_tickets.py",
     "server/contrib_format.py",
     "server/import_contrib.py",
     "server/contrib_keys.py",
