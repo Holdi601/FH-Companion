@@ -1316,6 +1316,26 @@ internal static class SelfTest
                 "Der Abbruch wurde zum Massstab -- er erreicht das Ziel nie.");
         }
 
+        // Eine volle Gruppe verliert die LANGSAMSTE Fahrt, nie die schnellste (seit
+        // 2026-10-11; vorher entschied Rechenrauschen auf den letzten Metern).
+        var voller = new Rivals.LapLibrary(Path.Combine(Path.GetTempPath(),
+            "forza-voll-" + Guid.NewGuid().ToString("N") + ".json"));
+        var schnellste = Strasse(6000f, 0f, 0.0140f);
+        voller.Add(schnellste);
+        var langsamste = Strasse(6000f, 0f, 0.0160f);
+        voller.Add(langsamste);
+        foreach (var tempo in new[] { 0.0150f, 0.0151f, 0.0152f, 0.0153f, 0.0154f })
+        {
+            voller.Add(Strasse(6000f, 0f, tempo));
+        }
+        if (voller.Laps.Count != 6 || !voller.Laps.Contains(schnellste) || voller.Laps.Contains(langsamste))
+        {
+            throw new InvalidOperationException(
+                $"Volle Gruppe: {voller.Laps.Count} Fahrten, schnellste "
+                + (voller.Laps.Contains(schnellste) ? "da" : "WEG") + ", langsamste "
+                + (voller.Laps.Contains(langsamste) ? "noch da" : "weg") + ".");
+        }
+
         // Das Archiv sortiert nach Strecke, Klasse, Auto, Abstimmung und Merkzettel.
         var wurzel = Path.Combine(Path.GetTempPath(),
             "forza-archiv-selbsttest-" + Guid.NewGuid().ToString("N"));

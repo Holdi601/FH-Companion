@@ -61,7 +61,8 @@ Drawn over the game, and only while Forza runs. Every part can be switched off.
 - **Lap delta.** Time gained or lost against a reference lap, measured at the
   same place on track, not after the same number of seconds.
   - The reference can be the same car and tune, the same car, the same PI class,
-    the same car and class, or any lap.
+    the same car and class, or any lap. More references can be ticked; each gets
+    its own smaller delta underneath.
   - The label always starts with the selected reference. In the PI-class and
     any-lap modes it also names the reference car, with its class when that
     differs from yours.

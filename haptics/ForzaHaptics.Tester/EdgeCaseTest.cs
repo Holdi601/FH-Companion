@@ -2182,6 +2182,52 @@ internal static class EdgeCaseTest
              "eine frische Horizon-Play-Anmeldung gilt nicht");
         Soll(Fall("rivals", TimeSpan.FromMinutes(1), 1, vorher: "freeroam").Mode == "freeroam",
              "der Menueschirm ueberschreibt die eigene Freiwelt-Uhr");
+        // Weitere Deltas (seit 2026-10-11): die angekreuzten, ohne den oben gewaehlten, in fester Reihenfolge.
+        {
+            var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+            var einst = new Rivals.OverlaySettings { DeltaReferenceMode = "tune", ExtraDeltas = new() { "class", "tune", "car" } };
+            typ.GetField("_settings", flags)!.SetValue(roh, einst);
+            var liste = (System.Collections.IList)typ.GetMethod("Zusaetze", flags)!.Invoke(roh, null)!;
+            var modi = liste.Cast<object>().Select(z => z.GetType().GetField("Modus")!.GetValue(z)!.ToString()).ToList();
+            Soll(string.Join(",", modi) == "SameCar,SameClass",
+                 $"weitere Deltas bei 'tune' oben und class/tune/car angekreuzt: {string.Join(",", modi)}");
+            einst.DeltaReferenceMode = "dual";
+            einst.ExtraDeltas = new();
+            liste = (System.Collections.IList)typ.GetMethod("Zusaetze", flags)!.Invoke(roh, null)!;
+            Soll(liste.Count == 1, "'dual' zeigt weiter die PI-Klasse als zweite Zahl");
+        }
+
+        // Kein Geister-Countdown in Rivals, Solo oder Koop (seit 2026-10-11).
+        var ohneGeist = typ.GetMethod("OhneGeist", flags)!;
+        var rasterFeld = typ.GetField("_raster", flags)!;
+        var rasterTyp = typ.GetNestedType("RasterStand", System.Reflection.BindingFlags.NonPublic)!;
+        bool Geistlos(string? modus, TimeSpan alter, string? reihen = null, TimeSpan? rasterAlter = null)
+        {
+            var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
+            if (modus is not null)
+            {
+                (string, DateTime, string?, double)? beleg = (modus, DateTime.UtcNow - alter, null, 0);
+                feld.SetValue(roh, beleg);
+            }
+            if (reihen is not null)
+            {
+                rasterFeld.SetValue(roh, Activator.CreateInstance(rasterTyp,
+                    new Rivals.GridRead(reihen.Length, null, reihen), DateTime.UtcNow - (rasterAlter ?? TimeSpan.Zero)));
+            }
+            return (bool)ohneGeist.Invoke(roh, null)!;
+        }
+        Soll(Geistlos("rivals", TimeSpan.FromMinutes(5)), "Rivals: der Geister-Countdown steht da");
+        Soll(!Geistlos("rivals", TimeSpan.FromMinutes(5), "HHHHHHHH"),
+             "nach dem Rivals-Schirm eine Startaufstellung -- das ist kein Rivals mehr, der Countdown fehlt");
+        Soll(Geistlos("race", TimeSpan.FromMinutes(10)), "Solo/Koop-Anmeldung: der Geister-Countdown steht da");
+        Soll(!Geistlos("horizon-play", TimeSpan.FromMinutes(10)), "Horizon Play: der Geister-Countdown fehlt");
+        Soll(!Geistlos("horizon-play", TimeSpan.FromMinutes(10), "AHHHHHHHH"),
+             "Horizon Play mit einer falsch gelesenen Zeile: der Countdown fehlt");
+        Soll(Geistlos(null, TimeSpan.Zero, "AAAAAAAAAAAH"), "Solo-Aufstellung (KI vorn, man selbst hinten): Countdown steht da");
+        Soll(!Geistlos(null, TimeSpan.Zero), "ohne jeden Beleg muss der Countdown bleiben");
+        Soll(!Geistlos(null, TimeSpan.Zero, "AAAAAAAAAAAH", TimeSpan.FromMinutes(10)),
+             "eine zehn Minuten alte Aufstellung gilt noch");
+
         Soll(Rivals.OverlayController.LaengePasst(1900, 1.9) && Rivals.OverlayController.LaengePasst(1850, 1.9)
              && !Rivals.OverlayController.LaengePasst(2500, 1.9) && !Rivals.OverlayController.LaengePasst(1900, 0),
              "die Laengenpruefung gegen 'Route Length' stimmt nicht");
@@ -2381,6 +2427,31 @@ internal static class EdgeCaseTest
             Rivals.OverlayAusgabe.SetzeImSpiel(vorher);
             Rivals.OverlayAusgabe.Flaeche = flaecheVorher;
         }
+
+        // WEITERE DELTAS (seit 2026-10-11): im echten Streifen gezeichnet, untereinander,
+        // unter dem Geister-Block -- und nichts davon, wenn keine eingestellt sind.
+        var groesse = new Size(1920, 1080);
+        int Gemalt(IReadOnlyList<(float?, string)> weitere, string? speichern = null)
+        {
+            using var streifen = new Rivals.DeltaHud(new Rectangle(Point.Empty, groesse), new Rivals.OverlaySettings { HudInputs = false });
+            streifen.Update(-0.734f, "same car, same tune", 12.4f, weitere);
+            using var bild = new Bitmap(groesse.Width, groesse.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            using (var gfx = Graphics.FromImage(bild)) { gfx.Clear(Color.Transparent); streifen.PaintInto(gfx); }
+            if (speichern is not null) { bild.Save(Path.Combine(Path.GetTempPath(), speichern)); }
+            var unterste = 0;
+            for (var y = 0; y < bild.Height; y += 2)
+            {
+                for (var x = 760; x < 1160; x += 4)
+                {
+                    if (bild.GetPixel(x, y).A > 0) { unterste = y; break; }
+                }
+            }
+            return unterste;
+        }
+        var ohne = Gemalt(Array.Empty<(float?, string)>());
+        var zwei = Gemalt(new (float?, string)[] { (0.286f, "same car, this course"), (-0.412f, "same PI class") },
+                          "forza-weitere-deltas.png");
+        Soll(zwei > ohne + 80, $"zwei weitere Deltas reichen nicht tiefer als keines ({zwei} gegen {ohne} Punkte)");
     }
 
     /// <summary>

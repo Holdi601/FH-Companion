@@ -140,7 +140,7 @@ internal sealed class OverlayController : IDisposable
             if (behalten) { _reference = null; _referenceForLength = -1; }
             // Neue Runde, neue Suche: die Stelle in der alten Referenz ist wertlos.
             _hint = 0;
-            _hintZwei = 0;
+            ZusaetzeVergessen();
             _referenceSample = null;
             _referenceSeconds = null;
             _letztesDelta = null;
@@ -901,7 +901,7 @@ internal sealed class OverlayController : IDisposable
         _reference = null;
         _referenceForLength = -1;
         _hint = 0;
-        _hintZwei = 0;
+        ZusaetzeVergessen();
 
         var text = naechste == "dual"
             ? Loc.T("compare: two figures -- same car, and same PI class")
@@ -1124,7 +1124,7 @@ internal sealed class OverlayController : IDisposable
     /// Dieselben Saetze zeigt die Vorschau im HUD-Reiter; die Schluessel muessen darum
     /// genau so bleiben.
     /// </remarks>
-    private static string DeltaModeLabel(DeltaReference mode) => mode switch
+    internal static string DeltaModeLabel(DeltaReference mode) => mode switch
     {
         DeltaReference.SameCar => Loc.T("same car, this course"),
         DeltaReference.SameClass => Loc.T("same PI class, this course"),
@@ -1697,7 +1697,7 @@ internal sealed class OverlayController : IDisposable
         // Annahme nicht, steht es dort, statt dass es wieder jemandem auffallen muss.
         var platz = (int)packet.Get("RacePosition");
         var imRennen = platz >= 1;
-        var geist = imRennen
+        var geist = imRennen && !OhneGeist()
             ? (float)Math.Max(_settings.GhostSeconds - rennzeit,
                               -(_settings.PopInSeconds + 1))
             // Ausserhalb eines Rennens: hinter der Einblendphase, also zeichnet der
@@ -1705,8 +1705,7 @@ internal sealed class OverlayController : IDisposable
             : -(float)(_settings.PopInSeconds + 1);
 
         float? delta = null;
-        float? zweites = null;
-        var zweiteBeschriftung = string.Empty;
+        var weitere = new List<(float? Delta, string Label)>();
         var ziel = string.Empty;
         var beschriftung = DeltaModeLabel(DeltaMode);
         // Ob die Laenge dieser Strecke ueberhaupt bekannt ist -- erst eine fertige
@@ -1818,21 +1817,27 @@ internal sealed class OverlayController : IDisposable
             }
             ziel = ZielZeile(packet);
 
-            if (DualDelta)
+            // WEITERE VERGLEICHE (seit 2026-10-11, vorher genau einer bei "dual"): jeder
+            // beantwortet eine ANDERE Frage -- "besser als mein Bestes in dieser Klasse"
+            // neben "besser als ich selbst mit diesem Auto". Je Vergleich eine eigene
+            // Referenz, wie oben nur in den ersten 400 m nachgefuehrt.
+            foreach (var z in Zusaetze())
             {
-                // Die zweite Zahl beantwortet eine ANDERE Frage: nicht "besser als
-                // ich selbst mit diesem Auto", sondern "besser als mein Bestes in
-                // dieser Leistungsklasse". Beides zugleich zu sehen ist der Sinn.
-                var klassenBeste = FindReference(packet, DeltaReference.SameClass);
-                var klassenZeit = ZeitAuf(klassenBeste, packet, ref _hintZwei,
-                                          ref _abseitsZwei, streckeBekannt);
-                if (klassenZeit is not null)
+                var laenge = (int)MathF.Round(_recorder.CurrentMetres / 10f);
+                if ((z.Ref is null || _recorder.CurrentMetres < 400f) && laenge != z.FuerLaenge)
                 {
-                    zweites = _recorder.CurrentSeconds - klassenZeit.Value;
+                    var vorher = z.Ref;
+                    z.FuerLaenge = laenge;
+                    z.Ref = FindReference(packet, z.Modus);
+                    if (!ReferenceEquals(vorher, z.Ref)) { z.Hint = 0; }
                 }
-                zweiteBeschriftung = klassenBeste is null
-                    ? string.Format(Loc.T("{0} -- none yet"), DeltaModeLabel(DeltaReference.SameClass))
-                    : MitReferenzAuto(DeltaReference.SameClass, klassenBeste, packet);
+                var zeit = ZeitAuf(z.Ref, packet, ref z.Hint, ref z.Abseits, streckeBekannt);
+                var text = z.Ref is null
+                    ? string.Format(Loc.T("{0} -- none yet"), DeltaModeLabel(z.Modus))
+                    : z.Modus is DeltaReference.SameClass or DeltaReference.Anything
+                        ? MitReferenzAuto(z.Modus, z.Ref, packet)
+                        : DeltaModeLabel(z.Modus);
+                weitere.Add((zeit is null ? null : _recorder.CurrentSeconds - zeit.Value, text));
             }
         }
         else if (_recorder.InFreeRoam)
@@ -1865,7 +1870,7 @@ internal sealed class OverlayController : IDisposable
 
         try
         {
-            _hud.Update(delta, beschriftung, geist, zweites, zweiteBeschriftung, ziel);
+            _hud.Update(delta, beschriftung, geist, weitere, ziel);
         }
         catch (Exception)
         {
@@ -1874,12 +1879,62 @@ internal sealed class OverlayController : IDisposable
     }
 
     private int _hint;
-    private int _hintZwei;
+    /// <summary>Ein weiterer Vergleich unter dem Delta, mit eigener Referenz und Lesestelle.</summary>
+    private sealed class Zusatz
+    {
+        public DeltaReference Modus;
+        public RecordedLap? Ref;
+        public int FuerLaenge = -1;
+        public int Hint;
+        public bool Abseits;
+    }
+
+    private List<Zusatz> _zusaetze = new();
+    private string _zusatzSignatur = string.Empty;
+
+    /// <summary>Die weiteren Vergleiche laut Einstellung -- ohne den, der schon oben steht.</summary>
+    private List<Zusatz> Zusaetze()
+    {
+        var kennungen = new List<string>(_settings.ExtraDeltas ?? new List<string>());
+        if (DualDelta) { kennungen.Add("class"); }
+        var modi = DeltaModes.Where(k => k != "dual" && kennungen.Contains(k, StringComparer.OrdinalIgnoreCase))
+                             .Select(ModusVon)
+                             .Where(m => m != DeltaMode)
+                             .Distinct()
+                             .ToList();
+        var signatur = string.Join(",", modi);
+        if (signatur != _zusatzSignatur)
+        {
+            _zusatzSignatur = signatur;
+            _zusaetze = modi.Select(m => new Zusatz { Modus = m }).ToList();
+        }
+        return _zusaetze;
+    }
+
+    /// <summary>Neue Runde oder andere Stufe: die weiteren Vergleiche suchen neu.</summary>
+    private void ZusaetzeVergessen()
+    {
+        foreach (var z in _zusaetze)
+        {
+            z.Ref = null;
+            z.FuerLaenge = -1;
+            z.Hint = 0;
+            z.Abseits = false;
+        }
+    }
+
+    internal static DeltaReference ModusVon(string kennung) => kennung.ToLowerInvariant() switch
+    {
+        "car" => DeltaReference.SameCar,
+        "class" => DeltaReference.SameClass,
+        "carclass" => DeltaReference.SameCarSameClass,
+        "any" => DeltaReference.Anything,
+        _ => DeltaReference.SameCarSameTune,
+    };
     private LapSample? _referenceSample;
     private float? _referenceSeconds;
     private float? _letztesDelta;
     private bool _abseits;
-    private bool _abseitsZwei;
 
     /// <summary>
     /// Die Zeit der Referenzrunde dort, wo ich gerade bin.
@@ -2218,8 +2273,13 @@ internal sealed class OverlayController : IDisposable
             _hudPreview = true;
             EnsureHud();
             // Dieselben Saetze wie im Rennen und in der Vorschau des HUD-Reiters.
+            // Die weiteren Vergleiche so, wie sie eingestellt sind -- je einer eine Zeile.
+            var beispiel = new[] { 0.286f, -0.412f, 1.035f, -0.118f, 0.640f };
+            var weitere = Zusaetze().Select((z, i) => ((float?)beispiel[i % beispiel.Length],
+                                                       string.Format(Loc.T("preview -- {0}"), DeltaModeLabel(z.Modus))))
+                                    .ToList();
             _hud?.Update(-0.734f, string.Format(Loc.T("preview -- {0}"), Loc.T("same car, this course")), 12.4f,
-                         0.286f, string.Format(Loc.T("preview -- {0}"), Loc.T("same PI class")),
+                         weitere,
                          _settings.HudTarget
                              ? string.Format(Loc.T("preview -- {0}"),
                                              string.Format(Loc.T("to beat: {0} -- website best, this car"), "1:24.012"))
@@ -3110,6 +3170,33 @@ internal sealed class OverlayController : IDisposable
         {
             _modusSchirm = (state.IsHorizonPlay ? "horizon-play" : "race", DateTime.UtcNow, null, 0);
         }
+    }
+
+    /// <summary>
+    /// Kein Geister-Countdown: das Rennen ist Rivals, Solo oder Koop (seit 2026-10-11).
+    /// </summary>
+    /// <remarks>
+    /// Ghosting gibt es nur online in Horizon Play. Der Nutzer: "the ghost warning should not
+    /// be there if it is a sp or coop or rivals race". Belege, juengster zuerst:
+    /// der Rivals-Schirm (ohne spaetere Startaufstellung -- Rivals hat keine), ein
+    /// Anmeldeschirm ohne Horizon Play ("race": Solo oder Koop), oder eine frische
+    /// Aufstellung, die nach RaceGrid.Modus Solo oder Koop ist. Ohne Beleg bleibt der
+    /// Countdown -- ihn in Horizon Play zu verschweigen waere der teurere Fehler.
+    /// </remarks>
+    private bool OhneGeist()
+    {
+        var jetzt = DateTime.UtcNow;
+        var raster = _raster is { } r && jetzt - r.Utc < TimeSpan.FromMinutes(3) ? r : null;
+        if (_modusSchirm is { } m)
+        {
+            var alter = jetzt - m.Seen;
+            if (m.Modus == "rivals" && alter <= RivalsGilt && (raster is null || raster.Utc < m.Seen)) { return true; }
+            if (m.Modus == "race" && alter <= SchirmGilt) { return true; }
+            // Horizon Play belegt: dann gilt keine Aufstellung als Gegenbeweis -- eine wurde
+            // dort schon einmal "AHHHHHHHH" gelesen, und das hiesse sonst Koop.
+            if (m.Modus == "horizon-play" && alter <= SchirmGilt) { return false; }
+        }
+        return raster is not null && RaceGrid.Modus("race", raster.Read.Rows, null, null) is "solo" or "coop";
     }
 
     /// <summary>Den Modus einer Runde aus dem zuletzt gelesenen Menue -- wenn es frisch genug ist.</summary>

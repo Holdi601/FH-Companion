@@ -85,6 +85,10 @@ Everything drawn over the game while you drive, and where it sits:
   names the reference car, with its class in brackets when that is not yours,
   for example "personal best, any car · Nissan Skyline (R)". The automatic
   source takes your own laps first and the Rivals times otherwise.
+- **Also show, smaller, under it.** Optional. Tick any of the other references
+  and each gets its own smaller delta under the main one: for example "same
+  car" on top and "same PI class" below it. The ghost countdown only appears in
+  Horizon Play; Rivals, solo and co-op races do not show it.
 - **Show the time to beat for the website's leaderboard.** On by default. A
   gold line under the delta, for example "to beat: 1:24.012 -- website best,
   this car". It is your car's best valid time on the website for this route

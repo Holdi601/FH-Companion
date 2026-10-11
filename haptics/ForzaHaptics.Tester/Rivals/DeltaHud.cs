@@ -218,8 +218,8 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
     private float? _delta;
     private string _label = string.Empty;
     private string _target = string.Empty;
-    private float? _secondDelta;
-    private string _secondLabel = string.Empty;
+    /// <summary>Weitere Vergleiche unter dem Delta, kleiner (seit 2026-10-11 beliebig viele).</summary>
+    private IReadOnlyList<(float? Delta, string Label)> _extras = Array.Empty<(float?, string)>();
     private float _ghostLeft;
     private readonly InputTrace _inputs = new();
     private RecordedLap? _refLap;
@@ -600,16 +600,24 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
     /// (see OverlayController.ZielZeile, since 2026-09-27).
     /// </param>
     public void Update(float? delta, string label, float ghostSecondsLeft,
-                       float? secondDelta = null, string secondLabel = "", string target = "")
+                       float? secondDelta = null, string secondLabel = "", string target = "") =>
+        Update(delta, label, ghostSecondsLeft,
+               string.IsNullOrEmpty(secondLabel)
+                   ? Array.Empty<(float?, string)>()
+                   : new[] { (secondDelta, secondLabel) },
+               target);
+
+    /// <summary>Wie oben, mit beliebig vielen weiteren Vergleichen unter dem Delta.</summary>
+    public void Update(float? delta, string label, float ghostSecondsLeft,
+                       IReadOnlyList<(float? Delta, string Label)> extras, string target = "")
     {
         var changed = _delta != delta || _label != label
-                      || _secondDelta != secondDelta || _secondLabel != secondLabel
+                      || !_extras.SequenceEqual(extras)
                       || _target != target
                       || Math.Abs(_ghostLeft - ghostSecondsLeft) > 0.05f;
         _delta = delta;
         _label = label;
-        _secondDelta = secondDelta;
-        _secondLabel = secondLabel;
+        _extras = extras.ToArray();
         _target = target;
         _ghostLeft = ghostSecondsLeft;
         if (changed || _eingabenNeu)
@@ -942,23 +950,29 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
                               deltaFont, labelFont);
             var unten = deltaPlace.Y + (height / Math.Max(1, _flaeche.Height)) + 0.004f;
 
-            if (!string.IsNullOrEmpty(_secondLabel))
+            // Jeder weitere Vergleich sitzt darunter, kleiner: er beantwortet eine andere
+            // Frage und darf die erste nicht ueberstrahlen.
+            if (_extras.Count > 0)
             {
-                // Der zweite Vergleich sitzt direkt darunter, kleiner: er beantwortet
-                // eine andere Frage und darf die erste nicht ueberstrahlen.
-                var second = _settings.DeltaPlacement with
+                // Liegt der Geister-Block direkt unter dem Delta (die Vorgabe), beginnen die
+                // weiteren Zahlen unter IHM -- immer, auch wenn er gerade nicht steht: sonst
+                // sprangen sie nach dem Countdown mitten im Rennen nach oben.
+                if (ghostPlace.Y >= deltaPlace.Y && ghostPlace.Y < unten + 0.02f
+                    && Math.Abs(ghostPlace.X - deltaPlace.X) < 0.2f)
                 {
-                    Y = deltaPlace.Y + height / Math.Max(1, _flaeche.Height) + 0.004f,
-                    Scale = deltaPlace.Scale * 0.62f,
-                };
-                using var secondFont = new Font("Segoe UI Semibold", _unit * 2.2f * second.Scale);
-                using var secondLabelFont = new Font("Segoe UI", _unit * 0.72f * second.Scale);
-                var secondColour = _secondDelta is null
-                    ? neutral
-                    : (_secondDelta < 0 ? ahead : behind);
-                var zweiteHoehe = Draw(g, second, Format(_secondDelta), secondColour, _secondLabel,
-                                       secondFont, secondLabelFont);
-                unten = second.Y + (zweiteHoehe / Math.Max(1, _flaeche.Height)) + 0.004f;
+                    var geistHoehe = g.MeasureString("GHOST 00.0", ghostFont).Height + _unit;
+                    unten = Math.Max(unten, ghostPlace.Y + (geistHoehe / Math.Max(1, _flaeche.Height)) + 0.004f);
+                }
+                var klein = deltaPlace with { Scale = deltaPlace.Scale * 0.62f };
+                using var extraFont = new Font("Segoe UI Semibold", _unit * 2.2f * klein.Scale);
+                using var extraLabelFont = new Font("Segoe UI", _unit * 0.72f * klein.Scale);
+                foreach (var (extraDelta, extraLabel) in _extras)
+                {
+                    var zeile = klein with { Y = unten };
+                    var extraColour = extraDelta is null ? neutral : (extraDelta < 0 ? ahead : behind);
+                    var hoehe = Draw(g, zeile, Format(extraDelta), extraColour, extraLabel, extraFont, extraLabelFont);
+                    unten = zeile.Y + (hoehe / Math.Max(1, _flaeche.Height)) + 0.004f;
+                }
             }
 
             // DIE ZEIT ZUM SCHLAGEN (seit 2026-09-27): eine Zeile darunter, in Gold wie

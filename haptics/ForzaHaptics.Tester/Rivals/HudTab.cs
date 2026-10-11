@@ -436,6 +436,55 @@ internal sealed class HudLayoutCanvas : Control
             _boxes[part] = kasten;
             Draw(g, part, kasten, einheit);
         }
+        WeitereDeltas(g, einheit);
+    }
+
+    /// <summary>Die angekreuzten weiteren Vergleiche, kleiner unter dem Delta -- wie im Streifen.</summary>
+    private void WeitereDeltas(Graphics g, float einheit)
+    {
+        if (!_boxes.TryGetValue(HudPart.Delta, out var oben)) { return; }
+        // Dieselbe Regel wie im Overlay (OverlayController.Zusaetze): "dual" heisst oben dieses
+        // Auto und darunter die PI-Klasse; der oben gewaehlte Vergleich steht nie doppelt.
+        var dual = string.Equals(_settings.DeltaReferenceMode, "dual", StringComparison.OrdinalIgnoreCase);
+        var haupt = dual ? DeltaReference.SameCar : OverlayController.ModusVon(_settings.DeltaReferenceMode ?? "tune");
+        var kennungen = new List<string>(_settings.ExtraDeltas);
+        if (dual) { kennungen.Add("class"); }
+        var modi = OverlayController.DeltaModes
+            .Where(k => k != "dual" && kennungen.Contains(k, StringComparer.OrdinalIgnoreCase))
+            .Select(OverlayController.ModusVon)
+            .Where(m => m != haupt)
+            .Distinct()
+            .ToList();
+        if (modi.Count == 0) { return; }
+        var lage = Place(HudPart.Delta);
+        using var gross = new Font("Segoe UI Semibold", Math.Max(2f, einheit * 2.2f * lage.Scale * 0.62f));
+        using var klein = new Font("Segoe UI", Math.Max(2f, einheit * 0.72f * lage.Scale * 0.62f));
+        using var platte = new SolidBrush(OverlaySettings.ParseColour(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16)));
+        using var leise = new SolidBrush(OverlaySettings.ParseColour(_settings.HudColorLabel, Color.Gray));
+        var beispiel = new[] { "+0.286", "-0.412", "+1.035", "-0.118", "+0.640" };
+        var y = oben.Bottom + 2;
+        // Wie im Streifen: unter dem Geister-Block, wenn er direkt darunter liegt.
+        if (_boxes.TryGetValue(HudPart.Ghost, out var geist)
+            && geist.Top >= oben.Top && geist.Top < y + 8 && geist.Right > oben.Left && geist.Left < oben.Right)
+        {
+            y = Math.Max(y, geist.Bottom + 2);
+        }
+        for (var i = 0; i < modi.Count; i++)
+        {
+            var zahl = beispiel[i % beispiel.Length];
+            var text = OverlayController.DeltaModeLabel(modi[i]);
+            var m1 = g.MeasureString(zahl, gross);
+            var m2 = g.MeasureString(text, klein);
+            var breite = Math.Max(m1.Width, m2.Width) + 2 * einheit;
+            var kasten = new RectangleF(oben.X + (oben.Width - breite) / 2, y, breite, m1.Height + m2.Height);
+            g.FillRectangle(platte, kasten);
+            using var stift = new SolidBrush(zahl.StartsWith('-')
+                ? OverlaySettings.ParseColour(_settings.HudColorAhead, Color.LightGreen)
+                : OverlaySettings.ParseColour(_settings.HudColorBehind, Color.IndianRed));
+            g.DrawString(zahl, gross, stift, kasten.X + (kasten.Width - m1.Width) / 2, kasten.Y);
+            g.DrawString(text, klein, leise, kasten.X + (kasten.Width - m2.Width) / 2, kasten.Y + m1.Height);
+            y = kasten.Bottom + 2;
+        }
     }
 
     private void Draw(Graphics g, HudPart part, RectangleF kasten, float einheit)
@@ -1079,6 +1128,19 @@ internal sealed class HudPartPanel : Panel
             Changed?.Invoke();
         };
         Rein(referenz);
+        // WEITERE DELTAS (seit 2026-10-11): jede angekreuzte Frage bekommt eine eigene,
+        // kleinere Zahl darunter -- etwa "dieses Auto" oben und "diese PI-Klasse" darunter.
+        Rein(Note(Loc.T("Also show, smaller, under it")));
+        foreach (var (kennung, text) in References.Where(r => r.Key != "dual"))
+        {
+            Schalter(text(), settings.ExtraDeltas.Contains(kennung, StringComparer.OrdinalIgnoreCase), an =>
+            {
+                _settings.ExtraDeltas.RemoveAll(k => string.Equals(k, kennung, StringComparison.OrdinalIgnoreCase));
+                if (an) { _settings.ExtraDeltas.Add(kennung); }
+            });
+        }
+        Rein(Note(Loc.T(
+            "Each ticked comparison gets its own smaller figure under the delta. The one chosen above is not shown twice.")));
         Rein(Note(Loc.T("Switch this while racing")));
         var taste = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var (_, name) in Keys) { taste.Items.Add(name); }

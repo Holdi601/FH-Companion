@@ -960,6 +960,26 @@ internal static class LapArchive
         public RecordedLap? Lap { get; set; }
     }
 
+    /// <summary>Jede abgelegte Fahrt, ausser den abgebrochenen ("unfinished").</summary>
+    internal static IEnumerable<RecordedLap> AlleFahrten(string? root = null)
+    {
+        var wurzel = root ?? Root;
+        if (!Directory.Exists(wurzel)) { yield break; }
+        var unfertig = Path.Combine(wurzel, UnfertigOrdner) + Path.DirectorySeparatorChar;
+        foreach (var datei in Directory.EnumerateFiles(wurzel, "*.json", SearchOption.AllDirectories))
+        {
+            if (datei.StartsWith(unfertig, StringComparison.OrdinalIgnoreCase)
+                || Path.GetFileName(datei).Equals("course.json", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            RecordedLap? lap = null;
+            try { lap = JsonSerializer.Deserialize<ArchivedLap>(File.ReadAllText(datei))?.Lap; }
+            catch (Exception) { }
+            if (lap is not null && lap.Samples.Count >= 3) { yield return lap; }
+        }
+    }
+
     /// <summary>
     /// Ist das ein Streckenname -- oder nur leer bzw. eine Ordnerkennung wie
     /// "course_-1850_1575_to_-1850_1575"?

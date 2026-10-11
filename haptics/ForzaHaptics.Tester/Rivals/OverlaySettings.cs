@@ -67,6 +67,12 @@ internal sealed class OverlaySettings
     /// </remarks>
     [JsonPropertyName("delta_reference")] public string DeltaReferenceMode { get; set; } = "tune";
 
+    /// <summary>
+    /// Weitere Vergleiche, kleiner unter dem Delta (seit 2026-10-11): dieselben Kennungen wie
+    /// <see cref="DeltaReferenceMode"/> ausser "dual". Leer in der Vorgabe.
+    /// </summary>
+    [JsonPropertyName("extra_deltas")] public List<string> ExtraDeltas { get; set; } = new();
+
     // Lage und Groesse der drei Anzeigen, als Anteil der Bildschirmbreite und -hoehe.
     // 0,5 / 0,02 mit "center" heisst: oben mittig. So laesst sich jedes Element
     // verschieben, ohne den Quelltext anzufassen.

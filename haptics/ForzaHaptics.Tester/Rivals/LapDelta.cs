@@ -1535,6 +1535,7 @@ internal sealed class LapLibrary
     {
         _path = path ?? DefaultPath;
         Load();
+        if (path is null) { EinmalNachfuellen(); }
     }
 
     public IReadOnlyList<RecordedLap> Laps => _laps;
@@ -1600,7 +1601,9 @@ internal sealed class LapLibrary
     /// </remarks>
     public const float MaxPlausibleMetresPerSecond = 125f;
 
-    public bool Add(RecordedLap lap)
+    public bool Add(RecordedLap lap) => Aufnehmen(lap, speichern: true);
+
+    private bool Aufnehmen(RecordedLap lap, bool speichern)
     {
         if (lap.LapSeconds <= 0 || lap.Samples.Count < 3) { return false; }
         var tempo = lap.LengthMetres / lap.LapSeconds;
@@ -1648,33 +1651,90 @@ internal sealed class LapLibrary
         _laps.Add(lap);
         gruppe.Add(lap);
 
-        if (gruppe.Count > JeStrasse)
+        if (gruppe.Count > JeStrasse && Verzichtbar(gruppe) is { } raus)
         {
-            var route = gruppe[0];
-            foreach (var k in gruppe)
-            {
-                if (k.RouteLength > route.RouteLength) { route = k; }
-            }
-            RecordedLap? schwaechste = null;
-            var wenigste = float.MaxValue;
-            foreach (var k in gruppe)
-            {
-                if (ReferenceEquals(k, route)) { continue; }
-                var weit = k.ArcReachedOn(route);
-                if (weit < wenigste) { wenigste = weit; schwaechste = k; }
-            }
-            if (schwaechste is not null)
-            {
-                _laps.Remove(schwaechste);
-                gruppe.Remove(schwaechste);
-            }
+            _laps.Remove(raus);
+            gruppe.Remove(raus);
         }
 
-        Save();
+        if (speichern) { Save(); }
 
         var jetztBeste = SchnellsteZumZiel(gruppe);
         // "true" heisst: ab jetzt wird gegen DIESE Fahrt gemessen.
         return ReferenceEquals(jetztBeste, lap) && !ReferenceEquals(vorherBeste, lap);
+    }
+
+    /// <summary>Wer aus einer vollen Gruppe weicht -- nie die schnellste Fahrt.</summary>
+    /// <remarks>
+    /// Bis 2026-10-11 wich "die am wenigsten weit gekommene". Sind alle bis ins Ziel
+    /// gekommen, ist das Rechenrauschen auf den letzten Metern, und es traf beliebige
+    /// Fahrten: 29 Runden Daikoku vom Donnerstag, darunter 61,316 s, verschwanden am
+    /// Freitag, waehrend 72,591 s blieb. Jetzt: zuerst der Abbruch, der am wenigsten weit
+    /// kam; sind alle im Ziel, die langsamste bis zum Ziel.
+    /// </remarks>
+    internal static RecordedLap? Verzichtbar(IReadOnlyList<RecordedLap> gruppe)
+    {
+        if (gruppe.Count < 2) { return null; }
+        var route = gruppe[0];
+        foreach (var k in gruppe)
+        {
+            if (k.RouteLength > route.RouteLength) { route = k; }
+        }
+        var ziel = RecordedLap.FinishArc(route, gruppe);
+        var beste = SchnellsteZumZiel(gruppe);
+        RecordedLap? abbruch = null;
+        var wenigste = float.MaxValue;
+        RecordedLap? langsamste = null;
+        var langsamsteZeit = float.MinValue;
+        foreach (var k in gruppe)
+        {
+            if (ReferenceEquals(k, beste)) { continue; }
+            var zeit = k.SecondsAtArcOf(route, ziel);
+            if (zeit is null)
+            {
+                if (ReferenceEquals(k, route)) { continue; }
+                var weit = k.ArcReachedOn(route);
+                if (weit < wenigste) { wenigste = weit; abbruch = k; }
+            }
+            else if (zeit.Value > langsamsteZeit)
+            {
+                langsamsteZeit = zeit.Value;
+                langsamste = k;
+            }
+        }
+        return abbruch ?? langsamste;
+    }
+
+    /// <summary>Fahrten aus dem Archiv aufnehmen, die der Bestand nicht (mehr) hat.</summary>
+    /// <remarks>
+    /// Das Archiv behaelt jede Fahrt, der Bestand nur sechs je Strasse -- und hat bis
+    /// 2026-10-11 dabei auch schnelle verloren (siehe <see cref="Verzichtbar"/>). Einmal
+    /// in zeitlicher Reihenfolge nachgereicht, bleiben je Gruppe die besten. Gespeichert
+    /// wird einmal am Schluss, nicht je Fahrt.
+    /// </remarks>
+    public int AusArchivNachfuellen(IEnumerable<RecordedLap> archiv)
+    {
+        var bekannt = new HashSet<DateTimeOffset>(_laps.Select(l => l.RecordedAt));
+        var neu = archiv.Where(l => !bekannt.Contains(l.RecordedAt)).OrderBy(l => l.RecordedAt).ToList();
+        foreach (var lap in neu) { Aufnehmen(lap, speichern: false); }
+        if (neu.Count > 0) { Save(); }
+        return neu.Count;
+    }
+
+    /// <summary>Einmal je Bestand: aus dem Archiv nachfuellen (Merkzettel daneben).</summary>
+    private void EinmalNachfuellen()
+    {
+        var merk = _path + ".archiv1";
+        try
+        {
+            if (File.Exists(merk) || !Directory.Exists(LapArchive.Root)) { return; }
+            var n = AusArchivNachfuellen(LapArchive.AlleFahrten());
+            File.WriteAllText(merk, DateTimeOffset.Now.ToString("O") + " " + n);
+        }
+        catch (Exception)
+        {
+            // Beim naechsten Start noch einmal.
+        }
     }
 
     /// <summary>

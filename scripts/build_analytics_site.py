@@ -1886,6 +1886,109 @@ function renderScans(host) {
     + "earlier scanning tool; current runs read the board from the screen."));
 }
 
+/* ---------- which boards most need a new scan (since 2026-10-11) ---------- */
+/* Every board that exists or could exist, oldest newest-scan first; never-scanned boards
+   lead. Category and track filters apply, the rest of the filters do not -- they are about
+   laps, this is about boards. The class filter does not apply either (see below). */
+let RESCAN_ALL = false;
+function renderRescan(host) {
+  const scans = (D.meta && D.meta.scans) || [];
+  const known = (D.meta && D.meta.known_routes) || {};
+  const last = {}, count = {}, depth = {};
+  scans.forEach(scan => {
+    const key = scan.t + "|" + scan.k;
+    count[key] = (count[key] || 0) + 1;
+    if (!last[key] || String(scan.when) > last[key]) last[key] = String(scan.when || "");
+  });
+  const rows = new Map();
+  D.boards.forEach(b => {
+    const track = D.tracks[b.t], cls = D.classes[b.k];
+    const key = track + "|" + cls;
+    depth[key] = Math.max(depth[key] || 0, b.maxRank || 0);
+    rows.set(key, { track, cls, cat: D.categories[b.c], key });
+  });
+  Object.keys(known).forEach(cat => {
+    (known[cat] || []).forEach(name => {
+      if (name.length > 40 || name.indexOf(",") >= 0) return;
+      CLASS_ORDER.forEach(cls => {
+        const key = name + "|" + cls;
+        if (!rows.has(key)) rows.set(key, { track: name, cls, cat, key });
+      });
+    });
+  });
+  const now = Date.now();
+  let list = Array.from(rows.values()).map(r => {
+    const when = last[r.key] || "";
+    const t = when ? Date.parse(when) : NaN;
+    return Object.assign(r, { when, days: isNaN(t) ? null : Math.max(0, Math.floor((now - t) / 86400000)),
+                              scans: count[r.key] || 0, depth: depth[r.key] || 0 });
+  });
+  // Every class, always: the class chips start on one class, and a visitor would see a
+  // seventh of the boards. Category and track narrow it.
+  list = list.filter(r => (!F.cat.size || F.cat.has(r.cat)) && (!F.tracks.size || F.tracks.has(r.track)));
+  list.sort((a, b) => {
+    if (!a.when !== !b.when) return a.when ? 1 : -1;
+    if (a.when !== b.when) return a.when < b.when ? -1 : 1;
+    return a.track.localeCompare(b.track) || CLASS_ORDER.indexOf(a.cls) - CLASS_ORDER.indexOf(b.cls);
+  });
+
+  const never = list.filter(r => !r.when).length;
+  const stale = list.filter(r => r.days !== null && r.days >= 14).length;
+  const tiles = el("div", "tiles");
+  [[num(list.length), "boards in view"],
+   [num(never), "never scanned"],
+   [num(stale), "last scanned 14+ days ago"],
+   [list.length && list[never] && list[never].days !== null ? list[never].days + " days" : "—", "oldest scan in view"]]
+    .forEach(pair => {
+      const d = el("div", "tile");
+      d.appendChild(el("b", null, pair[0]));
+      d.appendChild(el("span", "sub", pair[1]));
+      tiles.appendChild(d);
+    });
+  host.appendChild(tiles);
+
+  host.appendChild(el("h3", null, "Boards that most need a new scan"));
+  const intro = el("p", "sub2", "");
+  intro.appendChild(document.createTextNode("Top of the list first: boards nobody has scanned yet, then the boards whose newest scan is oldest. Scanning one of these helps the ratings the most \u2014 with the Scan tab in FH Companion, or the "));
+  const link = el("a", null, "contribute tool");
+  link.href = "/contribute";
+  intro.appendChild(link);
+  intro.appendChild(document.createTextNode(". All classes; the category and track filters above narrow the list."));
+  host.appendChild(intro);
+
+  const wrap = el("div", "tablewrap");
+  const table = el("table");
+  const head = el("tr");
+  [["#", true], ["Route", false], ["Class", false], ["Category", false], ["Last scan", false],
+   ["Age", true], ["Deepest rank", true], ["Scans", true]]
+    .forEach(([text, isNum]) => head.appendChild(el("th", isNum ? "num" : null, text)));
+  table.appendChild(head);
+  const shown = RESCAN_ALL ? list : list.slice(0, 50);
+  shown.forEach((r, i) => {
+    const tr = el("tr");
+    tr.appendChild(el("td", "num", String(i + 1)));
+    tr.appendChild(el("td", null, r.track));
+    tr.appendChild(el("td", null, r.cls));
+    tr.appendChild(el("td", "small", r.cat || ""));
+    tr.appendChild(el("td", "mono", r.when ? r.when.slice(0, 10) : "never"));
+    tr.appendChild(el("td", "num", r.days === null ? "—" : r.days + (r.days === 1 ? " day" : " days")));
+    tr.appendChild(el("td", "num", r.depth ? num(r.depth) : "—"));
+    tr.appendChild(el("td", "num", num(r.scans)));
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+  host.appendChild(wrap);
+  if (list.length > 50) {
+    const more = el("button", "chip", RESCAN_ALL ? "Show the first 50" : "Show all " + num(list.length));
+    more.type = "button";
+    more.onclick = () => { RESCAN_ALL = !RESCAN_ALL; render(); };
+    host.appendChild(more);
+  }
+  host.appendChild(el("p", "caveat",
+    "Dates are when a scan finished reading the board. A board is the union of all its scans, "
+    + "so an old scan is not wrong \u2014 it only misses the laps driven since."));
+}
+
 /* ---------- chrome ---------- */
 const TABS = [
   ["points", "Points ranking"],
@@ -1895,6 +1998,7 @@ const TABS = [
   ["spread", "Time spread"],
   ["contest", "Most contested"],
   ["scans", "Scan status"],
+  ["rescan", "Needs a rescan"],
 ];
 
 function renderTabs() {
@@ -2057,6 +2161,7 @@ function render() {
   else if (TAB === "spread") renderSpread(content);
   else if (TAB === "contest") renderContest(content);
   else if (TAB === "scans") renderScans(content);
+  else if (TAB === "rescan") renderRescan(content);
   else renderCar(content);
 }
 

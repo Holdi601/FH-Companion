@@ -672,6 +672,20 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--laps-refill", StringComparer.OrdinalIgnoreCase))
+        {
+            // Den eigenen Rundenbestand aus dem Archiv nachfuellen -- das tut die App sonst
+            // einmal beim naechsten Start (Merkzettel personal_laps.json.archiv1).
+            // Ausdruecklich mit Pfad: so fuellt der Konstruktor nicht schon selbst nach.
+            var echt = new Rivals.LapLibrary(Rivals.LapLibrary.DefaultPath);
+            var vorher = echt.Laps.Count;
+            var nachgereicht = echt.AusArchivNachfuellen(Rivals.LapArchive.AlleFahrten());
+            File.WriteAllText(Rivals.LapLibrary.DefaultPath + ".archiv1",
+                              DateTimeOffset.Now.ToString("O") + " " + nachgereicht);
+            Console.WriteLine($"{vorher} Fahrten im Bestand, {nachgereicht} aus dem Archiv nachgereicht, jetzt {echt.Laps.Count}.");
+            return;
+        }
+
         if (args.Contains("--tab-preview", StringComparer.OrdinalIgnoreCase))
         {
             // "--tab-preview scan|collection|tunes|racestats|auction [besitz.json] [x2]": einen Reiter
