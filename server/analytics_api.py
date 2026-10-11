@@ -310,9 +310,9 @@ def paketbauer():
 
 
 def guide_video(name: str, dist: Path | None = None) -> Path | None:
-    """Ein Anleitungsvideo oder sein Standbild aus dist/tutorials/ -- nur die bekannten Namen."""
+    """Ein Anleitungsvideo, der Trailer oder ein Standbild aus dist/tutorials/ -- nur die bekannten Namen."""
     import re
-    if not re.match(r"^fh-companion-setup-(pc|xbox)\.(mp4|jpg)$", name or ""):
+    if not re.match(r"^fh-companion-(setup-pc|setup-xbox|trailer)\.(mp4|jpg)$", name or ""):
         return None
     datei = (dist or DIST_DIR) / "tutorials" / name
     return datei if datei.is_file() else None

@@ -127,8 +127,8 @@ Ausdrücklich **nicht** dabei:
 - `build_analytics_site.py` — drüben wird nichts gebaut.
 - `build_contrib_package.py` — es schnürt das Scanner-Werkzeug aus rund zehn OCR- und
   Fernsteuerungsdateien, die drüben gar nicht liegen. Der Bau müsste scheitern.
-  Stattdessen geht das fertige Werkzeug als ZIP mit, und `/download/tool` liefert sie
-  aus, wenn der Bauer fehlt.
+  Stattdessen ging das fertige Werkzeug als ZIP mit, und `/download/tool` lieferte sie
+  aus, wenn der Bauer fehlte (bis 2026-10-11; seitdem ausgemustert).
 
 ## Was ausgeliefert wird — und was nicht
 

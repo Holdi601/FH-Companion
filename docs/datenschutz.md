@@ -162,8 +162,8 @@ beim ersten Start der App nennt diesen Schalter ausdrücklich.
 ### 5. Die Besucherstatistik der Seite
 
 Seit dem 2026-09-25 zählt der Server, wie oft die öffentlichen Seiten aufgerufen
-werden (Auswertung, `/app`, `/contribute`) — je Stunde, Tag, Land und Region — und
-wie oft jede Fassung der App und des Scan-Werkzeugs geladen wurde.
+werden (Auswertung, `/app`) — je Stunde, Tag, Land und Region — und wie oft jede
+Fassung der App geladen wurde.
 
 **Ohne Cookie, ohne gespeicherte Adresse.** Ein Besucher ist
 `HMAC(Tagessalz, IP + Browserkennung)`, gekürzt auf 16 Zeichen. Das Tagessalz

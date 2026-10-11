@@ -119,6 +119,9 @@ table.settings td:first-child { color: var(--muted); }
 .guides video { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #000;
   border: 1px solid var(--border); box-shadow: var(--shadow); display: block; }
 .guides figcaption { margin-top: 8px; font-size: 14px; color: var(--muted); }
+.trailer { margin: 18px 0 6px; }
+.trailer video { width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; background: #000;
+  border: 1px solid var(--border); box-shadow: var(--shadow); display: block; }
 .guides figcaption b { color: var(--ink); font-weight: 600; margin-right: 8px; }
 footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 [dir="rtl"] ul { padding-left: 0; padding-right: 20px; }
@@ -139,6 +142,11 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
       <a class="button" href="/download/haptics" id="dl">Download</a>
       <div class="facts" id="facts"><div class="mono">…</div></div>
     </div>
+  </div>
+
+  <!-- Der Trailer (seit 2026-10-11) gleich unter dem Download, vom eigenen Server wie die Anleitungen. -->
+  <div class="trailer">
+    <video controls preload="none" playsinline poster="/guide/fh-companion-trailer.jpg" src="/guide/fh-companion-trailer.mp4"></video>
   </div>
 
   <h2 id="h-setup"></h2>

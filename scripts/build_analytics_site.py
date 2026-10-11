@@ -300,8 +300,6 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
     <p class="ways">
       <a href="/app">FH Companion &mdash; the app for these ratings</a>
       <span class="sep">&middot;</span>
-      <a href="/contribute">Contribute &mdash; scan and share</a>
-      <span class="sep">&middot;</span>
       <a href="/admin">Admin</a>__SOURCE_WAY__
     </p>
   </header>
@@ -1949,9 +1947,9 @@ function renderRescan(host) {
 
   host.appendChild(el("h3", null, "Boards that most need a new scan"));
   const intro = el("p", "sub2", "");
-  intro.appendChild(document.createTextNode("Top of the list first: boards nobody has scanned yet, then the boards whose newest scan is oldest. Scanning one of these helps the ratings the most \u2014 with the Scan tab in FH Companion, or the "));
-  const link = el("a", null, "contribute tool");
-  link.href = "/contribute";
+  intro.appendChild(document.createTextNode("Top of the list first: boards nobody has scanned yet, then the boards whose newest scan is oldest. Scanning one of these helps the ratings the most \u2014 with the Scan leaderboards tab in "));
+  const link = el("a", null, "FH Companion");
+  link.href = "/app";
   intro.appendChild(link);
   intro.appendChild(document.createTextNode(". All classes; the category and track filters above narrow the list."));
   host.appendChild(intro);

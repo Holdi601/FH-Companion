@@ -1,5 +1,10 @@
 # Fremde Scans annehmen
 
+> **Seit 2026-10-11 ausgemustert:** das reine Scan-Werkzeug steht nicht mehr auf der
+> Website (`/contribute` leitet auf `/app` um, `/download/tool` antwortet 410). Gescannt
+> wird im Reiter "Scan leaderboards" von FH Companion. Die Annahme `/api/contribute`
+> bleibt fuer bereits verteilte Werkzeuge bestehen.
+
 Freunde scannen Boards auf ihrem eigenen Rechner und schicken die Zeilen zurück. Es
 ist derselbe Scanner wie hier, nur ohne VM — die Bilder kommen vom eigenen Bildschirm.
 

@@ -108,7 +108,6 @@ CODE = [
     # und /admin verlinkte: jeder Klick endete in "404 -- app_page.html is
     # missing". Aufgefallen ist es erst, als der Nutzer den Downloadlink anklickte.
     "server/app_page.html",
-    "server/contribute_page.html",
     "server/admin_page.html",
     "server/usage.py",
     # Seit 2026-09-24: die Pruefung gegen die Bestenliste und die Sperrliste der
@@ -163,12 +162,14 @@ INHALT = [
     # der App hat nichts zu vergleichen. Er wuerde still nie aktualisieren,
     # ohne dass irgendwo ein Fehler erschiene.
     "dist/fh-companion-latest.zip.meta.json",
-    "dist/forza-contrib-tool.zip",
     # Die Anleitungsvideos fuer die Download-Seite (/guide/...).
     "dist/tutorials/fh-companion-setup-pc.mp4",
     "dist/tutorials/fh-companion-setup-xbox.mp4",
     "dist/tutorials/fh-companion-setup-pc.jpg",
     "dist/tutorials/fh-companion-setup-xbox.jpg",
+    # Der Trailer neben dem Download (/guide/fh-companion-trailer.mp4, 1080p, rund 33 MB).
+    "dist/tutorials/fh-companion-trailer.mp4",
+    "dist/tutorials/fh-companion-trailer.jpg",
 ]
 
 GEHEIM = ["config/contrib_keys.json"]

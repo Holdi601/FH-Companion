@@ -541,7 +541,14 @@ def make_handler(root: Path, page: Path, builder: Path):
                                "No haptics package has been built yet. "
                                "Build one with: python scripts/build_haptics_package.py")
                 return
-            if self.path.startswith("/api/") or self.path == "/download/tool":
+            if self.path == "/download/tool":
+                # DAS WERKZEUG IST AUSGEMUSTERT (seit 2026-10-11): gescannt wird im Reiter
+                # "Scan leaderboards" von FH Companion.
+                self.send_api(410, "text/plain; charset=utf-8",
+                              b"The scan-only tool is retired. Scanning is built into FH Companion "
+                              b"(Scan leaderboards tab): /app")
+                return
+            if self.path.startswith("/api/"):
                 # Die Seite kann veraltet sein, der Datensatz nicht: die App fragt
                 # genau deshalb nach.
                 rebuild_if_stale(root, page, builder, self.note)
@@ -550,17 +557,6 @@ def make_handler(root: Path, page: Path, builder: Path):
                 status, content_type, payload = analytics_api.handle(
                     "GET", self.path, self.headers, b"",
                     client=self.client_address[0] if self.client_address else "")
-                if self.path == "/download/tool" and status >= 400:
-                    self.note(f"/download/tool abgelehnt ({status}) "
-                              f"fuer {self.address_string()}")
-                if (self.path == "/download/tool" and status == 200
-                        and content_type == "application/zip"):
-                    try:
-                        if downloads.zaehlt(self.command, self.headers.get("Range")):
-                            downloads.note("tool", downloads.fassung_aus_bytes(
-                                payload, "forza-contrib-tool.zip"), self.headers.get("User-Agent"))
-                    except Exception:
-                        pass
                 name = ("forza-contrib-tool.zip" if content_type == "application/zip"
                         else analytics_api.download_name(self.path) if status == 200
                         else None)
@@ -628,16 +624,11 @@ def make_handler(root: Path, page: Path, builder: Path):
                 return
             if self.path in ("/mitmachen", "/mitmachen/", "/contribute",
                              "/contribute.html"):
-                # Wie die Admin-Seite aus dem Skriptverzeichnis: sie hat im Ordner
-                # der Auswertungsseite nichts verloren, der wird alle fuenf Boards
-                # neu gebaut. Reines HTML, kein Geheimnis darin -- der Upload wird
-                # am Paket geprueft, nicht am Absender dieser Seite.
-                page_file = Path(__file__).resolve().parent / "contribute_page.html"
-                if not page_file.exists():
-                    self.send_error(404, "contribute_page.html is missing")
-                    return
-                self.send_api(200, "text/html; charset=utf-8",
-                              page_file.read_bytes().replace(b"__SOURCE_LINK__", quelltext_link()))
+                # Die Seite des reinen Scan-Werkzeugs gibt es nicht mehr (seit 2026-10-11):
+                # alte Links landen bei der App, die selbst scannt.
+                self.send_response(302)
+                self.send_header("Location", "/app")
+                self.end_headers()
                 return
             if self.path in ("/", "/index.html"):
                 rebuild_if_stale(root, page, builder, self.note)
