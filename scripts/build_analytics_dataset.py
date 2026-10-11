@@ -44,6 +44,11 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 
+# Das Siegel der App-Laeufe (server/run_seal.py) -- dieselbe Pruefung wie auf dem Server.
+import sys  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
+import run_seal  # noqa: E402
+
 # Bit order of the assist signature. `clean` is bit 0 and means the lap was VALID, so
 # a filter for invalid laps asks for bit 0 clear.
 FLAGS = [
@@ -607,13 +612,19 @@ def hidden_run_ids(path: Path | None = None) -> dict[str, str]:
 
 
 def discover_runs(root: Path, extra_roots: list[Path],
-                  hidden: dict[str, str]) -> tuple[list[tuple[Path, str]], int]:
+                  hidden: dict[str, str], seal_key: str | None = None) -> tuple[list[tuple[Path, str]], int]:
     """Alle Laufverzeichnisse, jeweils mit ihrer Herkunft, ohne die ausgeblendeten.
 
     Die Herkunft ist der Name des Unterordners unter `contrib` -- also der Beitragende
     -- oder "local" fuer die eigenen Laeufe. Sie steht spaeter an jedem Scan, damit auf
     der Seite sichtbar ist, wessen Zahlen man gerade ansieht.
+
+    EIN APP-LAUF NUR MIT PASSENDEM SIEGEL (seit 2026-10-11, server/run_seal.py): wurde eine
+    seiner Dateien nach der Annahme geaendert, faellt er weg -- mit einer Zeile, warum.
+    `seal_key` None heisst: den Schluessel aus config/contrib_keys.json nehmen.
     """
+    if seal_key is None:
+        seal_key = run_seal.schluessel_aus(Path(__file__).resolve().parent.parent / "config" / "contrib_keys.json")
     found: list[tuple[Path, str]] = []
     skipped = 0
     for state_path in sorted(root.glob("*/state.json")):
@@ -629,6 +640,12 @@ def discover_runs(root: Path, extra_roots: list[Path],
             if state_path.parent.name in hidden:
                 skipped += 1
                 continue
+            if state_path.parent.parent.name.startswith("app-"):
+                warum = run_seal.pruefen(state_path.parent, seal_key)
+                if warum:
+                    print("  App-Lauf ausgelassen (%s): %s" % (warum, state_path.parent.name))
+                    skipped += 1
+                    continue
             found.append((state_path, state_path.parent.parent.name))
     return found, skipped
 

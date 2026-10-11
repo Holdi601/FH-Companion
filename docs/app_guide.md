@@ -344,6 +344,18 @@ row: rank, time, car, PI, drivetrain, gearbox and assists. Gamertags are not rea
   the app is online. Untick it to keep scans on your disk only
   (`%LOCALAPPDATA%\FHCompanion\scans`). A "Server Error" in the game pauses the queue
   for a while and tries the board once more; a second one stops the queue.
+- **What the website accepts.** A scan is added automatically, without anyone
+  approving it, when it passes the server's checks:
+  - at least 3,000 ranks, or the whole board if it is shorter (90 % of the depth the
+    website already knows); keep **First ranks only** at 0 or at least 3,000;
+  - its fastest times match the ones already known for that board, and the best lap
+    is not more than 5 % under the known one; a new board must fit between the
+    neighbouring classes of the same route;
+  - it reads like a real board: times rise with the rank, PI values belong to the
+    class, the reading speed is one the app can reach, and no single car brings a
+    handful of new top times.
+  A scan that fails a check is kept on the server and the app says why; the admin can
+  still accept it, and can remove any scan later.
 - Only one automation drives the game at a time: while **Check my bids now** runs,
   a scan does not start, and the other way round.
 

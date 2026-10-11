@@ -52,6 +52,7 @@ internal sealed class ScanTab : UserControl
     private readonly NumericUpDown _obergrenze = new();
     private readonly CheckBox _hochladen = new();
     private readonly Label _warnung = new();
+    private readonly Label _anforderungen = new();
     private readonly Button _start;
     private readonly Button _stop;
     private readonly Label _aktuell = new();
@@ -174,6 +175,13 @@ internal sealed class ScanTab : UserControl
         };
         optionen.Controls.Add(_hochladen);
         _oben.Controls.Add(optionen);
+
+        // WAS DER SERVER VERLANGT (seit 2026-10-11) -- vor dem Scan zu lesen, nicht erst danach.
+        _anforderungen.Text = Loc.T("A scan reaches the website on its own when it covers at least 3,000 ranks (or the whole board, if it is shorter), its fastest times match the ones already known, and it reads like a real board. Otherwise the server keeps it and the admin decides. Keep \"First ranks only\" at 0 or at least 3,000.");
+        _anforderungen.AutoSize = true;
+        _anforderungen.ForeColor = Color.Silver;
+        _anforderungen.Margin = new Padding(8, 2, 3, 2);
+        _oben.Controls.Add(_anforderungen);
 
         _warnung.Text = Loc.T("While the scan runs, this PC belongs to the scanner: it sends keys to the game and reads the screen. Do not touch the mouse or keyboard. Switching to another window or pressing the Pause key stops it. Start it from a menu in the game, never while you drive.");
         _warnung.AutoSize = true;
@@ -677,6 +685,7 @@ internal sealed class ScanTab : UserControl
     {
         var breite = Math.Max(240, ClientSize.Width - _links.Width - 40);
         _warnung.MaximumSize = new Size(breite, 0);
+        _anforderungen.MaximumSize = new Size(breite, 0);
         _status.MaximumSize = new Size(breite, 0);
         _aktuell.MaximumSize = new Size(breite, 0);
     }

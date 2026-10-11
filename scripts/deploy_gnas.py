@@ -94,6 +94,8 @@ CODE = [
     "server/race_submissions.py",
     # Bestenlisten-Scans aus der App (2026-10-04) -- ebenso von analytics_api importiert.
     "server/scan_submissions.py",
+    # Das Siegel der App-Laeufe (seit 2026-10-11): der Server siegelt, der Bau hier prueft.
+    "server/run_seal.py",
     "server/contrib_format.py",
     "server/import_contrib.py",
     "server/contrib_keys.py",

@@ -857,24 +857,19 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
             zustand, zeilen, auffaellig = scans.pruefe_lauf(
                 anfrage.get("state"), anfrage.get("rows"), bekannt, now)
             scans.tageskontingent(install_id, root, now)
-            # DAS TOR: eine App meldet sich frei an, also geht ihr Lauf nur von selbst
-            # in den Datensatz, wenn er zu einem bekannten Board passt. Sonst liegt er
-            # ausgeblendet da, mit Grund, bis der Admin ihn einblendet.
-            # Vertraut ist eine Installation erst, wenn der Admin VERTRAUEN_AB ihrer
-            # zurueckgehaltenen Laeufe eingeblendet hat -- alles andere am Tor laesst sich
-            # aus den oeffentlichen Daten abschreiben.
-            versteckt = {(e if isinstance(e, str) else str(e.get("run_id") or ""))
-                         for e in load_visibility(visibility).get("hidden", [])
-                         if isinstance(e, (str, dict))}
-            vertraut = scans.freigegeben(install_id, versteckt, root) >= scans.VERTRAUEN_AB
-            grund = scans.freigabe(zustand, zeilen, bekannt, vertraut)
+            # DAS TOR: was jede automatische Pruefung besteht, geht von selbst in den
+            # Datensatz (seit 2026-10-11 auch von einer neuen Installation). Sonst liegt
+            # es ausgeblendet da, mit Grund; der Admin blendet aus und ein.
+            grund = scans.freigabe(zustand, zeilen, bekannt)
+            # Das Siegel: ohne Schluessel keins -- und ohne Siegel nimmt der Bau den Lauf nicht.
+            siegel = str((keys if keys is not None else load_keys()).get("run_seal") or "")
 
             def ausblenden(run_id: str, warum: str | None) -> None:
                 set_visibility(run_id, warum is not None, warum or "", visibility)
 
             d = scans.store(install_id, zustand, zeilen, auffaellig,
                             contrib_root=contrib_root, root=root, now=now,
-                            zurueckhalten=grund, ausblenden=ausblenden)
+                            zurueckhalten=grund, ausblenden=ausblenden, siegel=siegel)
             return as_json(200, {"ok": True, "id": d["id"], "run_id": d["run_id"],
                                  "rows": d["rows"], "flags": auffaellig,
                                  "held": bool(grund), "reason": grund,

@@ -197,15 +197,27 @@ internal static class ScanUpload
                 return new Antwort(false, Loc.T("The server did not take the scan: ") + Fehlertext(text, (int)antwort.StatusCode));
             }
             var zahl = 0;
+            var gehalten = false;
+            var grund = string.Empty;
             try
             {
-                zahl = JsonNode.Parse(text)?["rows"]?.GetValue<int>() ?? 0;
+                var knoten = JsonNode.Parse(text);
+                zahl = knoten?["rows"]?.GetValue<int>() ?? 0;
+                // ZURUECKGEHALTEN (seit 2026-10-11 gesagt): bis dahin hiess es auch dann "erreicht die
+                // Seite", wenn eine Pruefung des Servers ihn angehalten hatte.
+                gehalten = knoten?["held"]?.GetValue<bool>() ?? false;
+                grund = knoten?["reason"]?.GetValue<string>() ?? string.Empty;
             }
             catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException)
             {
                 // Angenommen ist angenommen -- auch wenn die Antwort nicht die erwartete Form hat.
             }
             Quittieren(laufOrdner, wer.Server, text);
+            if (gehalten)
+            {
+                return new Antwort(true, string.Format(CultureInfo.CurrentCulture,
+                    Loc.T("Sent: {0} rows, but held back by the server's checks: {1}"), zahl, grund));
+            }
             return new Antwort(true, string.Format(CultureInfo.CurrentCulture,
                 Loc.T("Sent: {0} rows. They reach the site with the next dataset update."), zahl));
         }

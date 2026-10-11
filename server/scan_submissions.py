@@ -43,14 +43,18 @@ Zeilen selbst statt aus dem, was die App behauptet. Merkwuerdiges -- Zeiten, die
 Platz fallen, ein Board, das der Datensatz nicht kennt -- wird angenommen und markiert,
 damit ein Mensch es ansieht.
 
-## Das Tor (seit 2026-10-04)
+## Das Tor (seit 2026-10-04, ohne Freigabe von Hand seit 2026-10-11)
 
-Eine App meldet sich ohne Passwort an. Was sie schickt, wird darum zwar immer abgelegt,
-geht aber nur dann von selbst in den Datensatz, wenn der Admin schon VERTRAUEN_AB Laeufe
-dieser Installation eingeblendet hat, das Board dort schon steht, seine Spitzenzeiten zu
-denen des Datensatzes passen und es mindestens UNBEWIESEN_ZEILEN Zeilen hat (freigabe()).
-Sonst steht der Lauf vom ersten Augenblick an auf der Sichtbarkeitsliste, mit dem Grund
-("unknown board", "times do not match", ...), und der Admin blendet ihn ein.
+Was eine App schickt, wird immer abgelegt und geht von selbst in den Datensatz, wenn es
+jede automatische Pruefung besteht (freigabe()). Der Nutzer am 2026-10-11: "automated
+validation ... otherwise it should be automatically added, and the admin only removes it
+manually when he thinks a scan is fishy". Bis dahin wartete jede neue Installation, bis
+der Admin zwei ihrer Laeufe eingeblendet hatte -- auch die des Betreibers selbst.
+
+Besteht ein Lauf eine Pruefung nicht, steht er vom ersten Augenblick an auf der
+Sichtbarkeitsliste, mit dem Grund. Der Admin kann jeden Lauf jederzeit aus- und wieder
+einblenden. Jeder angenommene Lauf wird versiegelt (run_seal.py); der Datensatzbau nimmt
+einen App-Lauf nur mit passendem Siegel.
 
 Derselbe Lauf (run_id) zweimal: abgelehnt. Ein Lauf wird nie ueberschrieben.
 """
@@ -72,6 +76,7 @@ from pathlib import Path
 import contrib_format as fmt
 import import_contrib
 import lap_submissions as laps
+import run_seal
 
 WORKSPACE = Path(__file__).resolve().parent.parent
 CONTRIB_ROOT = import_contrib.CONTRIB_ROOT
@@ -335,9 +340,35 @@ GRUND_UNBEKANNT = "unknown board"
 GRUND_ZEITEN = "times do not match"
 GRUND_KEIN_DATENSATZ = "dataset not readable"
 GRUND_DIENST = "server error during the scan"
-# Die ersten Laeufe einer Installation sieht immer ein Mensch an (freigegeben()).
-VERTRAUEN_AB = 2
-GRUND_NEU = "new installation: its first scans are reviewed"
+# DIE INNEREN PRUEFUNGEN (seit 2026-10-11). Der Scanner der App wirft selbst weg, was die
+# Folge bricht: an den beiden echten Laeufen vom 2026-10-11 (Electric Town Circuit A und S1)
+# fiel keins von 32.840 Zeitpaaren, und keiner von 32.852 PI-Werten lag ausserhalb der Klasse.
+# Mehr als ein Rest Leserauschen ist darum kein Lesefehler.
+HALT_FALLEND = 0.005
+HALT_PI = 0.01
+# Gelesen werden rund 16 Zeilen je Sekunde (dieselben Laeufe: 15,8 und 15,9).
+HALT_TEMPO = 40.0
+# Bis 2 % schneller als der Datensatz: nur markiert (Festival Chase A, 2026-10-04: 2,2 % und
+# richtig). Ab 5 %: zurueckgehalten.
+HALT_SCHNELLER = 0.05
+# So viele Spitzenzeiten (unter der 20. bekannten), die der Datensatz nicht kennt, darf ein
+# einziges Auto mitbringen. Eine erfundene Liste, die ein Auto nach vorn schieben soll, braucht
+# davon viele; echte neue Bestzeiten verteilen sich.
+HALT_NEU_JE_AUTO = 4
+# Ein neues Board: seine Bestzeit liegt zwischen denen der Nachbarklassen derselben Strecke,
+# mit diesem Spielraum.
+NACHBAR_SPIELRAUM = 0.03
+REIHENFOLGE = ("D", "C", "B", "A", "S1", "S2", "R")
+# MINDESTENS SO VIELE RAENGE (seit 2026-10-11, Wunsch des Nutzers: "dass man nicht einfach
+# rank 1 scanned und dann ars das ... 3-5k"). Viele Boards sind kleiner (Cross-Country D:
+# 1.500-2.300 Eintraege) -- fuer sie reichen 90 % der Tiefe, die der Datensatz schon kennt.
+MINDEST_ZEILEN = 3000
+MINDEST_ANTEIL_BEKANNT = 0.90
+
+
+class Brett(list):
+    """Die Spitzenzeiten eines Boards (ms, aufsteigend) -- und wie tief der Datensatz es kennt."""
+    tiefe: int = 0
 
 _ZEITEN_SCHLOSS = threading.Lock()
 _ZEITEN: dict = {"schluessel": None, "bretter": {}}
@@ -386,10 +417,17 @@ def bretter_zeiten(dataset_file: Path) -> dict:
                 if aktuell and sig & aktuell:
                     jetzt.append(int(ms))
             zeiten = sorted(jetzt or alle)[:PRUEF_SPITZE]
+            tiefe = b.get("maxRank")
+            if not isinstance(tiefe, int) or isinstance(tiefe, bool):
+                raenge = [r for r in (b.get("lrank") or []) if isinstance(r, int) and not isinstance(r, bool)]
+                tiefe = max(raenge, default=0)
             # Dasselbe Board zweimal (sollte es nicht geben): die Vereinigung.
             if key in bretter:
+                tiefe = max(tiefe, bretter[key].tiefe)
                 zeiten = sorted(bretter[key] + zeiten)[:PRUEF_SPITZE]
-            bretter[key] = zeiten
+            brett = Brett(zeiten)
+            brett.tiefe = tiefe
+            bretter[key] = brett
         _ZEITEN.update({"schluessel": schluessel, "bretter": bretter})
         return bretter
 
@@ -431,13 +469,93 @@ def zeiten_passen(bekannt: list, zeilen: list) -> bool:
     return treffer(bekannt, zeilen) >= math.ceil(len(bekannt) * PRUEF_ANTEIL)
 
 
-def viel_schneller(bekannt: list, zeilen: list) -> bool:
-    """Ist die beste gueltige Zeit des Laufs mehr als PRUEF_SCHNELLER unter der des Datensatzes?"""
+def _beste_ms(zeilen: list) -> int:
+    gueltig = [z["lap_time_seconds"] for z in zeilen if z.get("is_clean") is True]
+    return int(round(float(min(gueltig or [z["lap_time_seconds"] for z in zeilen])) * 1000))
+
+
+def viel_schneller(bekannt: list, zeilen: list, anteil: float = PRUEF_SCHNELLER) -> bool:
+    """Ist die beste gueltige Zeit des Laufs mehr als `anteil` unter der des Datensatzes?"""
     if not bekannt or not zeilen:
         return False
-    gueltig = [z["lap_time_seconds"] for z in zeilen if z.get("is_clean") is True]
-    beste = int(round(float(min(gueltig or [z["lap_time_seconds"] for z in zeilen])) * 1000))
-    return beste < min(bekannt) * (1 - PRUEF_SCHNELLER)
+    return _beste_ms(zeilen) < min(bekannt) * (1 - anteil)
+
+
+def neue_spitzen_je_auto(bekannt: list, zeilen: list) -> tuple[int, str]:
+    """Das Auto mit den meisten neuen Spitzenzeiten: (Anzahl, Auto).
+
+    Neu ist eine gueltige Zeit bis zur langsamsten bekannten Spitzenzeit, die keiner bekannten
+    auf PRUEF_TOLERANZ_MS gleicht.
+    """
+    if not bekannt or not zeilen:
+        return 0, ""
+    grenze = max(bekannt) + PRUEF_TOLERANZ_MS
+    zaehler: dict = {}
+    for z in zeilen:
+        if z.get("is_clean") is not True:
+            continue
+        ms = int(round(float(z["lap_time_seconds"]) * 1000))
+        if ms > grenze:
+            continue
+        i = bisect.bisect_left(bekannt, ms - PRUEF_TOLERANZ_MS)
+        if i < len(bekannt) and bekannt[i] <= ms + PRUEF_TOLERANZ_MS:
+            continue
+        auto = str(z.get("car_id") or z.get("car_short_id") or z.get("car_name") or "?")
+        zaehler[auto] = zaehler.get(auto, 0) + 1
+    if not zaehler:
+        return 0, ""
+    auto = max(zaehler, key=zaehler.get)
+    return zaehler[auto], auto
+
+
+def innere_pruefung(zustand: dict, zeilen: list) -> list:
+    """Was am Lauf selbst nicht stimmt -- ohne Datensatz. Gruende zum Zurueckhalten."""
+    gruende = []
+    sauber_zeiten = [z["lap_time_seconds"] for z in zeilen if z.get("is_clean") is True]
+    paare = max(1, len(sauber_zeiten) - 1)
+    fallend = sum(1 for a, b in zip(sauber_zeiten, sauber_zeiten[1:]) if b < a)
+    if fallend / paare > HALT_FALLEND:
+        gruende.append("lap times fall as the rank rises (%d of %d)" % (fallend, paare))
+    grenze = PI_GRENZEN.get(str(zustand.get("performance_class") or ""))
+    mit_pi = [z["pi"] for z in zeilen if "pi" in z]
+    if grenze and mit_pi:
+        aussen = sum(1 for p in mit_pi if not grenze[0] < p <= grenze[1])
+        if aussen / len(mit_pi) > HALT_PI:
+            gruende.append("PI outside the class (%d of %d)" % (aussen, len(mit_pi)))
+    sekunden = zustand.get("seconds")
+    if not isinstance(sekunden, (int, float)) or isinstance(sekunden, bool) or sekunden <= 0:
+        gruende.append("no scan duration")
+    elif len(zeilen) / sekunden > HALT_TEMPO:
+        gruende.append("read at %.0f rows a second -- faster than the app can" % (len(zeilen) / sekunden))
+    gelesen = zustand.get("readings")
+    if isinstance(gelesen, int) and not isinstance(gelesen, bool) and gelesen < len(zeilen):
+        gruende.append("fewer readings (%d) than rows (%d)" % (gelesen, len(zeilen)))
+    return gruende
+
+
+def nachbarn_passen(bretter: dict, zustand: dict, zeilen: list) -> str | None:
+    """Ein neues Board gegen die Nachbarklassen derselben Strecke -- None, wenn es passt.
+
+    Eine hoehere Klasse ist schneller: die Bestzeit liegt nicht weit ueber der der Klasse
+    darunter und nicht weit unter der der Klasse darueber.
+    """
+    klasse = str(zustand.get("performance_class") or "").upper()
+    if klasse not in REIHENFOLGE or not zeilen:
+        return None
+    i = REIHENFOLGE.index(klasse)
+
+    def beste(k: str):
+        b = brett_von(bretter, dict(zustand, performance_class=k))
+        return min(b) if b else None
+
+    meine = _beste_ms(zeilen)
+    unten = beste(REIHENFOLGE[i - 1]) if i > 0 else None
+    oben = beste(REIHENFOLGE[i + 1]) if i + 1 < len(REIHENFOLGE) else None
+    if unten is not None and meine > unten * (1 + NACHBAR_SPIELRAUM):
+        return "best lap %.3f s is slower than class %s's %.3f s" % (meine / 1000, REIHENFOLGE[i - 1], unten / 1000)
+    if oben is not None and meine < oben * (1 - NACHBAR_SPIELRAUM):
+        return "best lap %.3f s is faster than class %s's %.3f s" % (meine / 1000, REIHENFOLGE[i + 1], oben / 1000)
+    return None
 
 
 def ende_unbewiesen(zustand: dict) -> str | None:
@@ -471,35 +589,36 @@ def ende_unbewiesen(zustand: dict) -> str | None:
     return None
 
 
-def freigegeben(install_id: str, versteckt, root: Path | None = None) -> int:
-    """Wie viele zurueckgehaltene Laeufe dieser Installation der Admin eingeblendet hat.
-
-    Nur das zaehlt als Vertrauen: ein Lauf, der von selbst durchkam, hat niemand angesehen.
-    `versteckt` sind die run_ids auf der Sichtbarkeitsliste.
-    """
-    return sum(1 for d in list_scans(root)
-               if d.get("install_id") == install_id and d.get("held") and d.get("run_id") not in versteckt)
-
-
-def freigabe(zustand: dict, zeilen: list, bretter: dict | None, vertraut: bool = True) -> str:
+def freigabe(zustand: dict, zeilen: list, bretter: dict | None) -> str:
     """Leer, wenn der Lauf von selbst in den Datensatz darf -- sonst die Gruende, ihn zurueckzuhalten.
 
-    `vertraut`: der Admin hat schon VERTRAUEN_AB Laeufe dieser Installation eingeblendet. Alles,
-    was das Tor sonst prueft, ist oeffentlich (die Spitzenzeiten stehen in /api/dataset, das Ende
-    behauptet die App) und laesst sich abschreiben -- erst ein Mensch, der Laeufe dieser
-    Installation angesehen hat, macht sie zu einer, deren Laeufe von selbst durchgehen.
+    Ohne Freigabe von Hand (seit 2026-10-11): jede Installation, auch eine neue, und jedes
+    Board, auch eines, das der Datensatz noch nicht hat. Ein neues Board wird dafuer an den
+    Nachbarklassen gemessen, ein bekanntes an seinen Spitzenzeiten; dazu die inneren Pruefungen.
     """
     gruende = []
-    if not vertraut:
-        gruende.append(GRUND_NEU)
     if bretter is None:
         gruende.append(GRUND_KEIN_DATENSATZ)
     else:
         bekannt = brett_von(bretter, zustand)
         if not bekannt:
-            gruende.append(GRUND_UNBEKANNT)
-        elif not zeiten_passen(bekannt, zeilen):
-            gruende.append(GRUND_ZEITEN)
+            nachbar = nachbarn_passen(bretter, zustand, zeilen)
+            if nachbar:
+                gruende.append(nachbar)
+        else:
+            if not zeiten_passen(bekannt, zeilen):
+                gruende.append(GRUND_ZEITEN)
+            if viel_schneller(bekannt, zeilen, HALT_SCHNELLER):
+                gruende.append("best lap more than %d%% under the dataset's" % round(HALT_SCHNELLER * 100))
+            n, auto = neue_spitzen_je_auto(bekannt, zeilen)
+            if n >= HALT_NEU_JE_AUTO:
+                gruende.append("%d new top times for one car (%s)" % (n, auto))
+        tiefe = getattr(bekannt, "tiefe", 0) if bekannt else 0
+        if len(zeilen) < MINDEST_ZEILEN and not (tiefe and len(zeilen) >= tiefe * MINDEST_ANTEIL_BEKANNT):
+            gruende.append("only %d ranks -- at least %d, or the whole board, are needed"
+                           % (len(zeilen), min(MINDEST_ZEILEN, int(tiefe * MINDEST_ANTEIL_BEKANNT))
+                              if tiefe else MINDEST_ZEILEN))
+    gruende.extend(innere_pruefung(zustand, zeilen))
     ende = ende_unbewiesen(zustand)
     if ende:
         gruende.append(ende)
@@ -559,7 +678,7 @@ def gespeicherter_name(wer: str, run_id: str) -> str:
 def store(install_id: str, zustand: dict, zeilen: list, auffaellig: list,
           contrib_root: Path | None = None, root: Path | None = None,
           now: float | None = None, tool: str | None = None,
-          zurueckhalten: str = "", ausblenden=None) -> dict:
+          zurueckhalten: str = "", ausblenden=None, siegel: str = "") -> dict:
     """Ablegen wie import_contrib -- erst fertig daneben, dann in einem Zug an den Platz.
 
     Halb geschriebene Ordner duerfen im contrib-Baum nie stehen: deploy_gnas.py holt
@@ -587,6 +706,9 @@ def store(install_id: str, zustand: dict, zeilen: list, auffaellig: list,
             shutil.rmtree(werkstatt)
         import_contrib.write_run(werkstatt, zustand, zeilen, wer,
                                  tool or zustand.get("scanner_tool") or "app")
+        # Versiegelt NEBEN dem Ziel, unter dem Namen des Ziels: das Siegel nennt den Namen.
+        if siegel:
+            run_seal.siegeln_als(werkstatt, run_id, siegel)
         ziel = wurzel / wer / run_id
         ziel.parent.mkdir(parents=True, exist_ok=True)
         if zurueckhalten and ausblenden is not None:

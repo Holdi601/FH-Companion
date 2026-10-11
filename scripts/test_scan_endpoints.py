@@ -116,7 +116,7 @@ def ein_lauf(run_id: str, n: int = 600, strecke: str = "Festival Chase", klasse:
                "thumb_points": [{"rank": 1, "position": 0.0}, {"rank": n, "position": 0.4}],
                "status": ende, "gapless": True, "rows_collected": 99999,
                "minimum_rank": 1, "maximum_rank": 99999, "missing_ranks": 0, "scanner": "ocr",
-               "scanner_tool": "fhc/1.0.0.0", "readings": 2 * n, "seconds": 120,
+               "scanner_tool": "fhc/1.0.0.0", "readings": 2 * max(n, 600), "seconds": 120,
                "completed_at": "2026-10-04T03:12:00.000000+02:00"}
     if gesamt is None:
         zustand.pop("implied_total")
@@ -163,7 +163,8 @@ with tempfile.TemporaryDirectory() as tmp:
     api.DATASET_FILE = ordner / "laps.json"
     datensatz(api.DATASET_FILE)
     api.KEYS_FILE = ordner / "contrib_keys.json"
-    api.KEYS_FILE.write_text(json.dumps({"keys": {}, "admin": ADMIN}), encoding="utf-8")
+    SIEGEL = "siegel-schluessel-nur-fuer-den-test"
+    api.KEYS_FILE.write_text(json.dumps({"keys": {}, "admin": ADMIN, "run_seal": SIEGEL}), encoding="utf-8")
     api.FEATURES_FILE = ordner / "features.json"
     api.FEATURES_FILE.write_text(json.dumps({"lap_submissions": True}), encoding="utf-8")
     seite = ordner / "seite.html"
@@ -183,7 +184,9 @@ with tempfile.TemporaryDirectory() as tmp:
         wer = scans.wer_von(install_id)
         nonce = iter("nonce-s%04d" % i for i in range(1000))
         PFAD = "/api/scan/submit"
-        scans.VERTRAUEN_AB = 0
+        # Mehr Testlaeufe, als eine Installation an einem Tag einreichen darf (das Kontingent
+        # selbst prueft der Abschnitt "Tageskontingent").
+        scans.LAEUFE_JE_INSTALL_TAG = 1000
 
         def auf_server(run_id: str) -> str:
             """Der Name auf dem Server: im Namensraum der Installation."""
@@ -224,9 +227,20 @@ with tempfile.TemporaryDirectory() as tmp:
             tafel = pandas.read_parquet(lauf / "leaderboard_entries.parquet")
             pruefe(len(tafel) == 600 and "gamertag" not in tafel.columns and tafel["rank"].dtype.kind == "i",
                    "das Parquet hat 600 Zeilen, Raenge als Zahlen, keinen Gamertag")
-        gefunden, _ = bau.discover_runs(ordner / "sweep", [contrib], {})
+        gefunden, _ = bau.discover_runs(ordner / "sweep", [contrib], {}, seal_key=SIEGEL)
         pruefe([(p.parent.name, w) for p, w in gefunden] == [(lauf.name, wer)],
                "der Datensatzbau findet den Lauf wie einen Fremdbeitrag: %s" % gefunden)
+        pruefe((lauf / "seal.json").exists(), "der angenommene Lauf ist versiegelt")
+        if lauf.exists():
+            echte_zeilen = (lauf / "rows.jsonl").read_bytes()
+            (lauf / "rows.jsonl").write_bytes(echte_zeilen.replace(b'"lap_time_seconds":60.0,', b'"lap_time_seconds":50.0,', 1))
+            gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], {}, seal_key=SIEGEL)
+            pruefe(gefunden == [] and ausgelassen == 1, "eine geaenderte Zeile bricht das Siegel: der Bau laesst den Lauf weg")
+            (lauf / "rows.jsonl").write_bytes(echte_zeilen)
+            gefunden, _ = bau.discover_runs(ordner / "sweep", [contrib], {}, seal_key="ein anderer schluessel")
+            pruefe(gefunden == [], "mit einem anderen Schluessel passt das Siegel nicht")
+            gefunden, _ = bau.discover_runs(ordner / "sweep", [contrib], {}, seal_key=SIEGEL)
+            pruefe(len(gefunden) == 1, "zurueckgesetzt: das Siegel passt wieder")
         pruefe(not (scans.SCANS_DIR / "_eingang").exists() or not any((scans.SCANS_DIR / "_eingang").iterdir()),
                "kein halber Lauf bleibt im Eingang liegen")
 
@@ -277,8 +291,9 @@ with tempfile.TemporaryDirectory() as tmp:
         flags = antwort.get("flags", [])
         pruefe(status == 200 and "board not in the dataset yet" in flags and "PI outside the class" in flags
                and "lap times fall as the rank rises" in flags, "neues Board, falscher PI, fallende Zeit: %s" % flags)
-        pruefe(antwort.get("held") is True and "unknown board" in antwort.get("reason", ""),
-               "... und ein unbekanntes Board wird zurueckgehalten: %s" % antwort.get("reason"))
+        pruefe(antwort.get("held") is True and "PI outside the class" in antwort.get("reason", "")
+               and "only 600 ranks" in antwort.get("reason", "") and "unknown board" not in antwort.get("reason", ""),
+               "... zurueckgehalten fuer den PI und die Laenge, nicht weil das Board neu ist: %s" % antwort.get("reason"))
         neu_lauf = auf_server("ocr_CrossCountry_idx01_S2_20261004_050000")
 
         print("\nVerwalten und ausblenden")
@@ -288,8 +303,8 @@ with tempfile.TemporaryDirectory() as tmp:
         pruefe(len(laeufe) == 2 and all("install_id" not in d for d in laeufe),
                "die Verwaltung sieht beide Scans, ohne install_id (%d)" % status)
         gehalten = {d["run_id"]: d for d in laeufe}.get(neu_lauf, {})
-        pruefe(gehalten.get("hidden") is True and "unknown board" in gehalten.get("reason", "")
-               and "unknown board" in gehalten.get("held", ""),
+        pruefe(gehalten.get("hidden") is True and "PI outside" in gehalten.get("reason", "")
+               and "PI outside" in gehalten.get("held", ""),
                "die Verwaltung zeigt den zurueckgehaltenen Lauf ausgeblendet, mit Grund: %s" % gehalten.get("reason"))
         status, _ = ruf(port, "GET", "/api/admin/scan/list")
         pruefe(status == 401, "ohne Admin-Unterschrift: 401 (war %d)" % status)
@@ -302,7 +317,7 @@ with tempfile.TemporaryDirectory() as tmp:
         versteckt = {d["run_id"]: d for d in liste.get("scans", []) if d.get("hidden")}
         pruefe(sorted(versteckt) == sorted([lauf.name, neu_lauf]) and versteckt[lauf.name].get("reason") == "test",
                "die Verwaltung zeigt ihn als ausgeblendet")
-        gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], bau.hidden_run_ids(api.VISIBILITY_FILE))
+        gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], bau.hidden_run_ids(api.VISIBILITY_FILE), seal_key=SIEGEL)
         pruefe(ausgelassen == 2 and gefunden == [],
                "der Datensatzbau laesst den ausgeblendeten und den zurueckgehaltenen Lauf weg")
         runs = api.list_runs(ordner / "sweep", contrib, api.VISIBILITY_FILE)
@@ -311,7 +326,7 @@ with tempfile.TemporaryDirectory() as tmp:
         koerper = json.dumps({"run_id": lauf.name, "hidden": False}).encode("utf-8")
         status, _ = ruf(port, "POST", "/api/admin/visibility", koerper,
                         admin_kopf(ADMIN, "POST", "/api/admin/visibility", koerper))
-        gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], bau.hidden_run_ids(api.VISIBILITY_FILE))
+        gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], bau.hidden_run_ids(api.VISIBILITY_FILE), seal_key=SIEGEL)
         pruefe(status == 200 and ausgelassen == 1 and [p.parent.name for p, _ in gefunden] == [lauf.name],
                "wieder eingeblendet: der Bau nimmt ihn")
         # "Show" auf dem zurueckgehaltenen: freigegeben, und die Verwaltung sagt, was er war.
@@ -321,9 +336,9 @@ with tempfile.TemporaryDirectory() as tmp:
         status2, liste = ruf(port, "GET", "/api/admin/scan/list", None,
                              admin_kopf(ADMIN, "GET", "/api/admin/scan/list", b""))
         frei = {d["run_id"]: d for d in liste.get("scans", [])}.get(neu_lauf, {})
-        gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], bau.hidden_run_ids(api.VISIBILITY_FILE))
+        gefunden, ausgelassen = bau.discover_runs(ordner / "sweep", [contrib], bau.hidden_run_ids(api.VISIBILITY_FILE), seal_key=SIEGEL)
         pruefe(status == 200 and status2 == 200 and frei.get("hidden") is False
-               and "unknown board" in frei.get("held", "") and ausgelassen == 0 and len(gefunden) == 2,
+               and "PI outside" in frei.get("held", "") and ausgelassen == 0 and len(gefunden) == 2,
                "freigegeben: der Bau nimmt ihn, die Verwaltung behaelt den alten Grund (%s)" % frei.get("held"))
 
         print("\nWas auf der Seite gewinnt, wird nicht blind uebernommen")
@@ -369,9 +384,9 @@ with tempfile.TemporaryDirectory() as tmp:
                        "%s: abgelegt, ausgeblendet mit '%s' (%d, %s)" % (was, erwartet, st, grund))
 
         tor("ocr_gate_times_1", "times do not match", "andere Zeiten auf einem bekannten Board", {"basis": 70.0})
-        tor("ocr_gate_mode_1", "unknown board", "dasselbe Board in einer anderen Kategorie", {"modus": "Cross-Country"})
-        tor("ocr_gate_class_1", "unknown board", "eine Klasse, die der Datensatz fuer diese Strecke nicht hat",
-            {"klasse": "S1"})
+        tor("ocr_gate_mode_1", "only 600 ranks", "ein neues Board (andere Kategorie) mit 600 Raengen",
+            {"modus": "Cross-Country"})
+        tor("ocr_gate_class_1", "PI outside", "eine neue Klasse mit dem PI der alten", {"klasse": "S1"})
 
         # Die Haelfte: 10 der 20 Spitzenzeiten getroffen reicht, 9 nicht. Davor je zwei Zeilen
         # mit Zeiten, die der Datensatz nicht kennt.
@@ -483,38 +498,63 @@ with tempfile.TemporaryDirectory() as tmp:
                and scans.zeiten_passen([60000], []) is False,
                "ohne bekannte oder ohne eingereichte Zeiten passt nichts")
 
-        print("\nDas Tor: eine neue Installation")
-        # Ihre ersten Laeufe sieht ein Mensch an -- auch wenn alles andere passt. Vertraut ist
-        # sie erst, wenn der Admin VERTRAUEN_AB ihrer zurueckgehaltenen Laeufe eingeblendet hat.
-        scans.VERTRAUEN_AB = 2
+        print("\nOhne Freigabe von Hand: eine neue Installation")
+        # Seit 2026-10-11: was jede Pruefung besteht, geht von selbst durch -- auch der erste Lauf.
         status, antwort2 = ruf(port, "POST", "/api/lap/register",
                                json.dumps({"hardware": "e" * 64, "gamertag": "NeuTester"}).encode("utf-8"))
         neu_id, neu_geheim = antwort2.get("install_id", ""), antwort2.get("secret", "")
-        neu_wer = scans.wer_von(neu_id)
-
-        def neu_einreichen(name: str):
-            z, r = ein_lauf(name)
-            b = json.dumps({"state": z, "rows": r}).encode("utf-8")
-            return ruf(port, "POST", PFAD, b, unterschrieben(neu_geheim, neu_id, PFAD, b, next(nonce)))
+        z_n, r_n = ein_lauf("ocr_first_1")
+        b_n = json.dumps({"state": z_n, "rows": r_n}).encode("utf-8")
+        st_n, a_n = ruf(port, "POST", PFAD, b_n, unterschrieben(neu_geheim, neu_id, PFAD, b_n, next(nonce)))
+        pruefe(st_n == 200 and a_n.get("held") is False,
+               "der erste Lauf einer neuen Installation geht von selbst durch (%s)" % a_n.get("reason"))
 
         def zeigen(name: str) -> int:
             k = json.dumps({"run_id": name, "hidden": False}).encode("utf-8")
             return ruf(port, "POST", "/api/admin/visibility", k, admin_kopf(ADMIN, "POST", "/api/admin/visibility", k))[0]
 
-        st_a, a_a = neu_einreichen("ocr_trust_1")
-        st_b, a_b = neu_einreichen("ocr_trust_2")
-        pruefe(st_a == 200 and st_b == 200 and a_a.get("held") is True and a_b.get("held") is True
-               and "new installation" in a_a.get("reason", ""),
-               "eine neue Installation: ein passender Lauf wird trotzdem zurueckgehalten (%s)" % a_a.get("reason"))
-        pruefe(zeigen(a_a.get("run_id", "")) == 200, "der Admin gibt den ersten frei")
-        st_c, a_c = neu_einreichen("ocr_trust_3")
-        pruefe(st_c == 200 and a_c.get("held") is True and "new installation" in a_c.get("reason", ""),
-               "ein freigegebener Lauf reicht noch nicht (%s)" % a_c.get("reason"))
-        pruefe(zeigen(a_b.get("run_id", "")) == 200, "der Admin gibt den zweiten frei")
-        st_d, a_d = neu_einreichen("ocr_trust_4")
-        pruefe(st_d == 200 and a_d.get("held") is False,
-               "nach zwei freigegebenen Laeufen geht ein passender von selbst durch (%s)" % a_d.get("reason"))
-        scans.VERTRAUEN_AB = 0
+        print("\nDie automatischen Pruefungen")
+        # Ein neues Board, lang genug, ohne Nachbarklassen: von selbst sichtbar.
+        tor("ocr_auto_new_1", None, "ein neues Board mit 3.000 Raengen",
+            {"strecke": "Brand New Road", "n": 3000})
+        # Ein neues Board, deutlich langsamer als die Klasse darunter (Festival Chase A: 60,000 s).
+        tor("ocr_auto_nb_1", "slower than class A", "neue Klasse S1, langsamer als A",
+            {"klasse": "S1", "basis": 70.0, "n": 3000},
+            lambda t: t.replace('"pi": 650', '"pi": 750'))
+        # Gelesen schneller, als die App es kann; ohne Dauer; weniger Lesungen als Zeilen.
+        z_t, r_t = ein_lauf("ocr_auto_tempo_1")
+        z_t["seconds"] = 5
+        status, a_t = einreichen(z_t, r_t)
+        pruefe(a_t.get("held") is True and "faster than the app" in a_t.get("reason", ""),
+               "600 Zeilen in 5 s: zurueckgehalten (%s)" % a_t.get("reason"))
+        z_t, r_t = ein_lauf("ocr_auto_tempo_2")
+        z_t.pop("seconds")
+        status, a_t = einreichen(z_t, r_t)
+        pruefe(a_t.get("held") is True and "no scan duration" in a_t.get("reason", ""),
+               "ohne Dauer: zurueckgehalten (%s)" % a_t.get("reason"))
+        z_t, r_t = ein_lauf("ocr_auto_read_1")
+        z_t["readings"] = 10
+        status, a_t = einreichen(z_t, r_t)
+        pruefe(a_t.get("held") is True and "fewer readings" in a_t.get("reason", ""),
+               "10 Lesungen fuer 600 Zeilen: zurueckgehalten (%s)" % a_t.get("reason"))
+
+        def fallend(r: str) -> str:
+            zeilen = [json.loads(x) for x in r.splitlines()]
+            for x in zeilen[101:141:2]:
+                x["lap_time_seconds"] = round(x["lap_time_seconds"] - 0.1, 3)
+            return "\n".join(json.dumps(x) for x in zeilen) + "\n"
+        tor("ocr_auto_fall_1", "lap times fall", "20 Zeiten springen je 0,1 s zurueck", None, fallend)
+        tor("ocr_auto_pi_1", "PI outside", "der PI einer anderen Klasse", None,
+            lambda t: t.replace('"pi": 650', '"pi": 450'))
+        tor("ocr_auto_fast_1", "more than 5%", "eine Bestzeit 6,7 % unter dem Datensatz", None,
+            lambda t: t.replace('"lap_time_seconds": 60.0,', '"lap_time_seconds": 56.0,', 1))
+        tor("ocr_auto_car_1", "new top times for one car", "fuenf neue Spitzenzeiten fuer ein Auto",
+            {"basis": 60.5, "n": 10}, vorn_fremd(5))
+        tor("ocr_auto_car_2", None, "zwei neue Spitzenzeiten fuer ein Auto",
+            {"basis": 60.5, "n": 10}, vorn_fremd(2))
+        # Mindestens 3.000 Raenge -- oder 90 % der Tiefe, die der Datensatz kennt (hier 22).
+        tor("ocr_auto_short_1", "only 600 ranks", "600 Raenge eines neuen Boards", {"strecke": "Short Road"})
+        tor("ocr_auto_short_2", None, "das ganze bekannte Board (22 Raenge tief)")
 
         print("\nDas Tor: ein eigener Namensraum")
         # Ein lokaler Lauf und ein App-Lauf mit demselben Namen: der zurueckgehaltene App-Lauf
