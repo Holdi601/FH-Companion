@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import http.server
 import json
+import os
 import socket
 import socketserver
 import ssl
@@ -79,14 +80,23 @@ def darf(adresse: str, art: str, jetzt: float | None = None) -> float:
 # Obergrenze legen ein paar hundert langsame Verbindungen den Dienst lahm.
 GLEICHZEITIG = threading.BoundedSemaphore(64)
 
-# Auf einem Spiegel gibt es nichts zu bauen.
+# Auf einem Spiegel gibt es nichts zu bauen -- SOLANGE der Bauer und die Laeufe fehlen.
 #
-# Das GNAS bekommt die fertige Seite und den Datensatz zugeschickt; Boards, Sweeps
-# und der Bauer liegen dort gar nicht. Ohne diesen Riegel wuerde jeder Aufruf einen
-# Bau anstossen, der am fehlenden build_analytics_site.py scheitert -- die Seite
-# bliebe zwar heil, aber das Protokoll liefe mit Fehlern voll und jeder echte
-# Fehler ginge darin unter. Ein Spiegel liefert aus, sonst nichts.
+# Bis 2026-10-12 bekam das GNAS die fertige Seite und den Datensatz vom Spielrechner
+# zugeschickt. Seitdem liegen dort auch die Bauskripte und die Tabellen aller eigenen
+# Laeufe (deploy_gnas.py schickt sie), und der Server baut selbst, sobald neue Scans
+# angenommen werden -- der Nutzer: "es kann nicht sein, dass es meinen PC dazu braucht".
+# Fehlen Bauer oder Laeufe, bleibt es beim Ausliefern: sonst liefe das Protokoll mit
+# gescheiterten Bauten voll.
 NUR_AUSLIEFERN = False
+
+# Der Wunsch des Admins nach einem Neubau ("Rebuild now", build_state.anfordern) und die
+# Meldung, wie der letzte Bau ausging (build_state liest sie fuer die Verwaltung).
+BAU_ANFRAGE = Path("data/runtime/build_request.json")
+BAU_MELDUNG = Path("data/runtime/auto_build.json")
+BAU_SPERRE = Path("data/runtime/build.lock")
+# Auf dem Server prueft nur der Minutentakt, ob gebaut werden muss -- nicht jeder Aufruf.
+NUR_TAKT = False
 
 
 # The page is built from data AND from code, so both have to count as sources. A fix to
@@ -95,7 +105,7 @@ NUR_AUSLIEFERN = False
 # had been written since. The car-name file belongs here too -- naming a car_id changes
 # what the page shows without any board changing.
 CODE_SOURCES = ("build_analytics_dataset.py", "build_analytics_site.py",
-                "build_car_roster.py")
+                "build_car_roster.py", "submitted_laps.js")
 DATA_SOURCES = (Path("config/fh6_car_id_names.json"),
                 Path("config/fh6_car_catalogue.json"),
                 # Ein Fremdbeitrag oder ein ausgeblendeter Lauf aendert die Seite,
@@ -108,7 +118,9 @@ DATA_SOURCES = (Path("config/fh6_car_id_names.json"),
                 # bis zufaellig ein Scan fertig wird. Am 2026-09-10 kamen ueber die
                 # Tabelle 132.656 Zeilen zurueck; ohne sie hier stuende die Seite
                 # weiter auf dem alten Stand, ohne dass irgendetwas darauf hinweist.
-                Path("config/fh6_screen_name_aliases.tsv"))
+                Path("config/fh6_screen_name_aliases.tsv"),
+                # "Rebuild now" in der Verwaltung: eine juengere Anfrage macht die Seite alt.
+                BAU_ANFRAGE)
 
 # Fremdbeitraege liegen zwei Ebenen tief (contrib/<wer>/<lauf>), eigene Laeufe eine.
 CONTRIB_ROOT = Path("data/memory_scans/contrib")
@@ -128,7 +140,8 @@ def newest_source(root: Path) -> float:
             newest = max(newest, path.stat().st_mtime)
         except OSError:
             continue
-    here = Path(__file__).resolve().parent
+    # Die Bauskripte liegen in scripts/, nicht neben diesem Server (seit der Trennung).
+    here = Path(__file__).resolve().parent.parent / "scripts"
     for extra in [here / name for name in CODE_SOURCES] + list(DATA_SOURCES):
         try:
             newest = max(newest, extra.stat().st_mtime)
@@ -173,6 +186,10 @@ def rebuild_if_stale(root: Path, page: Path, builder: Path, log) -> None:
     """
     if NUR_AUSLIEFERN:
         return
+    # Auf dem Server stoesst NUR der Minutentakt an (seit 2026-10-12): die Pruefung liest den
+    # Zeitstempel von rund 2.100 Dateien -- bei jedem Aufruf der Apps waere das Last fuer nichts.
+    if NUR_TAKT and threading.current_thread().name not in ("bauuhr", "MainThread"):
+        return
     if page.exists():
         if REBUILD_LOCK.acquire(blocking=False):
             REBUILD_LOCK.release()
@@ -193,49 +210,96 @@ def _rebuild(root: Path, page: Path, builder: Path, log) -> None:
         source = newest_source(root)
         if source == 0.0:
             return
-        # Der Riegel oben gilt nur INNERHALB dieses Prozesses. Der Sweep baut die Seite
-        # aber selbst mit, aus seinem eigenen Prozess -- und dann schreiben zwei Laeufe
-        # gleichzeitig dieselbe laps.json und dieselbe HTML. Am 2026-08-27 um 12:51 war
-        # genau das der Fall: einer seit 12:44 unterwegs, ein zweiter durch einen
-        # API-Aufruf angestossen. Der Sweep hat diese Pruefung seit dem 26.08.
-        # (`ocr_board_sweep.rebuild_site`), hier fehlte sie.
-        try:
-            running = subprocess.run(
-                ["powershell.exe", "-NoProfile", "-Command",
-                 "@(Get-CimInstance Win32_Process | Where-Object { "
-                 "$_.CommandLine -match 'build_analytics_site' }).Count"],
-                capture_output=True, text=True, timeout=60).stdout
-            count = int("".join(c for c in running if c.isdigit()) or 0)
-            if count > 1:
-                log("rebuild skipped: another build is already running")
-                return
-        except Exception:
-            # Laesst sich das nicht feststellen, lieber bauen als gar nicht -- eine
-            # veraltete Seite ist teurer als ein ueberfluessiger Lauf.
-            pass
-        if built_from(page) >= source:
+        # Der Riegel oben gilt nur INNERHALB dieses Prozesses. Ein Sweep oder ein Bau von
+        # Hand schreibt aber aus einem eigenen Prozess dieselbe laps.json und dieselbe HTML
+        # (am 2026-08-27 um 12:51 liefen zwei). Darum eine Sperrdatei, auf jedem System --
+        # bis 2026-10-12 fragte hier PowerShell nach, und die gibt es auf dem GNAS nicht.
+        if not _sperre_nehmen():
+            log("rebuild skipped: another build is already running")
             return
-        log(f"rebuilding: board data is newer than the page")
-        started = time.monotonic()
-        result = subprocess.run(
-            [sys.executable, str(builder), "--root", str(root), "--out", str(page)],
-            capture_output=True, text=True)
-        if result.returncode == 0:
-            # Der Stand, den DIESER Lauf gesehen hat -- nicht der von jetzt: was
-            # sich waehrend des Baus geaendert hat, steht nicht in der Seite und
-            # muss den naechsten Bau ausloesen.
+        try:
+            if built_from(page) >= source:
+                return
+            anfrage = _lies_json(BAU_ANFRAGE)
+            grund = "requested by the admin" if anfrage else "board data is newer than the page"
+            log(f"rebuilding: {grund}")
+            started = time.monotonic()
+            # NIEDRIG: auf dem GNAS laufen Nextcloud und diese Seite daneben.
+            niedrig = (lambda: os.nice(10)) if hasattr(os, "nice") else None
+            result = subprocess.run(
+                [sys.executable, str(builder), "--root", str(root), "--out", str(page)],
+                capture_output=True, text=True, preexec_fn=niedrig)
+            dauer = round(time.monotonic() - started)
+            letzte = (result.stdout or "").strip().splitlines()[-1:] or ["ok"]
+            if result.returncode == 0:
+                # Der Stand, den DIESER Lauf gesehen hat -- nicht der von jetzt: was
+                # sich waehrend des Baus geaendert hat, steht nicht in der Seite und
+                # muss den naechsten Bau ausloesen.
+                try:
+                    page.with_suffix(page.suffix + ".built-from").write_text(
+                        repr(source), encoding="utf-8")
+                except OSError:
+                    pass
+                # Die erledigte Anfrage weg -- eine waehrend des Baus gestellte bleibt.
+                try:
+                    if anfrage and BAU_ANFRAGE.stat().st_mtime <= source:
+                        BAU_ANFRAGE.unlink()
+                except OSError:
+                    pass
+                log(f"rebuilt in {dauer}s: {letzte[0]}")
+                _melden(True, dauer, grund, "")
+            else:
+                # Serving the previous page beats serving an error: the old numbers are
+                # still true, they are just missing the newest board.
+                fehler = (result.stderr or result.stdout or "").strip()[-400:]
+                log(f"rebuild FAILED (exit {result.returncode}): {fehler}")
+                _melden(False, dauer, grund, fehler)
+        finally:
+            _sperre_lassen()
+
+
+def _lies_json(pfad: Path):
+    try:
+        return json.loads(pfad.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _melden(ok: bool, dauer: int, was: str, meldung: str) -> None:
+    """Fuer die Verwaltung (build_state.zustand): wie der letzte Bau ausging."""
+    try:
+        BAU_MELDUNG.parent.mkdir(parents=True, exist_ok=True)
+        BAU_MELDUNG.write_text(json.dumps({"finished": time.time(), "ok": ok, "seconds": dauer,
+                                           "what": was, "message": meldung[-300:]}), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _sperre_nehmen() -> bool:
+    """Die Bausperre -- eine Datei, die nur einer anlegen kann. Aelter als zwei Stunden: verwaist."""
+    BAU_SPERRE.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(2):
+        try:
+            fd = os.open(str(BAU_SPERRE), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, str(os.getpid()).encode("ascii"))
+            os.close(fd)
+            return True
+        except FileExistsError:
             try:
-                page.with_suffix(page.suffix + ".built-from").write_text(
-                    repr(source), encoding="utf-8")
+                if time.time() - BAU_SPERRE.stat().st_mtime > 7200:
+                    BAU_SPERRE.unlink()
+                    continue
             except OSError:
-                pass
-            log(f"rebuilt in {time.monotonic() - started:.1f}s: "
-                f"{(result.stdout or '').strip().splitlines()[-1:] or ['ok']}"[1:-1])
-        else:
-            # Serving the previous page beats serving an error: the old numbers are
-            # still true, they are just missing the newest board.
-            log(f"rebuild FAILED (exit {result.returncode}): "
-                f"{(result.stderr or result.stdout or '').strip()[-400:]}")
+                continue
+            return False
+    return False
+
+
+def _sperre_lassen() -> None:
+    try:
+        BAU_SPERRE.unlink()
+    except OSError:
+        pass
 
 
 def quelltext_link() -> bytes:
@@ -804,7 +868,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--page", type=Path,
                         default=workspace / "data/analytics/rivals_auto_wertung.html")
     parser.add_argument("--builder", type=Path,
-                        default=Path(__file__).resolve().parent / "build_analytics_site.py")
+                        default=workspace / "scripts" / "build_analytics_site.py")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--nur-ausliefern", action="store_true",
@@ -817,7 +881,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     global NUR_AUSLIEFERN
-    NUR_AUSLIEFERN = args.nur_ausliefern
+    # Der Spiegel baut selbst, sobald Bauer und Laeufe da sind (seit 2026-10-12).
+    spiegel = args.nur_ausliefern
+    NUR_AUSLIEFERN = spiegel and not (args.builder.exists() and args.root.exists())
+    global NUR_TAKT
+    NUR_TAKT = spiegel
+    # Auf dem Server baut nur dieser Prozess. Eine Sperre von vorher stammt aus einem Bau, den
+    # ein Neustart abgebrochen hat -- sie hielte jeden weiteren zwei Stunden lang auf.
+    if spiegel:
+        _sperre_lassen()
 
     args.page.parent.mkdir(parents=True, exist_ok=True)
     log = lambda message: (sys.stdout.write(f"[serve] {message}\n"), sys.stdout.flush())
@@ -845,9 +917,21 @@ def main(argv: list[str] | None = None) -> int:
         geoip.refresh_in_background(log)
         # Die Autoliste ("Car collection" in der App) ebenso, einmal am Tag -- nur im
         # Spiegelbetrieb: auf dem Spielrechner soll der Server nicht von selbst ins Netz.
-        if NUR_AUSLIEFERN:
+        if spiegel:
             import car_availability
             car_availability.im_hintergrund(log)
+        # BAUEN OHNE BESUCHER: bis hierher stiess nur ein Seitenaufruf einen Bau an. Jede
+        # Minute nachsehen, ob ein angenommener Scan, die Sichtbarkeitsliste oder "Rebuild
+        # now" die Seite alt gemacht hat.
+        if not NUR_AUSLIEFERN:
+            def bauuhr():
+                while True:
+                    time.sleep(60)
+                    try:
+                        rebuild_if_stale(args.root, args.page, args.builder, log)
+                    except Exception as e:
+                        log(f"build check failed: {e}")
+            threading.Thread(target=bauuhr, name="bauuhr", daemon=True).start()
         # BEIM BEENDEN SICHERN. `docker compose restart` schickt SIGTERM; ohne eigenen
         # Handler endet Python dann sofort, und die Besuche der letzten Sekunden
         # (visits.py schreibt hoechstens alle 15 s) waeren weg.

@@ -276,9 +276,9 @@ h3 { font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-size: 17
     <div class="panel">
       <div class="filters"><button id="build-refresh">Reload</button>
         <button id="build-now">Rebuild now</button>
-        <span class="note">The dataset is built on the PC that holds every scan. It checks this server
-        every five minutes and rebuilds on its own when accepted scans arrived or the visibility
-        list changed -- while Forza is closed. "Rebuild now" runs at once, at idle priority.</span></div>
+        <span class="note">This server rebuilds the dataset and the site on its own, at low priority,
+        within a minute after an accepted scan arrives or the visibility list changes. Submitted laps
+        need no rebuild -- the site loads them live. "Rebuild now" starts a build at once.</span></div>
       <div id="build" class="note">not loaded</div>
     </div>
 
@@ -753,10 +753,10 @@ function bauLaden() {
       : "No accepted scan waits for a build.")
       + (d.visibility_changed ? ' <span class="bad">The visibility list changed since the build.</span>' : "") + "</p>");
     if (d.request) {
-      teile.push('<p class="bad">Rebuild requested ' + esc(zeit(d.request.at)) + " -- the build PC picks it up within five minutes.</p>");
+      teile.push('<p class="bad">Rebuild requested ' + esc(zeit(d.request.at)) + " -- it starts within a minute.</p>");
     }
     var l = d.last_run;
-    teile.push("<p>Last automatic run: " + (l
+    teile.push("<p>Last build: " + (l
       ? esc(zeit(l.finished)) + " -- " + (l.ok ? "ok" : '<span class="bad">failed</span>') + ", "
         + esc(l.seconds) + " s, " + esc(l.what || "") + (l.message ? "<br><span class=\"note\">" + esc(l.message) + "</span>" : "")
       : "none reported yet") + "</p>");

@@ -1,14 +1,13 @@
 """Wie aktuell der Datensatz ist, und der Wunsch nach einem Neubau (seit 2026-10-12).
 
-Gebaut wird der Datensatz nicht hier, sondern auf dem Rechner mit allen Laeufen
-(scripts/auto_build.py, alle fuenf Minuten aus der Aufgabenplanung). Dieser Server sagt nur:
+Gebaut wird hier, auf dem Server (serve_analytics.py, Minutentakt). Dieses Modul sagt der
+Verwaltung:
 
-  * wann der ausgelieferte Datensatz gebaut wurde (Zeitstempel von data/analytics/laps.json --
-    deploy_gnas.py kopiert mit "scp -p", der Zeitstempel ist also der des Baus),
+  * wann der ausgelieferte Datensatz gebaut wurde (Zeitstempel von data/analytics/laps.json),
   * welche angenommenen Scans seitdem eingegangen sind, und ob sich die Sichtbarkeitsliste
     seitdem geaendert hat -- beides wartet auf den naechsten Bau,
   * ob der Admin einen Neubau angefordert hat (data/runtime/build_request.json),
-  * wie der letzte automatische Lauf ausging (data/runtime/auto_build.json, vom Baurechner).
+  * wie der letzte Bau ausging (data/runtime/auto_build.json, von serve_analytics._melden).
 
 Der Nutzer am 2026-10-12: zwei Scans eines Freundes standen in der Verwaltung, aber nicht auf
 der Seite -- gebaut wurde nur, wenn jemand von Hand auslieferte.
@@ -61,7 +60,7 @@ def zustand(dataset_file: Path, visibility_file: Path, scans_liste: list, verste
 
 
 def anfordern(wer: str = "admin", anfrage: Path | None = None, now: float | None = None) -> dict:
-    """Einen Neubau anfordern. Der Baurechner holt ihn innerhalb weniger Minuten ab."""
+    """Einen Neubau anfordern. Der Minutentakt des Servers nimmt ihn auf."""
     pfad = anfrage or ANFRAGE
     pfad.parent.mkdir(parents=True, exist_ok=True)
     eintrag = {"at": now or time.time(), "by": wer}

@@ -82,10 +82,10 @@ PFLICHT = ("host", "user", "remote_root")
 # nichts -- das ist der Grund, warum dieser Ordner ueberhaupt existiert: was auf
 # einem erreichbaren Rechner laeuft, soll man an einer Stelle aufzaehlen koennen.
 #
-# NICHT dabei: build_analytics_site.py (drueben wird nichts gebaut) und
-# build_contrib_package.py. Letzteres schnuert das Scanner-Werkzeug aus rund zehn
-# OCR- und Fernsteuerungsdateien, die drueben gar nicht liegen -- der Bau muesste
-# also scheitern. Das fertige Werkzeug geht stattdessen als dist/-ZIP mit.
+# SEIT 2026-10-12 BAUT DER SERVER SELBST: die Bauskripte und ihre Tabellen gehen mit
+# (unten, "der Bau"), die Laeufe dazu schickt quellen_schicken(). Seite und Datensatz
+# gehoeren seitdem dem Server und gehen von hier NICHT mehr hinueber.
+# NICHT dabei: build_contrib_package.py (das Werkzeug ist ausgemustert).
 CODE = [
     "server/serve_analytics.py",
     "server/analytics_api.py",
@@ -138,7 +138,27 @@ CODE = [
     "server/assets/world-110m.json",
     "server/deploy/Dockerfile",
     "server/deploy/docker-compose.yml",
+    # DER BAU (seit 2026-10-12): was build_analytics_site.py liest -- ermittelt an einem
+    # echten Bau, der jede geoeffnete Datei mitschrieb.
+    "scripts/build_analytics_site.py",
+    "scripts/build_analytics_dataset.py",
+    "scripts/build_car_roster.py",
+    "scripts/submitted_laps.js",
+    "config/fh6_board_catalogue.json",
+    "config/fh6_car_roster.json",
+    "config/fh6_screen_name_aliases.tsv",
+    "config/fh6_wiki_abbreviations.json",
+    "data/car_catalogue/fh6cars.html",
 ]
+
+# Einmal hinueber, danach fuehrt der Server sie selbst fort (der Namensabgleich merkt sich,
+# was er schon zugeordnet hat -- ohne ihn rechnete der erste Bau drueben lange).
+EINMAL = ["data/cache/car_name_matches.json"]
+
+# Die Laeufe, aus denen der Server baut: je Lauf nur die Tabelle und der Zustand (rund
+# 370 MB), nicht die Bilder (25 GB).
+QUELLEN_WURZEL = "data/memory_scans/full_sweep"
+QUELLEN_DATEIEN = ("state.json", "leaderboard_entries.parquet")
 
 # DIE SCHRIFTEN (server/fonts/), seit 2026-09-24 selbst ausgeliefert statt von
 # Google. Aus dem Ordner gelesen statt aufgezaehlt: 20 Dateien, und eine vergessene
@@ -157,9 +177,6 @@ CODE += sorted("server/brand/" + p.name
 # unmatched_car_names_matched.tsv enthaelt. Die haben auf einem erreichbaren Server
 # nichts zu suchen, und diese Liste ist der Grund, warum sie nie dorthin kommen.
 INHALT = [
-    "data/analytics/rivals_auto_wertung.html",
-    "data/analytics/rivals_auto_wertung.html.built-from",
-    "data/analytics/laps.json",
     "dist/fh-companion-latest.zip",
     # DER ZETTEL NEBEN DER ZIP.
     #
@@ -536,6 +553,64 @@ def seite_veraltet() -> bool:
 SPERRE = WORKSPACE / "data" / "runtime" / "deploy.lock"
 
 
+def quellen_schicken(cfg: dict, apply: bool) -> int:
+    """Die Tabellen der eigenen Laeufe hinueber -- nur, was drueben fehlt oder anders ist.
+
+    Verglichen wird nach Groesse und Zeitstempel (eine Liste von drueben in EINEM Aufruf),
+    geschickt als ein tar-Strom: fast 1.400 Dateien einzeln mit scp dauerten Stunden.
+    """
+    import tarfile
+
+    root = cfg["remote_root"]
+    p = fern(cfg, "cd '" + root + "' && mkdir -p '" + QUELLEN_WURZEL + "' && find '" + QUELLEN_WURZEL
+             + "' -type f \\( -name state.json -o -name leaderboard_entries.parquet \\) -printf '%p\\t%s\\t%T@\\n'")
+    drueben = {}
+    for zeile in (p.stdout or "").splitlines():
+        teile = zeile.split("\t")
+        if len(teile) == 3:
+            try:
+                drueben[teile[0]] = (int(teile[1]), int(float(teile[2])))
+            except ValueError:
+                continue
+    faellig = []
+    for lauf in sorted((WORKSPACE / QUELLEN_WURZEL).glob("*")):
+        for name in QUELLEN_DATEIEN:
+            datei = lauf / name
+            if not datei.is_file():
+                continue
+            rel = datei.relative_to(WORKSPACE).as_posix()
+            st = datei.stat()
+            if drueben.get(rel) != (st.st_size, int(st.st_mtime)):
+                faellig.append(rel)
+    print("  %d Datei(en) faellig, %d drueben gleich" % (len(faellig), len(drueben)))
+    if not apply or not faellig:
+        return len(faellig)
+    with tempfile.TemporaryFile() as puffer:
+        with tarfile.open(fileobj=puffer, mode="w") as tar:
+            for rel in faellig:
+                tar.add(str(WORKSPACE / rel), arcname=rel)
+        puffer.seek(0)
+        # OHNE -m: tar setzt die Zeit des Laufs, nicht die des Empfangs -- sie gilt fuer den
+        # Vergleich beim naechsten Mal und fuer die Frage des Servers, ob die Seite alt ist.
+        r = subprocess.run(ssh_basis(cfg) + ["cd '" + root + "' && tar -x -f - --no-same-owner && echo ok"],
+                           stdin=puffer, capture_output=True)
+    if b"ok" not in (r.stdout or b""):
+        raise Fehler("die Laeufe kamen nicht an: " + (r.stderr or b"").decode("utf-8", "replace")[-300:])
+    return len(faellig)
+
+
+def einmal_schicken(cfg: dict, apply: bool) -> None:
+    """Was drueben nur fehlen, nie ueberschrieben werden darf (EINMAL)."""
+    root = cfg["remote_root"]
+    for name in EINMAL:
+        p = fern(cfg, "test -f '" + root + "/" + name + "' && echo da")
+        if "da" in (p.stdout or ""):
+            continue
+        print("  " + name + " (zum ersten Mal)")
+        if apply:
+            schicken(cfg, [name], True)
+
+
 def bauen() -> None:
     # EINE STUNDE, NICHT EINE MINUTE. Hier stand bis zum 2026-09-15 "etwa eine
     # Minute" -- das galt bei einer Handvoll Boards. Am 2026-09-15 mit 598 Boards
@@ -702,13 +777,7 @@ def main(argv: list | None = None) -> int:
                         help="nur den Server-Code -- keine Daten")
     parser.add_argument("--kein-bau", action="store_true",
                         help="die Seite nicht bauen, auch wenn sie veraltet ist")
-    # Fuer den selbsttaetigen Bau (scripts/auto_build.py, seit 2026-10-12): nur Seite und
-    # Datensatz -- ein hier gebautes, ungeprueftes App-Paket ginge sonst nebenbei mit hinaus.
-    parser.add_argument("--nur-datensatz", action="store_true",
-                        help="wie --nur-daten, aber ohne Pakete und Videos")
     args = parser.parse_args(argv)
-    if args.nur_datensatz:
-        args.nur_daten = True
     if args.apply:
         SPERRE.parent.mkdir(parents=True, exist_ok=True)
         SPERRE.write_text(str(os.getpid()))
@@ -742,26 +811,14 @@ def _main(args) -> int:
         if args.einrichten:
             return einrichten(cfg)
 
-        gebaut = False
         if not args.nur_schicken:
+            # Geholt wird weiter -- fuer Auswertungen hier. GEBAUT wird hier nicht mehr:
+            # seit 2026-10-12 baut der Server selbst, sobald etwas Neues ankommt.
             print("HOLEN (was drueben entstanden ist)")
-            neu = holen_baeume(cfg, args.apply)
-            uebernommen = abgleich_beidseitig(cfg, args.apply)
-            if (neu or uebernommen) and args.apply and not args.kein_bau:
-                print("\nBAUEN (Fremdbeitraege oder Sichtbarkeit haben sich geaendert)")
-                bauen()
-                gebaut = True
+            holen_baeume(cfg, args.apply)
+            abgleich_beidseitig(cfg, args.apply)
 
         if not args.nur_holen:
-            # Bei --nur-code geht die Seite gar nicht mit -- sie dafuer zu
-            # bauen waere eine Minute Rechenzeit fuer nichts, und auf dieser
-            # Maschine konkurriert sie mit der OCR des laufenden Sweeps.
-            # Schon in diesem Lauf gebaut: nicht noch einmal (bis 2026-10-12 baute jeder Lauf
-            # mit neuen Fremdbeitraegen zweimal, je zwei bis drei Minuten).
-            if (args.apply and not args.kein_bau and not args.nur_code and not gebaut
-                    and seite_veraltet()):
-                print("\nBAUEN (die Seite ist hinter ihren Quellen zurueck)")
-                bauen()
             code_faellig = 0
             if not args.nur_daten:
                 importe_pruefen()
@@ -770,9 +827,11 @@ def _main(args) -> int:
             else:
                 print("\nCODE wird NICHT geschickt (--nur-daten)")
             if not args.nur_code:
-                print("SCHICKEN (Seite, Datensatz, Pakete)")
-                schicken(cfg, [n for n in INHALT if n.startswith("data/")] if args.nur_datensatz else INHALT,
-                         args.apply)
+                print("SCHICKEN (Pakete, Videos)")
+                schicken(cfg, INHALT, args.apply)
+                print("SCHICKEN (eigene Laeufe, aus denen der Server baut)")
+                quellen_schicken(cfg, args.apply)
+                einmal_schicken(cfg, args.apply)
                 print("SCHICKEN (Schluessel -- der Inhalt wird nicht ausgegeben)")
                 schicken(cfg, GEHEIM, args.apply, geheim=True)
             else:
