@@ -1025,6 +1025,21 @@ def handle(method: str, path: str, headers, body: bytes, *,
             return scan_endpunkt(method, path, headers, body, now, client, keys,
                                  contrib_root=contrib_root, visibility=visibility)
 
+        # DER NAECHSTE BAU DES DATENSATZES (seit 2026-10-12, build_state): was darauf wartet,
+        # wie der letzte selbsttaetige Lauf ausging, und der Knopf "Rebuild now".
+        if method == "GET" and path == "/api/admin/build":
+            require_admin(keys, method, path, headers, body, now)
+            import build_state
+            versteckt = {(e if isinstance(e, str) else str(e.get("run_id") or ""))
+                         for e in load_visibility(visibility).get("hidden", []) if isinstance(e, (str, dict))}
+            return as_json(200, build_state.zustand(dataset_file or DATASET_FILE, visibility or VISIBILITY_FILE,
+                                                    scans.list_scans(), versteckt))
+
+        if method == "POST" and path == "/api/admin/build/request":
+            require_admin(keys, method, path, headers, body, now)
+            import build_state
+            return as_json(200, {"ok": True, "request": build_state.anfordern("admin", now=now)})
+
         if method == "GET" and path == "/api/admin/usage":
             # Hinter dem Admin-Geheimnis, obwohl nichts Personenbezogenes darin
             # steht: es ist eine Geschaeftszahl, keine Auskunft fuer jedermann.

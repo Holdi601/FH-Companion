@@ -190,6 +190,18 @@ internal sealed class RivalsTab : UserControl
         nachreichUhr.Tick += (_, _) => WartendeAnstossen();
         nachreichUhr.Start();
         Disposed += (_, _) => nachreichUhr.Dispose();
+        // DIE META-LISTE AKTUELL HALTEN (seit 2026-10-12): bis dahin nur beim Start und auf
+        // Knopfdruck. Der Server baut neue Scans jetzt selbsttaetig ein; alle zehn Minuten wird
+        // nach seiner Version gefragt (ein kleiner Abruf) und nur bei einer neuen geladen --
+        // nie waehrend der Fahrt, das Einlesen kostet Sekunden.
+        var abgleichUhr = new System.Windows.Forms.Timer { Interval = 10 * 60 * 1000 };
+        abgleichUhr.Tick += (_, _) =>
+        {
+            if (Controller?.FaehrtGerade() == true) { return; }
+            SyncFromServer(announce: false);
+        };
+        abgleichUhr.Start();
+        Disposed += (_, _) => abgleichUhr.Dispose();
         WatchLocalDataset();
         // At startup, quietly: an unreachable server is the normal case and must not
         // put an error in front of someone who only wanted the overlay.

@@ -272,14 +272,23 @@ h3 { font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-size: 17
       <div id="races" class="note"></div>
     </div>
 
+    <h2>Dataset build</h2>
+    <div class="panel">
+      <div class="filters"><button id="build-refresh">Reload</button>
+        <button id="build-now">Rebuild now</button>
+        <span class="note">The dataset is built on the PC that holds every scan. It checks this server
+        every five minutes and rebuilds on its own when accepted scans arrived or the visibility
+        list changed -- while Forza is closed. "Rebuild now" runs at once, at idle priority.</span></div>
+      <div id="build" class="note">not loaded</div>
+    </div>
+
     <h2>Leaderboard scans from the app</h2>
     <div class="panel">
       <div class="filters"><button id="scans-refresh">Reload</button>
         <span class="note">Boards read in FH Companion's scan tab, stored like a friend's contribution
-        (contrib/app-&hellip;). No gamertags. Hiding puts the run on the dataset visibility list;
-        it leaves the site with the next dataset build. A scan is <b>held</b> (hidden on arrival)
-        when its board is not in the dataset, its top times do not match the dataset's, or its end
-        is unproven (under 500 rows or 80% of the board) -- Show releases it.</span></div>
+        (contrib/app-&hellip;). No gamertags. A scan that passes every automatic check goes live with
+        the next dataset build; one that fails is <b>held</b> (hidden on arrival) with the reason.
+        Hide removes any scan from the site, Show releases a held one. Flags are only marks.</span></div>
       <div id="scans" class="note">not loaded</div>
     </div>
 
@@ -727,6 +736,36 @@ function rennenZeichnen(bretter) {
   });
 }
 
+// Der naechste Bau des Datensatzes (seit 2026-10-12): was wartet, der letzte Lauf, der Knopf.
+function zeit(sekunden) {
+  return sekunden ? new Date(sekunden * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC" : "--";
+}
+function bauLaden() {
+  var ziel = document.getElementById("build");
+  ziel.textContent = "loading ...";
+  return hole("/api/admin/build").then(function (d) {
+    var teile = [];
+    teile.push("<p>Dataset built: <b>" + esc(zeit(d.built_at)) + "</b></p>");
+    var w = d.pending_scans || [];
+    teile.push("<p>" + (w.length
+      ? '<span class="bad">' + w.length + " accepted scan(s) wait for the next build:</span> "
+        + w.map(function (s) { return esc(s.track) + " " + esc(s["class"]) + " (" + esc(s.who) + ", " + esc(zeit(s.received)) + ")"; }).join("; ")
+      : "No accepted scan waits for a build.")
+      + (d.visibility_changed ? ' <span class="bad">The visibility list changed since the build.</span>' : "") + "</p>");
+    if (d.request) {
+      teile.push('<p class="bad">Rebuild requested ' + esc(zeit(d.request.at)) + " -- the build PC picks it up within five minutes.</p>");
+    }
+    var l = d.last_run;
+    teile.push("<p>Last automatic run: " + (l
+      ? esc(zeit(l.finished)) + " -- " + (l.ok ? "ok" : '<span class="bad">failed</span>') + ", "
+        + esc(l.seconds) + " s, " + esc(l.what || "") + (l.message ? "<br><span class=\"note\">" + esc(l.message) + "</span>" : "")
+      : "none reported yet") + "</p>");
+    ziel.innerHTML = teile.join("");
+  }).catch(function (e) {
+    ziel.textContent = "not available: " + e.message;
+  });
+}
+
 // Bestenlisten-Scans aus der App (seit 2026-10-04). Aus- und einblenden ueber die
 // Sichtbarkeitsliste wie jeder Lauf -- es gibt dafuer keinen eigenen Pfad.
 function scansLaden() {
@@ -921,6 +960,7 @@ function laden() {
     zeichnen();
     rundenLaden();
     rennenLaden();
+    bauLaden();
     scansLaden();
     sperrenLaden();
     fassungenLaden();
@@ -962,6 +1002,15 @@ document.getElementById("refresh").addEventListener("click", laden);
 document.getElementById("laps-refresh").addEventListener("click", rundenLaden);
 document.getElementById("races-refresh").addEventListener("click", rennenLaden);
 document.getElementById("scans-refresh").addEventListener("click", scansLaden);
+document.getElementById("build-refresh").addEventListener("click", bauLaden);
+document.getElementById("build-now").addEventListener("click", function () {
+  var b = document.getElementById("build-now");
+  b.disabled = true;
+  schicke("/api/admin/build/request", {})
+    .then(bauLaden)
+    .catch(function (e) { alert("Failed: " + e.message); })
+    .then(function () { b.disabled = false; });
+});
 document.getElementById("bans-refresh").addEventListener("click", sperrenLaden);
 ["f-player", "f-car", "f-max"].forEach(function (id) {
   document.getElementById(id).addEventListener("input", rundenZeichnen);

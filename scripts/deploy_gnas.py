@@ -49,6 +49,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import posixpath
 import shutil
 import subprocess
@@ -96,6 +97,8 @@ CODE = [
     "server/scan_submissions.py",
     # Das Siegel der App-Laeufe (seit 2026-10-11): der Server siegelt, der Bau hier prueft.
     "server/run_seal.py",
+    # Was auf den naechsten Bau des Datensatzes wartet, und "Rebuild now" (seit 2026-10-12).
+    "server/build_state.py",
     # Die Einmal-Tickets vor jeder Einreichung (seit 2026-10-11).
     "server/submit_tickets.py",
     "server/contrib_format.py",
@@ -528,6 +531,11 @@ def seite_veraltet() -> bool:
     return quelle > srv.built_from(seite)
 
 
+# Solange ein Deploy laeuft, steht hier seine Prozessnummer: der selbsttaetige Bau
+# (scripts/auto_build.py) faengt dann keinen zweiten an.
+SPERRE = WORKSPACE / "data" / "runtime" / "deploy.lock"
+
+
 def bauen() -> None:
     # EINE STUNDE, NICHT EINE MINUTE. Hier stand bis zum 2026-09-15 "etwa eine
     # Minute" -- das galt bei einer Handvoll Boards. Am 2026-09-15 mit 598 Boards
@@ -694,7 +702,27 @@ def main(argv: list | None = None) -> int:
                         help="nur den Server-Code -- keine Daten")
     parser.add_argument("--kein-bau", action="store_true",
                         help="die Seite nicht bauen, auch wenn sie veraltet ist")
+    # Fuer den selbsttaetigen Bau (scripts/auto_build.py, seit 2026-10-12): nur Seite und
+    # Datensatz -- ein hier gebautes, ungeprueftes App-Paket ginge sonst nebenbei mit hinaus.
+    parser.add_argument("--nur-datensatz", action="store_true",
+                        help="wie --nur-daten, aber ohne Pakete und Videos")
     args = parser.parse_args(argv)
+    if args.nur_datensatz:
+        args.nur_daten = True
+    if args.apply:
+        SPERRE.parent.mkdir(parents=True, exist_ok=True)
+        SPERRE.write_text(str(os.getpid()))
+    try:
+        return _main(args)
+    finally:
+        if args.apply:
+            try:
+                SPERRE.unlink()
+            except OSError:
+                pass
+
+
+def _main(args) -> int:
     try:
         cfg = einstellung()
     except Fehler as e:
@@ -714,6 +742,7 @@ def main(argv: list | None = None) -> int:
         if args.einrichten:
             return einrichten(cfg)
 
+        gebaut = False
         if not args.nur_schicken:
             print("HOLEN (was drueben entstanden ist)")
             neu = holen_baeume(cfg, args.apply)
@@ -721,12 +750,15 @@ def main(argv: list | None = None) -> int:
             if (neu or uebernommen) and args.apply and not args.kein_bau:
                 print("\nBAUEN (Fremdbeitraege oder Sichtbarkeit haben sich geaendert)")
                 bauen()
+                gebaut = True
 
         if not args.nur_holen:
             # Bei --nur-code geht die Seite gar nicht mit -- sie dafuer zu
             # bauen waere eine Minute Rechenzeit fuer nichts, und auf dieser
             # Maschine konkurriert sie mit der OCR des laufenden Sweeps.
-            if (args.apply and not args.kein_bau and not args.nur_code
+            # Schon in diesem Lauf gebaut: nicht noch einmal (bis 2026-10-12 baute jeder Lauf
+            # mit neuen Fremdbeitraegen zweimal, je zwei bis drei Minuten).
+            if (args.apply and not args.kein_bau and not args.nur_code and not gebaut
                     and seite_veraltet()):
                 print("\nBAUEN (die Seite ist hinter ihren Quellen zurueck)")
                 bauen()
@@ -739,7 +771,8 @@ def main(argv: list | None = None) -> int:
                 print("\nCODE wird NICHT geschickt (--nur-daten)")
             if not args.nur_code:
                 print("SCHICKEN (Seite, Datensatz, Pakete)")
-                schicken(cfg, INHALT, args.apply)
+                schicken(cfg, [n for n in INHALT if n.startswith("data/")] if args.nur_datensatz else INHALT,
+                         args.apply)
                 print("SCHICKEN (Schluessel -- der Inhalt wird nicht ausgegeben)")
                 schicken(cfg, GEHEIM, args.apply, geheim=True)
             else:
