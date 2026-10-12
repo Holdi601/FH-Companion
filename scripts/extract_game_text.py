@@ -119,7 +119,68 @@ WORTE = {
     "no_auctions": "NO AUCTIONS TO DISPLAY",
     "owned": "OWNED",
     "unit_min": "min",
+    "mi": "mi",
+    # Der Bestenlisten-Scanner (Scan/ScanScreen.cs, seit 2026-10-12): bis dahin erkannte er Schirme
+    # und Strecken nur an englischen Worten -- ein Spiel in einer anderen Sprache konnte nicht scannen.
+    # Jeder Text hier steht GENAU so in der englischen Tabelle (nachgesehen am 2026-10-12).
+    "performance_class_line": "[HIGHLIGHT:“{0}”] Performance Class",
+    "select_route": "Select Route",
+    "routes_available": "{0} Routes Available",
+    "filter_colon": "Filter:",
+    "global": "Global",
+    "players": "Players",
+    "time_to_beat": "Time to Beat",
+    "road_racing": "Road Racing",
+    "street_racing": "Street Racing",
+    "cross_country": "Cross-Country",
+    "cross_country_plain": "Cross Country",
+    "dirt_racing": "Dirt Racing",
+    "drag_racing": "Drag Racing",
+    "touge": "Touge",
+    "my_rivals": "My Rivals",
+    "monthly_rivals": "Monthly Rivals",
+    "horizon_rivals": "Horizon Rivals",
+    "forza_link_selection": "Forza LINK Selection",
+    "the_eliminator": "The Eliminator",
+    "horizon_stunt_party": "Horizon Stunt Party",
+    "top_the_leaderboards": "Top The Leaderboards",
+    "horizon_open": "Horizon Open",
+    "horizon_tour": "Horizon Tour",
+    "close_map": "Close Map",
+    "toggle_map_regions": "Toggle Map Regions",
+    "set_route": "Set Route",
+    "creative_hub": "CREATIVE HUB",
+    "reset_car_position": "Reset Car Position",
+    "exit_game": "Exit Game",
+    "customizable_garage": "Customizable Garage",
+    "forzavista": "Forzavista",
+    "continue": "Continue",
+    "start_game": "Start Game",
+    "accessibility_settings": "Accessibility/Settings",
+    "series_update": "Series Update",
+    "series_ends_in": "Series Ends In",
+    "festival_playlist": "Festival Playlist",
+    "loading": "LOADING",
+    "favorite_radio_station": "Favorite Radio Station",
+    "horizon_pulse": "HORIZON PULSE",
+    "rivals_beaten": "Rivals Beaten",
+    "number_of_podiums": "Number of Podiums",
+    "ultimate_draft_skills": "Ultimate Draft Skills",
+    "skill_points": "Skill Points",
+    "distance_driven": "Distance Driven",
+    "server_error": "Server Error",
+    "server_error_rivals": "There was an error communicating with the server. Could not update Rivals data.",
+    "server_error_later": "There was an error communicating with the server. Please try again later.",
+    "return_to_solo": "Return to Horizon Solo?",
+    "game_terminated": "Forza Horizon 6 has terminated unexpectedly due to an error.\nFor further support please visit:\n"
+                       "<a href=\"https://aka.ms/ForzaSupport\">https://aka.ms/ForzaSupport</a>",
+    "game_hit_error": "Forza Horizon 6 has hit an unexpected error",
+    "video_card_crash": "Video Card Crash",
 }
+
+# Lange Meldungen: nur ihr erster Satz kommt in die Datei -- den sucht der Scanner, der Rest
+# (Hinweise, Verweise) bricht die Texterkennung ohnehin in andere Zeilen.
+NUR_ERSTER_SATZ = ("server_error_rivals", "server_error_later", "game_terminated")
 
 # Menues des Spiels, die die App in ihren eigenen Texten NENNT ("Settings > HUD and
 # Gameplay", "My Cars"): je App-Sprache die Schreibweise des Spiels, damit die
@@ -241,6 +302,8 @@ def main() -> int:
                     alle.add(cache[(sprache, d)][k])
         if name in ANFAENGE:
             alle = {a.split("{")[0].strip() for a in alle}
+        if name in NUR_ERSTER_SATZ:
+            alle = {re.split(r"(?<=[.!?。！？])\s*|\n", a.strip())[0].strip() for a in alle}
         worte[name] = sorted(a for a in alle if a)
 
     # Menuenamen je App-Sprache: die erste Fundstelle des englischen Textes.

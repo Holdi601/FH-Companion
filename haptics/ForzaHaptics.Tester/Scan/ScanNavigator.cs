@@ -90,13 +90,19 @@ internal sealed class ScanNavigator
     internal const byte Enter = 0x0D, Esc = 0x1B, Links = 0x25, Hoch = 0x26, Rechts = 0x27, Runter = 0x28, TasteY = 0x59, Tab = 0x09;
     private const int PauseTaste = 0x13;
 
-    private static readonly Regex RivalsKachel = new(@"^\s*(?:Rivals|Top the Leaderboards)\s*$", RegexOptions.CultureInvariant);
+    // Beide Kacheln auch in der Sprache des Spiels (seit 2026-10-12): vorher fand ein deutsches
+    // Spiel weder "Rivalen" noch "Horizon-Rivalen" und kam nie zu den Kategorien.
+    internal static readonly Regex RivalsKachel = ScanScreen.Zeile("Rivals|Top the Leaderboards", RegexOptions.None,
+                                                                   ("rivals", "Rivals"), ("top_the_leaderboards", "Top The Leaderboards"));
 
     /// <summary>
     /// Die Kachel im Rivals-Hub, die zu den Kategorien fuehrt (links; daneben Monthly, My und Showcase Rivals).
     /// Ihr Titel steht zweizeilig: die Texterkennung liefert "Horizon" und "Rivals" getrennt (live 2026-10-04).
+    /// In den anderen Sprachen ebenso: "Horizon-" und "Rivalen", "Rivaux" und "Horizon" -- die Zeile mit
+    /// "Horizon" genuegt, wie im Englischen; einzeilig der ganze Titel ("Horizon-Rivalen", "地平线劲敌").
     /// </summary>
-    private static readonly Regex HorizonRivalsKachel = new(@"^\s*Horizon(?:\s+Rivals)?\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    internal static readonly Regex HorizonRivalsKachel = ScanScreen.Zeile(@"Horizon(?:\s+Rivals)?|Horizon\s*-", RegexOptions.IgnoreCase,
+                                                                          ("horizon_rivals", "Horizon Rivals"));
 
     private void PruefeWeiter()
     {
