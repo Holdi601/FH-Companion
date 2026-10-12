@@ -20,8 +20,14 @@ internal enum ScanSchirm
 /// <remarks>
 /// Die Muster sind die des Python-Werkzeugs (`scripts/forza_navigator.ps1`, Get-ScreenState),
 /// in derselben Reihenfolge -- jede Zeile dort ist eine Lehre aus einem verlorenen Lauf.
-/// Heute nur Englisch, wie das alte Werkzeug; die Spielsprachen kommen mit den
-/// Stringtabellen (GameText), sobald der Scanner laeuft.
+///
+/// ALLE SPIELSPRACHEN (seit 2026-10-12). Bis dahin nur Englisch, wie das alte Werkzeug: ein
+/// Spiel auf Deutsch, Franzoesisch, Japanisch ... konnte gar nicht scannen -- kein Schirm wurde
+/// erkannt, keine Strecke verortet. Jetzt steht hinter jedem englischen Muster (unveraendert,
+/// mit allen Toleranzen fuer verlesene Zeichen) dasselbe Wort in jeder Sprache des Spiels, aus
+/// dessen Stringtabellen (<see cref="GameText"/>, <c>config/game_text.json</c>). Die Muster der
+/// anderen Sprachen sind locker in Gross-/Kleinschreibung, Zwischenraum und Akzenten (siehe
+/// <see cref="TextMuster"/>); fehlt die Datei, gilt nur das Englische wie vorher.
 ///
 /// Streckennamen: der Titel der gewaehlten Strecke ist ab ~25 Zeichen beschnitten und
 /// LAEUFT ('Tateyama Alpine Cross-Coun' -> 'ateyama Alpine Cross-Count'), und die
@@ -55,37 +61,214 @@ internal static class ScanScreen
     /// <summary>Die Reihenfolge der Klassenleiste: so weit liegt R rechts von D.</summary>
     internal static readonly string[] Klassen = { "D", "C", "B", "A", "S1", "S2", "R", "X" };
 
+    // ------------------------------------------------------------------ //
+    // Die Texte des Spiels in allen Sprachen (seit 2026-10-12)
+    // ------------------------------------------------------------------ //
+
+    /// <summary>
+    /// Ein Text des Spiels als Muster, so wie die Texterkennung ihn liefert: Gross- und
+    /// Kleinschreibung egal, Zwischenraum und Bindestrich locker ("Horizon-Open", "Horizon Open",
+    /// Zeilenumbruch), Akzente duerfen fehlen ("Categorie"), ein Doppelpunkt darf fehlen oder ein
+    /// Strichpunkt sein, und Schriften ohne Wortgrenzen (Japanisch, Chinesisch) duerfen zwischen
+    /// den Zeichen Luecken haben. Worte in Buchstabenschrift nur als ganze Worte: das daenische
+    /// "Vent" ("Bitte warten") steckt sonst in "Event".
+    /// </summary>
+    internal static string TextMuster(string text)
+    {
+        var t = text.Replace('ɨ', 'i').Replace('Ɨ', 'I').Replace('ı', 'i').Trim();
+        var sb = new System.Text.StringBuilder();
+        var luecke = true;
+        foreach (var c in t)
+        {
+            if (char.IsWhiteSpace(c) || c is '-' or '‐' or '‑' or '–')
+            {
+                if (!luecke) { sb.Append(@"[\s\-‐‑–]*"); luecke = true; }
+                continue;
+            }
+            luecke = false;
+            if (c is ':' or '：') { sb.Append(@"\s*[:：;]?"); continue; }
+            if (c == '/') { sb.Append(@".{0,3}"); continue; }
+            var basis = OhneAkzent(c);
+            sb.Append(basis != c ? $"[{c}{basis}]" : Regex.Escape(c.ToString()));
+            if (c >= 0x2E80) { sb.Append(@"\s*"); luecke = true; }
+        }
+        var kern = sb.ToString();
+        if (kern.Length == 0) { return "(?!)"; }
+        var ohneGrenzen = t.Any(c => c >= 0x2E80);
+        var vorn = !ohneGrenzen && char.IsLetterOrDigit(t[0]) ? @"(?<![\p{L}\p{N}])" : string.Empty;
+        var hinten = !ohneGrenzen && char.IsLetterOrDigit(t[^1]) ? @"(?![\p{L}\p{N}])" : string.Empty;
+        return $"{vorn}(?i:{kern}){hinten}";
+    }
+
+    private static char OhneAkzent(char c)
+    {
+        var zerlegt = c.ToString().Normalize(System.Text.NormalizationForm.FormD);
+        return zerlegt.Length > 1 && char.IsLetter(zerlegt[0]) && zerlegt[0] < 0x2E80 ? zerlegt[0] : c;
+    }
+
+    /// <summary>
+    /// Die Schreibweisen eines Wortes in den anderen Spielsprachen, als Muster -- ohne die, die
+    /// gefaltet dem Englischen gleichen: das englische Muster deckt sie schon ab, und es soll
+    /// genau so bleiben, wie es war. Platzhalter ("{0} Routen verfuegbar") fallen weg.
+    /// </summary>
+    internal static IEnumerable<string> Fremd(string schluessel, string englisch)
+    {
+        var en = GameText.Falte(englisch.Replace("{0}", string.Empty));
+        foreach (var roh in GameText.Roh(schluessel, englisch))
+        {
+            var ohne = Regex.Replace(roh, @"\{\d\}", " ");
+            ohne = ohne.Trim().Trim('.', '。', ' ', (char)0xA0);
+            if (ohne.Length == 0 || GameText.Falte(ohne) == en) { continue; }
+            yield return TextMuster(ohne);
+        }
+    }
+
+    /// <summary>Das englische Muster und dahinter dieselben Worte in jeder Sprache des Spiels.</summary>
+    internal static string Mehrsprachig(string englischesMuster, params (string Schluessel, string Englisch)[] worte)
+    {
+        var fremd = worte.SelectMany(w => Fremd(w.Schluessel, w.Englisch)).Distinct(StringComparer.Ordinal).ToList();
+        return fremd.Count == 0 ? englischesMuster : englischesMuster + "|" + string.Join("|", fremd);
+    }
+
+    /// <summary>Wie <see cref="Mehrsprachig"/>, als ganze Zeile: "^\s*(?:...)\s*$".</summary>
+    internal static Regex Zeile(string englischesMuster, RegexOptions zusatz, params (string Schluessel, string Englisch)[] worte) =>
+        new(@"^\s*(?:" + Mehrsprachig(englischesMuster, worte) + @")\s*$", O | zusatz);
+
+    /// <summary>
+    /// Die Klassenzeile in den anderen Sprachen. Der Buchstabe steht nicht ueberall vorn:
+    /// '„D“ Leistungsklasse', aber 'Catégorie de performances « D »' und 'Ytelsesklasse for
+    /// «D»'. Aus der Vorlage des Spiels ('[HIGHLIGHT:„{0}“] Leistungsklasse') wird darum Text
+    /// vor und hinter dem Platzhalter; um den Buchstaben duerfen dieselben verlesenen
+    /// Anfuehrungszeichen kleben wie im Englischen.
+    /// </summary>
+    private static IEnumerable<string> KlassenMusterFremd()
+    {
+        const string Zeichen = @"|'""!“”„«»‘’‚‹›「」『』,";
+        foreach (var roh in GameText.Roh("performance_class_line", "[HIGHLIGHT:“{0}”] Performance Class"))
+        {
+            var t = roh.Replace("[HIGHLIGHT:", string.Empty).Replace("]", string.Empty);
+            var stelle = t.IndexOf("{0}", StringComparison.Ordinal);
+            if (stelle < 0) { continue; }
+            static string Rand(string s) => new string(s.Where(c => c != (char)0xA0).ToArray()).Trim()
+                .Trim('"', '\'', '“', '”', '„', '«', '»', '‘', '’', '‚', '‹', '›', '「', '」', '『', '』', ':', '-', ' ');
+            var vor = Rand(t[..stelle]);
+            var nach = Rand(t[(stelle + 3)..]);
+            if (GameText.Falte(vor + " " + nach) == "performance class") { continue; }
+            var muster = vor.Length > 0
+                ? TextMuster(vor) + @"\W{0,5}[" + Zeichen + @"]{0,3}(?<k>" + KlassenAlternative + ")(?![a-z0-9])"
+                : @"(?<![A-Za-z0-9])[SITtl" + Zeichen + @"]{0,3}(?<k>" + KlassenAlternative + ")";
+            muster += nach.Length > 0 ? @"[Il" + Zeichen + @"]{0,3}\W{0,4}" + TextMuster(nach) : string.Empty;
+            yield return muster;
+        }
+    }
+
+    /// <summary>Die Klassenzeile in jeder Sprache; die Klasse steht in der Gruppe "k".</summary>
+    internal static readonly string KlassenMusterAlle =
+        string.Join("|", new[] { KlassenMuster.Replace("(" + KlassenAlternative + ")", "(?<k>" + KlassenAlternative + ")") }
+                         .Concat(KlassenMusterFremd()).Distinct(StringComparer.Ordinal));
+
+    /// <summary>Die Kategorien, wie die Kacheln sie nennen, je englischem Namen.</summary>
+    private static readonly Dictionary<string, (string Schluessel, string Englisch)[]> KategorieWorte = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Road Racing"] = new[] { ("road_racing", "Road Racing") },
+        ["Street Racing"] = new[] { ("street_racing", "Street Racing") },
+        ["Cross-Country"] = new[] { ("cross_country", "Cross-Country"), ("cross_country_plain", "Cross Country") },
+        ["Dirt Racing"] = new[] { ("dirt_racing", "Dirt Racing") },
+        ["Drag Racing"] = new[] { ("drag_racing", "Drag Racing") },
+        ["Touge"] = new[] { ("touge", "Touge") },
+    };
+
+    /// <summary>Eine Kachel des Kategorieschirms, englisch (wie bisher: irgendwo im Text, ohne Ruecksicht auf Gross/klein) oder in der Spielsprache.</summary>
+    private static readonly Dictionary<string, Regex> KachelText = KategorieWorte.ToDictionary(
+        k => k.Key,
+        k => new Regex(Mehrsprachig("(?i:" + Regex.Escape(k.Key) + ")", k.Value), O),
+        StringComparer.OrdinalIgnoreCase);
+
     private static readonly (ScanSchirm Schirm, Regex Muster)[] Reihenfolge =
     {
         // Ein abgestuerztes Spiel zuerst: dagegen zu druecken ist verschwendet.
-        (ScanSchirm.Abgestuerzt, new(@"terminated\s+unexpectedly|has\s+\w+\s+an\s+unexpected\s+error|Video\s+Card\s+Crash", O)),
+        (ScanSchirm.Abgestuerzt, new(Mehrsprachig(@"terminated\s+unexpectedly|has\s+\w+\s+an\s+unexpected\s+error|Video\s+Card\s+Crash",
+                                                  ("game_terminated", "Forza Horizon 6 has terminated unexpectedly due to an error."),
+                                                  ("game_hit_error", "Forza Horizon 6 has hit an unexpected error"),
+                                                  ("video_card_crash", "Video Card Crash")), O)),
         // Dann der Serverfehler: der einzige Schirm, bei dem Warten nachweislich sinnlos ist.
-        (ScanSchirm.ServerFehler, new(@"Server\s+Error|error\s+communicating\s+with\s+the\s+server", O)),
-        (ScanSchirm.Bestaetigung, new(@"Are you sure you want to|Return to Horizon Solo\?", O)),
+        (ScanSchirm.ServerFehler, new(Mehrsprachig(@"Server\s+Error|error\s+communicating\s+with\s+the\s+server",
+                                                   ("server_error", "Server Error"),
+                                                   ("server_error_rivals", "There was an error communicating with the server."),
+                                                   ("server_error_later", "There was an error communicating with the server.")), O)),
+        // "Are you sure you want to" steht im Spiel nur in ganzen Saetzen; deren Ja/Nein faengt ScanDialog in jeder Sprache.
+        (ScanSchirm.Bestaetigung, new(Mehrsprachig(@"Are you sure you want to|Return to Horizon Solo\?", ("return_to_solo", "Return to Horizon Solo?")), O)),
         // Nicht 'Change Rival': das steht auch auf dem Klassenschirm. Filter und Spielerzahl
-        // gibt es nur auf der Tabelle selbst.
-        (ScanSchirm.Bestenliste, new(@"Filter:\s*Global|[0-9][0-9,]{2,}\s+Players", O)),
-        (ScanSchirm.Klassenschirm, new(KlassenMuster, O)),
+        // gibt es nur auf der Tabelle selbst. Die Spielerzahl in jeder Schreibweise der Sprache:
+        // "14,914 Players", "14.914 Spieler", "14 914 joueurs" (geschuetztes Leerzeichen) --
+        // aber nur in derselben Zeile, sonst griffe die Zahl unter einer Spaltenueberschrift.
+        (ScanSchirm.Bestenliste, new(@"Filter:\s*Global|[0-9][0-9,]{2,}\s+Players"
+                                     + FremdPaar(("filter_colon", "Filter:"), ("global", "Global"), @"\s*")
+                                     + FremdPaar(null, ("players", "Players"), @"\p{Zs}*",
+                                                 @"[0-9][0-9,.'’\p{Zs}]{2,}"), O)),
+        (ScanSchirm.Klassenschirm, new(KlassenMusterAlle, O)),
         // Derselbe Schirm wie der Klassenschirm, nur ohne lesbare Klassenzeile (weiss auf
         // heller Karte). 'Time to Beat' steht nur dort; 'Gap to Rival' auch auf der Leiste.
-        (ScanSchirm.RivalDetail, new(@"Time\s+to\s+Beat", O)),
+        (ScanSchirm.RivalDetail, new(Mehrsprachig(@"Time\s+to\s+Beat", ("time_to_beat", "Time to Beat")), O)),
         // "Roule Length": so liest die Windows-Texterkennung es auf hellen Karten (6 von 96 Listen).
-        (ScanSchirm.Streckenliste, new(@"Rou[lt]e\s+Length|Select\s+Route|Choose\s+Route", O)),
-        (ScanSchirm.Kategorien, new(@"Road Racing|Street Racing|Cross-Country|Dirt Racing|Drag Racing|Touge", O)),
-        (ScanSchirm.RivalsHub, new(@"My Rivals|Showcase Rivals|Monthly Rivals", O)),
-        (ScanSchirm.ForzaLink, new(@"Forza LINK Selection|The Eliminator|Horizon Stunt Party", O)),
-        (ScanSchirm.OnlineReiter, new(@"Top the Leaderboards|Horizon Open|Horizon Tour", O)),
-        (ScanSchirm.Karte, new(@"Close Map|Toggle Map Regions|Set Route", O)),
-        (ScanSchirm.Pause, new(@"CREATIVE HUB|Reset Car Position|Exit Game", O)),
-        (ScanSchirm.Garage, new(@"CUSTOMISABLE GARAGE|Forzavista", O)),
-        (ScanSchirm.Weiter, new(@"(?m)^\s*Continue\s*$", O)),
-        (ScanSchirm.Titel, new(@"Start\s*Game|Accessibility.{0,2}Settings", O)),
+        // "Choose Route" gibt es im Spiel nicht (mehr); es bleibt, wie es war.
+        (ScanSchirm.Streckenliste, new(Mehrsprachig(@"Rou[lt]e\s+Length|Select\s+Route|Choose\s+Route",
+                                                    ("route_length", "Route Length:"), ("route_length_plain", "Route Length"),
+                                                    ("select_route", "Select Route")), O)),
+        (ScanSchirm.Kategorien, new(Mehrsprachig(@"Road Racing|Street Racing|Cross-Country|Dirt Racing|Drag Racing|Touge",
+                                                 KategorieWorte.Values.SelectMany(w => w).ToArray()), O)),
+        // "Showcase Rivals" steht in keiner Tabelle als eigener Text -- nur Englisch.
+        (ScanSchirm.RivalsHub, new(Mehrsprachig(@"My Rivals|Showcase Rivals|Monthly Rivals",
+                                                ("my_rivals", "My Rivals"), ("monthly_rivals", "Monthly Rivals")), O)),
+        (ScanSchirm.ForzaLink, new(Mehrsprachig(@"Forza LINK Selection|The Eliminator|Horizon Stunt Party",
+                                                ("forza_link_selection", "Forza LINK Selection"), ("the_eliminator", "The Eliminator"),
+                                                ("horizon_stunt_party", "Horizon Stunt Party")), O)),
+        (ScanSchirm.OnlineReiter, new(Mehrsprachig(@"Top the Leaderboards|Horizon Open|Horizon Tour",
+                                                   ("top_the_leaderboards", "Top The Leaderboards"), ("horizon_open", "Horizon Open"),
+                                                   ("horizon_tour", "Horizon Tour")), O)),
+        (ScanSchirm.Karte, new(Mehrsprachig(@"Close Map|Toggle Map Regions|Set Route",
+                                            ("close_map", "Close Map"), ("toggle_map_regions", "Toggle Map Regions"), ("set_route", "Set Route")), O)),
+        (ScanSchirm.Pause, new(Mehrsprachig(@"CREATIVE HUB|Reset Car Position|Exit Game",
+                                            ("creative_hub", "CREATIVE HUB"), ("reset_car_position", "Reset Car Position"), ("exit_game", "Exit Game")), O)),
+        // Das Spiel schreibt "Customizable Garage"; der Schirm zeigt die britische Fassung.
+        (ScanSchirm.Garage, new(Mehrsprachig(@"CUSTOMISABLE GARAGE|Forzavista",
+                                             ("customizable_garage", "Customizable Garage"), ("forzavista", "Forzavista")), O)),
+        (ScanSchirm.Weiter, new(@"(?m)^\s*(?:" + Mehrsprachig("Continue", ("continue", "Continue")) + @")\s*$", O)),
+        (ScanSchirm.Titel, new(Mehrsprachig(@"Start\s*Game|Accessibility.{0,2}Settings",
+                                            ("start_game", "Start Game"), ("accessibility_settings", "Accessibility/Settings")), O)),
         // Nach jedem Spielstart modal; ENTER blaettert durch. Hinter den Menues, weil das
         // Pausenmenue 'Festival Playlist' ebenfalls zeigt.
-        (ScanSchirm.SerienUpdate, new(@"Series\s+Update|Series\s+Ends\s+In|Festival\s+Playlist", O)),
+        (ScanSchirm.SerienUpdate, new(Mehrsprachig(@"Series\s+Update|Series\s+Ends\s+In|Festival\s+Playlist",
+                                                   ("series_update", "Series Update"), ("series_ends_in", "Series Ends In"),
+                                                   ("festival_playlist", "Festival Playlist")), O)),
         // Die Ladekarten wechseln staendig; zuletzt, damit ein echtes Menue immer gewinnt.
-        (ScanSchirm.Ladeschirm, new(@"LOADING|PLEASE WAIT|Favourite Radio Station|HORIZON PULSE|Rivals Beaten|Number of Podiums|Ultimate Draft Skills|Skill Points|Distance Driven", O)),
+        (ScanSchirm.Ladeschirm, new(Mehrsprachig(@"LOADING|PLEASE WAIT|Favourite Radio Station|HORIZON PULSE|Rivals Beaten|Number of Podiums|Ultimate Draft Skills|Skill Points|Distance Driven",
+                                                 ("loading", "LOADING"), ("please_wait", "PLEASE WAIT"),
+                                                 ("favorite_radio_station", "Favourite Radio Station"), ("horizon_pulse", "HORIZON PULSE"),
+                                                 ("rivals_beaten", "Rivals Beaten"), ("number_of_podiums", "Number of Podiums"),
+                                                 ("ultimate_draft_skills", "Ultimate Draft Skills"), ("skill_points", "Skill Points"),
+                                                 ("distance_driven", "Distance Driven")), O)),
     };
+
+    /// <summary>
+    /// "|A B" fuer jedes Paar fremder Schreibweisen (A und B ohne die englischen). Ohne ersten
+    /// Teil steht <paramref name="zahl"/> davor: "14.914 Spieler".
+    /// </summary>
+    private static string FremdPaar((string Schluessel, string Englisch)? erst, (string Schluessel, string Englisch) dann,
+                                    string zwischen, string? zahl = null)
+    {
+        var b = Fremd(dann.Schluessel, dann.Englisch).Distinct(StringComparer.Ordinal).ToList();
+        if (b.Count == 0) { return string.Empty; }
+        if (erst is not { } e)
+        {
+            return "|" + zahl + zwischen + "(?:" + string.Join("|", b) + ")";
+        }
+        // "Filtre : Monde", aber auch "Filter: Monde" -- ein Teil darf dem Englischen gleichen (Deutsch:
+        // "Filter: Global"). Die Paare werden nicht je Sprache gebildet; ein Mischpaar steht nirgends sonst.
+        var a = Fremd(e.Schluessel, e.Englisch).Append(TextMuster(e.Englisch)).Distinct(StringComparer.Ordinal).ToList();
+        b.Add(TextMuster(dann.Englisch));
+        return "|(?:" + string.Join("|", a) + ")" + zwischen + "(?:" + string.Join("|", b.Distinct(StringComparer.Ordinal)) + ")";
+    }
 
     /// <summary>Zeilen, die kein Menue sind: Windows-Hinweis und die FPS-Anzeigen des Rechners.</summary>
     private static readonly Regex Rauschen =
@@ -93,8 +276,11 @@ internal static class ScanScreen
 
     // Nicht am Zeilenanfang verankert: auf dem Klassenschirm steht es hinter Klasse und
     // Jahreszeit ('"D" Performance Class / Summer Season / Route Length: 6.9 KM').
-    private static readonly Regex RouteLength = new(@"Rou[lt]e\s+Length", O);
-    private static readonly Regex LaengeWert = new(@"Rou[lt]e\s+Length\W*(\d{1,2})\s*[.,]\s*(\d)(.{0,6})", O);
+    // In jeder Sprache: "Routenlänge: 6,9 km", "Longueur du tracé : 6,9 km", "ルート距離: 6.9 km".
+    private static readonly string RouteLengthMuster =
+        Mehrsprachig(@"Rou[lt]e\s+Length", ("route_length", "Route Length:"), ("route_length_plain", "Route Length"));
+    private static readonly Regex RouteLength = new(RouteLengthMuster, O);
+    private static readonly Regex LaengeWert = new(@"(?:" + RouteLengthMuster + @")\W*(\d{1,2})\s*[.,]\s*(\d)(.{0,6})", O);
     private static readonly Regex KmWert = new(@"^\W*(\d{1,2})\s*[.,]\s*(\d)\s*(\S.{0,5})", O);
 
     // MEILEN (seit 2026-10-12). Ein Spiel mit imperialen Einheiten zeigt "Route Length: 4.3 MI"
@@ -147,10 +333,11 @@ internal static class ScanScreen
         }
         return meilen > km;
     }
-    private static readonly Regex RoutesKopf = new(@"^\s*Routes\s*$", O);
-    private static readonly Regex RivalsKopf = new(@"^\s*Rivals\s*$", O);
-    private static readonly Regex KlassenZeile = new(KlassenMuster, O);
-    private static readonly Regex RoutesAvailable = new(@"Routes\s+Available", O);
+    private static readonly Regex RoutesKopf = Zeile("Routes", RegexOptions.None, ("routes", "Routes"));
+    private static readonly Regex RivalsKopf = Zeile("Rivals", RegexOptions.None, ("rivals", "Rivals"));
+    private static readonly Regex KlassenZeile = new(KlassenMusterAlle, O);
+    // "{0} Routen verfügbar", "Dostępne trasy: {0}", "{0} 個のルートが利用可能": der Text ohne die Zahl.
+    private static readonly Regex RoutesAvailable = new(Mehrsprachig(@"Routes\s+Available", ("routes_available", "{0} Routes Available")), O);
 
     /// <summary>Alle Zeilen von oben nach unten als ein Text.</summary>
     public static string Text(IReadOnlyList<OcrLine> zeilen) =>
@@ -208,7 +395,7 @@ internal static class ScanScreen
         // Verschiedenes, gilt die Klasse als unlesbar -- dann wird gewartet, nicht geraten.
         static string Klasse(Match m)
         {
-            var roh = m.Groups[1].Value.ToUpperInvariant();
+            var roh = m.Groups["k"].Value.ToUpperInvariant();
             return roh.Length == 2 && roh[0] == 'S' ? (roh[1] is '2' or 'Z' ? "S2" : "S1") : roh;
         }
         var gelesen = KlassenZeile.Matches(Text(zeilen)).Select(Klasse).Distinct().ToList();
@@ -526,11 +713,73 @@ internal static class ScanScreen
 
     internal static bool GleicheStrecke(string? gelesen, string name) => StreckenAehnlichkeit(gelesen, name) >= Schwelle;
 
-    /// <summary>Die Position einer Lesung im Karussell; -1, wenn keine oder mehrere passen.</summary>
+    // ------------------------------------------------------------------ //
+    // Streckennamen in den anderen Sprachen (seit 2026-10-12)
+    // ------------------------------------------------------------------ //
+
+    /// <summary>Ein fremder Name zum Vergleich: ohne Akzente, nur Buchstaben und Ziffern.</summary>
+    internal static string FalteFremd(string? name) => string.Concat(GameText.Falte(name).Where(char.IsLetterOrDigit));
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string[]> FremdeNamen = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Die Namen einer Strecke in den anderen Spielsprachen ("Highway-Rundkurs", "Circuit
+    /// d'autoroute", "ハイウェイサーキット"), gefaltet -- ohne die, die dem englischen gleichen:
+    /// fuer die gilt weiter allein <see cref="StreckenAehnlichkeit"/>.
+    /// </summary>
+    internal static IReadOnlyList<string> Fremdnamen(string englisch) => FremdeNamen.GetOrAdd(englisch, e =>
+    {
+        var en = FalteFremd(e);
+        return GameText.StreckennamenLocker(e).Select(FalteFremd).Where(f => f.Length > 0 && f != en)
+                       .Distinct(StringComparer.Ordinal).ToArray();
+    });
+
+    /// <summary>
+    /// Wie sehr eine Lesung einem fremden Namen gleicht, 0..1. Die Regel der englischen Namen
+    /// (Kopf und Gattungswort) taugt hier nicht: "Carrera de Nachi" und "Carrera por los muelles
+    /// de Tokio" haetten denselben "Kopf". Darum der ganze Name; ein langer Titel ist beschnitten
+    /// und laeuft (ab ~25 Zeichen), dann zaehlt bei einer langen Lesung auch das gleich lange
+    /// Stueck des Namens ab bis zu fuenf Stellen.
+    /// </summary>
+    internal static double FremdAehnlichkeit(string? gelesen, string fremd)
+    {
+        var x = FalteFremd(gelesen);
+        var ohneGrenzen = fremd.Any(c => c >= 0x2E80);
+        if (x.Length < (ohneGrenzen ? 2 : 4) || fremd.Length == 0) { return 0.0; }
+        var beste = Aehnlichkeit(x, fremd);
+        // Nur eine LANGE Lesung ist ein beschnittener Titel: ein kurzer Name ("Izu Cross-Country")
+        // steckte sonst im Fenster eines langen ("Circuito Cross-Country da Ilha das Lendas").
+        if (fremd.Length > 24 && x.Length >= 18 && x.Length < fremd.Length)
+        {
+            for (var schub = 0; schub <= 5 && schub + x.Length <= fremd.Length; schub++)
+            {
+                beste = Math.Max(beste, Aehnlichkeit(x, fremd.Substring(schub, x.Length)));
+            }
+        }
+        return beste;
+    }
+
+    /// <summary>Wie sehr eine Lesung diese Strecke zeigt -- unter ihrem englischen Namen oder einem der Spielsprachen.</summary>
+    internal static double StreckenWert(string? gelesen, string englisch)
+    {
+        var wert = StreckenAehnlichkeit(gelesen, englisch);
+        foreach (var f in Fremdnamen(englisch))
+        {
+            if (wert >= 1.0) { break; }
+            wert = Math.Max(wert, FremdAehnlichkeit(gelesen, f));
+        }
+        return wert;
+    }
+
+    /// <summary>
+    /// Die Position einer Lesung im Karussell; -1, wenn keine oder mehrere passen. Seit
+    /// 2026-10-12 auch ueber die Namen der anderen Spielsprachen: ein deutsches Spiel zeigt
+    /// "Highway-Rundkurs", kein "Highway Circuit" -- vorher fand der Scanner dort keine Strecke.
+    /// </summary>
     public static int Lokalisiere(string? gelesen, IReadOnlyList<string> strecken)
     {
         if (string.IsNullOrWhiteSpace(gelesen) || strecken.Count == 0) { return -1; }
-        var werte = strecken.Select((n, i) => (Wert: StreckenAehnlichkeit(gelesen, n), Index: i))
+        var werte = strecken.Select((n, i) => (Wert: StreckenWert(gelesen, n), Index: i))
                             .OrderByDescending(w => w.Wert).ToList();
         if (werte[0].Wert < Schwelle) { return -1; }
         if (werte.Count > 1 && werte[0].Wert - werte[1].Wert < Abstand) { return -1; }
@@ -555,7 +804,7 @@ internal static class ScanScreen
     public static bool IstKategorieSchirm(IReadOnlyList<OcrLine> zeilen)
     {
         var text = Text(zeilen);
-        return RoutesAvailable.IsMatch(text) && Kacheln.Count(k => text.Contains(k.Name, StringComparison.OrdinalIgnoreCase)) >= 3;
+        return RoutesAvailable.IsMatch(text) && Kacheln.Count(k => KachelText[k.Name].IsMatch(text)) >= 3;
     }
 
     /// <summary>

@@ -66,6 +66,7 @@ internal static class EdgeCaseTest
         RouteTilesByNameNotLength();
         FastestTimePerCarWins();
         ScanScreensAreRecognised();
+        ScanScreensInEveryGameLanguage();
         BoardRowsAreMerged();
         ScanQueueIsBuilt();
         ScanStopKeepsRows();
@@ -1752,6 +1753,190 @@ internal static class EdgeCaseTest
         using var leer = new Bitmap(1920, 1080, PixelFormat.Format24bppRgb);
         using (var g = Graphics.FromImage(leer)) { g.Clear(Color.FromArgb(20, 140, 130)); }
         Soll(Scan.ScanScreen.KategorieRahmen(leer) is null, "Scan: ohne Rahmen keine Kachel");
+    }
+
+    /// <summary>
+    /// DER SCANNER IN JEDER SPIELSPRACHE (2026-10-12): bis dahin erkannte er Schirme und Strecken
+    /// nur an englischen Worten -- ein deutsches, franzoesisches, japanisches ... Spiel konnte gar
+    /// nicht scannen. Die Lesungen hier sind die Texte des Spiels aus config/game_text.json (jeder
+    /// wird dort nachgesehen, bevor er zaehlt), so wie die Texterkennung sie liefert.
+    /// </summary>
+    private static void ScanScreensInEveryGameLanguage()
+    {
+        static List<Rivals.OcrLine> Z(params string[] texte) =>
+            texte.Select((t, i) => new Rivals.OcrLine(t, 100, 100 + (i * 50))).ToList();
+        static Scan.ScanSchirm S(params string[] texte) => Scan.ScanScreen.Einordnen(Z(texte));
+        static Rivals.OcrLine Km(string t, double x) => new(t, x, 845) { W = 66 };
+        // Ein Text zaehlt nur, wenn ihn das Spiel wirklich so fuehrt.
+        static string Spiel(string schluessel, string englisch, string text)
+        {
+            Soll(Rivals.GameText.Roh(schluessel, englisch).Contains(text), $"Scan: '{text}' steht in game_text.json unter {schluessel}");
+            return text;
+        }
+        static string Strecke(string englisch, string text)
+        {
+            Soll(Rivals.GameText.StreckennamenLocker(englisch).Contains(text), $"Scan: '{text}' ist ein Name von '{englisch}' im Spiel");
+            return text;
+        }
+        Soll(Rivals.GameText.SprachenAnzahl >= 20, $"Scan: game_text.json kennt die Sprachen des Spiels ({Rivals.GameText.SprachenAnzahl})");
+
+        // Streckenliste: Kopfzeile, Titel, Laenge mit Dezimalkomma, Kachelleiste.
+        var routen = Scan.ScanRoutes.Laden();
+        var road = routen.Finde("Road Racing")!;
+        var cc = routen.Finde("Cross-Country")!;
+        foreach (var (kopf, titel, laenge, km) in new[]
+                 {
+                     (Spiel("routes", "Routes", "Routen"), Strecke("Highway Circuit", "Highway-Rundkurs"),
+                      Spiel("route_length", "Route Length:", "Routenlänge:") + " 7,0 km", "km"),
+                     (Spiel("routes", "Routes", "Tracés"), Strecke("Highway Circuit", "Circuit d'autoroute"),
+                      Spiel("route_length", "Route Length:", "Longueur du tracé\u00a0:") + " 7,0 km", "km"),
+                     (Spiel("routes", "Routes", "ルート"), Strecke("Highway Circuit", "ハイウェイサーキット"),
+                      Spiel("route_length", "Route Length:", "ルート距離:") + " 7.0 km", "km"),
+                 })
+        {
+            var liste = new List<Rivals.OcrLine>
+            {
+                new(kopf, 148, 213), new(titel, 147, 560), new(laenge, 147, 666),
+                Km("7,0 " + km, 527), Km("2,4 " + km, 764), Km("3,2 " + km, 1005), Km("1,1 " + km, 1253),
+            };
+            Soll(Scan.ScanScreen.Einordnen(liste) == Scan.ScanSchirm.Streckenliste, $"Scan: Streckenliste '{kopf}' / '{laenge}'");
+            Soll(Scan.ScanScreen.Laenge(liste) == 7.0 && !Scan.ScanScreen.InMeilen(liste), $"Scan: 7,0 km aus '{laenge}'");
+            Soll(Scan.ScanScreen.GewaehlteStrecke(liste) == titel, $"Scan: der Titel ueber '{laenge}'");
+            var lesung = new Scan.ScanScreen.Lesung(Scan.ScanSchirm.Streckenliste, liste, titel, null,
+                                                    Scan.ScanScreen.Laenge(liste), Scan.ScanScreen.Leiste(liste));
+            Soll(road.Verorte(lesung) == (0, "title+strip"), $"Scan: '{titel}' ist Highway Circuit, ueber Titel und Leiste ({road.Verorte(lesung)})");
+        }
+        // Dieselbe Liste in Meilen, franzoesisch.
+        var meilen = Z(Spiel("routes", "Routes", "Tracés"), "Circuit d'autoroute", "Longueur du tracé : 4,3 mi");
+        Soll(Scan.ScanScreen.InMeilen(meilen) && Scan.ScanScreen.Laenge(meilen) is { } lm && Math.Abs(lm - 6.92) < 0.01,
+             "Scan: 'Longueur du tracé : 4,3 mi' sind 6,92 km");
+
+        // Strecken verorten: der Titel in der Spielsprache, auch fuer Namen, die das Spiel anders schreibt.
+        static int Wo(Scan.ScanRoutes.Kategorie k, string name) => k.Strecken.ToList().IndexOf(name);
+        Soll(cc.Lokalisiere(Strecke("Shinjuku Gyoen Cross-Country", "Shinjuku-Gyoen-Querfeldein")) == Wo(cc, "Shinjuku Gyoen Cross-Country"),
+             "Scan: 'Shinjuku-Gyoen-Querfeldein' (das Spiel schreibt 'Cross Country')");
+        Soll(cc.Lokalisiere("Circuit de cross-country de Legend Island") == Wo(cc, "Legend Island Cross-Country Circuit"),
+             "Scan: franzoesischer Titel von Legend Island");
+        Soll(routen.Finde("Drag Racing")!.Lokalisiere(Strecke("Irokawa Space Centre Drag Strip", "Irokawa-Space-Center-Drag-Strecke")) == 1,
+             "Scan: 'Centre' und 'Center' sind dieselbe Strecke");
+        Soll(routen.Finde("Touge")!.Lokalisiere(Strecke("Mt Haruna", "Mount Haruna")) == 4, "Scan: 'Mount Haruna' ist Mt Haruna");
+        Soll(road.Lokalisiere("Shimanoyama-Rundkurs") == Wo(road, "Shimanoyama Circuit")
+             && road.Lokalisiere("Shimanoyama-Sprint") == Wo(road, "Shimanoyama Sprint"), "Scan: deutscher Rundkurs und Sprint am selben Ort");
+        Soll(routen.Finde("Street Racing")!.Lokalisiere(Strecke("Nachi Run", "Carrera de Nachi")) == Wo(routen.Finde("Street Racing")!, "Nachi Run"),
+             "Scan: 'Carrera de Nachi' -- das spanische 'Carrera' ist kein Gattungswort");
+        // Beschnitten und laufend wie im Englischen: ein langer Titel, ab der dritten Stelle gelesen.
+        Soll(cc.Lokalisiere("rcuit de cross-country de Legend Isl") == Wo(cc, "Legend Island Cross-Country Circuit"),
+             "Scan: ein beschnittener, laufender franzoesischer Titel");
+        // JEDER Name des Spiels, in jeder Sprache, findet seine Strecke -- oder bleibt unentschieden,
+        // nie eine falsche. Unentschieden duerfen nur wenige sein (dann verortet die Kachelleiste).
+        int alle = 0, offen = 0;
+        var falsch = new List<string>();
+        foreach (var kat in routen.Kategorien)
+        {
+            for (var i = 0; i < kat.Strecken.Count; i++)
+            {
+                foreach (var name in Rivals.GameText.StreckennamenLocker(kat.Strecken[i]))
+                {
+                    alle++;
+                    var wo = kat.Lokalisiere(name);
+                    if (wo < 0) { offen++; }
+                    else if (wo != i) { falsch.Add($"{name} -> {kat.Strecken[wo]}"); }
+                }
+            }
+        }
+        Console.WriteLine($"  Streckennamen der Spielsprachen: {alle}, davon {offen} unentschieden, {falsch.Count} falsch");
+        Soll(alle > 1500 && falsch.Count == 0 && offen * 20 <= alle,
+             $"Scan: {alle} Namen der Spielsprachen, {offen} unentschieden, falsch: {string.Join("; ", falsch.Take(10))}");
+        // Mindestens Griechisch, Russisch, Japanisch/Chinesisch und Koreanisch schreiben jeden Namen anders --
+        // auch "Mt Haruna", "Tokyo Sprint" und die "Cross-Country"-Strecken, die das Spiel anders nennt.
+        Soll(routen.Kategorien.All(k => k.Strecken.All(n => Scan.ScanScreen.Fremdnamen(n).Count >= 4)),
+             "Scan: jede Strecke hat ihre Namen in den Spielsprachen ("
+             + string.Join(", ", routen.Kategorien.SelectMany(k => k.Strecken).Where(n => Scan.ScanScreen.Fremdnamen(n).Count < 4)) + ")");
+
+        // Klassenschirm: der Buchstabe vorn (Deutsch, Japanisch) oder hinten (Franzoesisch, Norwegisch).
+        var de = Z(Spiel("rivals", "Rivals", "Rivalen"), "Mount Haruna", "„D“ Leistungsklasse / Sommer-Saison / Routenlänge: 6,9 km",
+                   "D 400", "C 500", Spiel("time_to_beat", "Time to Beat", "Zu schlagende Zeit"));
+        Soll(Spiel("performance_class_line", "", "[HIGHLIGHT:„{0}“] Leistungsklasse").Length > 0
+             && Scan.ScanScreen.Einordnen(de) == Scan.ScanSchirm.Klassenschirm && Scan.ScanScreen.KlasseAufSchirm(de) == "D"
+             && Scan.ScanScreen.GewaehlteStrecke(de) == "Mount Haruna" && Scan.ScanScreen.Laenge(de) == 6.9,
+             "Scan: deutscher Klassenschirm, Klasse D, 6,9 km");
+        var fr = Z("Rivaux", "Mont Haruna", "Catégorie de performances « S1 » / L'été / Longueur du tracé : 6,9 km");
+        Soll(Spiel("performance_class_line", "", "Catégorie de performances [HIGHLIGHT:«\u00a0{0}\u00a0»]").Length > 0
+             && Scan.ScanScreen.Einordnen(fr) == Scan.ScanSchirm.Klassenschirm && Scan.ScanScreen.KlasseAufSchirm(fr) == "S1",
+             $"Scan: franzoesische Klassenzeile, die Klasse hinten ({Scan.ScanScreen.KlasseAufSchirm(fr)})");
+        Soll(Scan.ScanScreen.KlasseAufSchirm(Z("Categorie de performances « SI »")) == "S1"
+             && Scan.ScanScreen.KlasseAufSchirm(Z("Catégorie de performances «A»")) == "A"
+             && Scan.ScanScreen.KlasseAufSchirm(Z("Ytelsesklasse for «R»")) == "R",
+             "Scan: ohne Akzent, ohne Abstand, norwegisch");
+        var jp = Z("ライバル", "''S2'' パフォーマンス クラス / 夏シーズン / ルート距離: 6.9 km");
+        Soll(Spiel("performance_class_line", "", "[HIGHLIGHT:''{0}''] パフォーマンス クラス").Length > 0
+             && Scan.ScanScreen.Einordnen(jp) == Scan.ScanSchirm.Klassenschirm && Scan.ScanScreen.KlasseAufSchirm(jp) == "S2"
+             && Scan.ScanScreen.Laenge(jp) == 6.9,
+             "Scan: japanische Klassenzeile");
+        Soll(Scan.ScanScreen.KlasseAufSchirm(Z("BAD Leistungsklasse")) is null
+             && Scan.ScanScreen.KlasseAufSchirm(Z("„B“ Leistungsklasse", "« A » Leistungsklasse")) is null,
+             "Scan: ein Wortende ist keine Klasse, zwei Klassen keine");
+        Soll(S("Mount Haruna", "Sommer-Saison / Routenlänge: 6,9 km", "Zu schlagende Zeit", "Rivale wechseln") == Scan.ScanSchirm.RivalDetail
+             && S("Rivalen", "Mount Haruna", "Sommer-Saison / Routenlänge: 6,9 km", "Details") == Scan.ScanSchirm.RivalDetail,
+             "Scan: deutsche Rivalenkarte ohne lesbare Klassenzeile");
+
+        // Kategorieschirm: Kachelnamen und "N Routen verfuegbar" in der Spielsprache.
+        var kategorienDe = Z(Spiel("horizon_rivals", "Horizon Rivals", "Horizon-Rivalen"), Spiel("road_racing", "Road Racing", "Streckenrennen"),
+                             "23 " + Spiel("routes_available", "{0} Routes Available", "{0} Routen verfügbar")[4..],
+                             Spiel("cross_country_plain", "Cross Country", "Querfeldein"), Spiel("street_racing", "Street Racing", "Straßenrennen"));
+        var kategorienFr = Z("Rivaux Horizon", "Course sur route", "23\u00a0tracés disponibles", "Cross-country", "Course de rue", "Course de drag");
+        var kategorienJp = Z("Horizon ライバル", "ロードレース", "23 個のルートが利用可能", "クロスカントリー", "ストリートレース", "峠");
+        foreach (var k in new[] { kategorienDe, kategorienFr, kategorienJp })
+        {
+            Soll(Scan.ScanScreen.Einordnen(k) == Scan.ScanSchirm.Kategorien && Scan.ScanScreen.IstKategorieSchirm(k),
+                 $"Scan: Kategorieschirm '{k[1].Text}'");
+        }
+        Soll(!Scan.ScanScreen.IstKategorieSchirm(de) && S("Rivalen", "Legend-Island-Querfeldeinstrecke", "Details", "D 400") != Scan.ScanSchirm.Kategorien,
+             "Scan: 'Querfeldein' im Titel macht keinen Kategorieschirm");
+
+        // Bestenliste: Spielerzahl mit Tausenderpunkt, geschuetztem Leerzeichen, Komma.
+        Soll(S("Rivale wechseln", "Fahrer", "A 700", "01:35.667", "14.914 " + Spiel("players", "Players", "Spieler")) == Scan.ScanSchirm.Bestenliste
+             && S("Changer de rival", "A 700", "01:35.667", "14\u202f914 joueurs") == Scan.ScanSchirm.Bestenliste
+             && S("A 700", "01:35.667", "14 914 " + Spiel("players", "Players", "Игроки")) == Scan.ScanSchirm.Bestenliste
+             && S("A 700", "01:35.667", "14,914 プレイヤー") == Scan.ScanSchirm.Bestenliste,
+             "Scan: die Spielerzahl auf Deutsch, Franzoesisch, Russisch, Japanisch");
+        Soll(S("Rivale wechseln", "A 700", Spiel("filter_colon", "Filter:", "Filtre\u00a0:") + " Monde") == Scan.ScanSchirm.Bestenliste
+             && S("A 700", "フィルター: 世界") == Scan.ScanSchirm.Bestenliste
+             && S("A 700", "Filter: Global") == Scan.ScanSchirm.Bestenliste,
+             "Scan: 'Filtre : Monde', 'フィルター: 世界', 'Filter: Global'");
+        Soll(S("Spieler", "123") != Scan.ScanSchirm.Bestenliste, "Scan: eine Zahl unter 'Spieler' ist keine Spielerzahl");
+
+        // Lade-, Fehler-, Menue- und Titelschirme.
+        Soll(S(Spiel("loading", "LOADING", "LÄDT")) == Scan.ScanSchirm.Ladeschirm && S("CHARGEMENT...") == Scan.ScanSchirm.Ladeschirm
+             && S("ロード中") == Scan.ScanSchirm.Ladeschirm && S("Rivalen geschlagen 68") == Scan.ScanSchirm.Ladeschirm,
+             "Scan: Ladeschirme auf Deutsch, Franzoesisch, Japanisch");
+        Soll(S("Event-Anmeldung", "Showcase-Event", "Vorschau") != Scan.ScanSchirm.Ladeschirm, "Scan: das daenische 'Vent' steckt nicht in 'Event'");
+        Soll(S(Spiel("server_error", "Server Error", "Serverfehler")) == Scan.ScanSchirm.ServerFehler
+             && S("Fehler bei der Kommunikation mit dem", "Server. Die Rivalen-Daten wurden nicht aktualisiert.") == Scan.ScanSchirm.ServerFehler
+             && S("サーバー エラー") == Scan.ScanSchirm.ServerFehler,
+             "Scan: der Serverfehler, auch umbrochen");
+        Soll(S("Unerwarteter Fehler in Forza Horizon 6") == Scan.ScanSchirm.Abgestuerzt
+             && S("Grafikkartenabsturz") == Scan.ScanSchirm.Abgestuerzt, "Scan: der Absturz auf Deutsch");
+        Soll(S("KAMPAGNE", "ONLINE", "Creative Hub", "Festival-Spielliste", "Spiel verlassen") == Scan.ScanSchirm.Pause
+             && S("Rivalen", "Festival-Spielliste", "Die Spitze der Bestenlisten erklimmen", "Horizon-Open") == Scan.ScanSchirm.OnlineReiter
+             && S("Rivalen", "Horizon-Rivalen", "Meine Rivalen", "Monatsrivalen") == Scan.ScanSchirm.RivalsHub
+             && S("Garage modulable", "Forzavista") == Scan.ScanSchirm.Garage
+             && S("Karte schließen", "Route festlegen") == Scan.ScanSchirm.Karte
+             && S("FORTFAHREN") == Scan.ScanSchirm.Weiter && S("続行") == Scan.ScanSchirm.Weiter
+             && S("Spiel starten", "Barrierefreiheit/Einstellungen") == Scan.ScanSchirm.Titel
+             && S("Serien-Update", "SERIE ENDET IN 13 T") == Scan.ScanSchirm.SerienUpdate
+             && S("Zum Horizon-Solo zurückkehren?") == Scan.ScanSchirm.Bestaetigung,
+             "Scan: Pause, Online-Reiter, Rivals-Hub, Garage, Karte, Weiter, Titel, Serien-Update, Rueckfrage auf Deutsch");
+
+        // Die Kacheln, die der Navigator per Rahmen sucht.
+        static bool Kachel(System.Text.RegularExpressions.Regex r, string t) => r.IsMatch(t);
+        Soll(Kachel(Scan.ScanNavigator.RivalsKachel, "Rivalen") && Kachel(Scan.ScanNavigator.RivalsKachel, "RIVAUX")
+             && Kachel(Scan.ScanNavigator.RivalsKachel, "Rivals") && !Kachel(Scan.ScanNavigator.RivalsKachel, "Meine Rivalen"),
+             "Scan: die Rivals-Kachel des Online-Reiters");
+        Soll(Kachel(Scan.ScanNavigator.HorizonRivalsKachel, "Horizon-") && Kachel(Scan.ScanNavigator.HorizonRivalsKachel, "Horizon-Rivalen")
+             && Kachel(Scan.ScanNavigator.HorizonRivalsKachel, "Rivaux Horizon") && Kachel(Scan.ScanNavigator.HorizonRivalsKachel, "Horizon")
+             && Kachel(Scan.ScanNavigator.HorizonRivalsKachel, "Horizon Rivals") && !Kachel(Scan.ScanNavigator.HorizonRivalsKachel, "Horizon Open"),
+             "Scan: die Kachel 'Horizon Rivals' im Hub");
     }
 
     /// <summary>

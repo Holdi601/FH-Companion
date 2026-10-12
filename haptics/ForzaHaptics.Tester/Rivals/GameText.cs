@@ -104,7 +104,11 @@ internal static class GameText
     /// <summary>Fuer Tests: die Datei neu laden (nach dem Setzen von <see cref="Pfad"/>).</summary>
     internal static void Vergessen()
     {
-        lock (Schloss) { _daten = null; }
+        lock (Schloss)
+        {
+            _daten = null;
+            _locker.Clear();
+        }
     }
 
     /// <summary>Wie viele Spielsprachen die Datei kennt (0: keine Datei).</summary>
@@ -131,6 +135,49 @@ internal static class GameText
     /// <summary>Die Namen einer Strecke in den anderen Spielsprachen (roh).</summary>
     internal static IReadOnlyList<string> Streckennamen(string englisch) =>
         Laden().Strecken.TryGetValue(englisch, out var n) ? n : new List<string>();
+
+    /// <summary>
+    /// Die Namen einer Strecke in den anderen Sprachen, auch wenn der eigene Name anders
+    /// geschrieben ist als der des Spiels (seit 2026-10-12, fuer den Scanner): "Cross-Country"
+    /// steht im Spiel als "Cross Country", "Centre" als "Center", "Mt Haruna" als "Mt. Haruna",
+    /// "Forest Cross-Country Circuit Snow" als "Snow Forest Cross Country Circuit", "Sekibe S
+    /// Scramble" als "Sekibe Scramble" und "Tokyo Sprint" als "Tokyo Railway Sprint".
+    /// </summary>
+    /// <remarks>
+    /// Erst genau, dann dieselben Worte in beliebiger Folge (ohne einzelne Buchstaben), zuletzt
+    /// genau EIN Name des Spiels, der ein Wort mehr hat. Sonst leer: lieber kein fremder Name als
+    /// der einer anderen Strecke.
+    /// </remarks>
+    internal static IReadOnlyList<string> StreckennamenLocker(string name)
+    {
+        var genau = Streckennamen(name);
+        if (genau.Count > 0) { return genau; }
+        lock (Schloss)
+        {
+            if (_locker.TryGetValue(name, out var gemerkt)) { return gemerkt; }
+        }
+        var strecken = Laden().Strecken;
+        var woerter = NamensWoerter(name);
+        var raus = new List<string>();
+        if (woerter.Count > 0)
+        {
+            var gleich = strecken.Where(s => NamensWoerter(s.Key).SetEquals(woerter)).ToList();
+            if (gleich.Count == 0)
+            {
+                var mehr = strecken.Where(s => NamensWoerter(s.Key) is var w && w.Count == woerter.Count + 1 && w.IsSupersetOf(woerter)).ToList();
+                if (mehr.Select(s => Falte(s.Key)).Distinct().Count() == 1) { gleich = mehr; }
+            }
+            raus = gleich.SelectMany(s => s.Value).Distinct(StringComparer.Ordinal).ToList();
+        }
+        lock (Schloss) { _locker[name] = raus; }
+        return raus;
+    }
+
+    private static readonly Dictionary<string, IReadOnlyList<string>> _locker = new(StringComparer.Ordinal);
+
+    private static HashSet<string> NamensWoerter(string name) =>
+        Falte(name).Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(w => w.Length > 1)
+                   .Select(w => w == "centre" ? "center" : w).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Steht das Wort in diesem Text? Als ganzes Wort -- "ja" steckt sonst in "jaguar".</summary>
     internal static bool Enthaelt(string? text, string schluessel, string englisch)
