@@ -94,8 +94,59 @@ internal static class ScanScreen
     // Nicht am Zeilenanfang verankert: auf dem Klassenschirm steht es hinter Klasse und
     // Jahreszeit ('"D" Performance Class / Summer Season / Route Length: 6.9 KM').
     private static readonly Regex RouteLength = new(@"Rou[lt]e\s+Length", O);
-    private static readonly Regex LaengeWert = new(@"Rou[lt]e\s+Length\W*(\d{1,2})\s*[.,]\s*(\d)", O);
-    private static readonly Regex KmWert = new(@"^\W*(\d{1,2})\s*[.,]\s*(\d)\s*K\s*M\b", O | RegexOptions.IgnoreCase);
+    private static readonly Regex LaengeWert = new(@"Rou[lt]e\s+Length\W*(\d{1,2})\s*[.,]\s*(\d)(.{0,6})", O);
+    private static readonly Regex KmWert = new(@"^\W*(\d{1,2})\s*[.,]\s*(\d)\s*(\S.{0,5})", O);
+
+    // MEILEN (seit 2026-10-12). Ein Spiel mit imperialen Einheiten zeigt "Route Length: 4.3 MI"
+    // und Meilen auf der Kachelleiste -- der Scanner verglich Kilometer und fand keine Strecke
+    // (ein amerikanischer Mitspieler musste auf metrisch umstellen). Gerechnet wird weiter in km.
+    public const double MeileKm = 1.609344;
+
+    /// <summary>
+    /// Wie weit eine gelesene Laenge von der bekannten abweichen darf: der Schirm rundet auf
+    /// eine Stelle, der Katalog auch. In Meilen sind das bis 0,08 km plus 0,05 km.
+    /// </summary>
+    public static double Toleranz(bool meilen) => meilen ? 0.14 : 0.05;
+
+    /// <summary>Was hinter einer Zahl steht: "mi" (true), "km" (false) -- oder null, wenn keins von beiden.</summary>
+    internal static bool? EinheitMeilen(string? hinten)
+    {
+        var t = GameText.Falte(hinten ?? string.Empty).Replace(" ", string.Empty).Replace(".", string.Empty);
+        if (t.Length == 0) { return null; }
+        foreach (var v in GameText.Varianten("mi", "mi"))
+        {
+            var f = GameText.Falte(v).Replace(" ", string.Empty).Replace(".", string.Empty);
+            if (f.Length > 0 && t.StartsWith(f, StringComparison.Ordinal)) { return true; }
+        }
+        foreach (var v in GameText.Varianten("km", "km"))
+        {
+            var f = GameText.Falte(v).Replace(" ", string.Empty).Replace(".", string.Empty);
+            if (f.Length > 0 && t.StartsWith(f, StringComparison.Ordinal)) { return false; }
+        }
+        // Die Texterkennung trennt gern ("K M", "M I") -- und liest I als l oder 1.
+        if (t.StartsWith("km", StringComparison.Ordinal)) { return false; }
+        if (t.StartsWith("mi", StringComparison.Ordinal) || t.StartsWith("ml", StringComparison.Ordinal)
+            || t.StartsWith("m1", StringComparison.Ordinal)) { return true; }
+        return null;
+    }
+
+    /// <summary>Ob die Laengen auf diesem Schirm Meilen sind -- die Mehrheit der Zahlen mit Einheit entscheidet.</summary>
+    public static bool InMeilen(IReadOnlyList<OcrLine> zeilen)
+    {
+        int meilen = 0, km = 0;
+        foreach (var z in zeilen)
+        {
+            var m = LaengeWert.Match(z.Text);
+            if (!m.Success) { m = KmWert.Match(z.Text); }
+            if (!m.Success) { continue; }
+            switch (EinheitMeilen(m.Groups[3].Value))
+            {
+                case true: meilen++; break;
+                case false: km++; break;
+            }
+        }
+        return meilen > km;
+    }
     private static readonly Regex RoutesKopf = new(@"^\s*Routes\s*$", O);
     private static readonly Regex RivalsKopf = new(@"^\s*Rivals\s*$", O);
     private static readonly Regex KlassenZeile = new(KlassenMuster, O);
@@ -170,7 +221,14 @@ internal static class ScanScreen
 
     /// <summary>Was ein Blick auf den Schirm ergibt (alle Lagen im 1080p-Bezugsbild).</summary>
     internal sealed record Lesung(ScanSchirm Schirm, List<OcrLine> Zeilen, string? Titel, string? Klasse,
-                                  double? Laenge, double?[] Leiste);
+                                  double? Laenge, double?[] Leiste)
+    {
+        /// <summary>Der Schirm zeigt Meilen: Laenge und Leiste sind schon in km umgerechnet, nur ungenauer.</summary>
+        public bool Meilen { get; init; }
+
+        /// <summary>Die erlaubte Abweichung einer gelesenen Laenge, in km.</summary>
+        public double Toleranz => ScanScreen.Toleranz(Meilen);
+    }
 
     /// <summary>
     /// Die Zeile unter dem Titel: '"D" Performance Class / Summer Season / Route Length: 6.9 KM'
@@ -227,7 +285,10 @@ internal static class ScanScreen
         {
             titel = null;
         }
-        return new Lesung(schirm, zeilen, titel, KlasseAufSchirm(zeilen), Laenge(zeilen), Leiste(zeilen));
+        return new Lesung(schirm, zeilen, titel, KlasseAufSchirm(zeilen), Laenge(zeilen), Leiste(zeilen))
+        {
+            Meilen = InMeilen(zeilen),
+        };
     }
 
     /// <summary>Einen Ausschnitt lesen; die Zeilen kommen in Lagen des ganzen Bilds zurueck.</summary>
@@ -296,13 +357,16 @@ internal static class ScanScreen
         }
     }
 
-    /// <summary>Die Streckenlaenge aus "Route Length: 6.9 KM", in km.</summary>
+    /// <summary>Die Streckenlaenge aus "Route Length: 6.9 KM" (oder "4.3 MI"), in km.</summary>
     public static double? Laenge(IReadOnlyList<OcrLine> zeilen)
     {
+        var meilen = InMeilen(zeilen);
         foreach (var z in zeilen)
         {
             var m = LaengeWert.Match(z.Text);
-            if (m.Success) { return int.Parse(m.Groups[1].Value) + (int.Parse(m.Groups[2].Value) / 10.0); }
+            if (!m.Success) { continue; }
+            var wert = int.Parse(m.Groups[1].Value) + (int.Parse(m.Groups[2].Value) / 10.0);
+            return (EinheitMeilen(m.Groups[3].Value) ?? meilen) ? wert * MeileKm : wert;
         }
         return null;
     }
@@ -318,11 +382,12 @@ internal static class ScanScreen
         {
             if (z.Y < 815 || z.Y > 880) { continue; }
             var m = KmWert.Match(z.Text);
-            if (!m.Success) { continue; }
+            if (!m.Success || EinheitMeilen(m.Groups[3].Value) is not { } meilen) { continue; }
             var rechts = z.X + (z.W > 0 ? z.W : 66);
             var k = (int)Math.Round((rechts - LeisteRechts0) / LeisteSchritt);
             if (k < 0 || k >= leiste.Length) { continue; }
-            leiste[k] = int.Parse(m.Groups[1].Value) + (int.Parse(m.Groups[2].Value) / 10.0);
+            var wert = int.Parse(m.Groups[1].Value) + (int.Parse(m.Groups[2].Value) / 10.0);
+            leiste[k] = meilen ? wert * MeileKm : wert;
         }
         return leiste;
     }
@@ -338,20 +403,21 @@ internal static class ScanScreen
     /// eindeutig ist (auch ohne die vorige Kachel und mit nur drei Zahlen), prueft
     /// scripts/build_scan_routes.py an allen 86 Strecken.
     /// </remarks>
-    public static int LeisteVerorten(double?[] leiste, double? laenge, IReadOnlyList<double?> laengen)
+    public static int LeisteVerorten(double?[] leiste, double? laenge, IReadOnlyList<double?> laengen,
+                                     double toleranz = 0.05)
     {
         var n = laengen.Count;
         if (n == 0) { return -1; }
         var kandidaten = new List<(int Wert, int Index)>();
         for (var i = 0; i < n; i++)
         {
-            if (laenge is { } l && laengen[i] is { } li && Math.Abs(l - li) > 0.05) { continue; }
+            if (laenge is { } l && laengen[i] is { } li && Math.Abs(l - li) > toleranz) { continue; }
             int treffer = 0, fehler = 0;
             for (var k = 0; k < leiste.Length; k++)
             {
                 if (leiste[k] is not { } wert) { continue; }
                 if (laengen[(((i + k - 1) % n) + n) % n] is not { } soll) { continue; }
-                if (Math.Abs(soll - wert) <= 0.05) { treffer++; } else { fehler++; }
+                if (Math.Abs(soll - wert) <= toleranz) { treffer++; } else { fehler++; }
             }
             if (fehler <= 1 && treffer >= Math.Min(3, n - 1)) { kandidaten.Add((treffer - (2 * fehler), i)); }
         }

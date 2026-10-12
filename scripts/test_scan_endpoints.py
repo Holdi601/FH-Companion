@@ -602,7 +602,7 @@ with tempfile.TemporaryDirectory() as tmp:
             lambda t: t.replace('"lap_time_seconds": 60.0,', '"lap_time_seconds": 53.0,', 1))
         tor("ocr_auto_fast_2", None, "eine Bestzeit 6,7 % unter dem Datensatz (eine Abkuerzung)", None,
             lambda t: t.replace('"lap_time_seconds": 60.0,', '"lap_time_seconds": 56.0,', 1))
-        tor("ocr_auto_car_1", "new top times for one car", "fuenf neue Spitzenzeiten fuer ein Auto",
+        tor("ocr_auto_car_1", None, "fuenf neue Spitzenzeiten fuer ein Auto: nur markiert",
             {"basis": 60.5, "n": 10}, vorn_fremd(5))
         tor("ocr_auto_car_2", None, "zwei neue Spitzenzeiten fuer ein Auto",
             {"basis": 60.5, "n": 10}, vorn_fremd(2))

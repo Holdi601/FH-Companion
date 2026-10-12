@@ -582,7 +582,8 @@ internal sealed class ScanNavigator
                     var (hier, beleg) = kat.Verorte(blick.Lesung);
                     var sollLaenge = kat.LaengeVon(ziel.RouteIndex);
                     var falsch = hier >= 0 && hier != ziel.RouteIndex
-                                 || hier < 0 && blick.Lesung.Laenge is { } km && sollLaenge is { } soll && Math.Abs(km - soll) > 0.05;
+                                 || hier < 0 && blick.Lesung.Laenge is { } km && sollLaenge is { } soll
+                                    && Math.Abs(km - soll) > blick.Lesung.Toleranz;
                     if (falsch)
                     {
                         if (++falscheStrecke > 3) { throw new Abbruch($"the class screen keeps showing another route ({beleg})"); }

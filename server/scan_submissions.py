@@ -285,6 +285,10 @@ def pruefe_lauf(state, rows_text, bekannte_bretter: set | dict | None = None,
             auffaellig.append("board not in the dataset yet")
         elif isinstance(bekannte_bretter, dict) and viel_schneller(brett_von(bekannte_bretter, zustand), zeilen):
             auffaellig.append("best lap more than %d%% under the dataset's" % round(PRUEF_SCHNELLER * 100))
+        if isinstance(bekannte_bretter, dict) and brett_von(bekannte_bretter, zustand):
+            n, auto = neue_spitzen_je_auto(brett_von(bekannte_bretter, zustand), zeilen)
+            if n >= MARKE_NEU_JE_AUTO:
+                auffaellig.append("%d new top times for one car (%s)" % (n, auto))
     return zustand, zeilen, auffaellig
 
 
@@ -352,10 +356,11 @@ HALT_TEMPO = 40.0
 # richtig). Ab 10 %: zurueckgehalten -- 5 % waren dem Nutzer zu eng (eine neu gefundene
 # Abkuerzung kann eine Strecke deutlich schneller machen).
 HALT_SCHNELLER = 0.10
-# So viele Spitzenzeiten (unter der 20. bekannten), die der Datensatz nicht kennt, darf ein
-# einziges Auto mitbringen. Eine erfundene Liste, die ein Auto nach vorn schieben soll, braucht
-# davon viele; echte neue Bestzeiten verteilen sich.
-HALT_NEU_JE_AUTO = 4
+# Ab so vielen Spitzenzeiten (unter der 20. bekannten), die der Datensatz nicht kennt, fuer ein
+# einziges Auto: MARKIERT, nicht zurueckgehalten (seit 2026-10-12). Als Sperre traf es den ersten
+# Fremdscan: Ito Sprint A, sechs Wochen nach dem letzten Scan, 34 neue Spitzenzeiten fuer den
+# Ginetta G40 Jr -- ein Auto, das inzwischen jeder faehrt. So sieht echter Wandel aus.
+MARKE_NEU_JE_AUTO = 4
 # Ein neues Board: seine Bestzeit liegt zwischen denen der Nachbarklassen derselben Strecke,
 # mit diesem Spielraum.
 NACHBAR_SPIELRAUM = 0.03
@@ -611,9 +616,6 @@ def freigabe(zustand: dict, zeilen: list, bretter: dict | None) -> str:
                 gruende.append(GRUND_ZEITEN)
             if viel_schneller(bekannt, zeilen, HALT_SCHNELLER):
                 gruende.append("best lap more than %d%% under the dataset's" % round(HALT_SCHNELLER * 100))
-            n, auto = neue_spitzen_je_auto(bekannt, zeilen)
-            if n >= HALT_NEU_JE_AUTO:
-                gruende.append("%d new top times for one car (%s)" % (n, auto))
         tiefe = getattr(bekannt, "tiefe", 0) if bekannt else 0
         if len(zeilen) < MINDEST_ZEILEN and not (tiefe and len(zeilen) >= tiefe * MINDEST_ANTEIL_BEKANNT):
             gruende.append("only %d ranks -- at least %d, or the whole board, are needed"

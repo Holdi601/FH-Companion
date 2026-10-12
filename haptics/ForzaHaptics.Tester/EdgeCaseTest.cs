@@ -1682,6 +1682,24 @@ internal static class EdgeCaseTest
         var anfangLesung = new Scan.ScanScreen.Lesung(Scan.ScanSchirm.Streckenliste, anfang, "Highway Circuit", null,
                                                       7.0, Scan.ScanScreen.Leiste(anfang));
         Soll(road.Verorte(anfangLesung) == (0, "title+strip"), "Scan: Highway Circuit ueber Titel und Leiste");
+        // MEILEN (seit 2026-10-12): dasselbe Bild in einem Spiel mit imperialen Einheiten.
+        var meilen = new List<Rivals.OcrLine>
+        {
+            new("Routes", 148, 213), new("Highway Circuit", 147, 560), new("Route Length: 4.3 MI", 147, 666),
+            Km("4.3 MI", 527), Km("1.5 MI", 764), Km("2.0 MI", 1005), Km("0.7 MI", 1253),
+        };
+        Soll(Scan.ScanScreen.InMeilen(meilen) && !Scan.ScanScreen.InMeilen(anfang), "Scan: Meilen erkannt, Kilometer nicht als Meilen");
+        Soll(Scan.ScanScreen.Laenge(meilen) is { } lm && Math.Abs(lm - 6.92) < 0.01,
+             $"Scan: 4.3 MI sind 6,92 km ({Scan.ScanScreen.Laenge(meilen)})");
+        var meilenLesung = new Scan.ScanScreen.Lesung(Scan.ScanSchirm.Streckenliste, meilen, null, null,
+                                                      Scan.ScanScreen.Laenge(meilen), Scan.ScanScreen.Leiste(meilen))
+        { Meilen = true };
+        Soll(road.Verorte(meilenLesung) == (0, "strip"), $"Scan: Highway Circuit in Meilen, nur ueber die Leiste ({road.Verorte(meilenLesung)})");
+        Soll(road.Verorte(meilenLesung with { Laenge = 1.9 * Scan.ScanScreen.MeileKm, Leiste = new double?[7], Titel = "Highway Circuit" }).Index == -1,
+             "Scan: Highway Circuit ist nicht 1.9 mi lang");
+        var gestoert = new List<Rivals.OcrLine> { new("Route Length: 4.3 M I", 147, 666), Km("1.5 Ml", 764) };
+        Soll(Scan.ScanScreen.InMeilen(gestoert) && Scan.ScanScreen.Leiste(gestoert)[2] is { } lg && Math.Abs(lg - 2.41) < 0.01,
+             "Scan: 'M I' und 'Ml' gelten als Meilen");
         // Titel und Leiste widersprechen sich: dann gar nicht.
         Soll(road.Verorte(anfangLesung with { Titel = "Soni Circuit" }).Index == -1, "Scan: Titel gegen Leiste heisst unentschieden");
         // Die Laenge widerspricht dem Titel: ebenso.

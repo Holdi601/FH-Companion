@@ -26,11 +26,11 @@ internal sealed class ScanRoutes
         public (int Index, string Beleg) Verorte(ScanScreen.Lesung l)
         {
             var nachTitel = Lokalisiere(l.Titel);
-            var nachLeiste = ScanScreen.LeisteVerorten(l.Leiste, l.Laenge, Laengen);
+            var nachLeiste = ScanScreen.LeisteVerorten(l.Leiste, l.Laenge, Laengen, l.Toleranz);
             if (nachTitel >= 0 && nachLeiste >= 0 && nachTitel != nachLeiste) { return (-1, $"title says {nachTitel}, strip says {nachLeiste}"); }
             var idx = nachTitel >= 0 ? nachTitel : nachLeiste;
             if (idx < 0) { return (-1, "neither title nor strip placed"); }
-            if (l.Laenge is { } gelesen && LaengeVon(idx) is { } soll && Math.Abs(gelesen - soll) > 0.05)
+            if (l.Laenge is { } gelesen && LaengeVon(idx) is { } soll && Math.Abs(gelesen - soll) > l.Toleranz)
             {
                 return (-1, $"route {idx} is {soll:0.0} km, the screen says {gelesen:0.0}");
             }
