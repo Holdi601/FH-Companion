@@ -488,6 +488,14 @@ internal sealed class OverlaySettings
     /// <summary>Bilder je Sekunde: 15, 30 oder 60. Das Spiel geht vor -- ab Werk 30.</summary>
     [JsonPropertyName("speedo_fps")] public int SpeedoFps { get; set; } = 30;
 
+    /// <summary>Empfindlichkeit der Lampen TC, ABS und STAB (0..100, 50 = gemessene Vorgabe, SpeedoSchwellen).</summary>
+    [JsonPropertyName("speedo_spin_sensitivity")] public int SpeedoSpinSensitivity { get; set; } = 50;
+    [JsonPropertyName("speedo_lock_sensitivity")] public int SpeedoLockSensitivity { get; set; } = 50;
+    [JsonPropertyName("speedo_stab_sensitivity")] public int SpeedoStabSensitivity { get; set; } = 50;
+
+    /// <summary>Je Auto (CarOrdinal) eigene Werte fuer TC, ABS, STAB -- sie gehen den allgemeinen vor.</summary>
+    [JsonPropertyName("speedo_car_sensitivity")] public Dictionary<string, int[]> SpeedoCarSensitivity { get; set; } = new();
+
     [JsonIgnore]
     public HudPlacement SpeedoPlacement => new(
         (float)HudSpeedoX, (float)HudSpeedoY, HudSpeedoAlign ?? "right",

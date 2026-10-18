@@ -214,36 +214,99 @@ internal sealed class SpeedoRenderer : IDisposable
     private static readonly StringFormat Rechts = new() { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
 
     /// <summary>Text in ein Feld -- bei Schrift "Digital" und Ziffern als Sieben-Segment-Anzeige.</summary>
+    /// <summary>
+    /// Text in ein Feld, an seinen TATSAECHLICHEN Umrissen ausgerichtet (seit 2026-10-18).
+    /// </summary>
+    /// <remarks>
+    /// Die erste Fassung schrieb mit DrawString: GDI+ legt um jeden Text einen Rand und rechnet den
+    /// Zeilenabstand der Schrift mit -- Ziffern standen dadurch je nach Schrift tiefer oder hoeher
+    /// als die Mitte, Kursives lief rechts aus dem Feld, und schmale Felder schnitten ab (der Nutzer:
+    /// "not centered or are clipping"). Jetzt wird der Text als Umriss gebaut: waagrecht nach seinen
+    /// echten Grenzen gesetzt, senkrecht nach der Hoehe einer Ziffer (sonst huepfte "rpm" gegen
+    /// "RPM"), und verkleinert, bis er in Breite UND Hoehe passt.
+    /// </remarks>
     private static void Schreibe(Graphics g, SpeedoDesign d, string text, RectangleF r, float px, Color farbe,
                                  StringFormat? lage = null, bool gross = false, float leuchten = 0f)
     {
-        if (string.IsNullOrEmpty(text)) { return; }
+        if (string.IsNullOrEmpty(text) || r.Width < 1f || r.Height < 1f) { return; }
         lage ??= Mitte;
         if (gross && d.Font == SpeedoFont.Digital && SiebenSegment.Kann(text))
         {
             SiebenSegment.Male(g, text, r, px, farbe, Alpha(farbe, 0.05f), lage.Alignment, d.Italic, leuchten);
             return;
         }
-        var f = Schrift(d, px, fett: gross);
-        // ZU BREIT? Kleiner, bis es passt -- ein abgeschnittenes "km/" oder "427 h" ist schlimmer.
-        var breite = g.MeasureString(text, f, PointF.Empty, StringFormat.GenericTypographic).Width;
-        if (breite > r.Width && r.Width > 4f)
+        var stil = (d.Italic ? FontStyle.Italic : FontStyle.Regular) | (gross ? FontStyle.Bold : FontStyle.Regular);
+        var familie = Familie(d.Font);
+        var (oben, unten) = Ziffernhoehe(familie, stil);
+        // WINDING, nicht Alternate: kursive und fette Ziffern ("4") haben sich ueberlappende Umrisse,
+        // und Alternate liess genau dort Loecher -- ein Schachbrett im Gang und im Tempo.
+        using var pfad = new GraphicsPath(FillMode.Winding);
+        var ff = Familienobjekt(familie);
+        pfad.AddString(text, ff, (int)(ff.IsStyleAvailable(stil) ? stil : FontStyle.Regular), 100f, PointF.Empty, StringFormat.GenericTypographic);
+        var grenzen = pfad.GetBounds();
+        if (grenzen.Width <= 0f) { return; }
+        // Massstab: px ist die Schriftgroesse; kleiner, wenn Breite oder Ziffernhoehe nicht passt.
+        var k = px / 100f;
+        var zifferH = (unten - oben) * k;
+        if (grenzen.Width * k > r.Width * 0.98f) { k = r.Width * 0.98f / grenzen.Width; }
+        if (zifferH > r.Height * 0.98f && unten > oben) { k = Math.Min(k, r.Height * 0.98f / (unten - oben)); }
+        var breite = grenzen.Width * k;
+        var x = lage.Alignment switch
         {
-            px *= r.Width / breite * 0.97f;
-            f = Schrift(d, px, fett: gross);
+            StringAlignment.Near => r.X,
+            StringAlignment.Far => r.Right - breite,
+            _ => r.X + (r.Width - breite) / 2f,
+        } - grenzen.X * k;
+        // Senkrecht: die Mitte der Ziffernhoehe auf die Mitte des Feldes.
+        var y = r.Y + r.Height / 2f - (oben + unten) / 2f * k;
+        using (var m = new Matrix(k, 0f, 0f, k, x, y))
+        {
+            pfad.Transform(m);
         }
         if (leuchten > 0.05f)
         {
-            using var schein = new SolidBrush(Alpha(farbe, 0.22f * leuchten));
-            for (var i = 0; i < 4; i++)
+            for (var i = 3; i >= 1; i--)
             {
-                var dx = (i % 2 == 0 ? -1f : 1f) * px * 0.04f;
-                var dy = (i < 2 ? -1f : 1f) * px * 0.04f;
-                g.DrawString(text, f, schein, new RectangleF(r.X + dx, r.Y + dy, r.Width, r.Height), lage);
+                using var schein = new Pen(Alpha(farbe, 0.1f * leuchten), Math.Max(1f, px * 0.05f * i)) { LineJoin = LineJoin.Round };
+                g.DrawPath(schein, pfad);
             }
         }
         using var pinsel = new SolidBrush(farbe);
-        g.DrawString(text, f, pinsel, r, lage);
+        g.FillPath(pinsel, pfad);
+    }
+
+    private static readonly Dictionary<(string, FontStyle), (float Oben, float Unten)> Ziffern = new();
+    private static readonly Dictionary<string, FontFamily> Familien = new();
+
+    /// <summary>Eine Schriftfamilie, einmal angelegt -- je Bild entstuenden sonst Dutzende.</summary>
+    private static FontFamily Familienobjekt(string name)
+    {
+        lock (SchriftSperre)
+        {
+            if (!Familien.TryGetValue(name, out var ff))
+            {
+                try { ff = new FontFamily(name); }
+                catch (ArgumentException) { ff = new FontFamily("Segoe UI"); }
+                Familien[name] = ff;
+            }
+            return ff;
+        }
+    }
+
+    /// <summary>Oberkante und Grundlinie der Ziffer "0" bei Groesse 100 -- je Schrift einmal gemessen.</summary>
+    private static (float Oben, float Unten) Ziffernhoehe(string familie, FontStyle stil)
+    {
+        lock (SchriftSperre)
+        {
+            if (Ziffern.TryGetValue((familie, stil), out var wert)) { return wert; }
+            var ff = Familienobjekt(familie);
+            using var pfad = new GraphicsPath();
+            pfad.AddString("0", ff, (int)(ff.IsStyleAvailable(stil) ? stil : FontStyle.Regular), 100f, PointF.Empty, StringFormat.GenericTypographic);
+            var b = pfad.GetBounds();
+            wert = b.Height > 0f ? (b.Top, b.Bottom) : (20f, 90f);
+            Ziffern[(familie, stil)] = wert;
+            return wert;
+        }
     }
 
     private static string GangText(int gang) => gang switch
@@ -702,12 +765,83 @@ internal sealed class SpeedoRenderer : IDisposable
     }
 
     /// <summary>Die Lampen TC (dreht durch) und ABS (blockiert) nebeneinander in <paramref name="r"/>.</summary>
+    private static readonly Color Gelb = Color.FromArgb(255, 251, 191, 36);
+    private static readonly Color Orange = Color.FromArgb(255, 251, 146, 60);
+    private static readonly Color Rot = Color.FromArgb(255, 239, 68, 68);
+
+    /// <summary>TC, ABS und (wenn gewaehlt) STAB nebeneinander in <paramref name="r"/>.</summary>
     private static void Lampen(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r, Schicht s)
     {
-        if (!d.ShowTraction) { return; }
-        var breite = (r.Width - r.Height * 0.4f) / 2f;
-        Lampe(g, d, new RectangleF(r.X, r.Y, breite, r.Height), d.TractionText, b.Wheelspin, Color.FromArgb(255, 251, 191, 36), s);
-        Lampe(g, d, new RectangleF(r.Right - breite, r.Y, breite, r.Height), d.LockText, b.WheelLock, Color.FromArgb(255, 251, 146, 60), s);
+        var liste = new List<Action<RectangleF>>();
+        if (d.ShowTraction)
+        {
+            liste.Add(f => Lampe(g, d, f, d.TractionText, b.Wheelspin, Gelb, s));
+            liste.Add(f => Lampe(g, d, f, d.LockText, b.WheelLock, Orange, s));
+        }
+        if (d.ShowStability) { liste.Add(f => StabLampe(g, d, b, f, s)); }
+        if (liste.Count == 0) { return; }
+        var luecke = r.Height * 0.3f;
+        var breite = (r.Width - luecke * (liste.Count - 1)) / liste.Count;
+        for (var i = 0; i < liste.Count; i++) { liste[i](new RectangleF(r.X + i * (breite + luecke), r.Y, breite, r.Height)); }
+    }
+
+    /// <summary>Die Stabilitaetslampe: gelb an der Grenze, rot und blinkend, wenn das Auto rutscht.</summary>
+    private static void StabLampe(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r, Schicht s)
+    {
+        var an = b.Stab > 0 && !(b.Stab == 2 && (int)(b.Uhr * 8.0) % 2 == 1);
+        var farbe = b.Stab == 2 ? Rot : Gelb;
+        if (!string.IsNullOrWhiteSpace(d.StabilityText))
+        {
+            Lampe(g, d, r, d.StabilityText, an, farbe, s);
+            return;
+        }
+        Lampe(g, d, r, string.Empty, an, farbe, s);
+        var c = s == Schicht.Grund ? Alpha(F(d.DimColour, Color.Gray), 0.55f) : Color.FromArgb(255, 20, 16, 8);
+        if (s == Schicht.Licht && !an) { return; }
+        Schleudern(g, RectangleF.Inflate(r, -r.Height * 0.12f, -r.Height * 0.12f), c);
+    }
+
+    /// <summary>
+    /// Das Zeichen der Stabilitaetskontrolle, wie im Auto: ein Wagen von hinten, darunter zwei
+    /// S-foermige Schleuderspuren. Breit gezeichnet -- in 12 Bildpunkten Hoehe muss es lesbar sein.
+    /// </summary>
+    private static void Schleudern(Graphics g, RectangleF r, Color c)
+    {
+        var h = r.Height;
+        var w = Math.Min(r.Width, h * 1.7f);
+        var x = r.X + (r.Width - w) / 2f;
+        using var pinsel = new SolidBrush(c);
+        // Der Wagen: Dach (Trapez) auf einem breiten Koerper, oben 55 % der Hoehe.
+        var koerperOben = r.Y + h * 0.22f;
+        var koerperUnten = r.Y + h * 0.52f;
+        using (var wagen = new GraphicsPath(FillMode.Winding))
+        {
+            wagen.AddPolygon(new[]
+            {
+                new PointF(x + w * 0.3f, r.Y), new PointF(x + w * 0.7f, r.Y),
+                new PointF(x + w * 0.82f, koerperOben), new PointF(x + w * 0.18f, koerperOben),
+            });
+            var radius = h * 0.08f;
+            var k = new RectangleF(x + w * 0.08f, koerperOben, w * 0.84f, koerperUnten - koerperOben);
+            wagen.AddArc(k.X, k.Y, radius * 2f, radius * 2f, 180, 90);
+            wagen.AddArc(k.Right - radius * 2f, k.Y, radius * 2f, radius * 2f, 270, 90);
+            wagen.AddArc(k.Right - radius * 2f, k.Bottom - radius * 2f, radius * 2f, radius * 2f, 0, 90);
+            wagen.AddArc(k.X, k.Bottom - radius * 2f, radius * 2f, radius * 2f, 90, 90);
+            wagen.CloseFigure();
+            // Die Raeder unter dem Koerper.
+            wagen.AddRectangle(new RectangleF(x + w * 0.14f, koerperUnten - h * 0.02f, w * 0.14f, h * 0.12f));
+            wagen.AddRectangle(new RectangleF(x + w * 0.72f, koerperUnten - h * 0.02f, w * 0.14f, h * 0.12f));
+            g.FillPath(pinsel, wagen);
+        }
+        // Zwei Schleuderspuren, je ein "S".
+        using var stift = new Pen(c, Math.Max(1.2f, h * 0.1f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        foreach (var mitte in new[] { 0.28f, 0.72f })
+        {
+            var sx = x + w * mitte;
+            var y0 = r.Y + h * 0.7f;
+            g.DrawBezier(stift, new PointF(sx - w * 0.1f, y0), new PointF(sx + w * 0.14f, y0 + h * 0.06f),
+                         new PointF(sx - w * 0.14f, r.Bottom - h * 0.06f), new PointF(sx + w * 0.1f, r.Bottom));
+        }
     }
 
     private static void Lampe(Graphics g, SpeedoDesign d, RectangleF r, string text, bool an, Color farbe, Schicht s)
@@ -950,11 +1084,7 @@ internal sealed class SpeedoRenderer : IDisposable
         {
             Gang(g, d, b, gangFeld, rechts.Width * 0.8f, kasten: true, s);
             if (d.ShowSpeed && d.ShowUnit) { Schreibe(g, d, e.TempoEinheit, new RectangleF(rechts.X, rechts.Y + rechts.Height * 0.53f, rechts.Width, rechts.Width * 0.22f), rechts.Width * 0.2f, leise); }
-            if (d.ShowTraction)
-            {
-                Lampe(g, d, new RectangleF(rechts.X, rechts.Bottom - rechts.Width * 0.62f, rechts.Width, rechts.Width * 0.28f), d.TractionText, false, Color.Gold, s);
-                Lampe(g, d, new RectangleF(rechts.X, rechts.Bottom - rechts.Width * 0.3f, rechts.Width, rechts.Width * 0.28f), d.LockText, false, Color.Orange, s);
-            }
+            SaeulenLampen(g, d, b, rechts, s);
             return;
         }
         Gang(g, d, b, gangFeld, rechts.Width * 0.8f, kasten: true, s);
@@ -973,12 +1103,26 @@ internal sealed class SpeedoRenderer : IDisposable
             Schreibe(g, d, info, new RectangleF(rechts.X - rand * 0.5f, y, rechts.Width + rand, rechts.Width * 0.18f), rechts.Width * 0.15f, leise);
             y += rechts.Width * 0.18f;
         }
+        SaeulenLampen(g, d, b, rechts, s);
+        Pedale(g, d, b, new RectangleF(spalte.Right + 3f, spalte.Bottom - spalte.Height * 0.3f, rand * 0.5f, spalte.Height * 0.3f), waagrecht: false);
+    }
+
+    /// <summary>Die Lampen der Saeule untereinander, von unten.</summary>
+    private static void SaeulenLampen(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF rechts, Schicht s)
+    {
+        var h = rechts.Width * 0.28f;
+        var y = rechts.Bottom - h;
+        if (d.ShowStability)
+        {
+            StabLampe(g, d, b, new RectangleF(rechts.X, y, rechts.Width, h), s);
+            y -= h * 1.12f;
+        }
         if (d.ShowTraction)
         {
-            Lampe(g, d, new RectangleF(rechts.X, rechts.Bottom - rechts.Width * 0.62f, rechts.Width, rechts.Width * 0.28f), d.TractionText, b.Wheelspin, Color.FromArgb(255, 251, 191, 36), s);
-            Lampe(g, d, new RectangleF(rechts.X, rechts.Bottom - rechts.Width * 0.3f, rechts.Width, rechts.Width * 0.28f), d.LockText, b.WheelLock, Color.FromArgb(255, 251, 146, 60), s);
+            Lampe(g, d, new RectangleF(rechts.X, y, rechts.Width, h), d.LockText, b.WheelLock, Orange, s);
+            y -= h * 1.12f;
+            Lampe(g, d, new RectangleF(rechts.X, y, rechts.Width, h), d.TractionText, b.Wheelspin, Gelb, s);
         }
-        Pedale(g, d, b, new RectangleF(spalte.Right + 3f, spalte.Bottom - spalte.Height * 0.3f, rand * 0.5f, spalte.Height * 0.3f), waagrecht: false);
     }
 
     /// <summary>Die Skala des Tempoinstruments: bis zur naechsten runden Zahl ueber dem Hoechsttempo.</summary>
@@ -1155,25 +1299,25 @@ internal sealed class SpeedoRenderer : IDisposable
                 g.FillPath(feld, form);
             }
             Gang(g, d, b, gangFeld, lcd.Height * 0.7f, kasten: true, s);
-            if (d.ShowSpeed && d.ShowUnit) { Schreibe(g, d, e.TempoEinheit, new RectangleF(lcd.X + lcd.Width * 0.47f, lcd.Y + lcd.Height * 0.5f, lcd.Width * 0.14f, lcd.Height * 0.3f), lcd.Height * 0.18f, leise, Links); }
-            Lampen(g, d, b, new RectangleF(lcd.X + lcd.Width * 0.62f, lcd.Y + lcd.Height * 0.1f, lcd.Width * 0.18f, lcd.Height * 0.24f), s);
+            if (d.ShowSpeed && d.ShowUnit) { Schreibe(g, d, e.TempoEinheit, new RectangleF(lcd.X + lcd.Width * 0.47f, lcd.Y + lcd.Height * 0.42f, lcd.Width * 0.14f, lcd.Height * 0.26f), lcd.Height * 0.18f, leise, Links); }
+            Lampen(g, d, b, new RectangleF(lcd.X + lcd.Width * 0.05f, lcd.Bottom - lcd.Height * 0.25f, lcd.Width * 0.4f, lcd.Height * 0.19f), s);
             return;
         }
         if (d.ShowSpeed)
         {
-            Schreibe(g, d, e.Tempo(b.SpeedMs).ToString("0", CultureInfo.InvariantCulture), new RectangleF(lcd.X + lcd.Width * 0.02f, lcd.Y, lcd.Width * 0.44f, lcd.Height * 0.8f), lcd.Height * 0.62f * d.SpeedSize, hell, Rechts, gross: true, leuchten: leuchten * 0.5f);
+            Schreibe(g, d, e.Tempo(b.SpeedMs).ToString("0", CultureInfo.InvariantCulture), new RectangleF(lcd.X + lcd.Width * 0.02f, lcd.Y, lcd.Width * 0.44f, lcd.Height * 0.72f), lcd.Height * 0.56f * d.SpeedSize, hell, Rechts, gross: true, leuchten: leuchten * 0.5f);
         }
         Gang(g, d, b, gangFeld, lcd.Height * 0.7f, kasten: true, s);
         var zeilen = Infos(d, b, e);
         if (d.ShowRpm) { zeilen.Insert(0, b.Rpm.ToString("n0", CultureInfo.CurrentCulture) + " rpm"); }
-        var zy = lcd.Y + lcd.Height * 0.38f;
+        var zy = lcd.Y + lcd.Height * 0.12f;
         foreach (var z in zeilen.Take(3))
         {
             Schreibe(g, d, z, new RectangleF(lcd.X + lcd.Width * 0.62f, zy, gangFeld.X - lcd.X - lcd.Width * 0.63f, lcd.Height * 0.18f), lcd.Height * 0.15f, leise, Links);
             zy += lcd.Height * 0.19f;
         }
-        Lampen(g, d, b, new RectangleF(lcd.X + lcd.Width * 0.62f, lcd.Y + lcd.Height * 0.1f, lcd.Width * 0.18f, lcd.Height * 0.24f), s);
-        Pedale(g, d, b, new RectangleF(lcd.X + lcd.Width * 0.06f, lcd.Bottom - lcd.Height * 0.14f, lcd.Width * 0.36f, lcd.Height * 0.08f), waagrecht: true);
+        Lampen(g, d, b, new RectangleF(lcd.X + lcd.Width * 0.05f, lcd.Bottom - lcd.Height * 0.25f, lcd.Width * 0.4f, lcd.Height * 0.19f), s);
+        Pedale(g, d, b, new RectangleF(lcd.X + lcd.Width * 0.62f, lcd.Bottom - lcd.Height * 0.14f, lcd.Width * 0.1f, lcd.Height * 0.08f), waagrecht: true);
     }
 }
 

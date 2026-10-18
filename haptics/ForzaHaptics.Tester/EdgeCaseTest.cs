@@ -2627,6 +2627,30 @@ internal static class EdgeCaseTest
         zustand.TripZurueck();
         Soll(zustand.Letztes.TripM > 0f, "(Letztes ist ein Bild, das Zuruecksetzen wirkt erst danach)");
 
+        // DIE LAMPEN (2026-10-18): gemessene Schwellen, Regler verdoppeln/halbieren, je Auto eigene Werte.
+        var std = Rivals.SpeedoSchwellen.Standard;
+        Soll(std is { Spin: 1.5f, Lock: 3f, StabWarn: 2f, StabRutsch: 3f }, $"Tacho-Lampen: Vorgaben {std}");
+        Soll(Math.Abs(Rivals.SpeedoSchwellen.Aus(0, 0, 0).Spin - 3f) < 0.01f && Math.Abs(Rivals.SpeedoSchwellen.Aus(100, 100, 100).Lock - 1.5f) < 0.01f,
+             "Tacho-Lampen: der Regler verdoppelt bzw. halbiert die Schwelle nicht");
+        var mitAuto = new Rivals.OverlaySettings();
+        mitAuto.SpeedoCarSensitivity["4711"] = new[] { 100, 50, 0 };
+        Soll(Math.Abs(Rivals.SpeedoSchwellen.Fuer(mitAuto, 4711).Spin - 0.75f) < 0.01f
+             && Math.Abs(Rivals.SpeedoSchwellen.Fuer(mitAuto, 4711).StabWarn - 4f) < 0.01f
+             && Rivals.SpeedoSchwellen.Fuer(mitAuto, 4712) == std, "Tacho-Lampen: eigene Werte eines Autos greifen nicht (oder auch bei anderen)");
+        // Durchdrehen hinten (Heckantrieb) unter Gas: an erst nach 80 ms, aus erst 250 ms darunter.
+        var lampen = new Rivals.SpeedoState(merken: false);
+        bool Tc(float schlupf, int ms)
+        {
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 4712, 700, 5, speed: 20f);
+            BitConverter.GetBytes(schlupf).CopyTo(roh, 92);
+            roh[315] = 255;
+            ForzaPacket.TryParse(roh, out var p);
+            return lampen.Aufnehmen(p, 0f, design, std, t0.AddMilliseconds(ms)).Wheelspin;
+        }
+        Soll(!Tc(0.8f, 0) && !Tc(2.0f, 16) && !Tc(2.0f, 60) && Tc(2.0f, 100), "Tacho-Lampen: TC geht nicht nach 80 ms an (oder zu frueh)");
+        Soll(Tc(1.0f, 116) && Tc(1.0f, 300) && !Tc(1.0f, 400), "Tacho-Lampen: TC geht nicht nach 250 ms darunter aus (oder zu frueh)");
+        Soll(Tc(1.4f, 420) == false, "Tacho-Lampen: knapp unter der Schwelle geht TC an");
+
         // Auf dem Schirm, auf jeder Aufloesung, mit jedem Anker.
         foreach (var flaeche in new[] { new Size(1920, 1080), new Size(3840, 2160), new Size(1280, 720) })
         {

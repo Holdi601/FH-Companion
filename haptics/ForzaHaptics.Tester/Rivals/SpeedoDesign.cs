@@ -122,6 +122,10 @@ internal sealed class SpeedoDesign
     [JsonPropertyName("showTraction")] public bool ShowTraction { get; set; } = true;
     [JsonPropertyName("tractionText")] public string TractionText { get; set; } = "TC";
     [JsonPropertyName("lockText")] public string LockText { get; set; } = "ABS";
+    /// <summary>Die Stabilitaetslampe (STAB): warnt vor dem Wegrutschen in der Kurve.</summary>
+    [JsonPropertyName("showStability")] public bool ShowStability { get; set; } = true;
+    /// <summary>Leer: das Zeichen (Auto mit Schleuderspuren) statt eines Textes.</summary>
+    [JsonPropertyName("stabilityText")] public string StabilityText { get; set; } = string.Empty;
     [JsonPropertyName("clock")] public SpeedoClock Clock { get; set; } = SpeedoClock.Off;
     [JsonPropertyName("distance")] public SpeedoDistance Distance { get; set; } = SpeedoDistance.Off;
 
@@ -181,6 +185,7 @@ internal sealed class SpeedoDesign
         RedlinePercent = Math.Clamp(RedlinePercent, 0.5f, 1f);
         TractionText = Kurz(TractionText, "TC");
         LockText = Kurz(LockText, "ABS");
+        StabilityText = string.IsNullOrWhiteSpace(StabilityText) ? string.Empty : StabilityText.Trim()[..Math.Min(6, StabilityText.Trim().Length)];
         return this;
     }
 

@@ -30,6 +30,13 @@ internal sealed class SpeedoTab : UserControl
     private readonly OverlaySettings _settings;
     private readonly Action<SpeedoDesign?> _designGeaendert;
     private readonly Action _tripZurueck;
+    private readonly Func<(int Auto, string? Name, SpeedoMesswerte Werte)?> _live;
+    private readonly TrackBar[] _lampenRegler = new TrackBar[3];
+    private readonly Label _lampenStand = new();
+    private readonly Label _autoZeile = new();
+    private readonly System.Windows.Forms.Timer _liveTakt = new() { Interval = 250 };
+    private int _liveAuto = -1;
+    private bool _reglerStill;
     private readonly FlowLayoutPanel _galerie = new();
     private readonly Panel _vorschau;
     private readonly FlowLayoutPanel _baukasten = new();
@@ -46,11 +53,13 @@ internal sealed class SpeedoTab : UserControl
     private string? _gespeichertAls;
     private bool _still;
 
-    public SpeedoTab(OverlaySettings settings, Action<SpeedoDesign?> designGeaendert, Action tripZurueck)
+    public SpeedoTab(OverlaySettings settings, Action<SpeedoDesign?> designGeaendert, Action tripZurueck,
+                     Func<(int Auto, string? Name, SpeedoMesswerte Werte)?>? live = null)
     {
         _settings = settings;
         _designGeaendert = designGeaendert;
         _tripZurueck = tripZurueck;
+        _live = live ?? (() => null);
         _design = SpeedoDesigns.Finde(settings.SpeedoDesign);
         Dock = DockStyle.Fill;
         BackColor = Grund;
@@ -86,6 +95,36 @@ internal sealed class SpeedoTab : UserControl
             AutoSize = true, ForeColor = Leise, Margin = new Padding(12, 8, 3, 3),
         };
         oben.Controls.Add(hinweis);
+
+        // ---- DIE LAMPEN: wie empfindlich, allgemein oder je Auto (seit 2026-10-18) ----
+        // Der Nutzer: "the TCS light is basically all the time on, same for ABS ... sensitivity per
+        // vehicle". Die Schwellen sind gemessen (SpeedoSchwellen); hier verschiebt man sie.
+        var lampen = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(8, 0, 8, 6), WrapContents = true };
+        lampen.Controls.Add(new Label { Text = Loc.T("Lamp sensitivity"), AutoSize = true, ForeColor = Color.White, Font = new Font("Segoe UI Semibold", 9.5f), Margin = new Padding(3, 8, 12, 3) });
+        var namen = new[] { Loc.T("TC (wheelspin)"), Loc.T("ABS (locking)"), Loc.T("STAB (about to slide)") };
+        for (var i = 0; i < 3; i++)
+        {
+            var nr = i;
+            lampen.Controls.Add(new Label { Text = namen[i], AutoSize = true, ForeColor = Leise, Margin = new Padding(3, 8, 3, 3) });
+            var r = new TrackBar { Minimum = 0, Maximum = 100, Width = 110, TickStyle = TickStyle.None, AutoSize = false, Height = 26, Margin = new Padding(0, 3, 14, 0) };
+            r.ValueChanged += (_, _) => ReglerGeaendert(nr, r.Value);
+            _lampenRegler[i] = r;
+            lampen.Controls.Add(r);
+        }
+        var fuerAuto = Knopf(Loc.T("Keep these for this car"));
+        fuerAuto.Click += (_, _) => FuerAutoMerken();
+        var allgemein = Knopf(Loc.T("This car: back to the general values"));
+        allgemein.Click += (_, _) => FuerAutoVergessen();
+        lampen.Controls.Add(fuerAuto);
+        lampen.Controls.Add(allgemein);
+        _autoZeile.AutoSize = true;
+        _autoZeile.ForeColor = Leise;
+        _autoZeile.Margin = new Padding(3, 8, 12, 3);
+        lampen.Controls.Add(_autoZeile);
+        _lampenStand.AutoSize = true;
+        _lampenStand.ForeColor = Leise;
+        _lampenStand.Margin = new Padding(3, 8, 3, 3);
+        lampen.Controls.Add(_lampenStand);
 
         // ---- LINKS: die Galerie ----
         _galerie.Dock = DockStyle.Left;
@@ -135,6 +174,7 @@ internal sealed class SpeedoTab : UserControl
         Controls.Add(mitte);
         Controls.Add(rechts);
         Controls.Add(_galerie);
+        Controls.Add(lampen);
         Controls.Add(oben);
 
         _takt.Tick += (_, _) =>
@@ -143,6 +183,7 @@ internal sealed class SpeedoTab : UserControl
             _vorschau.Invalidate();
         };
         _speichern.Tick += (_, _) => { _speichern.Stop(); Speichern(); };
+        _liveTakt.Tick += (_, _) => LiveZeigen();
         VisibleChanged += (_, _) =>
         {
             if (Visible)
@@ -151,14 +192,87 @@ internal sealed class SpeedoTab : UserControl
                 _an.Checked = _settings.HudSpeedo;
                 _still = false;
                 _takt.Start();
+                _liveTakt.Start();
+                LiveZeigen();
             }
             else
             {
                 _takt.Stop();
+                _liveTakt.Stop();
             }
         };
         GalerieAufbauen();
         Waehlen(_design);
+    }
+
+    /// <summary>Welches Auto faehrt, ob es eigene Werte hat, und was die Lampen gerade messen.</summary>
+    private void LiveZeigen()
+    {
+        var live = _live();
+        var auto = live?.Auto ?? 0;
+        if (auto != _liveAuto)
+        {
+            _liveAuto = auto;
+            var w = SpeedoSchwellen.Regler(_settings, auto);
+            _reglerStill = true;
+            for (var i = 0; i < 3; i++) { _lampenRegler[i].Value = Math.Clamp(w[i], 0, 100); }
+            _reglerStill = false;
+        }
+        var eigen = auto > 0 && _settings.SpeedoCarSensitivity.ContainsKey(auto.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        _autoZeile.Text = auto <= 0
+            ? Loc.T("No car yet -- the sliders set the general values.")
+            : string.Format(eigen ? Loc.T("{0}: its own values") : Loc.T("{0}: general values"), live?.Name ?? "#" + auto);
+        if (live is { } l && auto > 0)
+        {
+            var s = SpeedoSchwellen.Fuer(_settings, auto);
+            _lampenStand.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, Loc.T("now: TC {0:0.0} of {1:0.0} · ABS {2:0.0} of {3:0.0} · STAB {4:0.0} of {5:0.0}"),
+                l.Werte.Spin, s.Spin, l.Werte.Lock, s.Lock, l.Werte.Stab, s.StabWarn);
+        }
+        else
+        {
+            _lampenStand.Text = string.Empty;
+        }
+    }
+
+    private void ReglerGeaendert(int nr, int wert)
+    {
+        if (_reglerStill) { return; }
+        var schluessel = _liveAuto.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (_liveAuto > 0 && _settings.SpeedoCarSensitivity.TryGetValue(schluessel, out var eigen) && eigen is { Length: 3 })
+        {
+            eigen[nr] = wert;
+        }
+        else
+        {
+            switch (nr)
+            {
+                case 0: _settings.SpeedoSpinSensitivity = wert; break;
+                case 1: _settings.SpeedoLockSensitivity = wert; break;
+                default: _settings.SpeedoStabSensitivity = wert; break;
+            }
+        }
+        _settings.Save();
+        LiveZeigen();
+    }
+
+    private void FuerAutoMerken()
+    {
+        if (_liveAuto <= 0) { Melde(Loc.T("Drive the car first -- then its values can be kept.")); return; }
+        _settings.SpeedoCarSensitivity[_liveAuto.ToString(System.Globalization.CultureInfo.InvariantCulture)] =
+            _lampenRegler.Select(r => r.Value).ToArray();
+        _settings.Save();
+        LiveZeigen();
+        Melde(Loc.T("This car keeps its own lamp values; the sliders now change only this car."));
+    }
+
+    private void FuerAutoVergessen()
+    {
+        if (_liveAuto <= 0) { return; }
+        _settings.SpeedoCarSensitivity.Remove(_liveAuto.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        _settings.Save();
+        _liveAuto = -1;
+        LiveZeigen();
+        Melde(Loc.T("This car uses the general lamp values again."));
     }
 
     /// <summary>Nur bewegen, wenn es jemand sieht -- und nie, waehrend das Spiel vorn ist.</summary>
@@ -518,8 +632,10 @@ internal sealed class SpeedoTab : UserControl
         Schalter(Loc.T("Boost"), d.ShowBoost, v => Aendern(x => x.ShowBoost = v));
         Schalter(Loc.T("Throttle and brake"), d.ShowPedals, v => Aendern(x => x.ShowPedals = v));
         Schalter(Loc.T("Wheelspin and lock lamps"), d.ShowTraction, v => Aendern(x => x.ShowTraction = v));
+        Schalter(Loc.T("Stability lamp (about to slide)"), d.ShowStability, v => Aendern(x => x.ShowStability = v));
         Text(Loc.T("Wheelspin lamp text"), d.TractionText, v => Aendern(x => x.TractionText = v));
         Text(Loc.T("Lock lamp text"), d.LockText, v => Aendern(x => x.LockText = v));
+        TextOderLeer(Loc.T("Stability lamp text (empty = symbol)"), d.StabilityText, v => Aendern(x => x.StabilityText = v));
         Wahl(Loc.T("Clock"), d.Clock, v => Aendern(x => x.Clock = v), Uhrname);
         Wahl(Loc.T("Distance"), d.Distance, v => Aendern(x => x.Distance = v), Streckename);
 
@@ -552,6 +668,14 @@ internal sealed class SpeedoTab : UserControl
         var z = Zeile(text);
         var t = new TextBox { Text = wert, Width = 160, BackColor = Grund, ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
         t.TextChanged += (_, _) => { if (t.Text.Trim().Length > 0) { setzen(t.Text); } };
+        z.Controls.Add(t);
+    }
+
+    private void TextOderLeer(string text, string wert, Action<string> setzen)
+    {
+        var z = Zeile(text);
+        var t = new TextBox { Text = wert, Width = 160, BackColor = Grund, ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
+        t.TextChanged += (_, _) => setzen(t.Text);
         z.Controls.Add(t);
     }
 
@@ -718,6 +842,7 @@ internal sealed class SpeedoTab : UserControl
         if (disposing)
         {
             _takt.Dispose();
+            _liveTakt.Dispose();
             if (_speichern.Enabled) { _speichern.Stop(); Speichern(); }
             _speichern.Dispose();
             _maler.Dispose();

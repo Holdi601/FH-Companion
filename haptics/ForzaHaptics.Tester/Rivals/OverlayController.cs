@@ -348,12 +348,14 @@ internal sealed class OverlayController : IDisposable
                 return;
             }
             var design = _tacho.Design;
-            var bild = _tachoDaten.Aufnehmen(packet, design.Smoothing, design);
+            var bild = _tachoDaten.Aufnehmen(packet, design.Smoothing, design,
+                                             SpeedoSchwellen.Fuer(_settings, (int)packet.Get("CarOrdinal")));
             var nun = DateTime.UtcNow;
             var takt = TimeSpan.FromSeconds(1.0 / Math.Clamp(_settings.SpeedoFps, 10, 60));
             if (nun - _tachoGemalt < takt) { return; }
             var zeichen = TachoZeichen(bild, design);
             var bewegt = (design.GearPop && bild.SeitGangwechsel < 0.3f)
+                         || (bild.Stab == 2 && design.ShowStability)
                          || (bild.ImRoten && (design.RedlinePulse || design.ShowShiftLights))
                          || (bild.AtLimiter && design.LimiterFlash);
             if (zeichen == _tachoZeichen && !bewegt && _tacho.Visible) { return; }
@@ -382,6 +384,7 @@ internal sealed class OverlayController : IDisposable
         h.Add(b.Wheelspin);
         h.Add(b.WheelLock);
         h.Add(b.AtLimiter);
+        h.Add(b.Stab);
         if (d.ShowPower) { h.Add((int)(b.PowerW / 2000f)); }
         if (d.ShowBoost) { h.Add((int)(b.BoostPsi * 10f)); }
         if (d.ShowPedals) { h.Add((int)(b.Throttle * 25f)); h.Add((int)(b.Brake * 25f)); }
@@ -414,6 +417,21 @@ internal sealed class OverlayController : IDisposable
         catch (Exception)
         {
         }
+    }
+
+    /// <summary>Fuer den Reiter: welches Auto gerade faehrt, und was die Lampen gerade messen.</summary>
+    public (int Auto, string? Name, SpeedoMesswerte Werte) TachoLive()
+    {
+        var auto = _tachoDaten.Auto;
+        string? name = null;
+        try
+        {
+            if (auto > 0) { name = AutoNamen.Fuer(auto, _advisor, _autoliste ??= CarCollection.Laden(), _ordinals); }
+        }
+        catch (Exception)
+        {
+        }
+        return (auto, name, _tachoDaten.Messwerte);
     }
 
     /// <summary>Die Tagesstrecke des Tachos auf null.</summary>

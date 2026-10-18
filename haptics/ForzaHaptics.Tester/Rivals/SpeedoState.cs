@@ -13,10 +13,53 @@ internal readonly record struct SpeedoBild(
     // Animation: Sekunden seit dem letzten Gangwechsel, laufende Uhr fuer Pulsieren und Blinken.
     float SeitGangwechsel, double Uhr)
 {
+    /// <summary>Stabilitaet: 0 ruhig, 1 an der Grenze (gleich rutscht es), 2 rutscht.</summary>
+    public int Stab { get; init; }
+
     public float RpmAnteil => MaxRpm > 0f ? Math.Clamp(Rpm / MaxRpm, 0f, 1.05f) : 0f;
     public float RotAnteil => MaxRpm > 0f ? Math.Clamp(RedlineRpm / MaxRpm, 0.3f, 1f) : 0.9f;
     public bool ImRoten => MaxRpm > 0f && Rpm >= RedlineRpm;
 }
+
+/// <summary>
+/// Ab wann die Lampen TC, ABS und STAB angehen -- aus den drei Reglern (0..100, 50 = Vorgabe).
+/// </summary>
+/// <remarks>
+/// GEMESSEN an 60 eigenen Runden (2026-10-18; Forza normiert Schlupf so, dass 1 die Haftgrenze
+/// ist): beim Bremsen liegt der kleinste Schlupf im Median bei -1,6 -- das ABS des Spiels haelt das
+/// Rad an der Grenze --, echtes Blockieren erst unter -3 (10 % der Bremszeit). Am Gas liegt das
+/// angetriebene Rad nur 5 % der Zeit ueber 1,5. In Kurven liegt der kombinierte Schlupf 9 % der Zeit
+/// ueber 2, 3 % ueber 3. Die erste Fassung schaltete bei 0,2 -- beim Bremsen 96 % der Zeit an.
+/// Ein Regler verdoppelt (0) oder halbiert (100) die Schwelle.
+/// </remarks>
+internal readonly record struct SpeedoSchwellen(float Spin, float Lock, float StabWarn, float StabRutsch)
+{
+    public static SpeedoSchwellen Standard { get; } = Aus(50, 50, 50);
+
+    /// <summary>Die Werte dieses Autos, wenn es eigene hat -- sonst die allgemeinen.</summary>
+    public static SpeedoSchwellen Fuer(OverlaySettings s, int auto)
+    {
+        var w = Regler(s, auto);
+        return Aus(w[0], w[1], w[2]);
+    }
+
+    /// <summary>Die drei Reglerwerte fuer dieses Auto: eigene oder allgemeine.</summary>
+    public static int[] Regler(OverlaySettings s, int auto) =>
+        s.SpeedoCarSensitivity is { } je
+        && je.TryGetValue(auto.ToString(System.Globalization.CultureInfo.InvariantCulture), out var w) && w is { Length: 3 }
+            ? w
+            : new[] { s.SpeedoSpinSensitivity, s.SpeedoLockSensitivity, s.SpeedoStabSensitivity };
+
+    public static SpeedoSchwellen Aus(int spin, int sperre, int stab)
+    {
+        static float F(int regler) => (float)Math.Pow(2.0, (50 - Math.Clamp(regler, 0, 100)) / 50.0);
+        var stabF = F(stab);
+        return new SpeedoSchwellen(1.5f * F(spin), 3f * F(sperre), 2f * stabF, 3f * stabF);
+    }
+}
+
+/// <summary>Die rohen Messwerte der Lampen -- fuer die Anzeige "jetzt" beim Einstellen.</summary>
+internal readonly record struct SpeedoMesswerte(float Spin, float Lock, float Stab);
 
 /// <summary>
 /// Die Daten des Tachos aus der Telemetrie (seit 2026-10-18): geglaettete Nadel, gelernter
@@ -38,8 +81,12 @@ internal readonly record struct SpeedoBild(
 /// ## TC und ABS
 ///
 /// Die Telemetrie sagt nicht, ob eine Fahrhilfe eingreift. Die Lampen leuchten, wenn die
-/// angetriebenen Raeder durchdrehen (Schlupf ueber 0,2) oder ein Rad beim Bremsen blockiert
-/// (unter -0,2) -- also genau dann, wenn eine Fahrhilfe eingreifen wuerde.
+/// angetriebenen Raeder durchdrehen oder ein Rad beim Bremsen blockiert -- Schwellen und
+/// Begruendung bei <see cref="SpeedoSchwellen"/>. STAB warnt, bevor das Auto in der Kurve
+/// wegrutscht: der kombinierte Schlupf eines Rades, das quer laeuft (Schraeglauf ab 0,3), ueber
+/// der Warnschwelle = gelb, ueber der Rutschschwelle = rot. Jede Lampe geht erst an, wenn der Wert
+/// 80 ms ueber der Schwelle lag, und erst aus, wenn er 250 ms darunter (unter 85 %) blieb -- sonst
+/// flackert sie mit jedem Paket.
 ///
 /// ## Die Uhr des Spiels
 ///
@@ -66,6 +113,49 @@ internal sealed class SpeedoState
 
     public SpeedoBild Letztes { get; private set; }
 
+    /// <summary>Die letzten rohen Messwerte der Lampen.</summary>
+    public SpeedoMesswerte Messwerte { get; private set; }
+
+    /// <summary>Das Auto des letzten Pakets (CarOrdinal).</summary>
+    public int Auto => _auto;
+
+    private readonly Lampe _tc = new();
+    private readonly Lampe _abs = new();
+    private readonly Lampe _stabWarn = new();
+    private readonly Lampe _stabRutsch = new();
+
+    /// <summary>Eine Lampe mit Verzoegerung beim An- und Ausgehen.</summary>
+    private sealed class Lampe
+    {
+        private DateTime _ueberSeit = DateTime.MinValue;
+        private DateTime _unterSeit = DateTime.MinValue;
+        public bool An { get; private set; }
+
+        public bool Setze(bool ueber, bool unter, DateTime nun)
+        {
+            if (ueber)
+            {
+                _unterSeit = DateTime.MinValue;
+                if (_ueberSeit == DateTime.MinValue) { _ueberSeit = nun; }
+                if (!An && (nun - _ueberSeit).TotalMilliseconds >= 80) { An = true; }
+            }
+            else
+            {
+                _ueberSeit = DateTime.MinValue;
+                if (unter)
+                {
+                    if (_unterSeit == DateTime.MinValue) { _unterSeit = nun; }
+                    if (An && (nun - _unterSeit).TotalMilliseconds >= 250) { An = false; }
+                }
+                else
+                {
+                    _unterSeit = DateTime.MinValue;
+                }
+            }
+            return An;
+        }
+    }
+
     public static string SchaltDatei => Path.Combine(AppInfo.DataFolder, "speedo_shift.json");
     public static string StreckeDatei => Path.Combine(AppInfo.DataFolder, "speedo_odometer.json");
 
@@ -82,7 +172,10 @@ internal sealed class SpeedoState
     public void TripZurueck() => _trip = 0f;
 
     /// <summary>Ein Paket aufnehmen; <paramref name="glaettung"/> 0 = roh, 0,95 = sehr traege.</summary>
-    public SpeedoBild Aufnehmen(ForzaPacket p, float glaettung, SpeedoDesign design, DateTime? jetzt = null)
+    public SpeedoBild Aufnehmen(ForzaPacket p, float glaettung, SpeedoDesign design, DateTime? jetzt = null) =>
+        Aufnehmen(p, glaettung, design, SpeedoSchwellen.Standard, jetzt);
+
+    public SpeedoBild Aufnehmen(ForzaPacket p, float glaettung, SpeedoDesign design, SpeedoSchwellen schwellen, DateTime? jetzt = null)
     {
         var nun = jetzt ?? DateTime.UtcNow;
         var dt = _zuletzt == DateTime.MinValue ? 0f : (float)Math.Clamp((nun - _zuletzt).TotalSeconds, 0, 0.5);
@@ -140,15 +233,24 @@ internal sealed class SpeedoState
         if ((nun - _gespeichert).TotalSeconds > 60) { Speichern(); }
 
         var rot = design.Redline == SpeedoRedline.Learned ? Schaltpunkt(auto, max) : max * design.RedlinePercent;
-        var schlupf = Raeder(p, (int)p.Get("DrivetrainType"));
+        var m = Messen(p, (int)p.Get("DrivetrainType"));
+        // Nur, wo es etwas bedeutet: Gas fuer TC, Bremse fuer ABS, Fahrt (ueber 25 km/h) fuer STAB.
+        var spin = gas > 0.1f ? m.Spin : 0f;
+        var sperre = bremse > 0.1f ? m.Lock : 0f;
+        var stab = speed > 7f ? m.Stab : 0f;
+        Messwerte = new SpeedoMesswerte(spin, sperre, stab);
+        var tc = _tc.Setze(spin > schwellen.Spin, spin < schwellen.Spin * 0.85f, nun);
+        var abs = _abs.Setze(sperre > schwellen.Lock, sperre < schwellen.Lock * 0.85f, nun);
+        var warn = _stabWarn.Setze(stab > schwellen.StabWarn, stab < schwellen.StabWarn * 0.85f, nun);
+        var rutscht = _stabRutsch.Setze(stab > schwellen.StabRutsch, stab < schwellen.StabRutsch * 0.85f, nun);
         var bild = new SpeedoBild(
             _rpm, max, idle, rot, _speed, _topSpeed, gang,
             Math.Max(0f, leistung), (float)p.Get("Boost"), gas, bremse,
-            schlupf.Dreht && gas > 0.1f, schlupf.Blockiert && bremse > 0.1f, max > 0f && rpm >= max * 0.985f,
+            tc, abs, max > 0f && rpm >= max * 0.985f,
             _trip, (float)p.Get("DistanceTraveled"), _odometer,
             (float)p.Get("CurrentRaceTime"), (float)p.Get("CurrentLap"),
             _gangSeit == DateTime.MinValue ? 99f : (float)(nun - _gangSeit).TotalSeconds,
-            (nun - _start).TotalSeconds);
+            (nun - _start).TotalSeconds) { Stab = rutscht ? 2 : warn ? 1 : 0 };
         Letztes = bild;
         return bild;
     }
@@ -170,20 +272,29 @@ internal sealed class SpeedoState
         return max * 0.9f;
     }
 
-    private static (bool Dreht, bool Blockiert) Raeder(ForzaPacket p, int antrieb)
+    /// <summary>
+    /// Die drei Messwerte: Durchdrehen (groesster Schlupf eines angetriebenen Rades), Blockieren
+    /// (groesster negativer Schlupf, als positive Zahl) und Stabilitaet (groesster kombinierter
+    /// Schlupf eines Rades, das quer laeuft).
+    /// </summary>
+    internal static SpeedoMesswerte Messen(ForzaPacket p, int antrieb)
     {
-        float S(string ecke) => (float)p.Get("TireSlipRatio" + ecke);
-        var vl = S("FrontLeft");
-        var vr = S("FrontRight");
-        var hl = S("RearLeft");
-        var hr = S("RearRight");
-        var angetrieben = antrieb switch
+        string[] ecken = { "FrontLeft", "FrontRight", "RearLeft", "RearRight" };
+        var spin = 0f;
+        var sperre = 0f;
+        var stab = 0f;
+        for (var i = 0; i < 4; i++)
         {
-            0 => new[] { vl, vr },
-            1 => new[] { hl, hr },
-            _ => new[] { vl, vr, hl, hr },
-        };
-        return (angetrieben.Any(s => s > 0.2f), new[] { vl, vr, hl, hr }.Any(s => s < -0.2f));
+            var sr = (float)p.Get("TireSlipRatio" + ecken[i]);
+            var winkel = Math.Abs((float)p.Get("TireSlipAngle" + ecken[i]));
+            var kombi = Math.Abs((float)p.Get("TireCombinedSlip" + ecken[i]));
+            if (float.IsNaN(sr) || float.IsNaN(winkel) || float.IsNaN(kombi)) { continue; }
+            var getrieben = antrieb switch { 0 => i < 2, 1 => i >= 2, _ => true };
+            if (getrieben) { spin = Math.Max(spin, sr); }
+            sperre = Math.Max(sperre, -sr);
+            if (winkel >= 0.3f) { stab = Math.Max(stab, kombi); }
+        }
+        return new SpeedoMesswerte(spin, sperre, stab);
     }
 
     private void Laden()
@@ -276,6 +387,10 @@ internal sealed class SpeedoState
             gas > 0.5f ? 380000f * (rpm / max) : 0f, gas > 0.5f ? 14f * (rpm / max) : -2f, gas, bremse,
             gas > 0.5f && gang == 1 && seitWechsel < 0.5f, bremse > 0.5f && seitWechsel < 0.25f, limiter,
             12_340f, 4_210f, 18_765_400f, (float)t + 63.4f, (float)(t % 80.0),
-            seitWechsel, t);
+            seitWechsel, t)
+        {
+            // Beim Anbremsen der Kurve erst die Warnung, dann kurz das Rutschen.
+            Stab = zyklus is > 7.3 and < 7.75 ? 1 : zyklus is >= 7.75 and < 8.05 ? 2 : 0,
+        };
     }
 }

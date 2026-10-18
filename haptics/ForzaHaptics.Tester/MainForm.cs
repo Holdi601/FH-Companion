@@ -553,7 +553,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         speedoTab.Controls.Add(new Rivals.SpeedoTab(
             _rivals.Settings,
             design => { _rivals.Controller?.TachoNeu(design); hudEinstellungen.Invalidate(true); },
-            () => _rivals.Controller?.TachoTripZurueck()));
+            () => _rivals.Controller?.TachoTripZurueck(),
+            () => _rivals.Controller?.TachoLive()));
         hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
         hudEinstellungen.PersoenlichProbe += () => _rivals.PreviewPersonalRecord();
         hudEinstellungen.NeuesAutoProbe += () => _rivals.PreviewNewCar();
