@@ -45,14 +45,59 @@ internal readonly record struct SpeedoEinheiten(bool Mph, string Leistung)
 internal sealed class SpeedoRenderer : IDisposable
 {
     private Bitmap? _grund;
+    private Bitmap? _fuellung;
+    private Bitmap? _fuellungBlitz;
     private string _grundSchluessel = string.Empty;
+    private SpeedoDesign? _designZuletzt;
+    private int _designHash;
+    private long _designGeprueft;
 
     private enum Schicht { Grund, Licht }
+
+    // DIE LEUCHTENDE SKALA AUS DEM MERKER (seit 2026-10-18): einmal voll gezeichnet (und einmal
+    // weiss, fuer das Blitzen am Begrenzer), je Bild nur der Ausschnitt bis zur Drehzahl kopiert --
+    // ein DrawImage mit Ausschnitt statt dutzender Bogen- und Leuchtstriche. Gilt fuer den Faden,
+    // der gerade zeichnet (Tacho und Oberflaeche zeichnen nebeneinander).
+    [ThreadStatic] private static Bitmap? _fuellBild;
+    [ThreadStatic] private static Bitmap? _blitzBild;
+    [ThreadStatic] private static bool _blitzJetzt;
+    [ThreadStatic] private static float _fuellW;
+    [ThreadStatic] private static float _fuellH;
+    /// <summary>Beim Bau des Merkers: nur die Skalen, voll; Text, Nadel, Lampen nicht.</summary>
+    [ThreadStatic] private static bool _nurFuellung;
+    [ThreadStatic] private static bool _blitzPass;
 
     public void Dispose()
     {
         _grund?.Dispose();
         _grund = null;
+        _fuellung?.Dispose();
+        _fuellung = null;
+        _fuellungBlitz?.Dispose();
+        _fuellungBlitz = null;
+    }
+
+    /// <summary>Das Design hat sich geaendert (an derselben Stelle): den Merker neu bauen.</summary>
+    public void Vergessen()
+    {
+        _designZuletzt = null;
+        _grundSchluessel = string.Empty;
+    }
+
+    /// <summary>
+    /// Die Kennung des Designs -- je Objekt gemerkt und hoechstens zweimal je Sekunde neu gerechnet:
+    /// das ganze Design als JSON in JEDEM Bild kostete mehr als das Zeichnen selbst.
+    /// </summary>
+    private int DesignHash(SpeedoDesign d)
+    {
+        var jetzt = Environment.TickCount64;
+        if (!ReferenceEquals(d, _designZuletzt) || jetzt - _designGeprueft > 500)
+        {
+            _designHash = d.ToJson().GetHashCode();
+            _designZuletzt = d;
+            _designGeprueft = jetzt;
+        }
+        return _designHash;
     }
 
     /// <summary>Die Groesse des Tachos bei Skala <paramref name="k"/> (Bildpunkte).</summary>
@@ -68,12 +113,17 @@ internal sealed class SpeedoRenderer : IDisposable
         var platz = new RectangleF(ziel.X + (ziel.Width - w * k) / 2f, ziel.Y + (ziel.Height - h * k) / 2f, w * k, h * k);
 
         // 1. Der stehende Teil, aus dem Merker.
-        var schluessel = string.Join("|", d.ToJson().GetHashCode(), (int)platz.Width, (int)platz.Height,
+        var schluessel = string.Join("|", DesignHash(d), (int)platz.Width, (int)platz.Height,
             (int)(b.MaxRpm / 100f), (int)(b.RedlineRpm / 100f), e.Mph, SkalaTempo(b, e));
         if (_grund is null || schluessel != _grundSchluessel)
         {
+            Bitmap Neu() => new(Math.Max(1, (int)Math.Ceiling(platz.Width)), Math.Max(1, (int)Math.Ceiling(platz.Height)), PixelFormat.Format32bppPArgb);
             _grund?.Dispose();
-            _grund = new Bitmap(Math.Max(1, (int)Math.Ceiling(platz.Width)), Math.Max(1, (int)Math.Ceiling(platz.Height)), PixelFormat.Format32bppPArgb);
+            _fuellung?.Dispose();
+            _fuellungBlitz?.Dispose();
+            _grund = Neu();
+            _fuellung = Neu();
+            _fuellungBlitz = Neu();
             using (var gg = Graphics.FromImage(_grund))
             {
                 gg.Clear(Color.Transparent);
@@ -81,24 +131,47 @@ internal sealed class SpeedoRenderer : IDisposable
                 gg.ScaleTransform(k, k);
                 Lage(gg, d, b, e, w, h, Schicht.Grund);
             }
+            // Die volle Skala: Drehzahl am Anschlag, ohne Pulsieren -- einmal farbig, einmal weiss.
+            var voll = b with { Rpm = Math.Max(1f, b.MaxRpm), AtLimiter = false, Uhr = 0 };
+            foreach (var (bildZiel, weiss) in new[] { (_fuellung, false), (_fuellungBlitz, true) })
+            {
+                using var gg = Graphics.FromImage(bildZiel);
+                gg.Clear(Color.Transparent);
+                Vorbereiten(gg);
+                gg.ScaleTransform(k, k);
+                _nurFuellung = true;
+                _blitzPass = weiss;
+                try { Lage(gg, d, voll, e, w, h, Schicht.Licht); }
+                finally { _nurFuellung = false; _blitzPass = false; }
+            }
             _grundSchluessel = schluessel;
         }
         var alt = g.InterpolationMode;
+        var mischen = g.CompositingQuality;
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.CompositingQuality = CompositingQuality.HighSpeed;
         g.DrawImage(_grund, platz.X, platz.Y, _grund.Width, _grund.Height);
         g.InterpolationMode = alt;
+        g.CompositingQuality = mischen;
 
-        // 2. Was sich bewegt.
+        // 2. Was sich bewegt -- die Skala als Ausschnitt aus dem Merker.
         var zustand = g.Save();
         try
         {
-            Vorbereiten(g);
+            Vorbereiten(g, merker: false);
             g.TranslateTransform(platz.X, platz.Y);
             g.ScaleTransform(k, k);
+            _fuellBild = _fuellung;
+            _blitzBild = _fuellungBlitz;
+            _fuellW = w;
+            _fuellH = h;
+            _blitzJetzt = Blitz(d, b);
             Lage(g, d, b, e, w, h, Schicht.Licht);
         }
         finally
         {
+            _fuellBild = null;
+            _blitzBild = null;
             g.Restore(zustand);
         }
     }
@@ -110,13 +183,40 @@ internal sealed class SpeedoRenderer : IDisposable
         r.Male(g, d, b, ziel, e);
     }
 
-    private static void Vorbereiten(Graphics g)
+    private static void Vorbereiten(Graphics g, bool merker = true)
     {
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        g.CompositingQuality = CompositingQuality.HighQuality;
+        // Der Merker wird einmal gebaut: dort gammarichtig mischen. Je Bild NICHT -- das
+        // gammarichtige Mischen machte jedes Kopieren des Merkers drei- bis viermal so teuer.
+        g.PixelOffsetMode = merker ? PixelOffsetMode.HighQuality : PixelOffsetMode.Half;
+        g.CompositingQuality = merker ? CompositingQuality.HighQuality : CompositingQuality.HighSpeed;
     }
+
+    /// <summary>Die gemerkte volle Skala zeichnen, beschnitten auf <paramref name="ausschnitt"/>.</summary>
+    private static bool AusDemMerker(Graphics g, GraphicsPath ausschnitt)
+    {
+        var bild = _blitzJetzt ? _blitzBild : _fuellBild;
+        if (bild is null) { return false; }
+        using var vorher = g.Clip;
+        g.SetClip(ausschnitt, CombineMode.Intersect);
+        var alt = g.InterpolationMode;
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.DrawImage(bild, new RectangleF(0f, 0f, _fuellW, _fuellH));
+        g.InterpolationMode = alt;
+        g.Clip = vorher;
+        return true;
+    }
+
+    private static bool AusDemMerker(Graphics g, RectangleF ausschnitt)
+    {
+        using var pfad = new GraphicsPath();
+        pfad.AddRectangle(ausschnitt);
+        return AusDemMerker(g, pfad);
+    }
+
+    /// <summary>Im Merker-Bau oder im Licht ohne Merker: direkt zeichnen.</summary>
+    private static bool Direkt => _nurFuellung || _fuellBild is null;
 
     private static void Lage(Graphics g, SpeedoDesign d, SpeedoBild b, SpeedoEinheiten e, float w, float h, Schicht s)
     {
@@ -154,7 +254,7 @@ internal sealed class SpeedoRenderer : IDisposable
         if (u >= rot)
         {
             var c = F(d.RedlineColour, Color.Red);
-            if (d.RedlinePulse && b.ImRoten) { c = Alpha(c, 0.7f + 0.3f * (float)Math.Sin(b.Uhr * 14.0)); }
+            if (d.RedlinePulse && b.ImRoten && !_nurFuellung) { c = Alpha(c, 0.7f + 0.3f * (float)Math.Sin(b.Uhr * 14.0)); }
             return c;
         }
         var tief = F(d.LowColour, Color.DeepSkyBlue);
@@ -162,7 +262,8 @@ internal sealed class SpeedoRenderer : IDisposable
     }
 
     /// <summary>Blinkt der Begrenzer gerade (an/aus mit 8 Hz)?</summary>
-    private static bool Blitz(SpeedoDesign d, SpeedoBild b) => d.LimiterFlash && b.AtLimiter && (int)(b.Uhr * 16.0) % 2 == 0;
+    private static bool Blitz(SpeedoDesign d, SpeedoBild b) =>
+        _nurFuellung ? _blitzPass : d.LimiterFlash && b.AtLimiter && (int)(b.Uhr * 16.0) % 2 == 0;
 
     /// <summary>Wie stark das Leuchten gerade ist.</summary>
     private static float Leuchten(SpeedoDesign d, SpeedoBild b) =>
@@ -228,6 +329,7 @@ internal sealed class SpeedoRenderer : IDisposable
     private static void Schreibe(Graphics g, SpeedoDesign d, string text, RectangleF r, float px, Color farbe,
                                  StringFormat? lage = null, bool gross = false, float leuchten = 0f)
     {
+        if (_nurFuellung) { return; }
         if (string.IsNullOrEmpty(text) || r.Width < 1f || r.Height < 1f) { return; }
         lage ??= Mitte;
         if (gross && d.Font == SpeedoFont.Digital && SiebenSegment.Kann(text))
@@ -238,12 +340,7 @@ internal sealed class SpeedoRenderer : IDisposable
         var stil = (d.Italic ? FontStyle.Italic : FontStyle.Regular) | (gross ? FontStyle.Bold : FontStyle.Regular);
         var familie = Familie(d.Font);
         var (oben, unten) = Ziffernhoehe(familie, stil);
-        // WINDING, nicht Alternate: kursive und fette Ziffern ("4") haben sich ueberlappende Umrisse,
-        // und Alternate liess genau dort Loecher -- ein Schachbrett im Gang und im Tempo.
-        using var pfad = new GraphicsPath(FillMode.Winding);
-        var ff = Familienobjekt(familie);
-        pfad.AddString(text, ff, (int)(ff.IsStyleAvailable(stil) ? stil : FontStyle.Regular), 100f, PointF.Empty, StringFormat.GenericTypographic);
-        var grenzen = pfad.GetBounds();
+        var (pfad, grenzen) = Umriss(text, familie, stil);
         if (grenzen.Width <= 0f) { return; }
         // Massstab: px ist die Schriftgroesse; kleiner, wenn Breite oder Ziffernhoehe nicht passt.
         var k = px / 100f;
@@ -259,20 +356,49 @@ internal sealed class SpeedoRenderer : IDisposable
         } - grenzen.X * k;
         // Senkrecht: die Mitte der Ziffernhoehe auf die Mitte des Feldes.
         var y = r.Y + r.Height / 2f - (oben + unten) / 2f * k;
-        using (var m = new Matrix(k, 0f, 0f, k, x, y))
+        var zustand = g.Save();
+        try
         {
-            pfad.Transform(m);
-        }
-        if (leuchten > 0.05f)
-        {
-            for (var i = 3; i >= 1; i--)
+            g.TranslateTransform(x, y);
+            g.ScaleTransform(k, k);
+            if (leuchten > 0.05f)
             {
-                using var schein = new Pen(Alpha(farbe, 0.1f * leuchten), Math.Max(1f, px * 0.05f * i)) { LineJoin = LineJoin.Round };
-                g.DrawPath(schein, pfad);
+                for (var i = 3; i >= 1; i--)
+                {
+                    using var schein = new Pen(Alpha(farbe, 0.1f * leuchten), Math.Max(1f, px * 0.05f * i) / k) { LineJoin = LineJoin.Round };
+                    g.DrawPath(schein, pfad);
+                }
             }
+            using var pinsel = new SolidBrush(farbe);
+            g.FillPath(pinsel, pfad);
         }
-        using var pinsel = new SolidBrush(farbe);
-        g.FillPath(pinsel, pfad);
+        finally
+        {
+            g.Restore(zustand);
+        }
+    }
+
+    // DIE UMRISSE DER TEXTE, gemerkt je Faden: "237", "km/h", "7,114 rpm" kommen Bild fuer Bild
+    // wieder, und AddString war der teuerste Schritt eines Bildes.
+    [ThreadStatic] private static Dictionary<(string, string, FontStyle), (GraphicsPath Pfad, RectangleF Grenzen)>? _umrisse;
+
+    private static (GraphicsPath Pfad, RectangleF Grenzen) Umriss(string text, string familie, FontStyle stil)
+    {
+        _umrisse ??= new();
+        if (_umrisse.TryGetValue((text, familie, stil), out var da)) { return da; }
+        if (_umrisse.Count > 600)
+        {
+            foreach (var alt in _umrisse.Values) { alt.Pfad.Dispose(); }
+            _umrisse.Clear();
+        }
+        // WINDING, nicht Alternate: kursive und fette Ziffern ("4") haben sich ueberlappende Umrisse,
+        // und Alternate liess genau dort Loecher -- ein Schachbrett im Gang und im Tempo.
+        var pfad = new GraphicsPath(FillMode.Winding);
+        var ff = Familienobjekt(familie);
+        pfad.AddString(text, ff, (int)(ff.IsStyleAvailable(stil) ? stil : FontStyle.Regular), 100f, PointF.Empty, StringFormat.GenericTypographic);
+        var neu = (pfad, pfad.GetBounds());
+        _umrisse[(text, familie, stil)] = neu;
+        return neu;
     }
 
     private static readonly Dictionary<(string, FontStyle), (float Oben, float Unten)> Ziffern = new();
@@ -549,17 +675,43 @@ internal sealed class SpeedoRenderer : IDisposable
         }
 
         // LICHT: die Fuellung bis zum Anteil, dann das Leuchten.
-        anteil = Math.Clamp(anteil, 0f, 1f);
+        anteil = Math.Clamp(_nurFuellung ? 1f : anteil, 0f, 1f);
         if (anteil <= 0.001f) { return; }
+        if (!Direkt)
+        {
+            // Bis zum Ende des letzten angefangenen Segments -- die Schnittkante liegt in der Luecke.
+            var bisM = d.Fill == SpeedoFill.Smooth ? anteil : Math.Min(1f, (float)Math.Ceiling(anteil * n - 0.0001f) / n);
+            var weit = k.Radius + k.Dicke / 2f + 3f * Math.Min(k.Dicke * 0.45f, 5f) + 3f;
+            using (var torte = new GraphicsPath())
+            {
+                torte.AddPie(k.Mitte.X - weit, k.Mitte.Y - weit, weit * 2f, weit * 2f, k.Start, Math.Max(0.1f, k.Bogen * bisM));
+                AusDemMerker(g, torte);
+            }
+            // Im roten Bereich pulsiert er: ein heller Schleier ueber dem roten Teil.
+            if (d.RedlinePulse && anteil > rotAnteil && !_blitzJetzt)
+            {
+                var puls = 0.5f + 0.5f * (float)Math.Sin(b.Uhr * 14.0);
+                using var schleier = new Pen(Alpha(Color.White, 0.22f * puls), k.Dicke) { StartCap = LineCap.Flat, EndCap = LineCap.Flat };
+                g.DrawArc(schleier, rect, k.Start + k.Bogen * rotAnteil, k.Bogen * (bisM - rotAnteil));
+            }
+            return;
+        }
         var blitz = Blitz(d, b);
         var leuchten = Leuchten(d, b);
         if (leuchten > 0.05f && d.Fill != SpeedoFill.Ticks)
         {
-            var c = blitz ? Color.White : Segmentfarbe(d, b, anteil, rotAnteil);
-            for (var i = 3; i >= 1; i--)
+            // Je Stueck in seiner eigenen Farbe -- einmal, in den Merker.
+            var stueckeL = _nurFuellung ? 24 : 1;
+            for (var j = 0; j < stueckeL; j++)
             {
-                using var schein = new Pen(Alpha(c, 0.09f * leuchten * (4 - i)), k.Dicke + i * Math.Min(k.Dicke * 0.45f, 5f));
-                g.DrawArc(schein, rect, k.Start, k.Bogen * anteil);
+                var von = anteil * j / stueckeL;
+                var bis = anteil * (j + 1) / stueckeL;
+                var c = blitz ? Color.White : Segmentfarbe(d, b, _nurFuellung ? (von + bis) / 2f : anteil, rotAnteil);
+                for (var i = 3; i >= 1; i--)
+                {
+                    using var schein = new Pen(Alpha(c, 0.09f * leuchten * (4 - i)), k.Dicke + i * Math.Min(k.Dicke * 0.45f, 5f));
+                    g.DrawArc(schein, rect, k.Start + k.Bogen * von, k.Bogen * (bis - von) + (_nurFuellung ? 0.6f : 0f));
+                }
             }
         }
         if (d.Fill == SpeedoFill.Ticks)
@@ -604,6 +756,7 @@ internal sealed class SpeedoRenderer : IDisposable
     /// <summary>Die Nadel auf einem runden Instrument.</summary>
     private static void Nadel(Graphics g, SpeedoDesign d, SpeedoBild b, Kreis k, float anteil)
     {
+        if (_nurFuellung) { return; }
         if (d.Needle == SpeedoNeedle.None) { return; }
         var w = k.Start + k.Bogen * Math.Clamp(anteil, 0f, 1.02f);
         var farbe = F(d.NeedleColour, Color.Red);
@@ -693,7 +846,24 @@ internal sealed class SpeedoRenderer : IDisposable
             }
             return;
         }
+        if (_nurFuellung) { anteil = 1f; }
         if (anteil <= 0.001f) { return; }
+        if (!Direkt)
+        {
+            var bisM = n == 1 ? anteil : Math.Min(1f, (float)Math.Ceiling(anteil * n - 0.0001f) / n);
+            var t = Teil(0f, bisM);
+            var rand = 12f;
+            AusDemMerker(g, waagrecht
+                ? new RectangleF(t.X - rand, t.Y - rand, t.Width + rand, t.Height + rand * 2f)
+                : new RectangleF(t.X - rand, t.Y, t.Width + rand * 2f, t.Height + rand));
+            if (d.RedlinePulse && anteil > rotAnteil && !_blitzJetzt)
+            {
+                var puls = 0.5f + 0.5f * (float)Math.Sin(b.Uhr * 14.0);
+                using var schleier = new SolidBrush(Alpha(Color.White, 0.2f * puls));
+                g.FillRectangle(schleier, Teil(rotAnteil, bisM));
+            }
+            return;
+        }
         var blitz = Blitz(d, b);
         var leuchten = Leuchten(d, b);
         if (leuchten > 0.05f)
@@ -732,6 +902,7 @@ internal sealed class SpeedoRenderer : IDisposable
 
     private static void Schaltlichter(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r, Schicht s)
     {
+        if (_nurFuellung) { return; }
         var n = d.ShiftLights;
         var abstand = r.Width / n;
         var durchmesser = Math.Min(abstand * 0.78f, r.Height);
@@ -772,6 +943,7 @@ internal sealed class SpeedoRenderer : IDisposable
     /// <summary>TC, ABS und (wenn gewaehlt) STAB nebeneinander in <paramref name="r"/>.</summary>
     private static void Lampen(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r, Schicht s)
     {
+        if (_nurFuellung) { return; }
         var liste = new List<Action<RectangleF>>();
         if (d.ShowTraction)
         {
@@ -867,6 +1039,7 @@ internal sealed class SpeedoRenderer : IDisposable
 
     private static void Pedale(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r, bool waagrecht)
     {
+        if (_nurFuellung) { return; }
         if (!d.ShowPedals) { return; }
         var gas = Color.FromArgb(230, 74, 222, 128);
         var bremse = Color.FromArgb(230, 248, 113, 113);
@@ -900,6 +1073,7 @@ internal sealed class SpeedoRenderer : IDisposable
     /// <summary>Der Gang in einem Feld, mit kurzem Aufspringen beim Wechsel.</summary>
     private static void Gang(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r, float px, bool kasten, Schicht s)
     {
+        if (_nurFuellung) { return; }
         if (!d.ShowGear) { return; }
         if (s == Schicht.Grund)
         {
@@ -916,6 +1090,44 @@ internal sealed class SpeedoRenderer : IDisposable
         var zentrum = new PointF(r.X + r.Width / 2f, r.Y + r.Height / 2f);
         var feld = new RectangleF(zentrum.X - r.Width * sprung / 2f, zentrum.Y - r.Height * sprung / 2f, r.Width * sprung, r.Height * sprung);
         Schreibe(g, d, GangText(b.Gear), feld, px * d.GearSize * sprung, farbe, gross: true, leuchten: Leuchten(d, b));
+        Schaltrat(g, d, b, r);
+    }
+
+    /// <summary>
+    /// Die Schaltempfehlung am Gang: ein Pfeil rechts oben (gruen hoch, orange runter, er blinkt
+    /// leicht), und klein unten rechts der beste Gang fuer dieses Tempo, wenn es nicht dieser ist.
+    /// </summary>
+    private static void Schaltrat(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF r)
+    {
+        // Ein kleines Gangfeld (runde Instrumente): Pfeil darueber, bester Gang daneben -- darin
+        // waeren beide unlesbar klein.
+        var klein = Math.Min(r.Width, r.Height) < 60f;
+        var groesse = klein ? Math.Max(10f, Math.Min(r.Width, r.Height) * 0.42f) : Math.Min(r.Width, r.Height) * 0.3f;
+        if (d.ShowShiftAdvice && b.Rat != 0)
+        {
+            var hoch = b.Rat > 0;
+            var hell = (int)(b.Uhr * 6.0) % 2 == 0 ? 1f : 0.7f;
+            var farbe = Alpha(hoch ? Color.FromArgb(255, 74, 222, 128) : Color.FromArgb(255, 251, 146, 60), hell);
+            // Rund- und Doppelinstrument: darueber liegen die Lampen -- dort links daneben.
+            var links = klein && d.Layout is SpeedoLayout.Dial or SpeedoLayout.Twin;
+            var x = links ? r.X - groesse * 0.75f : klein ? r.X + r.Width / 2f : r.Right - groesse * 0.65f;
+            var y = links ? r.Y + r.Height / 2f : klein ? r.Y - groesse * 0.65f : r.Y + groesse * 0.7f;
+            var spitze = hoch ? y - groesse * 0.5f : y + groesse * 0.5f;
+            var fuss = hoch ? y + groesse * 0.35f : y - groesse * 0.35f;
+            using var schein = new SolidBrush(Alpha(farbe, 0.3f));
+            using var pinsel = new SolidBrush(farbe);
+            var pfeil = new[] { new PointF(x, spitze), new PointF(x + groesse * 0.5f, fuss), new PointF(x - groesse * 0.5f, fuss) };
+            g.FillEllipse(schein, x - groesse * 0.7f, y - groesse * 0.7f, groesse * 1.4f, groesse * 1.4f);
+            g.FillPolygon(pinsel, pfeil);
+        }
+        if (d.ShowBestGear && b.BesterGang > 0 && b.BesterGang != b.Gear && b.Gear is >= 1 and <= 10)
+        {
+            var feld = klein
+                ? new RectangleF(r.Right + groesse * 0.15f, r.Y + r.Height / 2f - groesse * 0.5f, groesse * 1.6f, groesse)
+                : new RectangleF(r.Right - groesse * 1.4f, r.Bottom - groesse * 1.1f, groesse * 1.3f, groesse);
+            Schreibe(g, d, "→" + b.BesterGang.ToString(CultureInfo.InvariantCulture), feld, groesse * 0.9f,
+                     b.BesterGang > b.Gear ? Color.FromArgb(255, 74, 222, 128) : Color.FromArgb(255, 251, 146, 60), klein ? Links : Rechts);
+        }
     }
 
     // ================================================================== //
@@ -1110,6 +1322,7 @@ internal sealed class SpeedoRenderer : IDisposable
     /// <summary>Die Lampen der Saeule untereinander, von unten.</summary>
     private static void SaeulenLampen(Graphics g, SpeedoDesign d, SpeedoBild b, RectangleF rechts, Schicht s)
     {
+        if (_nurFuellung) { return; }
         var h = rechts.Width * 0.28f;
         var y = rechts.Bottom - h;
         if (d.ShowStability)
@@ -1248,10 +1461,16 @@ internal sealed class SpeedoRenderer : IDisposable
         var kurve = new RectangleF(innen.X, innen.Y, innen.Width, innen.Height * 0.42f);
         var schritt = kurve.Width / n;
         var luecke = d.Fill == SpeedoFill.Smooth ? 0f : d.Fill == SpeedoFill.Blocks ? 0.4f : 0.22f;
-        var anteil = Math.Clamp(b.RpmAnteil, 0f, 1f);
+        var anteil = _nurFuellung ? 1f : Math.Clamp(b.RpmAnteil, 0f, 1f);
         var blitz = Blitz(d, b);
         var leuchten = Leuchten(d, b);
-        for (var i = 0; i < n; i++)
+        if (s == Schicht.Licht && !Direkt)
+        {
+            // Bis zur letzten Saeule, deren Mitte unter der Drehzahl liegt.
+            var bisI = (int)Math.Floor(anteil * n + 0.5f);
+            AusDemMerker(g, new RectangleF(kurve.X - 4f, kurve.Y - 6f, schritt * bisI + 4f, kurve.Height + 12f));
+        }
+        for (var i = 0; i < n && (s == Schicht.Grund || Direkt); i++)
         {
             var u = (i + 0.5f) / n;
             // Hoehe: weich ansteigend (Wurzel), oben nicht ganz voll.

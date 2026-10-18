@@ -54,8 +54,34 @@ internal sealed class HudTab : UserControl
         _canvas = new HudLayoutCanvas(settings) { Dock = DockStyle.Fill };
         _side = new HudPartPanel(settings) { Dock = DockStyle.Fill };
 
-        _canvas.Moved += () => { _changed(); Repaint(); };
-        _canvas.Committed += () => { _settings.Save(); _side.RefreshPlacements(); _changed(); Repaint(); };
+        // BEIM ZIEHEN HOECHSTENS 30 MAL JE SEKUNDE die echten Overlays nachziehen (seit 2026-10-18).
+        // Bis hierher frischte JEDE Mausbewegung alle Overlay-Fenster auf -- darunter den Streifen
+        // ueber dem ganzen Schirm -- und das Ziehen hakte. Die Flaeche hier folgt der Maus sofort.
+        var ziehTakt = new System.Windows.Forms.Timer { Interval = 33 };
+        var ziehOffen = false;
+        ziehTakt.Tick += (_, _) =>
+        {
+            ziehTakt.Stop();
+            if (!ziehOffen) { return; }
+            ziehOffen = false;
+            _changed();
+            Repaint();
+        };
+        Disposed += (_, _) => ziehTakt.Dispose();
+        _canvas.Moved += () =>
+        {
+            ziehOffen = true;
+            if (!ziehTakt.Enabled) { ziehTakt.Start(); }
+        };
+        _canvas.Committed += () =>
+        {
+            ziehTakt.Stop();
+            ziehOffen = false;
+            _settings.Save();
+            _side.RefreshPlacements();
+            _changed();
+            Repaint();
+        };
         _canvas.SelectionChanged += (part, klick) => _side.Select(part, springen: klick);
         _side.Changed += () =>
         {
@@ -529,7 +555,9 @@ internal sealed class HudLayoutCanvas : Control
                 g.ScaleTransform(f, f);
                 if (probe is not null)
                 {
-                    var pfad = LiveMapHud.SampleAus(probe);
+                    // Die Probestrecke einmal, nicht bei jedem Neuzeichnen (beim Ziehen 60 Mal je Sekunde).
+                    if (!ReferenceEquals(_probeFuer, probe)) { _probePfad = LiveMapHud.SampleAus(probe); _probeFuer = probe; }
+                    var pfad = _probePfad!;
                     var bis = pfad.Count / 3;
                     LiveMapHud.Male(g, _settings, echt, pfad, pfad.Take(bis + 1).ToList(), pfad[bis], auchWennAus: true);
                 }
@@ -553,7 +581,9 @@ internal sealed class HudLayoutCanvas : Control
             {
                 g.TranslateTransform(_screen.X, _screen.Y);
                 g.ScaleTransform(f, f);
-                SpeedoHud.Male(g, _settings, SpeedoDesigns.Gewaehlt(_settings), echt, SpeedoState.Vorfuehrung(0, ruhig: true));
+                var tachoDesign = SpeedoDesigns.Gewaehlt(_settings);
+                _tachoMaler.Male(g, tachoDesign, SpeedoState.Vorfuehrung(0, ruhig: true), SpeedoHud.Lege(_settings, tachoDesign, echt),
+                                 SpeedoEinheiten.Aus(_settings));
             }
             finally { g.Restore(zustand); }
             if (part == _selected) { Rahmen(g, kasten, part); }
@@ -689,6 +719,11 @@ internal sealed class HudLayoutCanvas : Control
 
     /// <summary>Nach dem Umstellen der Kartenquelle: die Beispielstrecken neu holen.</summary>
     internal void VorschauVergessen() { _vorschau = null; Invalidate(); }
+
+    private CourseShape.Outline? _probeFuer;
+    private List<PointF>? _probePfad;
+    /// <summary>Der Tacho der Vorschau, mit Merker -- ohne ihn baute jedes Neuzeichnen ihn neu.</summary>
+    private readonly SpeedoRenderer _tachoMaler = new();
 
     private List<(string Name, CourseShape.Outline? Shape)> VorschauKurse()
     {

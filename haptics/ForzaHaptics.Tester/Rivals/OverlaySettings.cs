@@ -486,7 +486,12 @@ internal sealed class OverlaySettings
     /// <summary>"hp", "kW" oder "PS".</summary>
     [JsonPropertyName("speedo_power_unit")] public string SpeedoPowerUnit { get; set; } = "hp";
     /// <summary>Bilder je Sekunde: 15, 30 oder 60. Das Spiel geht vor -- ab Werk 30.</summary>
-    [JsonPropertyName("speedo_fps")] public int SpeedoFps { get; set; } = 30;
+    /// <summary>
+    /// Hoechstens so viele Bilder je Sekunde; 0 = so oft wie der Bildschirm (seit 2026-10-18 die Vorgabe:
+    /// der Tacho zeichnet auf eigenem Faden und nur bei Aenderung). Neuer Schluessel -- unter
+    /// "speedo_fps" stand bei jedem die alte Grenze von 30.
+    /// </summary>
+    [JsonPropertyName("speedo_fps_cap")] public int SpeedoFps { get; set; }
 
     /// <summary>Empfindlichkeit der Lampen TC, ABS und STAB (0..100, 50 = gemessene Vorgabe, SpeedoSchwellen).</summary>
     [JsonPropertyName("speedo_spin_sensitivity")] public int SpeedoSpinSensitivity { get; set; } = 50;

@@ -2665,6 +2665,55 @@ internal static class EdgeCaseTest
         Soll(Tc(1.0f, 116) && Tc(1.0f, 300) && !Tc(1.0f, 400), "Tacho-Lampen: TC geht nicht nach 250 ms darunter aus (oder zu frueh)");
         Soll(Tc(1.4f, 420) == false, "Tacho-Lampen: knapp unter der Schwelle geht TC an");
 
+        // SCHALTRAT (2026-10-18): Leistung mit Hoechstwert bei 6.500 von 8.000; Gang 2 = 100 U/min je m/s,
+        // Gang 3 = 75. Gleiche Leistung nach dem Schalten bei r: |r-6500| = |0,75r-6500| -> r = 7.429.
+        var rat = new Rivals.SpeedoState(merken: false);
+        var tr = t0;
+        void Fahre(int gang, float verh, float rpm)
+        {
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 4713, 700, 5, maxRpm: 8000f, speed: rpm / verh);
+            BitConverter.GetBytes(rpm).CopyTo(roh, 16);
+            BitConverter.GetBytes(800f).CopyTo(roh, 12);
+            BitConverter.GetBytes(300000f - Math.Abs(rpm - 6500f) * 60f).CopyTo(roh, 260);
+            roh[315] = 255;
+            roh[319] = (byte)gang;
+            ForzaPacket.TryParse(roh, out var p);
+            rat.Aufnehmen(p, 0f, design, std, tr);
+            tr = tr.AddMilliseconds(20);
+        }
+        foreach (var (gang, verh) in new[] { (2, 100f), (3, 75f) })
+        {
+            for (var i = 0; i < 40; i++) { Fahre(gang, verh, 3000f + i * 5f); }
+            for (var r = 3000f; r <= 7950f; r += 50f) { Fahre(gang, verh, r); }
+        }
+        var vorher = rat.Beraten(4713, 2, 7000f, 70f, 8000f, 800f, 1f, tr);
+        var hoch1 = rat.Beraten(4713, 2, 7500f, 75f, 8000f, 800f, 1f, tr.AddMilliseconds(20));
+        var hoch2 = rat.Beraten(4713, 2, 7500f, 75f, 8000f, 800f, 1f, tr.AddMilliseconds(120));
+        Soll(Math.Abs(hoch2.Hochpunkt - 7430f) <= 60f, $"Schaltrat: Hochpunkt {hoch2.Hochpunkt:0} statt um 7.430 (Schnitt der Leistungskurven)");
+        Soll(vorher.Rat == 0 && hoch1.Rat == 0 && hoch2.Rat == 1, $"Schaltrat: hoch bei 7.500 nach 80 ms erwartet ({vorher.Rat}, {hoch1.Rat}, {hoch2.Rat})");
+        Soll(vorher.BesterGang == 2 && hoch2.BesterGang == 3,
+             $"Schaltrat: bester Gang bei 70 m/s 2 (7.000 gegen 5.250), bei 75 m/s 3 (5.625, hinter dem Schnittpunkt) -- war {vorher.BesterGang}, {hoch2.BesterGang}");
+        // Im dritten Gang bei 4.500 (Gang 2 waere 6.000, ~270 statt ~180 kW): runter.
+        rat.Beraten(4713, 3, 4500f, 60f, 8000f, 800f, 1f, tr.AddMilliseconds(500));
+        var runter = rat.Beraten(4713, 3, 4500f, 60f, 8000f, 800f, 1f, tr.AddMilliseconds(900));
+        Soll(runter.Rat == -1 && runter.BesterGang == 2, $"Schaltrat: runter in den zweiten erwartet ({runter.Rat}, {runter.BesterGang})");
+        var leer2 = new Rivals.SpeedoState(merken: false).Beraten(1, 3, 5000f, 50f, 8000f, 800f, 1f, tr);
+        Soll(leer2 is { Rat: 0, BesterGang: 0 }, "Schaltrat: ohne gelernte Kurve gibt es trotzdem einen Rat");
+
+        // DER MOTOR (2026-10-18): eigener Faden, nimmt Pakete auf, zeigt ohne Schalter nichts, endet sauber.
+        var motorEinst = new Rivals.OverlaySettings { HudSpeedo = false };
+        using (var motor = new Rivals.SpeedoMotor(motorEinst, new Rectangle(0, 0, 1920, 1080), merken: false))
+        {
+            Soll(ReferenceEquals(Rivals.SpeedoMotor.Aktiv, motor), "Tacho-Motor: nicht als aktiv gemeldet");
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 4714, 700, 5, speed: 30f);
+            ForzaPacket.TryParse(roh, out var p);
+            for (var i = 0; i < 20; i++) { motor.Paket(p); }
+            var bis = DateTime.UtcNow.AddSeconds(3);
+            while (motor.Live.Auto != 4714 && DateTime.UtcNow < bis) { Thread.Sleep(10); }
+            Soll(motor.Live.Auto == 4714, "Tacho-Motor: die Pakete kommen nicht an");
+        }
+        Soll(Rivals.SpeedoMotor.Aktiv is null, "Tacho-Motor: nach dem Ende noch aktiv");
+
         // Auf dem Schirm, auf jeder Aufloesung, mit jedem Anker.
         foreach (var flaeche in new[] { new Size(1920, 1080), new Size(3840, 2160), new Size(1280, 720) })
         {

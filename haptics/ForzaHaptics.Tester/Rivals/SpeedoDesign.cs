@@ -124,6 +124,10 @@ internal sealed class SpeedoDesign
     [JsonPropertyName("lockText")] public string LockText { get; set; } = "ABS";
     /// <summary>Die Stabilitaetslampe (STAB): warnt vor dem Wegrutschen in der Kurve.</summary>
     [JsonPropertyName("showStability")] public bool ShowStability { get; set; } = true;
+    /// <summary>Schaltempfehlung am Gang: Pfeil hoch/runter aus der gelernten Leistungskurve.</summary>
+    [JsonPropertyName("showShiftAdvice")] public bool ShowShiftAdvice { get; set; } = true;
+    /// <summary>Den besten Gang fuer das Tempo klein neben dem Gang.</summary>
+    [JsonPropertyName("showBestGear")] public bool ShowBestGear { get; set; } = true;
     /// <summary>Leer: das Zeichen (Auto mit Schleuderspuren) statt eines Textes.</summary>
     [JsonPropertyName("stabilityText")] public string StabilityText { get; set; } = string.Empty;
     [JsonPropertyName("clock")] public SpeedoClock Clock { get; set; } = SpeedoClock.Off;

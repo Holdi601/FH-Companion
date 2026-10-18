@@ -43,7 +43,12 @@ internal sealed class SpeedoTab : UserControl
     private readonly Label _titel = new();
     private readonly Label _status = new();
     private readonly CheckBox _an = new();
-    private readonly System.Windows.Forms.Timer _takt = new() { Interval = 33 };
+    // 60 Bilder je Sekunde fuer die Vorschau: ein Bild kostet unter einer Millisekunde (SpeedoRenderer).
+    private readonly System.Windows.Forms.Timer _takt = new() { Interval = 16 };
+    /// <summary>Die Regler speichern gesammelt -- nicht bei jedem Ruck eine Datei.</summary>
+    private readonly System.Windows.Forms.Timer _einstellungenSpeichern = new() { Interval = 500 };
+    /// <summary>Die Bilder der Galerie, je Design und Stand: nur Geaendertes wird neu gezeichnet.</summary>
+    private static readonly Dictionary<string, Bitmap> Kacheln = new();
     private readonly System.Windows.Forms.Timer _speichern = new() { Interval = 700 };
     private readonly SpeedoRenderer _maler = new();
     private readonly System.Diagnostics.Stopwatch _uhr = System.Diagnostics.Stopwatch.StartNew();
@@ -83,7 +88,7 @@ internal sealed class SpeedoTab : UserControl
             v => _settings.SpeedoMph = v == "mph"));
         oben.Controls.Add(Auswahl(Loc.T("Power"), new[] { ("hp", "hp"), ("kW", "kW"), ("PS", "PS") }, settings.SpeedoPowerUnit,
             v => _settings.SpeedoPowerUnit = v));
-        oben.Controls.Add(Auswahl(Loc.T("Frames per second"), new[] { ("15", "15"), ("30", "30"), ("60", "60") },
+        oben.Controls.Add(Auswahl(Loc.T("Frames per second"), new[] { ("0", Loc.T("like the screen")), ("30", "30"), ("60", "60"), ("120", "120"), ("144", "144") },
             settings.SpeedoFps.ToString(System.Globalization.CultureInfo.InvariantCulture),
             v => _settings.SpeedoFps = int.Parse(v, System.Globalization.CultureInfo.InvariantCulture)));
         var trip = Knopf(Loc.T("Reset trip"));
@@ -91,7 +96,7 @@ internal sealed class SpeedoTab : UserControl
         oben.Controls.Add(trip);
         var hinweis = new Label
         {
-            Text = Loc.T("Position and size: drag it in the tab Lap delta HUD. Fewer frames per second cost the game less."),
+            Text = Loc.T("Position and size: drag it in the tab Lap delta HUD. It draws on its own thread, only when something changes, at most as often as the screen refreshes."),
             AutoSize = true, ForeColor = Leise, Margin = new Padding(12, 8, 3, 3),
         };
         oben.Controls.Add(hinweis);
@@ -184,6 +189,7 @@ internal sealed class SpeedoTab : UserControl
         };
         _speichern.Tick += (_, _) => { _speichern.Stop(); Speichern(); };
         _liveTakt.Tick += (_, _) => LiveZeigen();
+        _einstellungenSpeichern.Tick += (_, _) => { _einstellungenSpeichern.Stop(); _settings.Save(); };
         VisibleChanged += (_, _) =>
         {
             if (Visible)
@@ -251,7 +257,8 @@ internal sealed class SpeedoTab : UserControl
                 default: _settings.SpeedoStabSensitivity = wert; break;
             }
         }
-        _settings.Save();
+        _einstellungenSpeichern.Stop();
+        _einstellungenSpeichern.Start();
         LiveZeigen();
     }
 
@@ -347,11 +354,21 @@ internal sealed class SpeedoTab : UserControl
     {
         var breite = 176;
         var bildHoehe = (int)Math.Clamp(breite * d.Hochkant, 60, 230);
-        var bild = new Bitmap(breite, bildHoehe, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
-        using (var g = Graphics.FromImage(bild))
+        var schluessel = d.Name + "|" + d.ToJson().GetHashCode() + "|" + _settings.SpeedoMph + "|" + _settings.SpeedoPowerUnit;
+        if (!Kacheln.TryGetValue(schluessel, out var bild))
         {
-            g.Clear(Color.FromArgb(52, 58, 66));
-            SpeedoRenderer.Einmal(g, d, SpeedoState.Vorfuehrung(0, ruhig: true), new RectangleF(4, 4, breite - 8, bildHoehe - 8), SpeedoEinheiten.Aus(_settings));
+            bild = new Bitmap(breite, bildHoehe, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(bild))
+            {
+                g.Clear(Color.FromArgb(52, 58, 66));
+                SpeedoRenderer.Einmal(g, d, SpeedoState.Vorfuehrung(0, ruhig: true), new RectangleF(4, 4, breite - 8, bildHoehe - 8), SpeedoEinheiten.Aus(_settings));
+            }
+            if (Kacheln.Count > 80)
+            {
+                foreach (var alt in Kacheln.Values) { alt.Dispose(); }
+                Kacheln.Clear();
+            }
+            Kacheln[schluessel] = bild;
         }
         var aktiv = string.Equals(d.Name, _settings.SpeedoDesign, StringComparison.OrdinalIgnoreCase);
         var kachel = new Panel { Width = breite + 8, Height = bildHoehe + 30, Margin = new Padding(3), Cursor = Cursors.Hand, Tag = d.Name };
@@ -372,7 +389,6 @@ internal sealed class SpeedoTab : UserControl
             c.Click += Klick;
             c.DoubleClick += Doppel;
         }
-        kachel.Disposed += (_, _) => bild.Dispose();
         return kachel;
     }
 
@@ -529,6 +545,8 @@ internal sealed class SpeedoTab : UserControl
             _speichern.Stop();
             _speichern.Start();
         }
+        // Dasselbe Objekt, geaendert: der Merker der Vorschau muss es wissen.
+        _maler.Vergessen();
         if (string.Equals(_settings.SpeedoDesign, _design.Name, StringComparison.OrdinalIgnoreCase)) { _designGeaendert(_design.Clone()); }
         _vorschau.Invalidate();
     }
@@ -633,6 +651,8 @@ internal sealed class SpeedoTab : UserControl
         Schalter(Loc.T("Throttle and brake"), d.ShowPedals, v => Aendern(x => x.ShowPedals = v));
         Schalter(Loc.T("Wheelspin and lock lamps"), d.ShowTraction, v => Aendern(x => x.ShowTraction = v));
         Schalter(Loc.T("Stability lamp (about to slide)"), d.ShowStability, v => Aendern(x => x.ShowStability = v));
+        Schalter(Loc.T("Shift advice: arrow up or down at the gear"), d.ShowShiftAdvice, v => Aendern(x => x.ShowShiftAdvice = v));
+        Schalter(Loc.T("Best gear for the speed next to the gear"), d.ShowBestGear, v => Aendern(x => x.ShowBestGear = v));
         Text(Loc.T("Wheelspin lamp text"), d.TractionText, v => Aendern(x => x.TractionText = v));
         Text(Loc.T("Lock lamp text"), d.LockText, v => Aendern(x => x.LockText = v));
         TextOderLeer(Loc.T("Stability lamp text (empty = symbol)"), d.StabilityText, v => Aendern(x => x.StabilityText = v));
@@ -746,6 +766,8 @@ internal sealed class SpeedoTab : UserControl
     {
         var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 80, BackColor = Feld, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 4, 14, 3) };
         foreach (var w in werte) { c.Items.Add(w.Text); }
+        // So breit wie der laengste Eintrag -- "wie der Bildschirm" ist in jeder Sprache anders lang.
+        c.Width = Math.Max(80, werte.Max(w => TextRenderer.MeasureText(w.Text, c.Font).Width) + 32);
         c.SelectedIndex = Math.Max(0, Array.FindIndex(werte, w => string.Equals(w.Key, jetzt, StringComparison.OrdinalIgnoreCase)));
         c.SelectedIndexChanged += (_, _) =>
         {
@@ -842,6 +864,8 @@ internal sealed class SpeedoTab : UserControl
         if (disposing)
         {
             _takt.Dispose();
+            if (_einstellungenSpeichern.Enabled) { _settings.Save(); }
+            _einstellungenSpeichern.Dispose();
             _liveTakt.Dispose();
             if (_speichern.Enabled) { _speichern.Stop(); Speichern(); }
             _speichern.Dispose();

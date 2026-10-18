@@ -18,6 +18,11 @@ internal sealed class SpeedoHud : LayeredHud
     private readonly SpeedoRenderer _maler = new();
     private SpeedoDesign _design;
     private SpeedoBild? _bild;
+    /// <summary>
+    /// Gezeichnet wird auf dem Faden des Tachos (SpeedoMotor) UND, fuer Aufnahme- und
+    /// Dashboardfenster, auf dem der Oberflaeche -- der Merker des Zeichners vertraegt nur einen.
+    /// </summary>
+    private readonly object _sperre = new();
 
     public SpeedoHud(OverlaySettings settings, Rectangle flaeche) : base(flaeche)
     {
@@ -30,12 +35,12 @@ internal sealed class SpeedoHud : LayeredHud
     /// <summary>Das gewaehlte Design neu laden (nach einer Aenderung im Reiter).</summary>
     public void DesignNeu(SpeedoDesign? design = null)
     {
-        _design = design ?? SpeedoDesigns.Finde(_settings.SpeedoDesign);
+        lock (_sperre) { _design = design ?? SpeedoDesigns.Finde(_settings.SpeedoDesign); }
     }
 
     public void Setze(SpeedoBild bild)
     {
-        _bild = bild;
+        lock (_sperre) { _bild = bild; }
         Render();
     }
 
@@ -44,9 +49,12 @@ internal sealed class SpeedoHud : LayeredHud
 
     protected override void Draw(Graphics g)
     {
-        if (_bild is { } b)
+        lock (_sperre)
         {
-            _maler.Male(g, _design, b, Lege(_settings, _design, AreaSize), SpeedoEinheiten.Aus(_settings));
+            if (_bild is { } b)
+            {
+                _maler.Male(g, _design, b, Lege(_settings, _design, AreaSize), SpeedoEinheiten.Aus(_settings));
+            }
         }
     }
 

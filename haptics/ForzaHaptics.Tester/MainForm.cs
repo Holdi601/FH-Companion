@@ -105,7 +105,8 @@ internal sealed class MainForm : Form, ITelemetryHost
     private bool _vibrating;
     private UdpClient? _telemetryClient;
     private CancellationTokenSource? _telemetryCancellation;
-    private ForzaPacket _latestTelemetry = null!;
+    // volatile: der Empfangsfaden schreibt jedes Paket, Haptik und Oberflaeche lesen.
+    private volatile ForzaPacket _latestTelemetry = null!;
     // The overlay reads the car from the SAME stream: Forza sends to one endpoint
     // and a UDP port takes one listener, so a separate process cannot have it.
     private RivalsTab? _rivals;
@@ -2190,32 +2191,55 @@ internal sealed class MainForm : Form, ITelemetryHost
 
         var client = _telemetryClient;
         var cancellation = _telemetryCancellation;
+        // EMPFANGEN AUF EINEM EIGENEN FADEN (seit 2026-10-18). Bis hierher lief diese Schleife mit
+        // await auf dem Faden der Oberflaeche: jedes einzelne Paket -- bei 120 Bildern je Sekunde
+        // 120 Mal -- stellte sich dort hinter Mausklicks, Reiter und Zeichnen an, und die ganze App
+        // hakte, waehrend gefahren wurde. Jetzt wird hier empfangen und gelesen; die Oberflaeche
+        // bekommt die Pakete gesammelt (OnTelemetryRaw) und die Anzeige zehnmal je Sekunde, der
+        // Tacho jedes Paket sofort auf seinem eigenen Faden (SpeedoMotor).
+        await Task.Run(() => EmpfangAsync(client, cancellation)).ConfigureAwait(true);
+    }
+
+    private readonly System.Collections.Concurrent.ConcurrentQueue<ForzaPacket> _rohPakete = new();
+    private int _rohGeplant;
+    private int _anzeigeGeplant;
+
+    /// <summary>Die Empfangsschleife -- nie auf dem Faden der Oberflaeche.</summary>
+    private async Task EmpfangAsync(UdpClient client, CancellationTokenSource cancellation)
+    {
         var stopwatch = Stopwatch.StartNew();
         var rateWindow = stopwatch.Elapsed;
         var packetsInWindow = 0;
         var totalPackets = 0L;
-
         try
         {
             while (!cancellation.IsCancellationRequested)
             {
-                var result = await client.ReceiveAsync(cancellation.Token);
+                var result = await client.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
                 totalPackets++;
                 packetsInWindow++;
 
                 if (!ForzaPacket.TryParse(result.Buffer, out var telemetry))
                 {
-                    _telemetryStatus.Text =
-                        string.Format(Loc.T("UDP received, but packet length {0} is not a supported Forza packet."),
-                                      result.Buffer.Length);
-                    _telemetryStatus.ForeColor = ErrorColor;
+                    var laenge = result.Buffer.Length;
+                    Oberflaeche(() =>
+                    {
+                        _telemetryStatus.Text =
+                            string.Format(Loc.T("UDP received, but packet length {0} is not a supported Forza packet."), laenge);
+                        _telemetryStatus.ForeColor = ErrorColor;
+                    });
                     continue;
                 }
 
-                // Die Rundenaufzeichnung bekommt JEDES Paket. Sie zeichnet nicht,
-                // sie rechnet kaum -- und alles, was hier verworfen wird, fehlt
-                // hinterher als Luecke in der Runde.
-                _rivals?.Controller?.OnTelemetryRaw(telemetry);
+                // Der Tacho bekommt jedes Paket sofort, hier, ohne die Oberflaeche.
+                Rivals.SpeedoMotor.Aktiv?.Paket(telemetry);
+                // Die Haptik liest das letzte Paket: jetzt jedes, nicht nur jedes zehnte.
+                _latestTelemetry = telemetry;
+
+                // Die Rundenaufzeichnung bekommt JEDES Paket -- gesammelt, in einem Aufruf je
+                // Durchgang der Oberflaeche. Was hier verloren ginge, fehlte als Luecke in der Runde.
+                _rohPakete.Enqueue(telemetry);
+                if (Interlocked.Exchange(ref _rohGeplant, 1) == 0) { Oberflaeche(RohAbarbeiten); }
 
                 var now = stopwatch.Elapsed;
                 var elapsed = now - rateWindow;
@@ -2227,7 +2251,17 @@ internal sealed class MainForm : Form, ITelemetryHost
                 var packetRate = packetsInWindow / elapsed.TotalSeconds;
                 packetsInWindow = 0;
                 rateWindow = now;
-                ShowTelemetry(telemetry, totalPackets, packetRate, result.Buffer.Length);
+                // Hoechstens eine Anzeige unterwegs: haengt die Oberflaeche, staut sich nichts.
+                if (Interlocked.Exchange(ref _anzeigeGeplant, 1) == 0)
+                {
+                    var gesamt = totalPackets;
+                    var laenge = result.Buffer.Length;
+                    Oberflaeche(() =>
+                    {
+                        Interlocked.Exchange(ref _anzeigeGeplant, 0);
+                        ShowTelemetry(telemetry, gesamt, packetRate, laenge);
+                    });
+                }
             }
         }
         catch (OperationCanceledException)
@@ -2240,9 +2274,36 @@ internal sealed class MainForm : Form, ITelemetryHost
         }
         catch (Exception exception)
         {
-            _telemetryStatus.Text = string.Format(Loc.T("Telemetry listener failed: {0}"), exception.Message);
-            _telemetryStatus.ForeColor = ErrorColor;
-            StopTelemetryControls();
+            Oberflaeche(() =>
+            {
+                _telemetryStatus.Text = string.Format(Loc.T("Telemetry listener failed: {0}"), exception.Message);
+                _telemetryStatus.ForeColor = ErrorColor;
+                StopTelemetryControls();
+            });
+        }
+    }
+
+    /// <summary>Alle gesammelten Pakete an die Rundenaufzeichnung -- auf dem Faden der Oberflaeche.</summary>
+    private void RohAbarbeiten()
+    {
+        // Erst die Marke zuruecksetzen, dann leeren: ein Paket, das dazwischen kommt, plant neu.
+        Interlocked.Exchange(ref _rohGeplant, 0);
+        var controller = _rivals?.Controller;
+        while (_rohPakete.TryDequeue(out var paket))
+        {
+            controller?.OnTelemetryRaw(paket);
+        }
+    }
+
+    /// <summary>Etwas auf dem Faden der Oberflaeche erledigen -- nie werfend, auch beim Schliessen.</summary>
+    private void Oberflaeche(Action tun)
+    {
+        try
+        {
+            if (IsHandleCreated && !IsDisposed) { BeginInvoke(tun); }
+        }
+        catch (Exception e) when (e is InvalidOperationException or ObjectDisposedException)
+        {
         }
     }
 
@@ -2282,7 +2343,6 @@ internal sealed class MainForm : Form, ITelemetryHost
     private void ShowTelemetry(ForzaPacket telemetry, long totalPackets, double packetRate, int packetLength)
     {
         Rivals.OverlayAusgabe.LetztesPaket = DateTime.UtcNow;
-        _latestTelemetry = telemetry;
         _rivals?.Controller?.OnTelemetry(telemetry);
         _latestTelemetryAt = DateTime.UtcNow;
         _hasTelemetry = true;

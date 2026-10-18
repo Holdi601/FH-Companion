@@ -16,6 +16,12 @@ internal readonly record struct SpeedoBild(
     /// <summary>Stabilitaet: 0 ruhig, 1 an der Grenze (gleich rutscht es), 2 rutscht.</summary>
     public int Stab { get; init; }
 
+    /// <summary>Schaltempfehlung: +1 jetzt hochschalten, -1 jetzt runterschalten, 0 nichts.</summary>
+    public int Rat { get; init; }
+
+    /// <summary>Der Gang mit der meisten Leistung bei diesem Tempo -- 0, solange unbekannt.</summary>
+    public int BesterGang { get; init; }
+
     public float RpmAnteil => MaxRpm > 0f ? Math.Clamp(Rpm / MaxRpm, 0f, 1.05f) : 0f;
     public float RotAnteil => MaxRpm > 0f ? Math.Clamp(RedlineRpm / MaxRpm, 0.3f, 1f) : 0.9f;
     public bool ImRoten => MaxRpm > 0f && Rpm >= RedlineRpm;
@@ -158,6 +164,13 @@ internal sealed class SpeedoState
 
     public static string SchaltDatei => Path.Combine(AppInfo.DataFolder, "speedo_shift.json");
     public static string StreckeDatei => Path.Combine(AppInfo.DataFolder, "speedo_odometer.json");
+    public static string GangDatei => Path.Combine(AppInfo.DataFolder, "speedo_gears.json");
+
+    /// <summary>Je Auto und Gang: Drehzahl je Meter pro Sekunde (die Uebersetzung bis zum Rad).</summary>
+    private readonly Dictionary<int, Dictionary<int, float>> _uebersetzung = new();
+    private bool _gaengeGeaendert;
+    private readonly Lampe _hoch = new();
+    private readonly Lampe _runter = new();
 
     private readonly bool _merken;
 
@@ -230,10 +243,27 @@ internal sealed class SpeedoState
                 }
             }
         }
+        var m = Messen(p, (int)p.Get("DrivetrainType"));
+        // DIE UEBERSETZUNG JE GANG LERNEN (seit 2026-10-18): Drehzahl / Tempo, nur wenn die Kupplung
+        // greift, das Rad nicht durchdreht und der Gang schon eine Weile drin ist -- gleitend, damit
+        // ein neues Tuning (andere Uebersetzung, gleiches Auto) sich von selbst durchsetzt.
+        var kupplung = (float)p.Get("Clutch") / 255f;
+        if (auto > 0 && gang is >= 1 and <= 10 && speed > 6f && kupplung < 0.1f && m.Spin < 0.5f
+            && max > 1000f && rpm < max * 0.99f && _gangSeit != DateTime.MinValue && (nun - _gangSeit).TotalSeconds > 0.4)
+        {
+            var je = _uebersetzung.TryGetValue(auto, out var u) ? u : _uebersetzung[auto] = new Dictionary<int, float>();
+            var wert = rpm / speed;
+            // Ein neuer Gang aendert die Schaltpunkte: die gemerkten weg.
+            if (!je.ContainsKey(gang)) { _hochpunkte.Clear(); }
+            je[gang] = je.TryGetValue(gang, out var alt) && alt > 0f ? alt + (wert - alt) * 0.05f : wert;
+            _gaengeGeaendert = true;
+        }
         if ((nun - _gespeichert).TotalSeconds > 60) { Speichern(); }
 
-        var rot = design.Redline == SpeedoRedline.Learned ? Schaltpunkt(auto, max) : max * design.RedlinePercent;
-        var m = Messen(p, (int)p.Get("DrivetrainType"));
+        var rat = Beraten(auto, gang, rpm, speed, max, idle, gas, nun);
+        var rot = design.Redline == SpeedoRedline.Learned
+            ? (rat.Hochpunkt > 0f ? rat.Hochpunkt : Schaltpunkt(auto, max))
+            : max * design.RedlinePercent;
         // Nur, wo es etwas bedeutet: Gas fuer TC, Bremse fuer ABS, Fahrt (ueber 25 km/h) fuer STAB.
         var spin = gas > 0.1f ? m.Spin : 0f;
         var sperre = bremse > 0.1f ? m.Lock : 0f;
@@ -250,9 +280,107 @@ internal sealed class SpeedoState
             _trip, (float)p.Get("DistanceTraveled"), _odometer,
             (float)p.Get("CurrentRaceTime"), (float)p.Get("CurrentLap"),
             _gangSeit == DateTime.MinValue ? 99f : (float)(nun - _gangSeit).TotalSeconds,
-            (nun - _start).TotalSeconds) { Stab = rutscht ? 2 : warn ? 1 : 0 };
+            (nun - _start).TotalSeconds) { Stab = rutscht ? 2 : warn ? 1 : 0, Rat = rat.Rat, BesterGang = rat.BesterGang };
         Letztes = bild;
         return bild;
+    }
+
+    /// <summary>
+    /// Die Leistung dieses Autos bei dieser Drehzahl, aus der gelernten Kurve (Vollgas, je 100 U/min,
+    /// zwischen zwei bekannten Stufen bis 500 U/min Abstand verbunden) -- null, wo sie unbekannt ist.
+    /// </summary>
+    internal float? Leistung(int auto, float rpm)
+    {
+        if (!_leistung.TryGetValue(auto, out var t) || t.Count < 4) { return null; }
+        var stufe = rpm / 100f;
+        var unten = (int)Math.Floor(stufe);
+        int? a = null;
+        int? b = null;
+        for (var i = unten; i >= unten - 5; i--) { if (t.ContainsKey(i)) { a = i; break; } }
+        for (var i = unten + 1; i <= unten + 6; i++) { if (t.ContainsKey(i)) { b = i; break; } }
+        if (a is null && b is null) { return null; }
+        if (a is null) { return b!.Value - stufe <= 1f ? t[b.Value] : null; }
+        if (b is null) { return stufe - a.Value <= 1f ? t[a.Value] : null; }
+        var u = (stufe - a.Value) / (b.Value - a.Value);
+        return t[a.Value] + (t[b.Value] - t[a.Value]) * Math.Clamp(u, 0f, 1f);
+    }
+
+    /// <summary>Was die Leistungskurve zum Schalten sagt.</summary>
+    internal readonly record struct Ratschlag(int Rat, int BesterGang, float Hochpunkt);
+
+    /// <summary>
+    /// HOCH, RUNTER, BESTER GANG (seit 2026-10-18, Wunsch des Nutzers: "du siehst doch ab welcher rpm
+    /// die PS abnehmen ... ein licht fuer jetzt runterschalten oder jetzt hochschalten").
+    /// </summary>
+    /// <remarks>
+    /// * Hochschalten lohnt, sobald der naechste Gang nach dem Schalten MEHR Leistung hat als dieser
+    ///   jetzt -- der Schnittpunkt der beiden Leistungskurven ist der beste Schaltpunkt. Er wird auch
+    ///   zum roten Bereich und zum Ziel der Schaltlichter.
+    /// * Runterschalten lohnt bei Gas, wenn der kleinere Gang mindestens 8 % mehr Leistung bringt und
+    ///   dort nicht gleich wieder hochgeschaltet werden muesste.
+    /// * Der beste Gang ist der mit der meisten Leistung bei diesem Tempo, ohne in den Begrenzer zu
+    ///   laufen.
+    /// Nur, wo Leistungskurve und Uebersetzungen gelernt sind; sonst schweigt der Rat.
+    /// </remarks>
+    internal Ratschlag Beraten(int auto, int gang, float rpm, float speed, float max, float idle, float gas, DateTime nun)
+    {
+        if (max <= 1000f || gang is < 1 or > 10 || !_uebersetzung.TryGetValue(auto, out var je)) { return new Ratschlag(0, 0, 0f); }
+        var hochpunkt = Hochpunkt(auto, gang, max, je);
+        var hoch = false;
+        var runter = false;
+        if (gas > 0.8f && je.TryGetValue(gang, out var jetzt) && jetzt > 0f)
+        {
+            if (rpm >= max * 0.985f && je.ContainsKey(gang + 1)) { hoch = true; }
+            else if (hochpunkt > 0f && rpm >= hochpunkt) { hoch = true; }
+            if (je.TryGetValue(gang - 1, out var klein) && klein > 0f)
+            {
+                var rpmKlein = rpm * klein / jetzt;
+                var pJetzt = Leistung(auto, rpm);
+                var pKlein = Leistung(auto, rpmKlein);
+                var grenze = Hochpunkt(auto, gang - 1, max, je);
+                if (pJetzt is { } a && pKlein is { } b && b > a * 1.08f
+                    && rpmKlein < (grenze > 0f ? grenze : max * 0.95f) * 0.97f) { runter = true; }
+            }
+        }
+        var besterGang = 0;
+        var besteLeistung = 0f;
+        if (speed > 3f)
+        {
+            foreach (var (g, verh) in je)
+            {
+                var r = speed * verh;
+                if (r <= idle + 300f || r >= max * 0.97f) { continue; }
+                if (Leistung(auto, r) is { } pw && pw > besteLeistung) { besteLeistung = pw; besterGang = g; }
+            }
+        }
+        var hochAn = _hoch.Setze(hoch, !hoch, nun);
+        var runterAn = _runter.Setze(runter, !runter, nun);
+        return new Ratschlag(hochAn ? 1 : runterAn ? -1 : 0, besterGang, hochpunkt);
+    }
+
+    /// <summary>Wo in diesem Gang hochzuschalten ist: wo der naechste Gang die gleiche Leistung hat.</summary>
+    private readonly Dictionary<(int, int), (float Wert, long Zeit)> _hochpunkte = new();
+
+    private float Hochpunkt(int auto, int gang, float max, Dictionary<int, float> je)
+    {
+        // Gemerkt fuer zwei Sekunden: die Suche laeuft sonst mit jedem Paket, 110 Mal je Sekunde.
+        var jetztMs = Environment.TickCount64;
+        if (_hochpunkte.TryGetValue((auto, gang), out var g) && jetztMs - g.Zeit < 2000) { return g.Wert; }
+        var wert = HochpunktSuchen(auto, gang, max, je);
+        _hochpunkte[(auto, gang)] = (wert, jetztMs);
+        return wert;
+    }
+
+    private float HochpunktSuchen(int auto, int gang, float max, Dictionary<int, float> je)
+    {
+        if (!je.TryGetValue(gang, out var jetzt) || !je.TryGetValue(gang + 1, out var naechst) || jetzt <= 0f || naechst <= 0f) { return 0f; }
+        var faktor = naechst / jetzt;
+        for (var r = max * 0.5f; r <= max * 0.99f; r += 50f)
+        {
+            if (Leistung(auto, r) is { } pJetzt && Leistung(auto, r * faktor) is { } pNaechst && pNaechst >= pJetzt) { return r; }
+        }
+        // Die Kurven schneiden sich nicht: bis kurz vor den Begrenzer.
+        return Leistung(auto, max * 0.97f) is null ? 0f : max * 0.97f;
     }
 
     /// <summary>Der gelernte Schaltpunkt dieses Autos -- oder 90 % der Hoechstdrehzahl.</summary>
@@ -310,6 +438,15 @@ internal sealed class SpeedoState
                     _leistung[a] = tabelle.Where(e => int.TryParse(e.Key, out _)).ToDictionary(e => int.Parse(e.Key), e => e.Value);
                 }
             }
+            if (File.Exists(GangDatei))
+            {
+                var g = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, float>>>(File.ReadAllText(GangDatei));
+                foreach (var (auto, tabelle) in g ?? new())
+                {
+                    if (!int.TryParse(auto, out var a)) { continue; }
+                    _uebersetzung[a] = tabelle.Where(e => int.TryParse(e.Key, out _)).ToDictionary(e => int.Parse(e.Key), e => e.Value);
+                }
+            }
             if (File.Exists(StreckeDatei))
             {
                 using var j = JsonDocument.Parse(File.ReadAllText(StreckeDatei));
@@ -335,6 +472,13 @@ internal sealed class SpeedoState
                     e => e.Value.ToDictionary(s => s.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), s => s.Value));
                 File.WriteAllText(SchaltDatei, JsonSerializer.Serialize(raus));
                 _geaendert = false;
+            }
+            if (_gaengeGeaendert)
+            {
+                var raus = _uebersetzung.ToDictionary(e => e.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    e => e.Value.ToDictionary(s => s.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), s => (float)Math.Round(s.Value, 3)));
+                File.WriteAllText(GangDatei, JsonSerializer.Serialize(raus));
+                _gaengeGeaendert = false;
             }
             if (Math.Abs(_odometer - _odometerGespeichert) > 1f)
             {
@@ -391,6 +535,9 @@ internal sealed class SpeedoState
         {
             // Beim Anbremsen der Kurve erst die Warnung, dann kurz das Rutschen.
             Stab = zyklus is > 7.3 and < 7.75 ? 1 : zyklus is >= 7.75 and < 8.05 ? 2 : 0,
+            // Kurz vor jedem Schalten: hoch; beim Bremsen: runter, und der beste Gang.
+            Rat = zyklus < 7.0 && zyklus % 1.4 > 1.15 ? 1 : zyklus >= 7.0 && rpm < 4200f ? -1 : 0,
+            BesterGang = zyklus < 7.0 ? gang : Math.Max(1, gang - 1),
         };
     }
 }

@@ -56,10 +56,8 @@ internal sealed class OverlayController : IDisposable
     private readonly CarNoteHud _carNote;
     private readonly LiveMapHud _liveMap;
     private readonly TyreHud _reifen;
-    private readonly SpeedoHud _tacho;
-    private readonly SpeedoState _tachoDaten = new();
-    private DateTime _tachoGemalt = DateTime.MinValue;
-    private int _tachoZeichen;
+    /// <summary>Der Tacho laeuft auf seinem eigenen Faden (SpeedoMotor) -- hier nur Auftraege.</summary>
+    private readonly SpeedoMotor _tacho;
     public CarNotes Notes { get; } = new();
     private string _carKey = string.Empty;
 
@@ -331,98 +329,22 @@ internal sealed class OverlayController : IDisposable
     }
 
     /// <summary>
-    /// Der eigene Tacho: sichtbar, solange gefahren wird und er an ist. Die Daten nimmt er je
-    /// Paket auf (die Nadel glaettet sich daran), gezeichnet wird im eigenen Takt und nur, wenn
-    /// sich etwas sichtbar geaendert hat oder eine Animation laeuft.
+    /// Der eigene Tacho: die Pakete bekommt er direkt vom Empfang (SpeedoMotor). Hier nur, ob das
+    /// Spiel vorn ist -- das weiss die Oberflaeche.
     /// </summary>
     private void UpdateTacho(ForzaPacket packet)
     {
-        if (_hudPreview) { return; }
-        try
-        {
-            var vorne = _settings.ConsoleMode || !_settings.OverlayRequireForza
-                        || (_game.Running && (!_settings.OverlayRequireFocus || _game.IsForeground));
-            if (!_settings.HudSpeedo || packet.Get("IsRaceOn") < 0.5 || !vorne)
-            {
-                if (_tacho.Visible) { _tacho.Hide(); }
-                return;
-            }
-            var design = _tacho.Design;
-            var bild = _tachoDaten.Aufnehmen(packet, design.Smoothing, design,
-                                             SpeedoSchwellen.Fuer(_settings, (int)packet.Get("CarOrdinal")));
-            var nun = DateTime.UtcNow;
-            var takt = TimeSpan.FromSeconds(1.0 / Math.Clamp(_settings.SpeedoFps, 10, 60));
-            if (nun - _tachoGemalt < takt) { return; }
-            var zeichen = TachoZeichen(bild, design);
-            var bewegt = (design.GearPop && bild.SeitGangwechsel < 0.3f)
-                         || (bild.Stab == 2 && design.ShowStability)
-                         || (bild.ImRoten && (design.RedlinePulse || design.ShowShiftLights))
-                         || (bild.AtLimiter && design.LimiterFlash);
-            if (zeichen == _tachoZeichen && !bewegt && _tacho.Visible) { return; }
-            _tachoGemalt = nun;
-            _tachoZeichen = zeichen;
-            _tacho.Setze(bild);
-            if (!_tacho.Visible)
-            {
-                _tacho.Show();
-                _tacho.TopMost = true;
-            }
-        }
-        catch (Exception)
-        {
-            // Eine Anzeige darf nie die App mitnehmen.
-        }
-    }
-
-    /// <summary>Was im Bild sichtbar ist, als Zahl -- gleich heisst: nicht neu zeichnen.</summary>
-    private static int TachoZeichen(SpeedoBild b, SpeedoDesign d)
-    {
-        var h = new HashCode();
-        h.Add((int)(b.Rpm / 20f));
-        h.Add((int)(b.SpeedMs * 3.6f));
-        h.Add(b.Gear);
-        h.Add(b.Wheelspin);
-        h.Add(b.WheelLock);
-        h.Add(b.AtLimiter);
-        h.Add(b.Stab);
-        if (d.ShowPower) { h.Add((int)(b.PowerW / 2000f)); }
-        if (d.ShowBoost) { h.Add((int)(b.BoostPsi * 10f)); }
-        if (d.ShowPedals) { h.Add((int)(b.Throttle * 25f)); h.Add((int)(b.Brake * 25f)); }
-        if (d.Distance != SpeedoDistance.Off) { h.Add((int)((b.TripM + b.RaceM + b.OdometerM) / 50f)); }
-        h.Add(d.Clock switch
-        {
-            SpeedoClock.RaceTime => (int)(b.RaceTime * 10f),
-            SpeedoClock.LapTime => (int)(b.LapTime * 10f),
-            SpeedoClock.Off => 0,
-            _ => DateTime.Now.Minute,
-        });
-        return h.ToHashCode();
+        _tacho.Vorne(_settings.ConsoleMode || !_settings.OverlayRequireForza
+                     || (_game.Running && (!_settings.OverlayRequireFocus || _game.IsForeground)));
     }
 
     /// <summary>Nach einer Aenderung im Reiter "Speedometer": das Design neu lesen und zeigen.</summary>
-    public void TachoNeu(SpeedoDesign? design = null)
-    {
-        try
-        {
-            SpeedoDesigns.Vergessen();
-            _tacho.DesignNeu(design);
-            _tachoZeichen = 0;
-            if (_hudPreview && _settings.HudSpeedo)
-            {
-                _tacho.Setze(SpeedoState.Vorfuehrung(0, ruhig: true));
-                if (!_tacho.Visible) { _tacho.Show(); _tacho.TopMost = true; }
-            }
-            else if (!_settings.HudSpeedo && _tacho.Visible) { _tacho.Hide(); }
-        }
-        catch (Exception)
-        {
-        }
-    }
+    public void TachoNeu(SpeedoDesign? design = null) => _tacho.Design(design);
 
     /// <summary>Fuer den Reiter: welches Auto gerade faehrt, und was die Lampen gerade messen.</summary>
     public (int Auto, string? Name, SpeedoMesswerte Werte) TachoLive()
     {
-        var auto = _tachoDaten.Auto;
+        var (auto, werte) = _tacho.Live;
         string? name = null;
         try
         {
@@ -431,11 +353,11 @@ internal sealed class OverlayController : IDisposable
         catch (Exception)
         {
         }
-        return (auto, name, _tachoDaten.Messwerte);
+        return (auto, name, werte);
     }
 
     /// <summary>Die Tagesstrecke des Tachos auf null.</summary>
-    public void TachoTripZurueck() => _tachoDaten.TripZurueck();
+    public void TachoTripZurueck() => _tacho.TripZurueck();
 
     private void UpdateLiveMap(ForzaPacket packet)
     {
@@ -629,7 +551,7 @@ internal sealed class OverlayController : IDisposable
         };
         _liveMap = new LiveMapHud(_settings, screen);
         _reifen = new TyreHud(_settings, screen);
-        _tacho = new SpeedoHud(_settings, screen);
+        _tacho = new SpeedoMotor(_settings, screen);
         EigeneRundenLaden();
 
         _tick.Interval = Math.Max(250, (int)(_settings.PollSeconds * 1000));
@@ -2394,7 +2316,7 @@ internal sealed class OverlayController : IDisposable
         _feier.SetArea(jetzt);
         _liveMap.SetArea(jetzt);
         _reifen.SetArea(jetzt);
-        _tacho.SetArea(jetzt);
+        _tacho.Flaeche(jetzt);
         // Der Streifen rechnet seine Einheit einmal aus der Flaeche; neu anlegen.
         if (_hud is not null && !_hud.IsDisposed)
         {
@@ -2471,12 +2393,7 @@ internal sealed class OverlayController : IDisposable
                 if (!_reifen.Visible) { _reifen.Show(); }
                 _reifen.TopMost = true;
             }
-            if (_settings.HudSpeedo)
-            {
-                _tacho.Setze(SpeedoState.Vorfuehrung(0, ruhig: true));
-                if (!_tacho.Visible) { _tacho.Show(); }
-                _tacho.TopMost = true;
-            }
+            _tacho.Vorschau(true);
             _carNote.SetNote("Porsche 911 GT3 RS '19  \u00b7  PI 900  \u00b7  " + string.Format(Loc.T("{0} hp"), 513),
                              string.Format(Loc.T("preview: {0}"),
                                            Loc.T("understeers from turn 3, tyres go off after 4 laps")));
@@ -2544,7 +2461,8 @@ internal sealed class OverlayController : IDisposable
             }
             else if (!_settings.HudTyres && _reifen.Visible) { _reifen.Hide(); }
             else if (_reifen.Visible) { _reifen.Render(); }
-            TachoNeu();
+            // Nur neu zeichnen -- das Design neu lesen (Dateien) tut der Reiter Speedometer selbst.
+            _tacho.NeuZeichnen();
             if (!_settings.DeltaHud) { HideStrip(); return; }
             if (_hud is not null && !_hud.IsDisposed) { _hud.Invalidate(); }
         }
@@ -2564,7 +2482,7 @@ internal sealed class OverlayController : IDisposable
         _liveMap.SetReference(null);
         _liveMap.ClearTrail();
         if (_reifen.Visible) { _reifen.Hide(); }
-        if (_tacho.Visible) { _tacho.Hide(); }
+        _tacho.Vorschau(false);
         HideHud();
         HideShapes();
         if (_carNote.Visible) { _carNote.Hide(); }
@@ -2891,7 +2809,7 @@ internal sealed class OverlayController : IDisposable
                 Hide(_left);
                 HideHud();
                 if (_reifen.Visible) { _reifen.Hide(); }
-                if (_tacho.Visible) { _tacho.Hide(); }
+                _tacho.Vorne(false);
                 SetStatus(Loc.T("console mode -- waiting for telemetry from the network"));
             }
             return false;
@@ -2929,7 +2847,7 @@ internal sealed class OverlayController : IDisposable
             // waehrend die beiden Panels verschwanden.
             HideHud();
             if (_reifen.Visible) { _reifen.Hide(); }
-            if (_tacho.Visible) { _tacho.Hide(); }
+            _tacho.Vorne(false);
             SetStatus(_game.Running
                 ? string.Format(Loc.T("idle — {0}.exe is not the active window"), _game.ProcessName)
                 : string.Format(Loc.T("idle — waiting for {0}.exe"), _game.ProcessName));
@@ -2971,11 +2889,7 @@ internal sealed class OverlayController : IDisposable
             {
                 _reifen.Hide();
             }
-            if (_tacho.Visible && !_hudPreview && DateTime.UtcNow - _telemetryAt > TimeSpan.FromSeconds(1.5))
-            {
-                _tacho.Hide();
-                _tachoDaten.Speichern();
-            }
+            // Der Tacho geht selbst weg, wenn keine Pakete mehr kommen (SpeedoMotor).
             if (_left.Up)
             {
                 RenderCar();
@@ -4863,8 +4777,8 @@ internal sealed class OverlayController : IDisposable
         // Und alle uebrigen Fenster: bis zum 2026-09-28 blieben Umriss, Notiz, Meldung
         // und Live-Karte des alten Controllers offen -- sichtbar eingefroren, wenn sie
         // beim Wechsel gerade standen.
-        try { _tachoDaten.Speichern(); } catch (Exception) { }
-        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen, _tacho })
+        try { _tacho.Dispose(); } catch (Exception) { }
+        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen })
         {
             try { fenster.Close(); fenster.Dispose(); } catch (Exception) { }
         }
