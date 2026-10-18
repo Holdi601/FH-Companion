@@ -131,6 +131,41 @@ internal static class AppUpdate
         }
     }
 
+    /// <summary>Wann die installierte Fassung gebaut wurde, oder null.</summary>
+    public static string? OwnBuiltAt()
+    {
+        var pfad = MetaPath;
+        if (pfad is null) { return null; }
+        try
+        {
+            return JsonSerializer.Deserialize<Fassung>(File.ReadAllText(pfad))?.BuiltAt;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Ist die Fassung des Servers NEUER als diese -- nicht nur anders? (seit 2026-10-18)
+    /// </summary>
+    /// <remarks>
+    /// Bis hierher galt jede andere Kennung als Update. Solange erst der Rivals-Reiter fragte, fiel
+    /// das nicht auf; seit die App beim Start fragt, bot ein frisch gebautes Paket, das noch nicht
+    /// ausgeliefert war, die AELTERE Fassung des Servers als Update an. Fehlt eine Bauzeit, gilt
+    /// wie frueher: anders ist neuer.
+    /// </remarks>
+    internal static bool IstNeuer(string eigeneKennung, string? eigeneZeit, string serverKennung, string? serverZeit)
+    {
+        if (string.Equals(eigeneKennung, serverKennung, StringComparison.Ordinal)) { return false; }
+        if (DateTimeOffset.TryParse(eigeneZeit, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var eigen)
+            && DateTimeOffset.TryParse(serverZeit, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var server))
+        {
+            return server > eigen;
+        }
+        return true;
+    }
+
     /// <summary>Wohin heruntergeladen und ausgepackt wird.</summary>
     /// <remarks>
     /// Neben den Zwischenstand des Nutzers und NICHT in den Installationsordner:
@@ -170,7 +205,7 @@ internal static class AppUpdate
                 // anzubieten, das dieselbe Fassung ist, verbrennt Vertrauen.
                 return new Befund(false, null, fassung, Loc.T("this copy does not know its own version"));
             }
-            var neuer = !string.Equals(eigene, fassung.Build, StringComparison.Ordinal);
+            var neuer = IstNeuer(eigene, OwnBuiltAt(), fassung.Build, fassung.BuiltAt);
             return new Befund(neuer, eigene, fassung,
                               neuer ? string.Format(Loc.T("new version: {0}"), fassung.Name)
                                     : Loc.T("the app is up to date"));

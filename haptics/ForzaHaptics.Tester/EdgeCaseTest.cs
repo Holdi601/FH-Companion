@@ -54,6 +54,7 @@ internal static class EdgeCaseTest
         OverlayOutputAndCost();
         TyreOverview();
         Speedometer();
+        UpdateNurWennNeuer();
         ReplacedControllerGoesQuiet();
         LiveMapStaysWithoutStrip();
         LapModeFromMenus();
@@ -2554,6 +2555,19 @@ internal static class EdgeCaseTest
     /// Der eigene Tacho (2026-10-18): ab Werk aus, jedes Design zeichnet in jedem Zustand (auch ohne
     /// Telemetrie), Designs ueberstehen JSON, der Schaltpunkt wird gelernt, und der Tacho bleibt auf dem Schirm.
     /// </summary>
+    /// <summary>Ein Update nur, wenn der Server spaeter gebaut hat -- nie eine aeltere Fassung (2026-10-18).</summary>
+    private static void UpdateNurWennNeuer()
+    {
+        Soll(!Rivals.AppUpdate.IstNeuer("a", "2026-10-18T12:58:40+02:00", "a", "2026-10-19T00:00:00+02:00"), "Update: dieselbe Kennung gilt als neuer");
+        Soll(!Rivals.AppUpdate.IstNeuer("neu", "2026-10-18T12:58:40+02:00", "alt", "2026-10-18T02:01:28+02:00"),
+             "Update: eine AELTERE Fassung des Servers wird angeboten (frisches Paket vor dem Ausliefern)");
+        Soll(Rivals.AppUpdate.IstNeuer("alt", "2026-10-18T02:01:28+02:00", "neu", "2026-10-18T12:58:40+02:00"), "Update: eine neuere Fassung wird nicht angeboten");
+        Soll(Rivals.AppUpdate.IstNeuer("alt", null, "neu", "2026-10-18T12:58:40+02:00") && Rivals.AppUpdate.IstNeuer("alt", "kaputt", "neu", null),
+             "Update: ohne Bauzeit gilt eine andere Kennung nicht mehr als neuer");
+        Soll(!Rivals.AppUpdate.IstNeuer("a", "2026-10-18T12:00:00+00:00", "b", "2026-10-18T13:00:00+02:00"),
+             "Update: Zeitzonen werden nicht verglichen (13:00 MESZ ist vor 12:00 UTC)");
+    }
+
     private static void Speedometer()
     {
         var s = new Rivals.OverlaySettings();
