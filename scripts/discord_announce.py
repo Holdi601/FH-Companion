@@ -120,6 +120,14 @@ def announce(dry_run: bool = False, force: bool = False) -> str:
             return "build %s was already announced" % build
         zeilen = commits(keys.get("last_commit"))
         inhalt = nachricht(meta, zeilen)
+        # @EVERYONE (seit 2026-10-18, Wunsch des Nutzers): ein Ping kommt nur aus dem Klartext
+        # ("content"), nie aus dem Embed -- und nur, wenn allowed_mentions es erlaubt. Abzuschalten
+        # mit "mention_everyone": false in config/discord_keys.json.
+        if keys.get("mention_everyone", True):
+            inhalt["content"] = "@everyone"
+            inhalt["allowed_mentions"] = {"parse": ["everyone"]}
+        else:
+            inhalt["allowed_mentions"] = {"parse": []}
         if dry_run:
             return json.dumps(inhalt, indent=1, ensure_ascii=False)
         senden(url, inhalt)
