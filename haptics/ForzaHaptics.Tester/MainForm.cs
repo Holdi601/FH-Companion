@@ -435,6 +435,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             Padding = new Padding(0)
         };
 
+        var speedoTab = new TabPage(Loc.T("Speedometer"))
+        {
+            BackColor = PanelColor,
+            ForeColor = Color.WhiteSmoke,
+            Padding = new Padding(0)
+        };
+
         var tunesTab = new TabPage(Loc.T("Tunes"))
         {
             BackColor = PanelColor,
@@ -538,6 +545,12 @@ internal sealed class MainForm : Form, ITelemetryHost
             () => _rivals.Controller?.RefreshHud(),
             show => _rivals.PreviewHud(show));
         hudTab.Controls.Add(hudEinstellungen);
+        // DER EIGENE TACHO (seit 2026-10-18): Galerie, Vorschau, Baukasten. Aenderungen gehen
+        // sofort an das Overlay (TachoNeu), die Lage stellt der Reiter "Lap delta HUD" ein.
+        speedoTab.Controls.Add(new Rivals.SpeedoTab(
+            _rivals.Settings,
+            design => { _rivals.Controller?.TachoNeu(design); hudEinstellungen.Invalidate(true); },
+            () => _rivals.Controller?.TachoTripZurueck()));
         hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
         hudEinstellungen.PersoenlichProbe += () => _rivals.PreviewPersonalRecord();
         hudEinstellungen.NeuesAutoProbe += () => _rivals.PreviewNewCar();
@@ -612,6 +625,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         if (controllerHier) { tabs.TabPages.Add(blueprintTab); }
         tabs.TabPages.Add(rivalsTab);
         tabs.TabPages.Add(hudTab);
+        tabs.TabPages.Add(speedoTab);
         if (!konsole)
         {
             Erweiterung.Reiter(tabs, new Erweiterung.Umgebung(

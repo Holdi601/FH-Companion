@@ -36,6 +36,11 @@ DATEI = WORKSPACE / "data" / "runtime" / "ip_bans.json"
 FEHL_GRENZE = 10
 FEHL_FENSTER = 3600
 SPERRE_SEKUNDEN = 24 * 3600
+# WANN ES WAR (seit 2026-10-18): die Fehlversuche einer Adresse bleiben eine Woche mit Zeit
+# und Art stehen, damit die Verwaltung zeigen kann, ob sie neu sind oder Tage alt. Fuer die
+# Sperre zaehlt weiter nur die letzte Stunde (FEHL_FENSTER).
+VERLAUF_SEKUNDEN = 7 * 86400
+VERLAUF_HOECHSTENS = 50
 
 _SCHLOSS = threading.Lock()
 
@@ -83,6 +88,10 @@ def fehlversuch(ip: str, art: str, now: float | None = None, pfad: Path | None =
         fehl = [t for t in e.get("failures", []) if jetzt - float(t) < FEHL_FENSTER]
         fehl.append(jetzt)
         e["failures"] = fehl[-50:]
+        verlauf = [v for v in e.get("history", [])
+                   if isinstance(v, dict) and jetzt - float(v.get("t") or 0) < VERLAUF_SEKUNDEN]
+        verlauf.append({"t": jetzt, "kind": art})
+        e["history"] = verlauf[-VERLAUF_HOECHSTENS:]
         e["last_kind"] = art
         e["last"] = jetzt
         gesperrt_jetzt = False
@@ -91,10 +100,10 @@ def fehlversuch(ip: str, art: str, now: float | None = None, pfad: Path | None =
             e["reason"] = f"auto: {len(fehl)} failed {art} attempts within an hour"
             gesperrt_jetzt = True
         d[ip] = e
-        # Alte, abgelaufene Eintraege ohne juengere Fehlversuche weg.
+        # Alte, abgelaufene Eintraege ohne Fehlversuch in der letzten Woche weg.
         for k in [k for k, v in d.items()
                   if float(v.get("until") or 0) < jetzt
-                  and not any(jetzt - float(t) < FEHL_FENSTER for t in v.get("failures", []))]:
+                  and jetzt - float(v.get("last") or 0) >= VERLAUF_SEKUNDEN]:
             d.pop(k, None)
         _sichern(d, pfad)
         return gesperrt_jetzt
@@ -112,9 +121,20 @@ def liste(now: float | None = None, pfad: Path | None = None) -> list:
     """Alle Adressen mit Fehlversuchen oder Sperre, fuer die Verwaltungsseite."""
     jetzt = time.time() if now is None else now
     raus = []
-    for ip, e in sorted(_laden(pfad).items()):
+    def zeit(t) -> str:
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(t)))
+
+    for ip, e in sorted(_laden(pfad).items(), key=lambda kv: -float(kv[1].get("last") or 0)):
         bis = float(e.get("until") or 0)
+        verlauf = [v for v in e.get("history", []) if isinstance(v, dict) and v.get("t")]
+        letzte = float(e.get("last") or (verlauf[-1]["t"] if verlauf else 0))
         raus.append({
+            # Wann: der letzte Fehlversuch, wie lange her, und die Woche davor im Einzelnen.
+            "last_at": zeit(letzte) if letzte else "",
+            "seconds_ago": int(jetzt - letzte) if letzte else None,
+            "failures_last_day": sum(1 for v in verlauf if jetzt - float(v["t"]) < 86400),
+            "failures_last_week": len(verlauf),
+            "history": [{"at": zeit(v["t"]), "kind": v.get("kind", "")} for v in reversed(verlauf)],
             "ip": ip,
             "banned": bis > jetzt,
             "until": time.strftime("%Y-%m-%d %H:%M", time.localtime(bis)) if bis > jetzt else "",

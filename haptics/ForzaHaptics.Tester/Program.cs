@@ -672,6 +672,25 @@ internal static class Program
             return;
         }
 
+        if (args.Contains("--grid-check", StringComparer.OrdinalIgnoreCase))
+        {
+            // "--grid-check <ordner>": jede gespeicherte Aufstellung (jpg, 1080p) so lesen, wie die App
+            // es tut -- klein (RaceGrid.Read), dann im vollen Bild (RaceGrid.Verfeinern). Nur lesen.
+            var gi = Array.FindIndex(args, a => string.Equals(a, "--grid-check", StringComparison.OrdinalIgnoreCase));
+            var ordner = gi + 1 < args.Length ? args[gi + 1] : Rivals.OverlayController.RennbildOrdner;
+            foreach (var datei in Directory.EnumerateFiles(ordner, "*.jpg").OrderBy(f => f, StringComparer.Ordinal))
+            {
+                using var voll = new Bitmap(datei);
+                using var klein = new Bitmap(voll, Rivals.RaceGrid.Aufnahme);
+                var roh = Rivals.RaceGrid.Read(klein);
+                var fein = roh is { } r ? Rivals.RaceGrid.Verfeinern(voll, r) : null;
+                Console.WriteLine($"{Path.GetFileName(datei)}\t"
+                                  + (roh is null ? "no grid" : fein is null ? $"rejected (raw {roh.Value.Rows})"
+                                     : $"{fein.Value.Rows}\traw {roh.Value.Rows}\tteam={fein.Value.Team}\tspec={fein.Value.Spec}"));
+            }
+            return;
+        }
+
         if (args.Contains("--laps-refill", StringComparer.OrdinalIgnoreCase))
         {
             // Den eigenen Rundenbestand aus dem Archiv nachfuellen -- das tut die App sonst
@@ -2112,6 +2131,57 @@ internal static class Program
                 bild.Save(Path.Combine(ordner, $"{name}_{flaeche.Height}.png"));
             }
             Console.WriteLine(ordner);
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--speedo-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // JEDER TACHO ALS BILD -- ohne Fenster ueber dem Spiel (SpeedoRenderer, dieselbe
+            // Zeichnung wie im Spiel): je Design eine Galerie aus vier Augenblicken der Vorfuehrung
+            // (Beschleunigen, roter Bereich, Begrenzer, Bremsen) und das Overlay auf 1080p.
+            //   --speedo-frames <ordner>
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var einheiten = new SpeedoEinheiten(false, "hp");
+            var uhr = System.Diagnostics.Stopwatch.StartNew();
+            var bilder = 0;
+            foreach (var d in SpeedoDesigns.Alle())
+            {
+                var groesse = SpeedoRenderer.Groesse(d, 1f);
+                var w = (int)Math.Ceiling(groesse.Width) + 20;
+                var h = (int)Math.Ceiling(groesse.Height) + 20;
+                using var bild = new System.Drawing.Bitmap(w * 4, h, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using var g = System.Drawing.Graphics.FromImage(bild);
+                g.Clear(System.Drawing.Color.FromArgb(70, 76, 84));
+                using var maler = new SpeedoRenderer();
+                var momente = new[] { 0.9, 6.95, 4.15, 7.8 };
+                for (var i = 0; i < momente.Length; i++)
+                {
+                    var b = SpeedoState.Vorfuehrung(momente[i]);
+                    if (i == 2) { b = b with { Rpm = b.MaxRpm * 0.995f, AtLimiter = true, Uhr = 0.01 }; }
+                    maler.Male(g, d, b, new System.Drawing.RectangleF(i * w + 10, 10, w - 20, h - 20), einheiten);
+                    bilder++;
+                }
+                var datei = new string(d.Name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());
+                bild.Save(Path.Combine(ordner, datei + ".png"));
+            }
+            // Wie teuer ein Bild ist: 300 Bilder des gewaehlten Designs mit Merker.
+            var mass = SpeedoDesigns.Eingebaut[1];
+            using (var flaeche = new System.Drawing.Bitmap(400, 400, System.Drawing.Imaging.PixelFormat.Format32bppPArgb))
+            using (var gm = System.Drawing.Graphics.FromImage(flaeche))
+            using (var maler = new SpeedoRenderer())
+            {
+                foreach (var d in SpeedoDesigns.Eingebaut)
+                {
+                    var takt = System.Diagnostics.Stopwatch.StartNew();
+                    for (var i = 0; i < 300; i++)
+                    {
+                        gm.Clear(System.Drawing.Color.Transparent);
+                        maler.Male(gm, d, SpeedoState.Vorfuehrung(i / 30.0), new System.Drawing.RectangleF(0, 0, 400, 400), einheiten);
+                    }
+                    Console.WriteLine($"{d.Name,-18} {takt.Elapsed.TotalMilliseconds / 300:0.00} ms/frame");
+                }
+            }
+            Console.WriteLine($"{bilder} frames in {uhr.ElapsedMilliseconds} ms -> {ordner}");
             return;
         }
 

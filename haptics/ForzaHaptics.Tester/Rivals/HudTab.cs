@@ -7,7 +7,7 @@ namespace ForzaHaptics.Tester.Rivals;
 // Course: die Umrisse der angebotenen Strecken. Anders als die uebrigen Teile
 // gehoert er zum Anmeldeschirm und nicht ins Rennen -- geschoben wird er aber
 // genauso, und darum steht er hier.
-internal enum HudPart { Delta, Ghost, Note, Inputs, Course, CarNote, LiveMap, Tyres }
+internal enum HudPart { Delta, Ghost, Note, Inputs, Course, CarNote, LiveMap, Tyres, Speedo }
 
 /// <summary>
 /// Der Reiter, auf dem der Streifen eingerichtet wird -- durch Ziehen, nicht Tippen.
@@ -333,6 +333,12 @@ internal sealed class HudLayoutCanvas : Control
             var b = TyreHud.Lege(_settings, echt);
             return new RectangleF(schirm.X + b.X * f, schirm.Y + b.Y * f, b.Width * f, b.Height * f);
         }
+        if (part == HudPart.Speedo)
+        {
+            var (echt, f) = NotizMassstab(schirm);
+            var b = SpeedoHud.Lege(_settings, SpeedoDesigns.Gewaehlt(_settings), echt);
+            return new RectangleF(schirm.X + b.X * f, schirm.Y + b.Y * f, b.Width * f, b.Height * f);
+        }
         if (part == HudPart.CarNote)
         {
             // DIESELBE RECHNUNG WIE IM SPIEL -- nicht nachgebaut, sondern aufgerufen
@@ -429,7 +435,7 @@ internal sealed class HudLayoutCanvas : Control
 
         _boxes.Clear();
         foreach (var part in new[]
-                 { HudPart.Course, HudPart.LiveMap, HudPart.Tyres, HudPart.CarNote, HudPart.Inputs, HudPart.Note,
+                 { HudPart.Course, HudPart.LiveMap, HudPart.Tyres, HudPart.Speedo, HudPart.CarNote, HudPart.Inputs, HudPart.Note,
                    HudPart.Ghost, HudPart.Delta })
         {
             var kasten = BoxOf(g, part, _screen);
@@ -538,6 +544,21 @@ internal sealed class HudLayoutCanvas : Control
             if (part == _selected) { Rahmen(g, kasten, part); }
             return;
         }
+        if (part == HudPart.Speedo)
+        {
+            // Mit der Zeichnung des Overlays (SpeedoHud.Male), im gewaehlten Design.
+            var (echt, f) = NotizMassstab(_screen);
+            var zustand = g.Save();
+            try
+            {
+                g.TranslateTransform(_screen.X, _screen.Y);
+                g.ScaleTransform(f, f);
+                SpeedoHud.Male(g, _settings, SpeedoDesigns.Gewaehlt(_settings), echt, SpeedoState.Vorfuehrung(0, ruhig: true));
+            }
+            finally { g.Restore(zustand); }
+            if (part == _selected) { Rahmen(g, kasten, part); }
+            return;
+        }
         if (part == HudPart.Tyres)
         {
             // Mit der Zeichnung des Overlays und einem Beispiel, das jeden Zustand
@@ -628,6 +649,7 @@ internal sealed class HudLayoutCanvas : Control
             HudPart.Course => Loc.T("Event Sign Up maps (before the race)"),
             HudPart.LiveMap => Loc.T("Live map (during the race)"),
             HudPart.Tyres => Loc.T("Tyre overview (while driving)"),
+            HudPart.Speedo => Loc.T("Speedometer (while driving)"),
             _ => HudPartPanel.Titel(part),
         };
         var aus = part switch
@@ -635,6 +657,7 @@ internal sealed class HudLayoutCanvas : Control
             HudPart.Course => !_settings.CourseShapes,
             HudPart.LiveMap => !_settings.LiveMap,
             HudPart.Tyres => !_settings.HudTyres,
+            HudPart.Speedo => !_settings.HudSpeedo,
             HudPart.CarNote => !_settings.CarNotes,
             HudPart.Inputs => !_settings.HudInputs,
             _ => false,
@@ -777,7 +800,7 @@ internal sealed class HudLayoutCanvas : Control
         // wuerde sonst jeden Griff auf die kleineren Anzeigen abfangen.
         foreach (var part in new[]
                  { HudPart.Delta, HudPart.Ghost, HudPart.Note, HudPart.Inputs,
-                   HudPart.CarNote, HudPart.Tyres, HudPart.LiveMap, HudPart.Course })
+                   HudPart.CarNote, HudPart.Speedo, HudPart.Tyres, HudPart.LiveMap, HudPart.Course })
         {
             if (!_boxes.TryGetValue(part, out var kasten)) { continue; }
             if (!kasten.Contains(e.Location)) { continue; }
@@ -904,6 +927,7 @@ internal sealed class HudPartPanel : Panel
         HudPart.CarNote => Loc.T("Car note"),
         HudPart.LiveMap => Loc.T("Live map"),
         HudPart.Tyres => Loc.T("Tyre overview"),
+        HudPart.Speedo => Loc.T("Speedometer"),
         _ => Loc.T("Delta"),
     };
 
@@ -1234,6 +1258,13 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Tyre temperature in Fahrenheit"), settings.TyresFahrenheit,
                  v => _settings.TyresFahrenheit = v);
 
+        // ---- DER EIGENE TACHO (seit 2026-10-18, ab Werk aus) ---------------------------
+        Abschnitt(Titel(HudPart.Speedo), HudPart.Speedo);
+        Schalter(Loc.T("Speedometer while driving"), settings.HudSpeedo, v => _settings.HudSpeedo = v);
+        Lage(HudPart.Speedo);
+        Rein(Note(Loc.T(
+            "Rev counter, gear, speed, redline and more. Pick one of the styles or build your own in the tab Speedometer.")));
+
         // ---- LIVE-KARTE ---------------------------------------------------------------
         Abschnitt(Titel(HudPart.LiveMap), HudPart.LiveMap);
         Schalter(Loc.T("Live map during the race"), settings.LiveMap, v => _settings.LiveMap = v);
@@ -1383,7 +1414,7 @@ internal sealed class HudPartPanel : Panel
         // Rivals-Runde gegen eine Koop-Runde zu stellen waere so falsch wie
         // stehend gegen fliegend.
         var modus = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
-        foreach (var m in new[] { "auto", "rivals", "solo", "coop", "horizon-play", "freeroam" })
+        foreach (var m in new[] { "auto", "rivals", "solo", "coop", "horizon-play", "spec", "freeroam" })
         {
             modus.Items.Add(m);
         }

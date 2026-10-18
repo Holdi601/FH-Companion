@@ -56,6 +56,10 @@ internal sealed class OverlayController : IDisposable
     private readonly CarNoteHud _carNote;
     private readonly LiveMapHud _liveMap;
     private readonly TyreHud _reifen;
+    private readonly SpeedoHud _tacho;
+    private readonly SpeedoState _tachoDaten = new();
+    private DateTime _tachoGemalt = DateTime.MinValue;
+    private int _tachoZeichen;
     public CarNotes Notes { get; } = new();
     private string _carKey = string.Empty;
 
@@ -134,6 +138,14 @@ internal sealed class OverlayController : IDisposable
     {
         _recorder.LapCompleted += (_, lap) =>
         {
+            // EINE DRIFT-WERTUNG IST KEINE RUNDE (seit 2026-10-18): Punkte statt Zeit. Sie geht
+            // weder in die Bibliothek (Delta), noch ins Rundenarchiv (Strecken, My times), noch an
+            // die Seite -- sondern mit ihrer Punktzahl nach drift.jsonl.
+            if (lap.IstDrift)
+            {
+                DriftAblegen(lap);
+                return;
+            }
             _rennen.LapDone();
             var behalten = _laps.Add(lap);
             // Eine neue Bestzeit macht die gemerkte Referenz ungueltig.
@@ -318,6 +330,95 @@ internal sealed class OverlayController : IDisposable
         }
     }
 
+    /// <summary>
+    /// Der eigene Tacho: sichtbar, solange gefahren wird und er an ist. Die Daten nimmt er je
+    /// Paket auf (die Nadel glaettet sich daran), gezeichnet wird im eigenen Takt und nur, wenn
+    /// sich etwas sichtbar geaendert hat oder eine Animation laeuft.
+    /// </summary>
+    private void UpdateTacho(ForzaPacket packet)
+    {
+        if (_hudPreview) { return; }
+        try
+        {
+            var vorne = _settings.ConsoleMode || !_settings.OverlayRequireForza
+                        || (_game.Running && (!_settings.OverlayRequireFocus || _game.IsForeground));
+            if (!_settings.HudSpeedo || packet.Get("IsRaceOn") < 0.5 || !vorne)
+            {
+                if (_tacho.Visible) { _tacho.Hide(); }
+                return;
+            }
+            var design = _tacho.Design;
+            var bild = _tachoDaten.Aufnehmen(packet, design.Smoothing, design);
+            var nun = DateTime.UtcNow;
+            var takt = TimeSpan.FromSeconds(1.0 / Math.Clamp(_settings.SpeedoFps, 10, 60));
+            if (nun - _tachoGemalt < takt) { return; }
+            var zeichen = TachoZeichen(bild, design);
+            var bewegt = (design.GearPop && bild.SeitGangwechsel < 0.3f)
+                         || (bild.ImRoten && (design.RedlinePulse || design.ShowShiftLights))
+                         || (bild.AtLimiter && design.LimiterFlash);
+            if (zeichen == _tachoZeichen && !bewegt && _tacho.Visible) { return; }
+            _tachoGemalt = nun;
+            _tachoZeichen = zeichen;
+            _tacho.Setze(bild);
+            if (!_tacho.Visible)
+            {
+                _tacho.Show();
+                _tacho.TopMost = true;
+            }
+        }
+        catch (Exception)
+        {
+            // Eine Anzeige darf nie die App mitnehmen.
+        }
+    }
+
+    /// <summary>Was im Bild sichtbar ist, als Zahl -- gleich heisst: nicht neu zeichnen.</summary>
+    private static int TachoZeichen(SpeedoBild b, SpeedoDesign d)
+    {
+        var h = new HashCode();
+        h.Add((int)(b.Rpm / 20f));
+        h.Add((int)(b.SpeedMs * 3.6f));
+        h.Add(b.Gear);
+        h.Add(b.Wheelspin);
+        h.Add(b.WheelLock);
+        h.Add(b.AtLimiter);
+        if (d.ShowPower) { h.Add((int)(b.PowerW / 2000f)); }
+        if (d.ShowBoost) { h.Add((int)(b.BoostPsi * 10f)); }
+        if (d.ShowPedals) { h.Add((int)(b.Throttle * 25f)); h.Add((int)(b.Brake * 25f)); }
+        if (d.Distance != SpeedoDistance.Off) { h.Add((int)((b.TripM + b.RaceM + b.OdometerM) / 50f)); }
+        h.Add(d.Clock switch
+        {
+            SpeedoClock.RaceTime => (int)(b.RaceTime * 10f),
+            SpeedoClock.LapTime => (int)(b.LapTime * 10f),
+            SpeedoClock.Off => 0,
+            _ => DateTime.Now.Minute,
+        });
+        return h.ToHashCode();
+    }
+
+    /// <summary>Nach einer Aenderung im Reiter "Speedometer": das Design neu lesen und zeigen.</summary>
+    public void TachoNeu(SpeedoDesign? design = null)
+    {
+        try
+        {
+            SpeedoDesigns.Vergessen();
+            _tacho.DesignNeu(design);
+            _tachoZeichen = 0;
+            if (_hudPreview && _settings.HudSpeedo)
+            {
+                _tacho.Setze(SpeedoState.Vorfuehrung(0, ruhig: true));
+                if (!_tacho.Visible) { _tacho.Show(); _tacho.TopMost = true; }
+            }
+            else if (!_settings.HudSpeedo && _tacho.Visible) { _tacho.Hide(); }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    /// <summary>Die Tagesstrecke des Tachos auf null.</summary>
+    public void TachoTripZurueck() => _tachoDaten.TripZurueck();
+
     private void UpdateLiveMap(ForzaPacket packet)
     {
         if (_hudPreview) { return; }
@@ -444,6 +545,13 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Eine Zeile ins Protokoll, auch aus anderen Teilen des Overlays.</summary>
     public static void WriteDiagnostic(string text) => Write("delta.log", text);
 
+    /// <summary>Eine Zeile ins Auktionsprotokoll (seit 2026-10-18: was "My Bids" las).</summary>
+    internal static void WriteAuctionLog(string text) => Write("auction.log", text);
+
+    /// <summary>Ein gelesenes Bild des Auktionshauses aufheben -- als Beleg fuer den Bieter.</summary>
+    internal static void AuktionsbildAufheben(Bitmap bild, string art) =>
+        BildSpeichern(bild, AuktionsbildOrdner, art, null, 150);
+
     private static void Write(string datei, string text)
     {
         try
@@ -503,6 +611,7 @@ internal sealed class OverlayController : IDisposable
         };
         _liveMap = new LiveMapHud(_settings, screen);
         _reifen = new TyreHud(_settings, screen);
+        _tacho = new SpeedoHud(_settings, screen);
         EigeneRundenLaden();
 
         _tick.Interval = Math.Max(250, (int)(_settings.PollSeconds * 1000));
@@ -705,6 +814,7 @@ internal sealed class OverlayController : IDisposable
         UpdateDelta(packet);
         UpdateLiveMap(packet);
         UpdateReifen(packet);
+        UpdateTacho(packet);
         UpdateMeisterschaft(packet);
     }
 
@@ -715,6 +825,10 @@ internal sealed class OverlayController : IDisposable
     private List<(string Name, string Key, bool ByName)> _angebot = new();
     private readonly HashSet<int> _erledigt = new();
     private DateTime _angebotZeit = DateTime.MinValue;
+    /// <summary>Wann zuletzt ein Anmeldeschirm gelesen wurde -- trennt zwei Besuche desselben Schirms.</summary>
+    private DateTime _letzterAngebotsBlick = DateTime.MinValue;
+    private bool _neuerBesuch;
+    private static readonly TimeSpan NeuerBesuchNach = TimeSpan.FromSeconds(15);
     private bool _rennenLaeuft;
     private DateTime _rennenStillSeit = DateTime.MinValue;
     private int _rundenImRennen;
@@ -756,6 +870,12 @@ internal sealed class OverlayController : IDisposable
                 _rundenStrecke = null;
                 _zielBerechnet = DateTime.MinValue;
                 _meisterschaftWeg.Stop();
+                // Alles gefahren: die Reihe ist vorbei, nicht erst nach 20 s, die der Start eben anhielt.
+                if (_angebot.Count > 0 && _erledigt.Count >= _angebot.Count)
+                {
+                    _angebot = new();
+                    _erledigt.Clear();
+                }
                 _umrisseUhr.RaceStarted();
                 // DAS RENNEN BEGINNT: die Umrisse gehoeren davor, nicht darueber --
                 // und die Autonotiz samt Tune ebenso (Nutzermeldung 2026-09-27).
@@ -779,6 +899,10 @@ internal sealed class OverlayController : IDisposable
         if (_angebot.Count == 0 || DateTime.UtcNow - _angebotZeit > AngebotGilt) { return; }
         // Nur, wenn wirklich eine Runde fertig wurde -- ein Abbruch ist keine gefahrene Strecke.
         if (_rundenImRennen == 0) { return; }
+        // NICHT NACH EINEM FREMDEN RENNEN (seit 2026-10-18): kam nach dem Angebot der Rivals-Schirm,
+        // gehoerte die Runde nicht zur Reihe. Bis dahin kamen die Karten nach jeder Rivals-Runde
+        // wieder (2026-10-16: fuenfmal in neun Minuten) und wurden als 1/3, 2/3, 3/3 gezaehlt.
+        if (_modusSchirm is { Modus: "rivals" } rv && rv.Seen > _angebotZeit) { return; }
         var index = _letzteStrecke is { } s
             ? _angebot.FindIndex(a => string.Equals(a.Name, s, StringComparison.OrdinalIgnoreCase))
             : -1;
@@ -789,7 +913,8 @@ internal sealed class OverlayController : IDisposable
             index = Enumerable.Range(0, _angebot.Count).FirstOrDefault(i => !_erledigt.Contains(i), -1);
         }
         if (index >= 0) { _erledigt.Add(index); }
-        _angebotZeit = DateTime.UtcNow;
+        // _angebotZeit bleibt: bis 2026-10-18 verlaengerte jede Runde die 45 Minuten, und ein
+        // Angebot verfiel nie.
         WriteDiagnostic($"Meisterschaft: {(index >= 0 ? _angebot[index].Name : "?")} gefahren, "
                         + $"{_erledigt.Count}/{_angebot.Count}");
         // Nach jedem Rennen eine frische Anzeige mit eigener Zeit.
@@ -918,7 +1043,13 @@ internal sealed class OverlayController : IDisposable
     public event EventHandler? DeltaModeChanged;
 
     /// <summary>Die Vergleichsstufe, wie sie in der Einstellung steht.</summary>
-    private DeltaReference DeltaMode => (_settings.DeltaReferenceMode ?? "tune").ToLowerInvariant() switch
+    /// <remarks>
+    /// IM SPEC RACING (seit 2026-10-18, Wunsch des Nutzers): immer dasselbe Auto in derselben
+    /// Abstimmung -- dort faehrt jeder dasselbe, und jede weitere Stufe vergliche mit etwas
+    /// anderem als dem, was man gerade faehrt.
+    /// </remarks>
+    private DeltaReference DeltaMode => ImSpecRennen() ? DeltaReference.SameCarSameTune
+        : (_settings.DeltaReferenceMode ?? "tune").ToLowerInvariant() switch
     {
         "car" => DeltaReference.SameCar,
         "class" => DeltaReference.SameClass,
@@ -1697,7 +1828,7 @@ internal sealed class OverlayController : IDisposable
         // Annahme nicht, steht es dort, statt dass es wieder jemandem auffallen muss.
         var platz = (int)packet.Get("RacePosition");
         var imRennen = platz >= 1;
-        var geist = imRennen && !OhneGeist()
+        var geist = imRennen && !OhneGeist(platz)
             ? (float)Math.Max(_settings.GhostSeconds - rennzeit,
                               -(_settings.PopInSeconds + 1))
             // Ausserhalb eines Rennens: hinter der Einblendphase, also zeichnet der
@@ -1732,7 +1863,18 @@ internal sealed class OverlayController : IDisposable
         // ist. Darum haengt der Riegel an ihr und nicht an der Platzierung.
         var uhrLaeuft = _recorder.CurrentSeconds > 0f;
 
-        if (_recorder.HasLapUnderway && uhrLaeuft)
+        if (_recorder.Drift)
+        {
+            // DRIFT: Punkte, keine Zeit (seit 2026-10-18) -- ein Delta gegen eine Rundenzeit waere
+            // hier eine Zahl ohne Sinn.
+            beschriftung = string.Format(Loc.T("drift -- {0} points"), _recorder.DriftScore.ToString("n0"));
+            if (DriftBestwert(_recorder.StartX, _recorder.StartZ) is { } bestwert)
+            {
+                beschriftung += " · " + string.Format(Loc.T("best here {0}"), bestwert.ToString("n0"));
+            }
+            _letztesDelta = null;
+        }
+        else if (_recorder.HasLapUnderway && uhrLaeuft)
         {
             // Die Referenz wird je Strecke EINMAL gesucht, nicht je Paket: die Suche
             // laeuft ueber den ganzen Bestand, und bei 60 Paketen je Sekunde waere das
@@ -2234,6 +2376,7 @@ internal sealed class OverlayController : IDisposable
         _feier.SetArea(jetzt);
         _liveMap.SetArea(jetzt);
         _reifen.SetArea(jetzt);
+        _tacho.SetArea(jetzt);
         // Der Streifen rechnet seine Einheit einmal aus der Flaeche; neu anlegen.
         if (_hud is not null && !_hud.IsDisposed)
         {
@@ -2310,6 +2453,12 @@ internal sealed class OverlayController : IDisposable
                 if (!_reifen.Visible) { _reifen.Show(); }
                 _reifen.TopMost = true;
             }
+            if (_settings.HudSpeedo)
+            {
+                _tacho.Setze(SpeedoState.Vorfuehrung(0, ruhig: true));
+                if (!_tacho.Visible) { _tacho.Show(); }
+                _tacho.TopMost = true;
+            }
             _carNote.SetNote("Porsche 911 GT3 RS '19  \u00b7  PI 900  \u00b7  " + string.Format(Loc.T("{0} hp"), 513),
                              string.Format(Loc.T("preview: {0}"),
                                            Loc.T("understeers from turn 3, tyres go off after 4 laps")));
@@ -2377,6 +2526,7 @@ internal sealed class OverlayController : IDisposable
             }
             else if (!_settings.HudTyres && _reifen.Visible) { _reifen.Hide(); }
             else if (_reifen.Visible) { _reifen.Render(); }
+            TachoNeu();
             if (!_settings.DeltaHud) { HideStrip(); return; }
             if (_hud is not null && !_hud.IsDisposed) { _hud.Invalidate(); }
         }
@@ -2396,6 +2546,7 @@ internal sealed class OverlayController : IDisposable
         _liveMap.SetReference(null);
         _liveMap.ClearTrail();
         if (_reifen.Visible) { _reifen.Hide(); }
+        if (_tacho.Visible) { _tacho.Hide(); }
         HideHud();
         HideShapes();
         if (_carNote.Visible) { _carNote.Hide(); }
@@ -2651,12 +2802,15 @@ internal sealed class OverlayController : IDisposable
     /// klebt er ueber dem Rennen -- genau die Beschwerde, die es zum
     /// Vordergrund-Riegel gefuehrt hat.
     /// </remarks>
-    private void HideShapes()
+    private void HideShapes([System.Runtime.CompilerServices.CallerLineNumber] int zeile = 0)
     {
         if (_hudPreview) { return; }
         if (_shapes is not null && !_shapes.IsDisposed && _shapes.Visible)
         {
             _shapes.Hide();
+            // Seit 2026-10-18 mit Herkunft: ob ein Ausblenden vom Rennstart, von der Zeit oder vom
+            // Fokus kam, liess sich im Protokoll nicht sehen.
+            WriteDiagnostic($"Umrisse ausgeblendet (OverlayController.cs:{zeile})");
         }
     }
 
@@ -2719,6 +2873,7 @@ internal sealed class OverlayController : IDisposable
                 Hide(_left);
                 HideHud();
                 if (_reifen.Visible) { _reifen.Hide(); }
+                if (_tacho.Visible) { _tacho.Hide(); }
                 SetStatus(Loc.T("console mode -- waiting for telemetry from the network"));
             }
             return false;
@@ -2756,6 +2911,7 @@ internal sealed class OverlayController : IDisposable
             // waehrend die beiden Panels verschwanden.
             HideHud();
             if (_reifen.Visible) { _reifen.Hide(); }
+            if (_tacho.Visible) { _tacho.Hide(); }
             SetStatus(_game.Running
                 ? string.Format(Loc.T("idle — {0}.exe is not the active window"), _game.ProcessName)
                 : string.Format(Loc.T("idle — waiting for {0}.exe"), _game.ProcessName));
@@ -2796,6 +2952,11 @@ internal sealed class OverlayController : IDisposable
             if (_reifen.Visible && !_hudPreview && DateTime.UtcNow - _telemetryAt > TimeSpan.FromSeconds(1.5))
             {
                 _reifen.Hide();
+            }
+            if (_tacho.Visible && !_hudPreview && DateTime.UtcNow - _telemetryAt > TimeSpan.FromSeconds(1.5))
+            {
+                _tacho.Hide();
+                _tachoDaten.Speichern();
             }
             if (_left.Up)
             {
@@ -3077,10 +3238,19 @@ internal sealed class OverlayController : IDisposable
             }
             return;
         }
-        if (state.Key != _lastAdviceKey)
+        // EIN NEUER BESUCH DESSELBEN SCHIRMS (seit 2026-10-18): bis dahin zeigte nur ein ANDERER
+        // Schirm die Karten wieder -- nach Alt-Tab, Rennstart oder abgelaufener Zeit blieb derselbe
+        // Anmeldeschirm dunkel. Neu ist ein Besuch, wenn der letzte gelesene Anmeldeschirm laenger
+        // als NeuerBesuchNach her ist.
+        var jetztAngebot = DateTime.UtcNow;
+        var neuerBesuch = jetztAngebot - _letzterAngebotsBlick > NeuerBesuchNach;
+        _letzterAngebotsBlick = jetztAngebot;
+        if (state.Key != _lastAdviceKey || neuerBesuch)
         {
             _lastAdviceKey = state.Key;
-            RenderAdvice(state);
+            _neuerBesuch = neuerBesuch;
+            try { RenderAdvice(state); }
+            finally { _neuerBesuch = false; }
         }
         // An automatic show never interrupts the left panel: that was asked for.
         if (state.Key != _waved)
@@ -3168,9 +3338,99 @@ internal sealed class OverlayController : IDisposable
         }
         else if (state.IsOffer)
         {
-            _modusSchirm = (state.IsHorizonPlay ? "horizon-play" : "race", DateTime.UtcNow, null, 0);
+            // ONLINE IST, WAS EINE REIHE TRAEGT (seit 2026-10-18): "Joining Spec Racing 2/3" galt bis
+            // dahin als Solo/Koop ("race"), weil es nicht "Horizon Play" heisst -- 55 Starts ohne
+            // Geister-Countdown, und keine Spec-Runde wurde je zugeordnet.
+            var modus = state.IsSpecRacing ? "spec" : state.IsOnline ? "horizon-play" : "race";
+            _modusSchirm = (modus, DateTime.UtcNow, null, 0);
+            _driftSchirm = state.IsDriftSeries ? DateTime.UtcNow : null;
         }
     }
+
+    /// <summary>Der zuletzt gelesene Anmeldeschirm war Spec Racing, und er gilt noch.</summary>
+    private bool ImSpecRennen() =>
+        (_modusSchirm is { Modus: "spec" } m && DateTime.UtcNow - m.Seen <= SchirmGilt)
+        || (_raster is { } g && g.Read.Spec && DateTime.UtcNow - g.Utc < TimeSpan.FromMinutes(10));
+
+    /// <summary>Eine Drift-Wertung mit Punkten ablegen: eine Zeile in drift.jsonl.</summary>
+    private (float X, float Z, double? Wert)? _driftBest;
+
+    /// <summary>
+    /// Die beste eigene Drift-Wertung, die an diesem Startpunkt (60 m) begann -- aus drift.jsonl,
+    /// einmal je Startpunkt gelesen. Null, wenn es dort noch keine gibt.
+    /// </summary>
+    private double? DriftBestwert(float x, float z)
+    {
+        if (x == 0f && z == 0f) { return null; }
+        if (_driftBest is { } b && Math.Abs(b.X - x) < 1f && Math.Abs(b.Z - z) < 1f) { return b.Wert; }
+        double? bestes = null;
+        try
+        {
+            var pfad = Path.Combine(AppInfo.DataFolder, "drift.jsonl");
+            if (File.Exists(pfad))
+            {
+                foreach (var zeile in File.ReadLines(pfad))
+                {
+                    try
+                    {
+                        using var j = System.Text.Json.JsonDocument.Parse(zeile);
+                        var r = j.RootElement;
+                        if (!r.TryGetProperty("startX", out var sx) || !r.TryGetProperty("startZ", out var sz)
+                            || !r.TryGetProperty("score", out var sc)) { continue; }
+                        var dx = sx.GetDouble() - x;
+                        var dz = sz.GetDouble() - z;
+                        if (dx * dx + dz * dz > 60.0 * 60.0) { continue; }
+                        bestes = Math.Max(bestes ?? 0, sc.GetDouble());
+                    }
+                    catch (Exception e) when (e is System.Text.Json.JsonException or InvalidOperationException or FormatException)
+                    {
+                    }
+                }
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+        }
+        _driftBest = (x, z, bestes);
+        return bestes;
+    }
+
+    private void DriftAblegen(RecordedLap lap)
+    {
+        _driftBest = null;
+        try
+        {
+            var strecke = lap.Track;
+            if (string.IsNullOrWhiteSpace(strecke) && _angebot.Count > 0 && DateTime.UtcNow - _angebotZeit <= AngebotGilt
+                && _driftSchirm is { } d && DateTime.UtcNow - d <= SchirmGilt)
+            {
+                strecke = _angebot.Select(a => a.Name).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            }
+            var zeile = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                at = lap.RecordedAt,
+                score = Math.Round(lap.DriftScore ?? 0f),
+                seconds = Math.Round(lap.LapSeconds, 3),
+                car = lap.CarOrdinal,
+                pi = lap.PerformanceIndex,
+                carClass = LapArchive.ClassOf(lap.PerformanceIndex),
+                track = strecke,
+                metres = Math.Round(lap.LengthMetres),
+                startX = lap.StartX,
+                startZ = lap.StartZ,
+                series = _driftSchirm is { } ds && DateTime.UtcNow - ds <= SchirmGilt ? "horizon-play-drift" : null,
+            });
+            File.AppendAllText(Path.Combine(AppInfo.DataFolder, "drift.jsonl"), zeile + Environment.NewLine);
+            LogLap($"drift: {lap.DriftScore ?? 0:n0} points in {lap.LapSeconds:0.0} s, car {lap.CarOrdinal}, PI {lap.PerformanceIndex}"
+                   + (strecke is null ? string.Empty : $" ({strecke})") + " -- scored, not timed");
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    /// <summary>Wann zuletzt eine Drift-Reihe angeboten wurde (Horizon Play Drift) -- oder null.</summary>
+    private DateTime? _driftSchirm;
 
     /// <summary>
     /// Kein Geister-Countdown: das Rennen ist Rivals, Solo oder Koop (seit 2026-10-11).
@@ -3183,32 +3443,50 @@ internal sealed class OverlayController : IDisposable
     /// Aufstellung, die nach RaceGrid.Modus Solo oder Koop ist. Ohne Beleg bleibt der
     /// Countdown -- ihn in Horizon Play zu verschweigen waere der teurere Fehler.
     /// </remarks>
-    private bool OhneGeist()
+    /// <param name="platz">Der Platz im laufenden Rennen (RacePosition) -- in Rivals immer 1.</param>
+    private bool OhneGeist(int platz = 0)
     {
         var jetzt = DateTime.UtcNow;
         var raster = _raster is { } r && jetzt - r.Utc < TimeSpan.FromMinutes(3) ? r : null;
         if (_modusSchirm is { } m)
         {
             var alter = jetzt - m.Seen;
-            if (m.Modus == "rivals" && alter <= RivalsGilt && (raster is null || raster.Utc < m.Seen)) { return true; }
-            if (m.Modus == "race" && alter <= SchirmGilt) { return true; }
-            // Horizon Play belegt: dann gilt keine Aufstellung als Gegenbeweis -- eine wurde
-            // dort schon einmal "AHHHHHHHH" gelesen, und das hiesse sonst Koop.
-            if (m.Modus == "horizon-play" && alter <= SchirmGilt)
+            // RIVALS NUR, SOLANGE NICHTS DAGEGEN SPRICHT (seit 2026-10-18): jede Aufstellung und
+            // jedes Ergebnis NACH dem Rivals-Schirm widerlegt ihn (Rivals hat keine), ebenso ein
+            // Platz ueber 1. Bis dahin zaehlte nur eine Aufstellung unter 3 Minuten -- lag das Spiel
+            // vor dem Start im Hintergrund, wurde keine gelesen, und der zwei Stunden alte
+            // Rivals-Schirm verschwieg den Countdown eines Online-Rennens (2026-10-16 12:36).
+            if (m.Modus == "rivals" && alter <= RivalsGilt)
             {
+                var widerlegt = (_raster is { } g && g.Utc > m.Seen) || (_ergebnis is { } e0 && e0.Utc > m.Seen) || platz > 1;
+                if (!widerlegt) { return true; }
+            }
+            if (m.Modus == "race" && alter <= SchirmGilt) { return true; }
+            // Online belegt (Horizon Play, Spec Racing): dann gilt keine Aufstellung als Gegenbeweis
+            // -- eine wurde dort schon einmal "AHHHHHHHH" gelesen, und das hiesse sonst Koop.
+            if (m.Modus is "horizon-play" or "spec" && alter <= SchirmGilt)
+            {
+                // Eine Aufstellung mit Teamfarben NACH dem Schirm ist Koop (seit 2026-10-18).
+                if (raster is not null && raster.Utc > m.Seen && raster.Read.Team) { return true; }
                 // ... AUSSER ein spaeteres Ergebnis zeigt ein Rennen gegen die KI: am 2026-10-08
                 // folgten auf "Horizon Play Drift" acht Koop-Rennen, deren Anmeldung nicht gelesen
                 // wurde -- alle galten als Horizon Play.
-                return _ergebnis is { } e && e.Utc > m.Seen && jetzt - e.Utc < TimeSpan.FromMinutes(20)
-                       && RaceGrid.KiRennen(e.Read);
+                return _ergebnis is { } e && e.Utc > m.Seen && KiGiltNoch(e, jetzt);
             }
         }
-        if (_ergebnis is { } letztes && jetzt - letztes.Utc < TimeSpan.FromMinutes(20) && RaceGrid.KiRennen(letztes.Read))
-        {
-            return true;
-        }
-        return raster is not null && RaceGrid.Modus("race", raster.Read.Rows, null, null) is "solo" or "coop";
+        if (_ergebnis is { } letztes && KiGiltNoch(letztes, jetzt)) { return true; }
+        return raster is not null && RaceGrid.Modus("race", raster.Read.Rows, null, null,
+                                                    raster.Read.Team, raster.Read.Spec) is "solo" or "coop";
     }
+
+    /// <summary>
+    /// Ein Ergebnis voller KI spricht noch fuer dieses Rennen: hoechstens 20 Minuten alt, und keine
+    /// neuere Aufstellung mit einem anderen Feld (seit 2026-10-18 -- am 2026-10-15 18:15 verschwieg
+    /// das KI-Ergebnis des vorigen Rennens den Countdown eines Rennens mit zwoelf Menschen).
+    /// </summary>
+    private bool KiGiltNoch(RasterStand ergebnis, DateTime jetzt) =>
+        jetzt - ergebnis.Utc < TimeSpan.FromMinutes(20) && RaceGrid.KiRennen(ergebnis.Read)
+        && !(_raster is { } g && g.Utc > ergebnis.Utc && g.Read.Drivers != ergebnis.Read.Drivers);
 
     /// <summary>Den Modus einer Runde aus dem zuletzt gelesenen Menue -- wenn es frisch genug ist.</summary>
     /// <remarks>
@@ -3218,12 +3496,22 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     internal void ModusAusSchirm(RecordedLap lap, int platzMax)
     {
-        if (lap.Mode != "unknown" || _modusSchirm is not { } beleg) { return; }
+        if (lap.Mode != "unknown") { return; }
+        // DIE AUFSTELLUNG ZUERST (seit 2026-10-18): Teamfarben sind Koop, ein Feld aus einem Auto
+        // ist Spec Racing -- juenger als der Anmeldeschirm, und eindeutig.
+        if (_raster is { } grid && DateTime.UtcNow - grid.Utc < TimeSpan.FromMinutes(20)
+            && (_modusSchirm is not { } frueher || grid.Utc > frueher.Seen) && (grid.Read.Team || grid.Read.Spec))
+        {
+            lap.Mode = grid.Read.Spec ? "spec" : "coop";
+            lap.ModeEvidence = "start-grid:" + (grid.Read.Spec ? "one-car" : "team-colours");
+            return;
+        }
+        if (_modusSchirm is not { } beleg) { return; }
         var alter = DateTime.UtcNow - beleg.Seen;
         if (alter > (beleg.Modus == "rivals" ? RivalsGilt : SchirmGilt)) { return; }
         // Nach dem Schirm ein Ergebnis voller KI (seit 2026-10-11): das war Koop, dessen Anmeldung
         // nicht gelesen wurde -- kein "Horizon Play" vom alten Schirm, und damit keine Einreichung.
-        if (beleg.Modus == "horizon-play" && _ergebnis is { } erg && erg.Utc > beleg.Seen
+        if (beleg.Modus is "horizon-play" or "spec" && _ergebnis is { } erg && erg.Utc > beleg.Seen
             && RaceGrid.KiRennen(erg.Read))
         {
             lap.ModeEvidence = "conflict:horizon-play-screen-but-ai-result";
@@ -3708,14 +3996,29 @@ internal sealed class OverlayController : IDisposable
     {
         // DASSELBE ANGEBOT WIE ZULETZT? Dann bleibt, was schon gefahren ist -- zwischen
         // zwei Rennen einer Meisterschaft zeigt das Spiel die Liste womoeglich erneut.
+        var frisch = DateTime.UtcNow - _angebotZeit <= AngebotGilt;
         var gleich = routen.Select(r => r.Name).SequenceEqual(_angebot.Select(a => a.Name),
                                                               StringComparer.OrdinalIgnoreCase)
-                     && DateTime.UtcNow - _angebotZeit <= AngebotGilt;
+                     && frisch;
+        // NUR EIN TEIL DES ANGEBOTS GELESEN (seit 2026-10-18): las der Leser abwechselnd zwei und
+        // drei Strecken, galt jedes Mal ein neues Angebot, und die 45 s begannen von vorn.
+        var teil = !gleich && frisch && routen.Count >= 2 && routen.Count < _angebot.Count
+                   && routen.All(r => _angebot.Any(a => string.Equals(a.Name, r.Name, StringComparison.OrdinalIgnoreCase)));
+        if (teil)
+        {
+            gleich = true;
+            routen = _angebot;
+        }
         if (!gleich)
         {
             _erledigt.Clear();
             _meisterschaftWeg.Stop();
             // Ein neues Angebot ist eine neue Frage: die Zeit laeuft neu.
+            _umrisseUhr.NewOffer();
+        }
+        else if (_neuerBesuch)
+        {
+            // Derselbe Schirm, neu besucht: neue Zeit, der Stand der Reihe bleibt.
             _umrisseUhr.NewOffer();
         }
         // MITTEN IN EINE REIHE EINGESTIEGEN: was vor dem Einstieg liegt, faehrt man
@@ -3756,6 +4059,8 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Die zuletzt gelesene Startaufstellung -- ein Verweis, damit Lesen und Schreiben nie zerreissen.</summary>
     private sealed record RasterStand(GridRead Read, DateTime Utc);
     private volatile RasterStand? _raster;
+    /// <summary>Die zuletzt klein gelesene Aufstellung -- um zu sehen, ob sich etwas aenderte, ohne das grosse Bild.</summary>
+    private GridRead? _rasterRoh;
     /// <summary>Das zuletzt gelesene Ergebnis (seit 2026-10-11, fuer den Geister-Countdown).</summary>
     private volatile RasterStand? _ergebnis;
     /// <summary>Das zuletzt gespeicherte Bild einer Aufstellung -- es wird aufgehoben, wenn das Rennen eines gegen die KI war.</summary>
@@ -3794,13 +4099,36 @@ internal sealed class OverlayController : IDisposable
                 try
                 {
                     using var bild = GameArea.Capture(flaeche, RaceGrid.Aufnahme);
-                    if (RaceGrid.Read(bild) is { } g)
+                    if (RaceGrid.Read(bild) is { } roh)
                     {
                         var vorher = _raster;
-                        _raster = new RasterStand(g, DateTime.UtcNow);
-                        if (vorher is null || vorher.Read != g || DateTime.UtcNow - vorher.Utc > TimeSpan.FromSeconds(30))
+                        var neu = vorher is null || _rasterRoh != roh || DateTime.UtcNow - vorher.Utc > TimeSpan.FromSeconds(30);
+                        var g = roh;
+                        if (neu)
                         {
-                            LogLap($"start grid: {g.Drivers} drivers, {g.Humans} human, rows {g.Rows}, cursor {g.Cursor?.ToString() ?? "-"}");
+                            // IM VOLLEN BILD NACHLESEN (seit 2026-10-18): Koop, Drivatare, Spec Racing,
+                            // und ob es ueberhaupt eine Aufstellung ist (RaceGrid.Verfeinern).
+                            using var voll = Vollbild(flaeche);
+                            if (voll is not null)
+                            {
+                                if (RaceGrid.Verfeinern(voll, roh) is not { } fein)
+                                {
+                                    LogLap("looked like a start grid, but is none (settings or player list) -- ignored");
+                                    return;
+                                }
+                                g = fein;
+                            }
+                        }
+                        else if (vorher is not null)
+                        {
+                            g = vorher.Read;
+                        }
+                        _rasterRoh = roh;
+                        _raster = new RasterStand(g, DateTime.UtcNow);
+                        if (neu)
+                        {
+                            LogLap($"start grid: {g.Drivers} drivers, {g.Humans} human, rows {g.Rows}, cursor {g.Cursor?.ToString() ?? "-"}"
+                                   + (g.Team ? ", team colours (co-op)" : string.Empty) + (g.Spec ? ", one car for all (spec racing)" : string.Empty));
                             RennbildMerken(flaeche, "grid");
                         }
                     }
@@ -4134,7 +4462,8 @@ internal sealed class OverlayController : IDisposable
                 r.StartFrom = "grid-cursor";
             }
             // SOLO ODER KOOP: allein hinten ist Solo, ein Block von Menschen hinten ist Koop.
-            r.Mode = RaceGrid.Modus(r.Mode, aufstellung?.Rows, r.Start, r.Drivers);
+            r.Mode = RaceGrid.Modus(r.Mode, aufstellung?.Rows, r.Start, r.Drivers,
+                                    aufstellung?.Team ?? false, aufstellung?.Spec ?? false);
             // DIE META-WAHL: wo das Auto JETZT auf der Bestenliste dieser Strecke steht.
             try
             {
@@ -4516,7 +4845,8 @@ internal sealed class OverlayController : IDisposable
         // Und alle uebrigen Fenster: bis zum 2026-09-28 blieben Umriss, Notiz, Meldung
         // und Live-Karte des alten Controllers offen -- sichtbar eingefroren, wenn sie
         // beim Wechsel gerade standen.
-        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen })
+        try { _tachoDaten.Speichern(); } catch (Exception) { }
+        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen, _tacho })
         {
             try { fenster.Close(); fenster.Dispose(); } catch (Exception) { }
         }

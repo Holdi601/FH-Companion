@@ -149,6 +149,17 @@ internal sealed class RecordedLap
     /// </remarks>
     [JsonPropertyName("mode")] public string Mode { get; set; } = "unknown";
 
+    /// <summary>
+    /// "drift": eine Drift-Wertung (Drift-Rennen, Drift Attack, Driftzone) -- gezaehlt werden
+    /// Punkte, nicht Zeit (seit 2026-10-18). Null bei jeder gewoehnlichen Runde.
+    /// </summary>
+    [JsonPropertyName("kind")] public string? Kind { get; set; }
+
+    /// <summary>Die Drift-Punkte am Ende der Wertung (nur bei Kind "drift").</summary>
+    [JsonPropertyName("driftScore")] public float? DriftScore { get; set; }
+
+    [JsonIgnore] public bool IstDrift => Kind == "drift";
+
     /// <summary>Woher <see cref="Mode"/> stammt.</summary>
     /// <remarks>
     /// "timer" heisst: die eigene Freiwelt-Uhr hat die Fahrt gestoppt, der Modus
@@ -860,6 +871,34 @@ internal sealed class LapRecorder
     {
         _samples.Clear();
         LapGeneration++;
+        Drift = false;
+        DriftScore = 0f;
+    }
+
+    /// <summary>
+    /// Laeuft gerade eine Drift-Wertung? (seit 2026-10-18)
+    /// </summary>
+    /// <remarks>
+    /// In Drift-Events schickt das Spiel in `CurrentLap` den laufenden PUNKTESTAND statt einer
+    /// Zeit -- gemessen am 2026-10-08: 668.680 bei 287,6 s Rennzeit, nie fallend, wachsend nur
+    /// bei hohem Schraeglauf. In einem echten Rennen kann die Rundenzeit nie groesser sein als
+    /// die Rennzeit. Bis hierher wurde so eine Wertung als Runde von 668.680 s auf "Highway
+    /// Circuit" abgelegt.
+    /// </remarks>
+    public bool Drift { get; private set; }
+
+    /// <summary>Der hoechste Punktestand der laufenden Drift-Wertung.</summary>
+    public float DriftScore { get; private set; }
+
+    private float _driftDauer;
+
+    /// <summary>Eine fertige Fahrt als Drift-Wertung kennzeichnen, wenn sie eine war.</summary>
+    private void AlsDrift(RecordedLap fertig)
+    {
+        if (!Drift) { return; }
+        fertig.Kind = "drift";
+        fertig.DriftScore = DriftScore;
+        if (_driftDauer > 0f) { fertig.LapSeconds = _driftDauer; }
     }
     private int _lapNumber = -1;
     private float _lapStartTime;
@@ -1020,7 +1059,7 @@ internal sealed class LapRecorder
         };
         LastLapMetres = fertig.LengthMetres;
         _armed = false;
-        LapCompleted?.Invoke(this, fertig);
+        AlsDrift(fertig); LapCompleted?.Invoke(this, fertig);
     }
 
     public void Reset()
@@ -1063,6 +1102,13 @@ internal sealed class LapRecorder
 
         var lapNumber = (int)packet.Get("LapNumber");
         var lapTime = (float)packet.Get("CurrentLap");
+        var rennzeit = (float)packet.Get("CurrentRaceTime");
+        if (lapTime > 0f && lapTime > rennzeit + 5f) { Drift = true; }
+        if (Drift)
+        {
+            DriftScore = Math.Max(DriftScore, lapTime);
+            if (rennzeit > 0f) { _driftDauer = rennzeit; }
+        }
         var x = (float)packet.Get("PositionX");
         var y = (float)packet.Get("PositionY");
         var z = (float)packet.Get("PositionZ");
@@ -1182,7 +1228,7 @@ internal sealed class LapRecorder
             FullTrack = _vollspur.Detach(),
                 };
                 LastLapMetres = fertig.LengthMetres;
-                LapCompleted?.Invoke(this, fertig);
+                AlsDrift(fertig); LapCompleted?.Invoke(this, fertig);
             }
             _lapNumber = lapNumber;
             // Die Linie, ueber die eben gefahren wurde, ist der Anfang der neuen
@@ -1456,7 +1502,7 @@ internal sealed class LapRecorder
             FullTrack = _vollspur.Detach(),
         };
         LastLapMetres = fertig.LengthMetres;
-        LapCompleted?.Invoke(this, fertig);
+        AlsDrift(fertig); LapCompleted?.Invoke(this, fertig);
     }
 
     /// <summary>

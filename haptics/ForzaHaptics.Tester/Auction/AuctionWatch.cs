@@ -104,7 +104,8 @@ internal sealed class AuctionWatch : IDisposable
             var karten = AuctionReader.LiesKarten(voll1080, _ocr);
             // Eigene Gebote: die Liste kam aus "My Bids" -- oder eine Karte traegt OUTBID/WINNING
             // (das steht nur bei Auktionen, auf die der Nutzer geboten hat).
-            Einarbeiten(karten, _zuletztMeineGebote || karten.Any(k => k.Status is "OUTBID" or "WINNING"));
+            Einarbeiten(karten, _zuletztMeineGebote || karten.Any(k => k.Status is "OUTBID" or "WINNING"),
+                        alleKarten: _zuletztMeineGebote);
         }
         catch (Exception) { }
         finally
@@ -119,15 +120,26 @@ internal sealed class AuctionWatch : IDisposable
     /// Gelesene Karten einarbeiten (aus dem Overlay oder vom Bieter). Nur Karten aus "My Bids" sind
     /// eigene Gebote -- im Suchergebnis stehen auch fremde beendete Auktionen (SOLD!, NOT SOLD!).
     /// </summary>
-    public void Einarbeiten(IReadOnlyList<AuktionsKarte> karten, bool meineGebote)
+    /// <param name="alleKarten">
+    /// Die Liste IST "My Bids" (Bieter, oder das Menue zeigte "My Bids" markiert): dann ist jede
+    /// Karte mit Namen ein eigenes Gebot, auch wenn ihr Abzeichen nicht lesbar war. Seit
+    /// 2026-10-18 -- bis dahin fielen solche Karten weg, und der Reiter meldete "2 auctions
+    /// read", zeigte sie aber nicht. Ohne Gewissheit (nur ein OUTBID/WINNING auf irgendeiner
+    /// Karte) bleiben es die Karten mit Abzeichen: im Suchergebnis stehen auch fremde.
+    /// </param>
+    /// <returns>Wie viele Karten als eigene Gebote verfolgt werden.</returns>
+    public int Einarbeiten(IReadOnlyList<AuktionsKarte> karten, bool meineGebote, bool alleKarten = false)
     {
         var jetzt = DateTime.UtcNow;
+        var eigene = !meineGebote ? new List<AuktionsKarte>()
+            : karten.Where(k => !string.IsNullOrWhiteSpace(k.Auto) && (alleKarten || k.Status is not null)).ToList();
         Mit(s =>
         {
-            if (meineGebote) { s.MeineGebote(karten.Where(k => k.Status is not null).ToList(), jetzt); }
+            if (meineGebote) { s.MeineGebote(eigene, jetzt); }
             s.Gesehen(karten, meineGebote ? "my_bids" : "search", jetzt);
             return 0;
         });
+        return eigene.Count;
     }
 
     private void Takt()

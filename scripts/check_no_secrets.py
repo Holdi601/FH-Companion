@@ -62,6 +62,8 @@ MUSTER: list[tuple[str, re.Pattern[str]]] = [
      re.compile(r"MIG[HI]AgEAMBMGByqGSM49AgEGCCqGSM49AwEH")),
     ("GitHub-Token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{30,}\b")),
     ("Slack-Token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
+    # Seit 2026-10-18: der Webhook der Versionsankuendigung (config/discord_keys.json).
+    ("Discord-Webhook", re.compile(r"discord(?:app)?\.com/api/webhooks/\d+/[A-Za-z0-9_-]{20,}")),
     ("JSON-Web-Token", re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.")),
 ]
 

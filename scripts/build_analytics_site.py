@@ -267,6 +267,12 @@ footer.notes ol.steps { margin: 0; padding-left: 22px; max-width: 82ch; display:
 [dir="rtl"] footer.notes ol.steps { padding-left: 0; padding-right: 22px; }
 footer.notes .endnote { margin-top: 10px; }
 .caveat { color: var(--note); }
+.sstate { display: inline-block; font-size: 11.5px; padding: 0 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.sstate.live { color: var(--link); }
+.sstate.waiting, .sstate.hidden { color: var(--muted); }
+.sstate.held, .sstate.skipped { color: var(--note); }
+.sstate.review { color: var(--warn); background: var(--warn-bg); }
+td.why { font-size: 12.5px; color: var(--ink-soft); max-width: 52ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 680px) {
   .frow > .label { min-width: 100%; }
@@ -718,6 +724,10 @@ function zeigeAndereModi(liste) {
    und die Seite ist genau die alte. */
 let SUBMITTED = null;
 let HP = null;
+/* Die zuletzt aus der App gesendeten Scans, live von /api/scan/recent (seit 2026-10-18).
+   null = noch nicht geladen, [] = keine. */
+let RECENT = null;
+let RECENT_ALL = false;
 function pickCars(board, need, forbid) {
   return pickWithSources(D, board, pickCarsRivals(board, need, forbid), SUBMITTED, HP, F.source);
 }
@@ -1804,7 +1814,74 @@ function renderContest(host) {
   });
 }
 
+const RECENT_STATE = {
+  live: ["On the site", ""],
+  waiting: ["Accepted", "reaches the site with the next dataset update"],
+  held: ["Refused by the checks", ""],
+  review: ["Waiting for manual review", "sent again after a failure; an admin looks at it first"],
+  hidden: ["Removed by an admin", ""],
+  skipped: ["Left out of the build", ""],
+};
+
+function agoText(seconds) {
+  if (seconds < 90) return "just now";
+  if (seconds < 3600) return Math.round(seconds / 60) + " min ago";
+  if (seconds < 172800) return Math.round(seconds / 3600) + " h ago";
+  return Math.round(seconds / 86400) + " days ago";
+}
+
+/* WAS AUS DER APP KAM UND WO ES STEHT. Der Nutzer: "If a scan is refused on the website it
+   should say so" -- und ein Lauf ueber mehrere Boards sendet jedes, sobald es gelesen ist,
+   darum erscheinen sie hier eines nach dem anderen. */
+function renderRecentSubmissions(host) {
+  host.appendChild(el("h3", null, "Sent from the app"));
+  host.appendChild(el("p", "sub2",
+    "The newest scans players sent with FH Companion, and where each one stands. Every board uploads as soon "
+    + "as it is read, so a running batch appears here board by board. A refused scan says which check stopped it."));
+  if (RECENT === null) { host.appendChild(el("p", "sub2", "Loading \u2026")); return; }
+  if (!RECENT.length) { host.appendChild(el("p", "sub2", "No scans sent yet.")); return; }
+  const now = Date.now() / 1000;
+  const wrap = el("div", "tablewrap");
+  const table = el("table");
+  const head = el("tr");
+  [["Sent", false], ["Route", false], ["Class", false], ["Mode", false], ["Ranks", true], ["State", false], ["Why", false]]
+    .forEach(([text, isNum]) => head.appendChild(el("th", isNum ? "num" : null, text)));
+  table.appendChild(head);
+  (RECENT_ALL ? RECENT : RECENT.slice(0, 15)).forEach(s => {
+    const tr = el("tr");
+    const sent = el("td", "small", s.received ? agoText(Math.max(0, now - s.received)) : "");
+    if (s.received) sent.title = new Date(s.received * 1000).toLocaleString();
+    tr.appendChild(sent);
+    tr.appendChild(el("td", null, s.track || ""));
+    tr.appendChild(el("td", null, s["class"] || ""));
+    tr.appendChild(el("td", "small", s.mode || ""));
+    tr.appendChild(el("td", "num", s.rows ? num(s.rows) : "\u2014"));
+    const z = RECENT_STATE[s.state] || [s.state || "?", ""];
+    const cell = el("td");
+    cell.appendChild(el("span", "sstate " + (s.state || ""), z[0]));
+    tr.appendChild(cell);
+    tr.appendChild(el("td", "why", s.reason || z[1]));
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+  host.appendChild(wrap);
+  if (RECENT.length > 15) {
+    const more = el("button", "chip", RECENT_ALL ? "Show the newest 15" : "Show all " + num(RECENT.length));
+    more.type = "button";
+    more.onclick = () => { RECENT_ALL = !RECENT_ALL; render(); };
+    host.appendChild(more);
+  }
+}
+
+function loadRecent() {
+  return fetch("/api/scan/recent", { cache: "no-store" })
+    .then(r => r.json().then(d => (r.ok ? d : { scans: [] }), () => ({ scans: [] })))
+    .then(d => { RECENT = d.scans || []; if (TAB === "scans") render(); })
+    .catch(() => { RECENT = []; if (TAB === "scans") render(); });
+}
+
 function renderScans(host) {
+  renderRecentSubmissions(host);
   const scans = (D.meta && D.meta.scans) || [];
   const known = (D.meta && D.meta.known_routes) || {};
   const have = {};
@@ -2258,6 +2335,10 @@ function render() {
     .then(r => r.json().then(d => (r.ok ? d : { boards: [] }), () => ({ boards: [] })))
     .then(d => { HP = buildHp(D, d.boards || []); if (HP.placed) render(); })
     .catch(() => { /* ohne Server: nichts zu tun */ });
+  // Die gesendeten Scans: einmal, dann jede Minute, solange der Reiter offen und sichtbar ist --
+  // so sieht man einen laufenden Stapel wachsen.
+  loadRecent();
+  setInterval(() => { if (TAB === "scans" && !document.hidden) loadRecent(); }, 60000);
 })();
 </script>
 """
@@ -2299,7 +2380,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = json.loads(packed)
         args.data_out = None
     else:
-        payload = dataset.build(args.root, drop_invalid=args.drop_invalid)
+        payload = dataset.build(args.root, drop_invalid=args.drop_invalid, runs_out=dataset.RUNS_FILE)
         packed = json.dumps(payload, separators=(",", ":"))
     if args.data_out:
         args.data_out.parent.mkdir(parents=True, exist_ok=True)

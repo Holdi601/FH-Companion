@@ -876,6 +876,9 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
             # Datensatz (seit 2026-10-11 auch von einer neuen Installation). Sonst liegt
             # es ausgeblendet da, mit Grund; der Admin blendet aus und ein.
             grund = scans.freigabe(zustand, zeilen, bekannt)
+            erneut = bool(anfrage.get("resubmit")) or scans.erneut_nach_halt(install_id, zustand, root, now)
+            if erneut:
+                grund = scans.GRUND_ERNEUT + ("; " + grund if grund else "")
             # Das Siegel: ohne Schluessel keins -- und ohne Siegel nimmt der Bau den Lauf nicht.
             siegel = str((keys if keys is not None else load_keys()).get("run_seal") or "")
 
@@ -884,13 +887,21 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
 
             d = scans.store(install_id, zustand, zeilen, auffaellig,
                             contrib_root=contrib_root, root=root, now=now,
-                            zurueckhalten=grund, ausblenden=ausblenden, siegel=siegel)
+                            zurueckhalten=grund, ausblenden=ausblenden, siegel=siegel, erneut=erneut)
             return as_json(200, {"ok": True, "id": d["id"], "run_id": d["run_id"],
                                  "rows": d["rows"], "flags": auffaellig,
-                                 "held": bool(grund), "reason": grund,
+                                 "held": bool(grund), "reason": grund, "review": erneut,
                                  "note": ("Accepted, held for review: %s." % grund if grund else
                                           "Accepted. It reaches the site with the next "
                                           "dataset build.")})
+
+        # DIE LETZTEN SCANS FUER DIE SEITE (seit 2026-10-18): ohne Anmeldung, ohne Absender.
+        # Der Nutzer: "If a scan is refused on the website it should say so" -- und waehrend
+        # mehrere Boards laufen, kommt hier eines nach dem anderen an.
+        if method == "GET" and path == "/api/scan/recent":
+            return as_json(200, {"scans": scans.oeffentlich(scans.list_scans(root), _versteckt(visibility),
+                                                             scans.bauprotokoll()),
+                                 "now": now or time.time()})
 
         # --- ab hier nur mit Admin-Unterschrift ---
         keys = load_keys() if keys is None else keys
@@ -903,11 +914,16 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
                     versteckt[e] = ""
                 elif isinstance(e, dict) and e.get("run_id"):
                     versteckt[str(e["run_id"])] = str(e.get("reason") or "")
-            # install_id bleibt draussen, wie bei den Runden.
-            liste = [dict({k: v for k, v in d.items() if k != "install_id"},
-                          hidden=d.get("run_id") in versteckt,
-                          reason=versteckt.get(d.get("run_id"), ""))
-                     for d in scans.list_scans(root)]
+            # install_id bleibt draussen, wie bei den Runden. Dazu, wo der Scan steht
+            # (seit 2026-10-18): bis dahin sah die Verwaltung nur "eingereicht".
+            protokoll = scans.bauprotokoll()
+            liste = []
+            for d in scans.list_scans(root):
+                zustand, warum = scans.zustand_von(d, versteckt, protokoll)
+                liste.append(dict({k: v for k, v in d.items() if k != "install_id"},
+                                  hidden=d.get("run_id") in versteckt,
+                                  reason=versteckt.get(d.get("run_id"), ""),
+                                  state=zustand, stateReason=warum))
             liste.sort(key=lambda d: d.get("received") or 0, reverse=True)
             return as_json(200, {"scans": liste})
 
@@ -917,6 +933,17 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
 
 
 SPUR_PFAD = re.compile(r"/api/lap/telemetry/([0-9a-f]{20})\.(csv|json\.gz)")
+
+
+def _versteckt(visibility: Path | None) -> dict:
+    """run_id -> Grund, fuer jeden ausgeblendeten Lauf."""
+    raus = {}
+    for e in load_visibility(visibility).get("hidden", []):
+        if isinstance(e, str):
+            raus[e] = ""
+        elif isinstance(e, dict) and e.get("run_id"):
+            raus[str(e["run_id"])] = str(e.get("reason") or "")
+    return raus
 
 
 def download_name(path: str) -> str | None:

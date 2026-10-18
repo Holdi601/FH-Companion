@@ -591,6 +591,10 @@ CONTRIB_ROOT = WORKSPACE_ROOT / "data/memory_scans/contrib"
 # der heute fehlerhaft aussieht, ist morgen vielleicht der einzige Beleg dafuer, WAS
 # schiefging.
 VISIBILITY_FILE = WORKSPACE_ROOT / "config/dataset_visibility.json"
+# WAS DER BAU MIT JEDEM LAUF TAT (seit 2026-10-18): aufgenommen oder ausgelassen, und warum.
+# Bis hierher stand das nur in der Konsole des Baus -- die Verwaltung sah von einem Scan nur
+# "eingereicht", nicht ob er auf der Seite ist. NICHT unter data/analytics: das ist oeffentlich.
+RUNS_FILE = WORKSPACE_ROOT / "data/runtime/build_runs.json"
 
 
 def hidden_run_ids(path: Path | None = None) -> dict[str, str]:
@@ -612,7 +616,8 @@ def hidden_run_ids(path: Path | None = None) -> dict[str, str]:
 
 
 def discover_runs(root: Path, extra_roots: list[Path],
-                  hidden: dict[str, str], seal_key: str | None = None) -> tuple[list[tuple[Path, str]], int]:
+                  hidden: dict[str, str], seal_key: str | None = None,
+                  protokoll: dict | None = None) -> tuple[list[tuple[Path, str]], int]:
     """Alle Laufverzeichnisse, jeweils mit ihrer Herkunft, ohne die ausgeblendeten.
 
     Die Herkunft ist der Name des Unterordners unter `contrib` -- also der Beitragende
@@ -622,7 +627,10 @@ def discover_runs(root: Path, extra_roots: list[Path],
     EIN APP-LAUF NUR MIT PASSENDEM SIEGEL (seit 2026-10-11, server/run_seal.py): wurde eine
     seiner Dateien nach der Annahme geaendert, faellt er weg -- mit einer Zeile, warum.
     `seal_key` None heisst: den Schluessel aus config/contrib_keys.json nehmen.
+    `protokoll` (run_id -> Eintrag) bekommt jeden ausgelassenen Fremdlauf mit Grund.
     """
+    if protokoll is None:
+        protokoll = {}
     if seal_key is None:
         seal_key = run_seal.schluessel_aus(Path(__file__).resolve().parent.parent / "config" / "contrib_keys.json")
     found: list[tuple[Path, str]] = []
@@ -638,21 +646,35 @@ def discover_runs(root: Path, extra_roots: list[Path],
         # contrib/<beitragender>/<run_id>/state.json
         for state_path in sorted(extra.glob("*/*/state.json")):
             if state_path.parent.name in hidden:
+                protokoll[state_path.parent.name] = {"state": "hidden", "why": hidden[state_path.parent.name]}
                 skipped += 1
                 continue
             if state_path.parent.parent.name.startswith("app-"):
                 warum = run_seal.pruefen(state_path.parent, seal_key)
                 if warum:
                     print("  App-Lauf ausgelassen (%s): %s" % (warum, state_path.parent.name))
+                    protokoll[state_path.parent.name] = {"state": "skipped", "why": "seal: " + warum}
                     skipped += 1
                     continue
             found.append((state_path, state_path.parent.parent.name))
     return found, skipped
 
 
+def laeufe_ablegen(pfad: Path, protokoll: dict) -> None:
+    """Das Protokoll des Baus ablegen -- erst daneben, dann in einem Zug an den Platz."""
+    try:
+        pfad.parent.mkdir(parents=True, exist_ok=True)
+        neu = pfad.with_suffix(".tmp")
+        neu.write_text(json.dumps({"built_at": time.time(), "runs": protokoll}, sort_keys=True), encoding="utf-8")
+        os.replace(neu, pfad)
+    except OSError as e:
+        print("  Bauprotokoll nicht geschrieben: %s" % e)
+
+
 def build(root: Path, *, drop_invalid: bool = False,
           contrib_roots: list[Path] | None = None,
-          visibility: Path | None = None) -> dict:
+          visibility: Path | None = None,
+          runs_out: Path | None = None) -> dict:
     catalogue = load_catalogue()
     car_meta = load_car_meta()
     by_name = name_to_car_id(car_meta)
@@ -741,7 +763,8 @@ def build(root: Path, *, drop_invalid: bool = False,
 
     hidden = hidden_run_ids(visibility)
     roots = contrib_roots if contrib_roots is not None else [CONTRIB_ROOT]
-    run_paths, hidden_count = discover_runs(root, roots, hidden)
+    protokoll: dict[str, dict] = {}
+    run_paths, hidden_count = discover_runs(root, roots, hidden, protokoll=protokoll)
 
     staged = []
     track_names: set[str] = set()
@@ -750,12 +773,18 @@ def build(root: Path, *, drop_invalid: bool = False,
         state = json.loads(state_path.read_text(encoding="utf-8-sig"))
         parquet = state_path.parent / "leaderboard_entries.parquet"
         if not parquet.exists():
+            if origin != "local":
+                protokoll[state_path.parent.name] = {"state": "skipped", "why": "no leaderboard_entries.parquet"}
             continue
+        if origin != "local":
+            protokoll[state_path.parent.name] = {"state": "included"}
         track = (state.get("track") or "").strip()
         track_names.add(track)
         origins[id(state)] = origin
         staged.append((state, parquet, track))
     fix = canonical_tracks(track_names)
+    if runs_out is not None:
+        laeufe_ablegen(runs_out, protokoll)
 
     # Provenance, so the page can say what has been read and when rather than leaving it
     # to be guessed from the numbers. A board is usually the merge of several runs, and
@@ -1033,7 +1062,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     payload = build(args.root, drop_invalid=args.drop_invalid,
-                    contrib_roots=args.contrib_root, visibility=args.visibility)
+                    contrib_roots=args.contrib_root, visibility=args.visibility,
+                    runs_out=RUNS_FILE if args.contrib_root is None and args.visibility is None else None)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
 

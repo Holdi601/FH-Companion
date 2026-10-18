@@ -55,6 +55,7 @@ internal sealed class ScanTab : UserControl
     private readonly Label _anforderungen = new();
     private readonly Button _start;
     private readonly Button _stop;
+    private readonly Button _erneut;
     private readonly Label _aktuell = new();
     private readonly Label _status = new();
     private readonly ListView _tabelle = new();
@@ -201,9 +202,18 @@ internal sealed class ScanTab : UserControl
         };
         var ordner = Knopf(Loc.T("Open scans folder"));
         ordner.Click += (_, _) => OrdnerOeffnen();
+        // NOCH EINMAL SENDEN (seit 2026-10-18): ein Board, dessen Versand scheiterte oder das der
+        // Server anhielt -- aus der Tabelle oder aus einem gespeicherten Scan-Ordner.
+        _erneut = Knopf(Loc.T("Send selected again"));
+        _erneut.Enabled = false;
+        _erneut.Click += (_, _) => AuswahlErneut();
+        var gespeichert = Knopf(Loc.T("Send a saved scan ..."));
+        gespeichert.Click += (_, _) => GespeichertSenden();
         knoepfe.Controls.Add(_start);
         knoepfe.Controls.Add(_stop);
         knoepfe.Controls.Add(ordner);
+        knoepfe.Controls.Add(_erneut);
+        knoepfe.Controls.Add(gespeichert);
         _oben.Controls.Add(knoepfe);
 
         _aktuell.AutoSize = true;
@@ -219,6 +229,16 @@ internal sealed class ScanTab : UserControl
         _tabelle.Dock = DockStyle.Fill;
         _tabelle.View = View.Details;
         _tabelle.FullRowSelect = true;
+        _tabelle.MultiSelect = false;
+        // Was ein Zustand bedeutet und was der Server sagte: als Tooltip und, beim Auswaehlen,
+        // in der Statuszeile -- die Spalte selbst ist zu schmal fuer einen Satz.
+        _tabelle.ShowItemToolTips = true;
+        _tabelle.SelectedIndexChanged += (_, _) =>
+        {
+            var z = _tabelle.SelectedItems.Count == 1 ? _tabelle.SelectedItems[0] : null;
+            _erneut.Enabled = z?.Tag is string;
+            if (z is not null && !string.IsNullOrEmpty(z.ToolTipText)) { Status(z.ToolTipText); }
+        };
         _tabelle.BackColor = Feld;
         _tabelle.ForeColor = Color.WhiteSmoke;
         foreach (var (text, breite, rechts) in new[]
@@ -283,6 +303,24 @@ internal sealed class ScanTab : UserControl
 
     /// <summary>Haelt dieses Board die ganze Warteschlange an -- sofort, ohne Pause und zweiten Versuch?</summary>
     internal static bool HaeltSchlangeAn(string? status) => status == "game_crashed";
+
+    /// <summary>
+    /// Was ein Zustand bedeutet, in einem Satz, den man ohne den Code versteht (seit 2026-10-18,
+    /// der Nutzer: "the error should be really explanatory ... instead of just failed").
+    /// </summary>
+    internal static string StatusErklaerung(string status) => status switch
+    {
+        "end_detected" => Loc.T("Read to the end of the board. Complete."),
+        "invalid_tail" => Loc.T("Every valid lap was read; after them the board holds only invalid laps, which are not needed. Complete."),
+        "valid_section_complete" => Loc.T("Every valid lap was read; after them the board holds only invalid laps, which are not needed. Complete."),
+        "row_cap_reached" => Loc.T("Stopped at the rank limit set under \"First ranks only\". The website takes it on its own only from 3,000 ranks."),
+        "truncated" => Loc.T("The board stopped loading new rows before its end; usually the game's online session ran out. What was read is kept. Scan the board again later for the rest."),
+        "end_unverified" => Loc.T("The scanner reached what looks like the end, but the scrollbar did not confirm it. The server may hold the scan back."),
+        "server_error" => Loc.T("The game showed \"Server Error\": it could not reach its leaderboards. The scan itself is fine. Try again later; this board is not sent."),
+        "stopped" => Loc.T("Stopped before the end: by Stop, by the Pause key, or because another window came to the front. What was read is kept and sent; the server holds a board that is too short."),
+        "game_crashed" => Loc.T("The game closed during the scan. The queue stops here. Start the game again and scan this board once more."),
+        _ => status,
+    };
 
     internal static string StatusText(string status) => status switch
     {
@@ -538,6 +576,13 @@ internal sealed class ScanTab : UserControl
     {
         var versand = hochladen && LohntVersand(e.Status);
         Setze(zeile, StatusText(e.Status), zeilen, dauer, versand ? Loc.T("sending ...") : Loc.T("off"));
+        var erklaerung = StatusErklaerung(e.Status);
+        Zurueck(() =>
+        {
+            zeile.Tag = e.Ordner;
+            zeile.ToolTipText = erklaerung;
+            if (zeile.Selected) { _erneut.Enabled = true; }
+        });
         Log($"{name}: {e.Status}, {e.Zeilen} rows up to rank {e.HoechsterPlatz} in {dauer} -> {e.Ordner}");
         if (versand) { Senden(e.Ordner, zeile); }
     }
@@ -577,25 +622,97 @@ internal sealed class ScanTab : UserControl
         }
     }
 
-    private void Senden(string ordner, ListViewItem zeile)
+    /// <summary>
+    /// Einen Lauf hinausschicken, neben dem Scan her: jedes Board, sobald es gelesen ist -- es
+    /// stapelt sich nichts, und Verwaltung und Seite sehen den Stapel Board fuer Board wachsen.
+    /// </summary>
+    private void Senden(string ordner, ListViewItem zeile, bool erneut = false)
     {
         var ende = _ende.Token;
         _ = Task.Run(async () =>
         {
             string text;
+            string meldung;
             try
             {
-                var antwort = await ScanUpload.SendenAsync(ordner, ende).ConfigureAwait(false);
-                text = antwort.Ok ? Loc.T("sent") : string.Format(Loc.T("not sent: {0}"), antwort.Meldung);
-                Log($"upload {Path.GetFileName(ordner)}: {(antwort.Ok ? "ok" : "failed")} {antwort.Meldung}");
+                var antwort = await ScanUpload.SendenAsync(ordner, ende, erneut).ConfigureAwait(false);
+                // DIE SPALTE KURZ, DER SATZ GANZ: bis hierher stand nur "sent" -- auch wenn der
+                // Server den Scan angehalten hatte, und warum, stand nirgends.
+                text = !antwort.Ok ? Loc.T("not sent")
+                       : erneut ? Loc.T("sent again, for review")
+                       : antwort.Gehalten ? Loc.T("sent, held back") : Loc.T("sent");
+                meldung = antwort.Meldung;
+                Log($"upload {Path.GetFileName(ordner)}{(erneut ? " (again)" : string.Empty)}: {(antwort.Ok ? "ok" : "failed")} {antwort.Meldung}");
             }
             catch (Exception x)
             {
-                text = string.Format(Loc.T("not sent: {0}"), x.Message);
+                text = Loc.T("not sent");
+                meldung = x.Message;
                 Log($"upload {Path.GetFileName(ordner)}: {x.Message}");
             }
-            Zurueck(() => zeile.SubItems[4].Text = text);
+            Zurueck(() =>
+            {
+                zeile.SubItems[4].Text = text;
+                // Erste Zeile: was der Zustand bedeutet; zweite: was der letzte Versand ergab.
+                var basis = (zeile.ToolTipText ?? string.Empty).Split(Environment.NewLine)[0];
+                if (basis.StartsWith(Loc.T("Upload: "), StringComparison.Ordinal)) { basis = string.Empty; }
+                zeile.ToolTipText = (basis.Length > 0 ? basis + Environment.NewLine : string.Empty) + Loc.T("Upload: ") + meldung;
+                if (zeile.Selected) { Status(zeile.ToolTipText); }
+            });
         });
+    }
+
+    /// <summary>Das ausgewaehlte Board noch einmal senden -- nach einer Rueckfrage.</summary>
+    private void AuswahlErneut()
+    {
+        if (_tabelle.SelectedItems.Count != 1 || _tabelle.SelectedItems[0].Tag is not string ordner) { return; }
+        ErneutSenden(ordner, _tabelle.SelectedItems[0]);
+    }
+
+    private void ErneutSenden(string ordner, ListViewItem zeile)
+    {
+        var frage = Loc.T("Send this board again?\n\nA board sent again is not put on the website on its own: an admin looks at it first, because a resent scan is more likely to have been changed. The website shows it as \"Waiting for manual review\" until then.");
+        if (MessageBox.Show(this, frage, Loc.T("Send again"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+        {
+            return;
+        }
+        zeile.SubItems[4].Text = Loc.T("sending ...");
+        Senden(ordner, zeile, erneut: true);
+    }
+
+    /// <summary>Einen gespeicherten Scan (Ordner unter "scans") auswaehlen und noch einmal senden.</summary>
+    private void GespeichertSenden()
+    {
+        try
+        {
+            Directory.CreateDirectory(Wurzel);
+            using var wahl = new FolderBrowserDialog
+            {
+                Description = Loc.T("Choose the folder of a saved scan (it holds state.json and rows.jsonl)."),
+                UseDescriptionForTitle = true,
+                InitialDirectory = Wurzel,
+                ShowNewFolderButton = false,
+            };
+            if (wahl.ShowDialog(this) != DialogResult.OK) { return; }
+            var ordner = wahl.SelectedPath;
+            if (!File.Exists(Path.Combine(ordner, "state.json")) || !File.Exists(Path.Combine(ordner, "rows.jsonl")))
+            {
+                Status(Loc.T("This folder holds no scan: state.json or rows.jsonl is missing."));
+                return;
+            }
+            var zeile = new ListViewItem(new[] { Path.GetFileName(ordner), Loc.T("saved scan"), string.Empty, string.Empty, string.Empty })
+            {
+                Tag = ordner,
+            };
+            _tabelle.Items.Add(zeile);
+            zeile.Selected = true;
+            zeile.EnsureVisible();
+            ErneutSenden(ordner, zeile);
+        }
+        catch (Exception e)
+        {
+            Status(e.Message);
+        }
     }
 
     private string BoardName(ScanNavigator.Ziel z)

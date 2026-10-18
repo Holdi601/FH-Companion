@@ -53,6 +53,7 @@ internal static class EdgeCaseTest
         CelebrationLooksRight();
         OverlayOutputAndCost();
         TyreOverview();
+        Speedometer();
         ReplacedControllerGoesQuiet();
         LiveMapStaysWithoutStrip();
         LapModeFromMenus();
@@ -1479,6 +1480,17 @@ internal static class EdgeCaseTest
         var rumpf = System.Text.Json.Nodes.JsonNode.Parse(Scan.ScanUpload.Rumpf(zustand, zeilen))!;
         Soll(rumpf["state"]?["track"]?.GetValue<string>() == "Festival Chase" && rumpf["rows"]?.GetValue<string>() == zeilen
              && rumpf.AsObject().Count == 2, "Scan senden: der Rumpf traegt Zustand oder Zeilen nicht so, wie sie sind");
+        // Erneut gesendet: das Zeichen fuer den Server, und ein neuer Name nur, wenn der alte schon dort liegt.
+        var nochmal = System.Text.Json.Nodes.JsonNode.Parse(Scan.ScanUpload.Rumpf(zustand, zeilen, erneut: true))!;
+        Soll(nochmal["resubmit"]?.GetValue<bool>() == true && nochmal.AsObject().Count == 3,
+             "Scan erneut senden: das Zeichen \"resubmit\" fehlt");
+        var jetzt = new DateTime(2026, 10, 18, 12, 30, 5, DateTimeKind.Utc);
+        Soll(Scan.ScanUpload.ErneutName("ocr_x_1", schonGesendet: false, jetzt) == "ocr_x_1"
+             && Scan.ScanUpload.ErneutName("ocr_x_1", schonGesendet: true, jetzt) == "ocr_x_1_r20261018123005",
+             "Scan erneut senden: der Laufname stimmt nicht");
+        Soll(new[] { "end_detected", "invalid_tail", "row_cap_reached", "truncated", "end_unverified", "server_error", "stopped", "game_crashed" }
+                 .All(s => Scan.ScanTab.StatusErklaerung(s).Length > 30),
+             "Scan: ein Zustand ohne erklaerenden Satz");
 
         var ordner = Path.Combine(Path.GetTempPath(), "fhc-scan-upload-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ordner);
@@ -2406,7 +2418,7 @@ internal static class EdgeCaseTest
         var rasterTyp = typ.GetNestedType("RasterStand", System.Reflection.BindingFlags.NonPublic)!;
         var ergebnisFeld = typ.GetField("_ergebnis", flags)!;
         bool Geistlos(string? modus, TimeSpan alter, string? reihen = null, TimeSpan? rasterAlter = null,
-                      string? ergebnis = null, TimeSpan? ergebnisAlter = null)
+                      string? ergebnis = null, TimeSpan? ergebnisAlter = null, int platz = 0)
         {
             var roh = (Rivals.OverlayController)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typ);
             if (ergebnis is not null)
@@ -2424,7 +2436,7 @@ internal static class EdgeCaseTest
                 rasterFeld.SetValue(roh, Activator.CreateInstance(rasterTyp,
                     new Rivals.GridRead(reihen.Length, null, reihen), DateTime.UtcNow - (rasterAlter ?? TimeSpan.Zero)));
             }
-            return (bool)ohneGeist.Invoke(roh, null)!;
+            return (bool)ohneGeist.Invoke(roh, new object[] { platz })!;
         }
         Soll(Geistlos("rivals", TimeSpan.FromMinutes(5)), "Rivals: der Geister-Countdown steht da");
         Soll(!Geistlos("rivals", TimeSpan.FromMinutes(5), "HHHHHHHH"),
@@ -2435,6 +2447,16 @@ internal static class EdgeCaseTest
              "Horizon Play mit einer falsch gelesenen Zeile: der Countdown fehlt");
         Soll(Geistlos(null, TimeSpan.Zero, "AAAAAAAAAAAH"), "Solo-Aufstellung (KI vorn, man selbst hinten): Countdown steht da");
         Soll(!Geistlos(null, TimeSpan.Zero), "ohne jeden Beleg muss der Countdown bleiben");
+        // Seit 2026-10-18: Spec Racing ist online; ein Rivals-Schirm faellt durch jede spaetere
+        // Aufstellung (auch eine aeltere als 3 Minuten) und durch einen Platz ueber 1.
+        Soll(!Geistlos("spec", TimeSpan.FromMinutes(10)), "Spec Racing: der Geister-Countdown fehlt");
+        Soll(!Geistlos("rivals", TimeSpan.FromMinutes(10), "HHHHHHHHHHHH", TimeSpan.FromMinutes(4)),
+             "Rivals-Schirm, danach eine 4 Minuten alte Aufstellung (Alt-Tab vor dem Start): der Countdown fehlt");
+        Soll(!Geistlos("rivals", TimeSpan.FromMinutes(10), platz: 4), "Rivals-Schirm, aber Platz 4: der Countdown fehlt");
+        Soll(!Geistlos(null, TimeSpan.Zero, "HHHHHHHHHHHH", TimeSpan.FromMinutes(1), "AAAAAAAADDA", TimeSpan.FromMinutes(2)),
+             "KI-Ergebnis des vorigen Rennens, danach eine Aufstellung mit anderem Feld: der Countdown fehlt");
+        Soll(Geistlos(null, TimeSpan.Zero, "HHHHHHHHHHH", TimeSpan.FromMinutes(1), "AAAAAAAADDA", TimeSpan.FromMinutes(2)),
+             "KI-Ergebnis, danach eine Aufstellung mit demselben Feld (Koop): der Countdown steht da");
         Soll(Geistlos("horizon-play", TimeSpan.FromMinutes(20), ergebnis: "AHAAAAAAAAA", ergebnisAlter: TimeSpan.FromMinutes(3)),
              "Koop nach Horizon Play (Ergebnis voller KI nach dem Schirm): der Geister-Countdown steht da");
         Soll(!Geistlos("horizon-play", TimeSpan.FromMinutes(2), ergebnis: "AHAAAAAAAAA", ergebnisAlter: TimeSpan.FromMinutes(5)),
@@ -2525,6 +2547,101 @@ internal static class EdgeCaseTest
         catch (ObjectDisposedException e)
         {
             Soll(false, "ein geschlossenes Overlay wirft bei einem spaeten Aufruf: " + e.Message);
+        }
+    }
+
+    /// <summary>
+    /// Der eigene Tacho (2026-10-18): ab Werk aus, jedes Design zeichnet in jedem Zustand (auch ohne
+    /// Telemetrie), Designs ueberstehen JSON, der Schaltpunkt wird gelernt, und der Tacho bleibt auf dem Schirm.
+    /// </summary>
+    private static void Speedometer()
+    {
+        var s = new Rivals.OverlaySettings();
+        Soll(!s.HudSpeedo, "der Tacho ist ab Werk an -- er soll opt-in sein");
+        var namen = Rivals.SpeedoDesigns.Eingebaut.Select(d => d.Name).ToList();
+        Soll(namen.Count >= 12 && namen.Distinct(StringComparer.OrdinalIgnoreCase).Count() == namen.Count,
+             $"Tacho: {namen.Count} eingebaute Designs, oder zwei heissen gleich");
+        Soll(Rivals.SpeedoDesigns.Eingebaut.Any(d => d.Name == s.SpeedoDesign), "Tacho: das voreingestellte Design gibt es nicht");
+        Soll(Enum.GetValues<Rivals.SpeedoLayout>().All(l => Rivals.SpeedoDesigns.Eingebaut.Any(d => d.Layout == l)),
+             "Tacho: ein Layout hat kein eingebautes Design");
+
+        // Jedes Design, jeder Augenblick, auch ein leeres Bild (kein Auto, keine Drehzahl).
+        var leer = new Rivals.SpeedoBild(0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, false, false, false, 0, 0, 0, 0, 0, 99, 0);
+        using (var bild = new Bitmap(500, 500, System.Drawing.Imaging.PixelFormat.Format32bppPArgb))
+        using (var g = Graphics.FromImage(bild))
+        using (var maler = new Rivals.SpeedoRenderer())
+        {
+            foreach (var d in Rivals.SpeedoDesigns.Eingebaut)
+            {
+                foreach (var e in new[] { new Rivals.SpeedoEinheiten(false, "hp"), new Rivals.SpeedoEinheiten(true, "kW") })
+                {
+                    foreach (var b in new[] { leer, Rivals.SpeedoState.Vorfuehrung(0.5), Rivals.SpeedoState.Vorfuehrung(6.9), Rivals.SpeedoState.Vorfuehrung(8.2) })
+                    {
+                        try { maler.Male(g, d, b, new RectangleF(0, 0, 500, 500), e); }
+                        catch (Exception x) { Soll(false, $"Tacho {d.Name}: {x.GetType().Name} {x.Message}"); }
+                    }
+                }
+                try { maler.Male(g, d, Rivals.SpeedoState.Vorfuehrung(1), new RectangleF(0, 0, 2, 2), new Rivals.SpeedoEinheiten(false, "hp")); }
+                catch (Exception x) { Soll(false, $"Tacho {d.Name} winzig: {x.Message}"); }
+            }
+        }
+
+        // JSON hin und zurueck; Unsinn wird beschnitten.
+        var kopie = Rivals.SpeedoDesigns.Eingebaut[2].Clone();
+        Soll(!kopie.BuiltIn, "Tacho: eine Kopie gilt als eingebaut");
+        var zurueck = Rivals.SpeedoDesign.FromJson(kopie.ToJson());
+        Soll(zurueck is not null && zurueck.ToJson() == kopie.ToJson(), "Tacho: ein Design uebersteht JSON nicht");
+        var wild = Rivals.SpeedoDesign.FromJson("{\"size\": 99999, \"segments\": -4, \"glow\": 7, \"layout\": \"Moto\", \"name\": \"\"}");
+        Soll(wild is { Size: 900, Segments: 4, Glow: 1f, Layout: Rivals.SpeedoLayout.Moto } && wild.Name.Length > 0,
+             "Tacho: unsinnige Werte aus einer Datei bleiben stehen");
+        Soll(Rivals.SpeedoDesign.FromJson("kein json") is null && Rivals.SpeedoDesign.FromJson("{\"layout\": \"Hexagon\"}") is null,
+             "Tacho: eine kaputte Datei gilt als Design");
+        Soll(Path.GetFileName(Rivals.SpeedoDesigns.DateiVon("Neon / glow (mine) ..")) == "neon-glow-mine.json",
+             "Tacho: der Dateiname traegt Zeichen, die kein Dateiname vertraegt");
+
+        // Sieben Segmente: Ziffern und Gaenge ja, Buchstaben nein.
+        Soll(Rivals.SiebenSegment.Kann("123") && Rivals.SiebenSegment.Kann("R") && Rivals.SiebenSegment.Kann("1:35")
+             && !Rivals.SiebenSegment.Kann("km/h"), "Tacho: die Sieben-Segment-Anzeige nimmt das Falsche");
+
+        // DER GELERNTE SCHALTPUNKT: Vollgas, Leistung mit Hoechstwert bei 6.500 von 8.000.
+        var zustand = new Rivals.SpeedoState(merken: false);
+        Soll(Math.Abs(zustand.Schaltpunkt(987654, 8000f) - 7200f) < 1f, "Tacho: ohne Lernen nicht 90 % der Hoechstdrehzahl");
+        var design = new Rivals.SpeedoDesign();
+        var t0 = new DateTime(2026, 10, 18, 12, 0, 0, DateTimeKind.Utc);
+        for (var i = 0; i <= 50; i++)
+        {
+            var rpm = 3000f + i * 100f;
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 987654, 700, 5, maxRpm: 8000f, speed: 30f);
+            BitConverter.GetBytes(rpm).CopyTo(roh, 16);
+            BitConverter.GetBytes(800f).CopyTo(roh, 12);
+            BitConverter.GetBytes(300000f - Math.Abs(rpm - 6500f) * 60f).CopyTo(roh, 260);
+            roh[315] = 255;
+            roh[319] = 3;
+            if (!ForzaPacket.TryParse(roh, out var p)) { Soll(false, "Tacho: Testpaket parst nicht"); return; }
+            zustand.Aufnehmen(p, 0f, design, t0.AddMilliseconds(i * 16));
+        }
+        var punkt = zustand.Schaltpunkt(987654, 8000f);
+        Soll(Math.Abs(punkt - 6550f) <= 100f, $"Tacho: Schaltpunkt {punkt:0} statt um 6.500 (Leistungshoechstwert)");
+        Soll(zustand.Letztes.Gear == 3 && zustand.Letztes.TripM > 20f && zustand.Letztes.TripM < 30f,
+             $"Tacho: Gang {zustand.Letztes.Gear} oder Strecke {zustand.Letztes.TripM:0.0} m stimmt nicht (30 m/s, 0,8 s)");
+        zustand.TripZurueck();
+        Soll(zustand.Letztes.TripM > 0f, "(Letztes ist ein Bild, das Zuruecksetzen wirkt erst danach)");
+
+        // Auf dem Schirm, auf jeder Aufloesung, mit jedem Anker.
+        foreach (var flaeche in new[] { new Size(1920, 1080), new Size(3840, 2160), new Size(1280, 720) })
+        {
+            foreach (var anker in new[] { "left", "center", "right" })
+            {
+                s.HudSpeedoAlign = anker;
+                s.HudSpeedoX = anker == "left" ? 0.0 : 1.0;
+                s.HudSpeedoY = 1.0;
+                foreach (var d in Rivals.SpeedoDesigns.Eingebaut)
+                {
+                    var r = Rivals.SpeedoHud.Lege(s, d, flaeche);
+                    Soll(r.X >= 0 && r.Y >= 0 && r.Right <= flaeche.Width && r.Bottom <= flaeche.Height && r.Width > 50,
+                         $"Tacho {d.Name}: {r} liegt nicht auf {flaeche}");
+                }
+            }
         }
     }
 

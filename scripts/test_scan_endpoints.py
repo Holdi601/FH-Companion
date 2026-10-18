@@ -124,7 +124,10 @@ def ein_lauf(run_id: str, n: int = 600, strecke: str = "Festival Chase", klasse:
                "status": ende, "gapless": True, "rows_collected": 99999,
                "minimum_rank": 1, "maximum_rank": 99999, "missing_ranks": 0, "scanner": "ocr",
                "scanner_tool": "fhc/1.0.0.0", "readings": 2 * max(n, 600), "seconds": 120,
-               "completed_at": "2026-10-04T03:12:00.000000+02:00"}
+               # Je Lauf ein eigener Zeitpunkt, wie bei echten Scans: derselbe Zeitpunkt heisst
+               # derselbe Scan (scan_submissions.erneut_nach_halt).
+               "completed_at": "2026-10-04T03:%02d:%02d.000000+02:00" % divmod(
+                   int(hashlib.sha256(run_id.encode("utf-8")).hexdigest(), 16) % 3600, 60)}
     if gesamt is None:
         zustand.pop("implied_total")
     if grenze is not None:
@@ -194,6 +197,8 @@ with tempfile.TemporaryDirectory() as tmp:
         # Mehr Testlaeufe, als eine Installation an einem Tag einreichen darf (das Kontingent
         # selbst prueft der Abschnitt "Tageskontingent").
         scans.LAEUFE_JE_INSTALL_TAG = 1000
+        # Das Bauprotokoll des Tests, nicht das des Arbeitsplatzes.
+        scans.LAEUFE_DATEI = ordner / "build_runs.json"
 
         def auf_server(run_id: str) -> str:
             """Der Name auf dem Server: im Namensraum der Installation."""
@@ -207,8 +212,12 @@ with tempfile.TemporaryDirectory() as tmp:
                 return ("kein-ticket", b"")
             return (a["ticket"], base64.b64decode(a["key"]))
 
-        def einreichen(zustand: dict, zeilen: str, geheimnis: str | None = None, ticket: tuple | None = None):
-            b = json.dumps({"state": zustand, "rows": zeilen}).encode("utf-8")
+        def einreichen(zustand: dict, zeilen: str, geheimnis: str | None = None, ticket: tuple | None = None,
+                       erneut: bool = False):
+            rumpf_d = {"state": zustand, "rows": zeilen}
+            if erneut:
+                rumpf_d["resubmit"] = True
+            b = json.dumps(rumpf_d).encode("utf-8")
             t = ticket or ticket_holen(geheimnis or secret, install_id)
             return ruf(port, "POST", PFAD, b,
                        unterschrieben(geheimnis or secret, install_id, PFAD, b, next(nonce), t))
@@ -609,6 +618,59 @@ with tempfile.TemporaryDirectory() as tmp:
         # Mindestens 3.000 Raenge -- oder 90 % der Tiefe, die der Datensatz kennt (hier 22).
         tor("ocr_auto_short_1", "only 600 ranks", "600 Raenge eines neuen Boards", {"strecke": "Short Road"})
         tor("ocr_auto_short_2", None, "das ganze bekannte Board (22 Raenge tief)")
+        # Ein neues kleines Board, bis zum bewiesenen Ende gelesen (Cross-Country: ~2.000 Raenge).
+        tor("ocr_auto_short_3", None, "ein neues Board, 1.500 Raenge bis zum Ende",
+            {"strecke": "Small Cross Road", "n": 1500, "ende": "invalid_tail"})
+        tor("ocr_auto_short_4", "only 1500 ranks", "1.500 Raenge eines neuen Boards, angehalten",
+            {"strecke": "Small Stopped Road", "n": 1500, "ende": "stopped"})
+        tor("ocr_auto_short_5", "only 1500 ranks", "1.500 Raenge eines neuen Boards an einer Grenze",
+            {"strecke": "Small Capped Road", "n": 1500, "ende": "row_cap_reached", "grenze": 1500})
+
+        print("\nErneut gesendet: wartet auf den Admin")
+        z_e, r_e = ein_lauf("ocr_resend_1", strecke="Resend Road", n=3000)
+        st_e, a_e = einreichen(z_e, r_e, erneut=True)
+        pruefe(st_e == 200 and a_e.get("held") is True and a_e.get("review") is True
+               and scans.GRUND_ERNEUT in a_e.get("reason", "")
+               and scans.GRUND_ERNEUT in (versteckt_mit(auf_server("ocr_resend_1")) or ""),
+               "mit dem Zeichen der App: angehalten zur Durchsicht (%s)" % a_e.get("reason"))
+        # Ein angehaltener Scan, ohne Zeichen unter neuem Namen noch einmal geschickt.
+        z_h, r_h = ein_lauf("ocr_resend_2", strecke="Held Road")
+        st_h, a_h = einreichen(z_h, r_h)
+        pruefe(a_h.get("held") is True and a_h.get("review") is False, "(der erste Versand wird angehalten: %s)" % a_h.get("reason"))
+        z_h2 = dict(z_h, run_id="ocr_resend_2b")
+        st_h2, a_h2 = einreichen(z_h2, r_h)
+        pruefe(st_h2 == 200 and a_h2.get("review") is True and scans.GRUND_ERNEUT in a_h2.get("reason", ""),
+               "derselbe Scan unter neuem Namen, ohne Zeichen: auch zur Durchsicht (%s)" % a_h2.get("reason"))
+        # Ein NEUER Scan desselben Boards ist kein erneuter Versand.
+        z_h3, r_h3 = ein_lauf("ocr_resend_3", strecke="Held Road", n=3000)
+        st_h3, a_h3 = einreichen(z_h3, r_h3)
+        pruefe(st_h3 == 200 and a_h3.get("review") is False and a_h3.get("held") is False,
+               "ein neuer, ganzer Scan desselben Boards: von selbst sichtbar (%s)" % a_h3.get("reason"))
+
+        print("\nWo jeder Scan steht")
+        st_l, liste_l = ruf(port, "GET", "/api/admin/scan/list", None,
+                            admin_kopf(ADMIN, "GET", "/api/admin/scan/list", b""))
+        nach_name = {d.get("run_id"): d for d in liste_l.get("scans", [])}
+        e1 = nach_name.get(auf_server("ocr_resend_1"), {})
+        e2 = nach_name.get(auf_server("ocr_resend_2"), {})
+        e3 = nach_name.get(auf_server("ocr_resend_3"), {})
+        pruefe(e1.get("state") == "review" and e1.get("resubmit") is True, "erneut gesendet: 'review' (%s)" % e1.get("state"))
+        pruefe(e2.get("state") == "held" and "only 600 ranks" in e2.get("stateReason", ""),
+               "angehalten: 'held' mit Grund (%s, %s)" % (e2.get("state"), e2.get("stateReason")))
+        pruefe(e3.get("state") in ("waiting", "live"), "freigegeben: wartet auf den Bau oder ist da (%s)" % e3.get("state"))
+        st_o, offen_l = ruf(port, "GET", "/api/scan/recent")
+        oeff = offen_l.get("scans", []) if st_o == 200 else []
+        roh = json.dumps(offen_l)
+        pruefe(st_o == 200 and oeff and all("who" not in d and "run_id" not in d and "install_id" not in d for d in oeff)
+               and install_id not in roh and wer not in roh,
+               "die Seite sieht die letzten Scans ohne Absender (%d, %d Scans)" % (st_o, len(oeff)))
+        held_road = [d for d in oeff if d.get("track") == "Held Road" and d.get("state") == "held"]
+        pruefe(held_road and "only 600 ranks" in held_road[0].get("reason", ""),
+               "... und ein angehaltener sagt, warum (%s)" % (held_road[0].get("reason") if held_road else None))
+        api.set_visibility(auf_server("ocr_auto_short_1"), True, "copied from another board", api.VISIBILITY_FILE)
+        st_o, offen_l = ruf(port, "GET", "/api/scan/recent")
+        pruefe("copied from another board" not in json.dumps(offen_l),
+               "der Grund des Admins bleibt in der Verwaltung")
 
         print("\nDas Tor: ein eigener Namensraum")
         # Ein lokaler Lauf und ein App-Lauf mit demselben Namen: der zurueckgehaltene App-Lauf

@@ -110,6 +110,15 @@ button:hover { background: var(--bar); border-color: var(--bar); color: var(--on
 .race { margin: 14px 0 18px; }
 .race .proof img { max-width: 100%; margin-top: 8px; border-radius: 4px; }
 tr.hidden-row td { opacity: .45; text-decoration: line-through; }
+/* Wo ein Scan steht (seit 2026-10-18): ein Abzeichen, darunter der Grund -- lesbar, nie durchgestrichen. */
+.state { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid currentColor; white-space: nowrap; }
+.state.live { color: var(--good); }
+.state.waiting, .state.hidden { color: var(--muted); }
+.state.held, .state.skipped { color: var(--bad); }
+.state.review { color: #c47a00; }
+.state-why { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; max-width: 46ch; }
+tr.dim-row td { opacity: .55; }
 .err { color: var(--bad); }
 .ok { color: var(--good); }
 .chart { display: flex; align-items: flex-end; gap: 2px; height: 130px; margin-top: 6px; }
@@ -164,6 +173,15 @@ h3 { font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif; font-size: 17
 .hbar .z { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
 .vlegend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-soft); margin: 2px 0 6px; }
 .vlegend i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+/* Aufklappbare Abschnitte und Rundengruppen (seit 2026-10-18). */
+details.sec > summary { cursor: pointer; list-style: none; }
+details.sec > summary::-webkit-details-marker { display: none; }
+details.sec > summary h2 { display: inline-block; }
+details.sec > summary h2::before { content: "\25BE  "; color: var(--muted); font-size: 15px; }
+details.sec:not([open]) > summary h2::before { content: "\25B8  "; }
+details.lapgrp { margin: 6px 0; }
+details.lapgrp > summary { cursor: pointer; padding: 4px 0; }
+details.lapcls { margin-left: 18px; }
 </style>
 
 <div class="wrap">
@@ -529,6 +547,11 @@ function schicke(path, koerper) {
     });
 }
 
+/** Welche Strecken und Klassen der Runden aufgeklappt sind -- bleibt ueber ein Neuladen. */
+function rundenOffen() {
+  try { return JSON.parse(localStorage.getItem("fgh-admin-laps-open") || "{}") || {}; } catch (e) { return {}; }
+}
+
 function rundenZeichnen() {
   var spieler = (document.getElementById("f-player").value || "").toLowerCase();
   var auto = (document.getElementById("f-car").value || "").trim();
@@ -554,19 +577,53 @@ function rundenZeichnen() {
       : "no laps submitted yet";
     return;
   }
-  ziel.innerHTML = '<table class="laps"><tr><th>Time</th><th>Player</th>'
-    + '<th>Track</th><th>Class</th>'
-    + '<th>Car</th><th>PI</th><th>Received</th><th>Flags</th><th>Telemetry</th><th></th><th></th></tr>'
-    + reihen.map(function (r) {
+  // NACH STRECKE UND KLASSE, BEIDES AUFKLAPPBAR (seit 2026-10-18): vorher eine einzige Tabelle
+  // aller Runden. Der Spieler steht in jeder Zeile gleich neben der Zeit.
+  var kopf = '<table class="laps"><tr><th>Time</th><th>Player</th>'
+    + '<th>Car</th><th>PI</th><th>Received</th><th>Flags</th><th>Telemetry</th><th></th><th></th></tr>';
+  var gruppen = {};
+  reihen.forEach(function (r) {
+    var lap = r.lap || {};
+    var strecke = lap.track || "(no route name)";
+    var klasse = KLASSEN[Number(lap.carClass)] || "-";
+    (gruppen[strecke] = gruppen[strecke] || {});
+    (gruppen[strecke][klasse] = gruppen[strecke][klasse] || []).push(r);
+  });
+  var offen = rundenOffen();
+  ziel.innerHTML = Object.keys(gruppen).sort().map(function (strecke) {
+    var klassen = gruppen[strecke];
+    var anzahl = Object.keys(klassen).reduce(function (n, k) { return n + klassen[k].length; }, 0);
+    var spieler = {};
+    Object.keys(klassen).forEach(function (k) { klassen[k].forEach(function (r) { spieler[r.gamertag || "?"] = 1; }); });
+    return '<details class="lapgrp" data-key="' + esc(strecke) + '"' + (offen[strecke] ? " open" : "") + '><summary><b>'
+      + esc(strecke) + '</b> <span class="note">' + anzahl + " lap(s), " + Object.keys(spieler).length
+      + " player(s)</span></summary>"
+      + KLASSEN.concat(["-"]).filter(function (k) { return klassen[k]; }).map(function (k) {
+          var schluessel = strecke + "|" + k;
+          var beste = klassen[k][0];
+          return '<details class="lapgrp lapcls" data-key="' + esc(schluessel) + '"' + (offen[schluessel] ? " open" : "")
+            + '><summary>Class <b>' + esc(k) + '</b> <span class="note">' + klassen[k].length + " lap(s), best "
+            + esc(Number(rundeSekunden(beste)).toFixed(3)) + " s by " + esc(beste.gamertag || "(no gamertag)")
+            + "</span></summary>" + kopf + klassen[k].map(zeileHtml).join("") + "</table></details>";
+        }).join("")
+      + "</details>";
+  }).join("");
+  Array.prototype.forEach.call(ziel.querySelectorAll("details.lapgrp"), function (d) {
+    d.addEventListener("toggle", function () {
+      var o = rundenOffen();
+      if (d.open) { o[d.getAttribute("data-key")] = 1; } else { delete o[d.getAttribute("data-key")]; }
+      try { localStorage.setItem("fgh-admin-laps-open", JSON.stringify(o)); } catch (e) { }
+    });
+  });
+
+  function zeileHtml(r) {
         var s = rundeSekunden(r);
         // Ein vorlaeufiger Name (Spieler ohne Gamertag) ist als solcher erkennbar.
         var vorlaeufig = r.gamertag_temporary === true ? " <i>(temporary)</i>" : "";
         var lap = r.lap || {};
         return '<tr><td class="' + (r.hidden ? "hid" : "") + '">'
           + (s === undefined || isNaN(Number(s)) ? "?" : esc(Number(s).toFixed(3)) + " s")
-          + "</td><td>" + esc(r.gamertag || "(no gamertag)") + vorlaeufig
-          + "</td><td>" + esc(lap.track || "-")
-          + "</td><td>" + esc(KLASSEN[Number(lap.carClass)] || "-")
+          + "</td><td><b>" + esc(r.gamertag || "(no gamertag)") + "</b>" + vorlaeufig
           + "</td><td>" + esc(lap.carOrdinal !== undefined ? lap.carOrdinal : "?")
           + "</td><td>" + esc(lap.performanceIndex !== undefined ? lap.performanceIndex : "-")
           + "</td><td>" + esc(String(r.received || "").replace("T", " ").replace("+00:00", ""))
@@ -584,7 +641,7 @@ function rundenZeichnen() {
           + (r.hidden ? "0" : "1") + '">'
           + (r.hidden ? "restore" : "delete") + "</button></td>"
           + '<td><button class="ban" data-ban="' + esc(r.id) + '">ban player</button></td></tr>';
-      }).join("") + "</table>";
+  }
 
   Array.prototype.forEach.call(ziel.querySelectorAll("button[data-tele]"), function (b) {
     b.addEventListener("click", function () {
@@ -773,23 +830,45 @@ function scansLaden() {
   ziel.textContent = "loading ...";
   return hole("/api/admin/scan/list").then(function (d) {
     var liste = d.scans || [];
+    // WO JEDER SCAN STEHT (seit 2026-10-18). Bis dahin stand hier nur "eingereicht", und der
+    // Grund eines angehaltenen Scans war grau und durchgestrichen -- der Nutzer sah einen
+    // Cross-Country-Scan in der Verwaltung, aber nicht auf der Seite, und nicht warum.
+    var ZUSTAND = {
+      live: ["Live", "in the dataset the site shows"],
+      waiting: ["Waiting for build", "accepted; the next dataset build takes it"],
+      held: ["Held by the checks", "the automatic checks stopped it"],
+      review: ["Resubmitted - review", "sent again after a failure; needs your look"],
+      hidden: ["Hidden by admin", ""],
+      skipped: ["Skipped by the build", "the build left it out"]
+    };
+    var zahl = {};
+    liste.forEach(function (s) { zahl[s.state] = (zahl[s.state] || 0) + 1; });
+    var kopf = Object.keys(ZUSTAND).filter(function (k) { return zahl[k]; }).map(function (k) {
+      return '<span class="state ' + k + '">' + esc(ZUSTAND[k][0]) + ": " + zahl[k] + "</span>";
+    }).join(" ");
     ziel.innerHTML = liste.length
-      ? "<table><tr><th>Received</th><th>From</th><th>Route</th><th>Class</th><th>Mode</th><th>Rows</th>"
-        + "<th>Deepest</th><th>Status</th><th>Flags</th><th>Held / hidden</th><th></th></tr>"
+      ? '<p class="row">' + kopf + "</p>"
+        + "<table><tr><th>Received</th><th>From</th><th>Route</th><th>Class</th><th>Mode</th><th>Rows</th>"
+        + "<th>Deepest</th><th>Scan end</th><th>Flags</th><th>State</th><th></th></tr>"
         + liste.map(function (s) {
             var wann = s.received ? new Date(s.received * 1000).toISOString().slice(0, 16).replace("T", " ") : "";
-            return "<tr" + (s.hidden ? ' class="hidden-row"' : "") + ' title="' + esc(s.run_id) + '"><td>'
+            var z = ZUSTAND[s.state] || [s.state || "?", ""];
+            var warum = s.stateReason || (s.state === "hidden" ? s.reason : "") || z[1];
+            // Freigegeben, obwohl das Tor ihn hielt: das bleibt sichtbar, damit man weiss, was man freigab.
+            var frueher = !s.hidden && s.held ? "released by admin (was: " + s.held + ")" : "";
+            var knopf = s.hidden
+              ? '<button data-scan="' + esc(s.run_id) + '" data-hide="0">'
+                + (s.state === "held" ? "Allow anyway" : s.state === "review" ? "Approve" : "Show") + "</button>"
+              : '<button class="ghost" data-scan="' + esc(s.run_id) + '" data-hide="1">Hide</button>';
+            return "<tr" + (s.state === "hidden" ? ' class="dim-row"' : "") + ' title="' + esc(s.run_id) + '"><td>'
               + esc(wann) + "</td><td>" + esc(s.who) + "</td><td>" + esc(s.track) + "</td><td>"
               + esc(s["class"]) + "</td><td>" + esc(s.mode || "") + "</td><td>" + esc(s.rows) + "</td><td>"
               + esc(s.maxRank) + "</td><td>" + esc(s.status || "") + "</td><td>"
-              + (s.flags && s.flags.length ? '<span class="bad">' + esc(s.flags.join(", ")) + "</span>" : "")
-              + "</td><td>"
-              // Ausgeblendet: der Grund der Liste (das Tor oder der Admin). Eingeblendet, aber
-              // vom Tor zurueckgehalten: das steht noch da, damit man weiss, was freigegeben wurde.
-              + (s.hidden ? '<span class="bad">' + esc(s.reason || "hidden") + "</span>"
-                 : (s.held ? "released (was: " + esc(s.held) + ")" : "")) + "</td><td>"
-              + '<button data-scan="' + esc(s.run_id) + '" data-hide="' + (s.hidden ? "0" : "1") + '">'
-              + (s.hidden ? "Show" : "Hide") + "</button></td></tr>";
+              + (s.flags && s.flags.length ? '<span class="err">' + esc(s.flags.join(", ")) + "</span>" : "")
+              + '</td><td><span class="state ' + esc(s.state || "") + '">' + esc(z[0]) + "</span>"
+              + (warum ? '<div class="state-why">' + esc(warum) + "</div>" : "")
+              + (frueher ? '<div class="state-why">' + esc(frueher) + "</div>" : "")
+              + "</td><td>" + knopf + "</td></tr>";
           }).join("") + "</table>"
       : "no scans sent yet";
     Array.prototype.forEach.call(ziel.querySelectorAll("button[data-scan]"), function (b) {
@@ -799,6 +878,8 @@ function scansLaden() {
         if (hide) {
           grund = prompt("Why hide this scan?", "wrong data");
           if (grund === null) { return; }
+        } else if (!confirm("Put this scan into the dataset? The next build takes it onto the site.")) {
+          return;
         }
         b.disabled = true;
         schicke("/api/admin/visibility", { run_id: b.getAttribute("data-scan"), hidden: hide, reason: grund })
@@ -894,13 +975,32 @@ function sperrenLaden() {
           }).join("") + "</table>"
       : "no banned or warned players";
     var ips = d.ips || [];
+    // WANN (seit 2026-10-18): der letzte Fehlversuch mit Uhrzeit und Abstand, die Woche
+    // davor im Einzelnen aufklappbar -- vorher stand nur die Zahl der letzten Stunde da.
+    function vorWieLange(s) {
+      if (s === null || s === undefined) { return ""; }
+      if (s < 90) { return s + " s ago"; }
+      if (s < 5400) { return Math.round(s / 60) + " min ago"; }
+      if (s < 172800) { return Math.round(s / 3600) + " h ago"; }
+      return Math.round(s / 86400) + " days ago";
+    }
     adressen.innerHTML = ips.length
-      ? '<table class="laps"><tr><th>Address</th><th>State</th><th>Failed logins 1h</th>'
-        + '<th>Kind</th><th>Reason</th><th></th></tr>'
+      ? '<table class="laps"><tr><th>Address</th><th>Last failed login</th><th>State</th>'
+        + '<th>1 h</th><th>24 h</th><th>7 days</th><th>Kind</th><th>Reason</th><th></th></tr>'
         + ips.map(function (x) {
+            var verlauf = (x.history || []).map(function (v) {
+              return '<div class="mono">' + esc(v.at) + "  " + esc(v.kind) + "</div>";
+            }).join("");
             return "<tr><td>" + esc(x.ip) + "</td><td>"
+              + '<span class="mono">' + esc(x.last_at || "-") + "</span>"
+              + (x.seconds_ago !== null && x.seconds_ago !== undefined
+                 ? ' <span class="' + (x.seconds_ago < 3600 ? "err" : "note") + '">(' + esc(vorWieLange(x.seconds_ago)) + ")</span>" : "")
+              + (verlauf ? '<details><summary class="note">all attempts</summary>' + verlauf + "</details>" : "")
+              + "</td><td>"
               + (x.banned ? "blocked until " + esc(x.until) : (x.home_network ? "home network (never blocked)" : "watching"))
-              + "</td><td>" + esc(x.failures_last_hour) + "</td><td>" + esc(x.last_kind)
+              + "</td><td>" + esc(x.failures_last_hour) + "</td><td>" + esc(x.failures_last_day === undefined ? "" : x.failures_last_day)
+              + "</td><td>" + esc(x.failures_last_week === undefined ? "" : x.failures_last_week)
+              + "</td><td>" + esc(x.last_kind)
               + "</td><td>" + esc(x.reason) + "</td><td>"
               + '<button data-unban-ip="' + esc(x.ip) + '">' + (x.banned ? "unban" : "clear") + "</button>"
               + "</td></tr>";
@@ -1513,6 +1613,34 @@ window.addEventListener("resize", function () {
     Array.prototype.forEach.call(document.querySelectorAll(".vchart"), function (b) { if (b._neu) { b._neu(); } });
   }, 150);
 });
+
+// JEDER ABSCHNITT AUFKLAPPBAR (seit 2026-10-18): jede h2 im Inhalt wird mit allem bis zur
+// naechsten h2 zu einem <details>; ob er zu ist, merkt sich der Browser je Ueberschrift.
+// Die Elemente ziehen nur um -- ihre ids und Verweise bleiben dieselben.
+(function abschnitte() {
+  var inhalt = document.getElementById("body");
+  var gruppe = null;
+  Array.prototype.slice.call(inhalt.children).forEach(function (el) {
+    if (el.tagName === "H2") {
+      var d = document.createElement("details");
+      d.className = "sec";
+      var schluessel = "fgh-admin-sec:" + el.textContent.trim();
+      var zu = false;
+      try { zu = localStorage.getItem(schluessel) === "0"; } catch (e) { }
+      d.open = !zu;
+      var s = document.createElement("summary");
+      inhalt.insertBefore(d, el);
+      s.appendChild(el);
+      d.appendChild(s);
+      d.addEventListener("toggle", function () {
+        try { localStorage.setItem(schluessel, d.open ? "1" : "0"); } catch (e) { }
+      });
+      gruppe = d;
+    } else if (gruppe) {
+      gruppe.appendChild(el);
+    }
+  });
+})();
 
 // Nach einem Neuladen im selben Reiter geht es ohne erneutes Tippen weiter.
 if (sessionStorage.getItem("fgh-admin")) { laden(); }

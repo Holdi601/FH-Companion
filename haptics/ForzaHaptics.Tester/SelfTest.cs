@@ -31,6 +31,7 @@ internal static class SelfTest
         CheckPositionDelta();
         CheckSprintRecording();
         CheckLiveMapResets();
+        CheckDriftScore();
         CheckOwnCars();
         CheckCourseIdentity();
         CheckRouteLengths();
@@ -408,9 +409,13 @@ internal static class SelfTest
                                     int pi, int carClass, float maxRpm = 7000f,
                                     int cylinders = 6, int drivetrain = 1,
                                     float? x = null, float? z = null,
-                                    uint timestampMs = 0, float speed = 0f)
+                                    uint timestampMs = 0, float speed = 0f, float? raceTime = null)
     {
         var packet = new byte[324];
+        // Die Rennzeit laeuft im Spiel mit und ist nie kleiner als die Rundenzeit; ohne sie hielte
+        // die Drift-Erkennung (CurrentLap weit ueber CurrentRaceTime = Punktestand) jede Runde
+        // fuer eine Drift-Wertung (seit 2026-10-18).
+        BitConverter.GetBytes(raceTime ?? lapTime).CopyTo(packet, 308);
         BitConverter.GetBytes(timestampMs).CopyTo(packet, 4);
         BitConverter.GetBytes(speed).CopyTo(packet, 256);
         // Ohne Angabe auf einer Geraden entlang X: der Weg ist dann die Strecke.
@@ -775,6 +780,57 @@ internal static class SelfTest
     /// Rennen zur Startlinie, und in Rennen 2 und 3 einer Meisterschaft die Strecke
     /// von Rennen 1. Beides, weil die Karte nur "Runde abgeschlossen" kannte.
     /// </remarks>
+    /// <summary>
+    /// Eine Drift-Wertung (seit 2026-10-18): CurrentLap traegt den Punktestand, weit ueber der
+    /// Rennzeit. Sie wird als "drift" mit Punkten gemeldet, ihre Dauer ist die Rennzeit.
+    /// </summary>
+    private static void CheckDriftScore()
+    {
+        var aufnahme = new Rivals.LapRecorder();
+        Rivals.RecordedLap? gemeldet = null;
+        aufnahme.LapCompleted += (_, l) => gemeldet = l;
+        void Paket(int raceOn, float x, float punkte, float rennzeit)
+        {
+            if (!ForzaPacket.TryParse(LapPacket(raceOn, 0, x, punkte, 0f, 1234, 700, 5, x: x, raceTime: rennzeit), out var p))
+            {
+                throw new InvalidOperationException("Das Driftpaket parste nicht.");
+            }
+            aufnahme.OnTelemetry(p);
+        }
+        // Start: Punkte und Uhr bei null, dann waechst der Punktestand viel schneller als die Uhr.
+        Paket(1, 0f, 0.01f, 0.01f);
+        for (var t = 0.1f; t < 60f; t += 0.1f) { Paket(1, t * 20f, t * t * 40f, t); }
+        Paket(0, 1200f, 0f, 0f);
+        if (gemeldet is null || !gemeldet.IstDrift)
+        {
+            throw new InvalidOperationException("Drift: die Wertung wurde nicht als Drift gemeldet.");
+        }
+        if (gemeldet.DriftScore is not { } s || s < 100000f || gemeldet.LapSeconds > 61f)
+        {
+            throw new InvalidOperationException(
+                $"Drift: Punkte {gemeldet.DriftScore} und Dauer {gemeldet.LapSeconds} s stimmen nicht.");
+        }
+        // Und eine gewoehnliche Runde (Rundenzeit = Rennzeit) ist keine.
+        var normal = new Rivals.LapRecorder();
+        Rivals.RecordedLap? runde = null;
+        normal.LapCompleted += (_, l) => runde = l;
+        void Normal(int raceOn, int lap, float x, float t)
+        {
+            if (!ForzaPacket.TryParse(LapPacket(raceOn, lap, x, t, 0f, 1234, 700, 5, x: x), out var p))
+            {
+                throw new InvalidOperationException("Das Rundenpaket parste nicht.");
+            }
+            normal.OnTelemetry(p);
+        }
+        Normal(1, 0, 0f, 0.01f);
+        for (var t = 0.1f; t < 60f; t += 0.1f) { Normal(1, 0, t * 30f, t); }
+        Normal(0, 0, 1800f, 0f);
+        if (runde is not null && runde.IstDrift)
+        {
+            throw new InvalidOperationException("Drift: eine gewoehnliche Runde galt als Drift-Wertung.");
+        }
+    }
+
     private static void CheckLiveMapResets()
     {
         // ---- der Aufzeichner zaehlt jeden Neubeginn: Einfahrt, "GO", naechstes Rennen

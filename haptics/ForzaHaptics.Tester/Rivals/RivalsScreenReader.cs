@@ -70,6 +70,26 @@ internal sealed class ScreenState
         Series is { Length: > 0 } s
         && GameText.Varianten("horizon_play", "Horizon Play").Any(v => GameText.Falte(s).Contains(v, StringComparison.Ordinal));
 
+    /// <summary>
+    /// Spec Racing (seit 2026-10-18): "Joining Spec Racing 2/3" -- online, jeder im selben Auto.
+    /// Bis dahin galt es als Solo/Koop, weil es nicht "Horizon Play" heisst.
+    /// </summary>
+    public bool IsSpecRacing =>
+        Series is { Length: > 0 } s
+        && GameText.Varianten("spec_racing", "Spec Racing").Any(v => GameText.Falte(s).Contains(v, StringComparison.Ordinal));
+
+    /// <summary>
+    /// Eine Online-Reihe mit anderen Spielern: nur sie traegt den Kopf "Joining X k/n" (Series).
+    /// Solo- und Koop-Anmeldungen haben keinen.
+    /// </summary>
+    public bool IsOnline => IsHorizonPlay || IsSpecRacing || SeriesIndex > 0;
+
+    /// <summary>Horizon Play Drift (oder eine andere Drift-Reihe): gewertet wird die Punktzahl, nicht die Zeit.</summary>
+    public bool IsDriftSeries =>
+        Series is { Length: > 0 } s
+        && (GameText.Varianten("drift", "Drift").Any(v => GameText.Falte(s).Contains(v, StringComparison.Ordinal))
+            || GameText.Falte(s).Contains("drift", StringComparison.Ordinal));
+
     /// <summary>Die Zeilen oben links, mit "|" getrennt ("Rivals", "Routes") -- leer, wenn keine.</summary>
     public string Kopf { get; set; } = string.Empty;
 

@@ -161,7 +161,7 @@ internal static class RaceLog
     /// </summary>
     internal static void ModusNachErgebnis(RaceRecord r)
     {
-        if (r.Mode == "horizon-play" && r.ResultRows is { Length: > 0 } zeilen
+        if (r.Mode is "horizon-play" or "spec" && r.ResultRows is { Length: > 0 } zeilen
             && RaceGrid.KiRennen(new GridRead(zeilen.Length, null, zeilen)))
         {
             r.Mode = zeilen.Count(c => c == 'H') >= 2 ? "coop" : "solo";
@@ -233,6 +233,12 @@ internal readonly record struct GridRead(int Drivers, int? Cursor, string Rows)
 
     /// <summary>Um wie viel (Anteil der Bildhoehe) die Tabelle tiefer steht als ueblich; 0 auf der Aufstellung.</summary>
     public float Versatz { get; init; }
+
+    /// <summary>Koop: die Aufstellung traegt Teamfarben (rot die KI, blau die Menschen). Seit 2026-10-18.</summary>
+    public bool Team { get; init; }
+
+    /// <summary>Spec Racing: jede Zeile nennt dasselbe Auto und denselben PI. Seit 2026-10-18.</summary>
+    public bool Spec { get; init; }
 }
 
 /// <summary>
@@ -337,6 +343,164 @@ internal static class RaceGrid
 
     /// <summary>Das Ergebnis nach dem Rennen -- oder null.</summary>
     public static GridRead? ReadResults(Bitmap bild) => Lies(bild, ergebnis: true);
+
+    /// <summary>
+    /// Die Aufstellung im VOLLEN Bild nachlesen (seit 2026-10-18): Koop, Drivatare, Spec Racing --
+    /// oder null, wenn es gar keine Aufstellung ist.
+    /// </summary>
+    /// <remarks>
+    /// Gemessen an 116 Aufstellungen (1080p, 2026-10-08 bis 10-16):
+    ///   * KOOP traegt links (x 268-312) je Zeile eine Teamfarbe: rot (232, 28, 82) fuer die KI,
+    ///     blau (0, 144, 225) fuer die Menschen. Horizon Play hat dort eine dunkeltuerkise
+    ///     Platzzelle (20, 84, 72) mit weisser Nummer.
+    ///   * DAS ABZEICHEN (x 331-395): ein Mensch hat dort einen farbigen Stufenkasten oder einen
+    ///     schwarzen Stern -- irgendein Punkt dunkler als 100 oder satter als 40. Ein DRIVATAR hat
+    ///     ein graues "D" ohne Farbe, nichts dunkler als 150. Bis hierher las der Leser das "D"
+    ///     als Abzeichen, und jede KI galt als Mensch. Auf der markierten (schwarzen) Zeile ist der
+    ///     Drivatar ein weisser Kasten.
+    ///   * SPEC RACING: jede Zeile nennt dasselbe Auto und denselben PI. Der Autoname (x 697-1050)
+    ///     und der PI (x 1100-1155) als Tinte verglichen: Spec heisst, alle Zeilen bis auf eine
+    ///     (das eigene Auto steht fett) gleichen einer anderen -- gemessen hoechstens 0,01
+    ///     Abweichung bei Spec, mindestens 0,55 sonst.
+    ///   * KEINE AUFSTELLUNG: die Einstellungen und die Spielerliste lasen sich als zwoelf
+    ///     Menschen. Eine echte Aufstellung hat bei x 1234-1238 eine tuerkise Luecke in der
+    ///     limettengruenen Kopfzeile; dort ist sie bei beiden durchgehend limette.
+    /// </remarks>
+    public static GridRead? Verfeinern(Bitmap voll, GridRead g)
+    {
+        if (voll.Width < 640 || voll.Height < 360 || g.Drivers < 1) { return g; }
+        using var klar = voll.PixelFormat == PixelFormat.Format24bppRgb ? null
+            : voll.Clone(new Rectangle(0, 0, voll.Width, voll.Height), PixelFormat.Format24bppRgb);
+        var quelle = klar ?? voll;
+        var daten = quelle.LockBits(new Rectangle(0, 0, quelle.Width, quelle.Height), ImageLockMode.ReadOnly,
+                                    PixelFormat.Format24bppRgb);
+        try
+        {
+            var w = quelle.Width;
+            var h = quelle.Height;
+            var schritt = daten.Stride;
+            var puffer = new byte[schritt * h];
+            System.Runtime.InteropServices.Marshal.Copy(daten.Scan0, puffer, 0, puffer.Length);
+            var sx = w / 1920f;
+            var sy = h / 1080f;
+            (int R, int G, int B) Px(int x, int y)
+            {
+                x = Math.Clamp((int)(x * sx), 0, w - 1);
+                y = Math.Clamp((int)(y * sy), 0, h - 1);
+                var i = (y * schritt) + (x * 3);
+                return (puffer[i + 2], puffer[i + 1], puffer[i]);
+            }
+            static bool Limette((int R, int G, int B) p) => p.R > 150 && p.G > 220 && p.B < 90;
+
+            // Die Luecke in der Kopfzeile: ist sie limette, ist das keine Aufstellung.
+            var luecke = Enumerable.Range(1234, 5).Count(x => Limette(Px(x, 262)));
+            if (luecke >= 4) { return null; }
+
+            var zeilen = g.Rows.ToCharArray();
+            var team = 0;
+            var tinte = new List<bool[]>();
+            var piTinte = new List<bool[]>();
+            for (var s = 0; s < g.Drivers && s < zeilen.Length; s++)
+            {
+                var y0 = 300 + (54 * s);
+                // Teamfarbe links.
+                long rr = 0, gg = 0, bb = 0;
+                var n = 0;
+                for (var y = y0 - 10; y <= y0 + 10; y += 2)
+                {
+                    for (var x = 268; x <= 312; x += 3) { var p = Px(x, y); rr += p.R; gg += p.G; bb += p.B; n++; }
+                }
+                var (mr, mg, mb) = (rr / n, gg / n, bb / n);
+                var rot = mr > 190 && mg < 70 && mb is > 50 and < 120;
+                var blau = mr < 40 && mg is > 115 and < 175 && mb > 190;
+                if (rot || blau) { team++; }
+
+                // Markierte (schwarze) Zeile?
+                long hell = 0;
+                var hn = 0;
+                for (var x = 420; x < 680; x += 6) { var p = Px(x, y0); hell += p.R + p.G + p.B; hn++; }
+                var schwarz = hell / (3.0 * hn) < 70;
+
+                // Das Abzeichen.
+                var minHell = 255;
+                var maxSatt = 0;
+                long summe = 0;
+                var an = 0;
+                for (var y = y0 - 14; y <= y0 + 14; y++)
+                {
+                    for (var x = 331; x <= 395; x++)
+                    {
+                        var p = Px(x, y);
+                        var l = (p.R + p.G + p.B) / 3;
+                        minHell = Math.Min(minHell, l);
+                        maxSatt = Math.Max(maxSatt, Math.Max(p.R, Math.Max(p.G, p.B)) - Math.Min(p.R, Math.Min(p.G, p.B)));
+                        summe += l;
+                        an++;
+                    }
+                }
+                if (schwarz)
+                {
+                    // Drivatar: ein weisser Kasten mit grauem "D", nichts Dunkles darin. Ein Mensch:
+                    // Stern/Stufe auf Schwarz -- oder ein hellgrauer Stufenkasten MIT dunklen Ziffern
+                    // ("147", 2026-10-14 11:53 -- der galt erst als Drivatar).
+                    zeilen[s] = summe / (double)an >= 200 && maxSatt < 25 && minHell >= 150 ? 'A' : 'H';
+                }
+                else if (minHell < 100 || maxSatt > 40)
+                {
+                    zeilen[s] = 'H';
+                }
+                else if (minHell >= 150 && maxSatt < 12)
+                {
+                    zeilen[s] = 'A';
+                }
+
+                // Tinte des Autonamens und des PI, fuer Spec Racing.
+                bool[] Streifen(int xa, int xb)
+                {
+                    var bits = new bool[(xb - xa) * 25];
+                    var k = 0;
+                    for (var y = y0 - 12; y <= y0 + 12; y++)
+                    {
+                        for (var x = xa; x < xb; x++)
+                        {
+                            var p = Px(x, y);
+                            var l = (p.R + p.G + p.B) / 3;
+                            bits[k++] = schwarz ? l > 150 : l < 110;
+                        }
+                    }
+                    return bits;
+                }
+                tinte.Add(Streifen(697, 1050));
+                piTinte.Add(Streifen(1100, 1155));
+            }
+            var spec = g.Drivers >= 3 && GleichBisAufEine(tinte) && GleichBisAufEine(piTinte);
+            return g with { Rows = new string(zeilen), Team = team * 2 >= g.Drivers && team >= 2, Spec = spec };
+        }
+        finally
+        {
+            quelle.UnlockBits(daten);
+        }
+    }
+
+    /// <summary>Gleicht jeder Streifen bis auf hoechstens einen einem anderen (Jaccard-Abstand)?</summary>
+    internal static bool GleichBisAufEine(List<bool[]> streifen)
+    {
+        if (streifen.Count < 3) { return false; }
+        double Abstand(bool[] a, bool[] b)
+        {
+            int beide = 0, eins = 0;
+            for (var i = 0; i < a.Length && i < b.Length; i++)
+            {
+                if (a[i] && b[i]) { beide++; } else if (a[i] || b[i]) { eins++; }
+            }
+            return beide + eins == 0 ? 1.0 : eins / (double)(beide + eins);
+        }
+        var naechste = streifen.Select((a, i) => streifen.Where((_, j) => j != i).Min(b => Abstand(a, b)))
+                               .OrderByDescending(d => d).ToList();
+        // Die groesste darf abweichen (das eigene Auto steht fett), die zweitgroesste nicht.
+        return naechste[1] <= 0.15;
+    }
+
 
     private static GridRead? Lies(Bitmap bild, bool ergebnis)
     {
@@ -480,9 +644,14 @@ internal static class RaceGrid
     /// des Nutzers, 2026-09-30). Tragen die KI-Fahrer doch Abzeichen, bleibt bei einem als
     /// Solo/Koop gelesenen Anmeldeschirm ("race") die Regel: als Letzter gestartet ist Solo.
     /// </remarks>
-    internal static string Modus(string modus, string? zeilen, int? start, int? feld)
+    internal static string Modus(string modus, string? zeilen, int? start, int? feld,
+                                 bool team = false, bool spec = false)
     {
-        if (modus is "horizon-play" or "rivals" or "freeroam") { return modus; }
+        // DIE AUFSTELLUNG SAGT ES SELBST (seit 2026-10-18): Teamfarben sind Koop, ein Feld aus
+        // demselben Auto ist Spec Racing -- auch wenn der Anmeldeschirm etwas anderes belegte.
+        if (spec && modus is not ("rivals" or "freeroam")) { return "spec"; }
+        if (team && modus is not ("rivals" or "freeroam")) { return "coop"; }
+        if (modus is "horizon-play" or "spec" or "rivals" or "freeroam") { return modus; }
         if (!string.IsNullOrEmpty(zeilen))
         {
             var menschen = zeilen.Count(c => c == 'H');

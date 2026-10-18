@@ -81,6 +81,14 @@ import run_seal
 WORKSPACE = Path(__file__).resolve().parent.parent
 CONTRIB_ROOT = import_contrib.CONTRIB_ROOT
 SCANS_DIR = WORKSPACE / "data" / "submissions" / "scans"
+# Was der letzte Datensatzbau mit jedem Fremdlauf tat (build_analytics_dataset.RUNS_FILE).
+LAEUFE_DATEI = WORKSPACE / "data" / "runtime" / "build_runs.json"
+# ERNEUT GESENDET (seit 2026-10-18, Wunsch des Nutzers): ein Board, das die App nach einem
+# Fehlschlag noch einmal schickt, wartet auf den Admin -- "the chance of something doctored is
+# higher". Erkannt am Zeichen der App ("resubmit") und, falls eine App es weglaesst, daran, dass
+# dieselbe Installation dasselbe Board in diesem Fenster schon geschickt hat und es angehalten wurde.
+GRUND_ERNEUT = "resubmitted -- needs manual review"
+ERNEUT_FENSTER = 48 * 3600
 
 # Ein Board hat bis zu rund 20.000 Zeilen zu je ~450 Byte; contrib_format laesst
 # 60.000 zu. 32 MB lassen dafuer Luft und bleiben unter der Lesegrenze des Servers.
@@ -370,6 +378,13 @@ REIHENFOLGE = ("D", "C", "B", "A", "S1", "S2", "R")
 # 1.500-2.300 Eintraege) -- fuer sie reichen 90 % der Tiefe, die der Datensatz schon kennt.
 MINDEST_ZEILEN = 3000
 MINDEST_ANTEIL_BEKANNT = 0.90
+# EIN KLEINES NEUES BOARD MIT BEWIESENEM ENDE (seit 2026-10-18): ein Board, das der Datensatz
+# noch nicht kennt, hat keine bekannte Tiefe -- die 90 % griffen nie. Darum hielt die Regel
+# den ersten Scan von Nangan Cross-Country Circuit C zurueck (2.014 Raenge bis zum Ende der
+# gueltigen Runden, "invalid_tail"). Ein bewiesenes Ende ab so vielen Raengen gilt als das
+# ganze Board; "row_cap_reached" ist eine Grenze, kein Ende, und zaehlt hier nicht.
+GANZES_BOARD_ZEILEN = 1000
+ENDE_GANZES_BOARD = {"end_detected", "invalid_tail", "valid_section_complete"}
 
 
 class Brett(list):
@@ -617,10 +632,20 @@ def freigabe(zustand: dict, zeilen: list, bretter: dict | None) -> str:
             if viel_schneller(bekannt, zeilen, HALT_SCHNELLER):
                 gruende.append("best lap more than %d%% under the dataset's" % round(HALT_SCHNELLER * 100))
         tiefe = getattr(bekannt, "tiefe", 0) if bekannt else 0
-        if len(zeilen) < MINDEST_ZEILEN and not (tiefe and len(zeilen) >= tiefe * MINDEST_ANTEIL_BEKANNT):
-            gruende.append("only %d ranks -- at least %d, or the whole board, are needed"
-                           % (len(zeilen), min(MINDEST_ZEILEN, int(tiefe * MINDEST_ANTEIL_BEKANNT))
-                              if tiefe else MINDEST_ZEILEN))
+        ende_status = str(zustand.get("end_status") or zustand.get("status") or "")
+        ganz = (ende_status in ENDE_GANZES_BOARD and len(zeilen) >= GANZES_BOARD_ZEILEN
+                and not (tiefe and len(zeilen) < tiefe * MINDEST_ANTEIL_BEKANNT))
+        bekannt_tief = tiefe and len(zeilen) >= tiefe * MINDEST_ANTEIL_BEKANNT
+        if len(zeilen) < MINDEST_ZEILEN and not ganz and not bekannt_tief:
+            if tiefe:
+                gruende.append("only %d ranks -- the dataset knows this board %d ranks deep; at least %d "
+                               "(or %d with the board's end) are needed"
+                               % (len(zeilen), tiefe, min(MINDEST_ZEILEN, int(tiefe * MINDEST_ANTEIL_BEKANNT)),
+                                  GANZES_BOARD_ZEILEN))
+            else:
+                gruende.append("only %d ranks -- a new board needs %d ranks, or at least %d read to its "
+                               "proven end (this scan ended with '%s')"
+                               % (len(zeilen), MINDEST_ZEILEN, GANZES_BOARD_ZEILEN, ende_status or "?"))
     gruende.extend(innere_pruefung(zustand, zeilen))
     ende = ende_unbewiesen(zustand)
     if ende:
@@ -630,6 +655,79 @@ def freigabe(zustand: dict, zeilen: list, bretter: dict | None) -> str:
 
 def _buch(root: Path | None = None) -> Path:
     return root or SCANS_DIR
+
+
+def _board(d: dict) -> tuple:
+    return tuple(str(d.get(k) or "").strip().lower() for k in ("track", "class", "mode"))
+
+
+def erneut_nach_halt(install_id: str, zustand: dict, root: Path | None = None,
+                     now: float | None = None) -> bool:
+    """Schickt diese Installation einen Scan noch einmal, der ihr in den letzten 48 h angehalten wurde?"""
+    grenze = (now or time.time()) - ERNEUT_FENSTER
+    mein = _board({"track": zustand.get("track"), "class": zustand.get("performance_class"),
+                   "mode": zustand.get("rivals_mode")})
+    # DERSELBE SCAN, nicht dasselbe Board: ein neuer, laengerer Scan eines angehaltenen Boards ist
+    # ein neuer Scan. Gleich ist er am Zeitpunkt, an dem der Scanner fertig war.
+    fertig = zustand.get("completed_at")
+    return bool(fertig) and any(
+        d.get("install_id") == install_id and d.get("held") and (d.get("received") or 0) >= grenze
+        and _board(d) == mein and d.get("completedAt") == fertig for d in list_scans(root))
+
+
+def bauprotokoll(pfad: Path | None = None) -> dict:
+    """{"built_at": ..., "runs": {run_id: {"state": ..., "why": ...}}} -- leer, wenn es keins gibt."""
+    try:
+        d = json.loads((pfad or LAEUFE_DATEI).read_text(encoding="utf-8"))
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def zustand_von(d: dict, versteckt: dict, protokoll: dict) -> tuple[str, str]:
+    """Wo ein eingereichter Scan steht: (Zustand, Grund).
+
+    "review"   erneut gesendet, wartet auf den Admin
+    "held"     von den automatischen Pruefungen angehalten (Grund: welche)
+    "hidden"   vom Admin ausgeblendet
+    "skipped"  der Bau liess ihn aus (Siegel, fehlende Datei)
+    "live"     im Datensatz, den die Seite zeigt
+    "waiting"  angenommen, der naechste Bau nimmt ihn auf
+    """
+    run_id = d.get("run_id")
+    if run_id in versteckt:
+        grund = versteckt.get(run_id) or ""
+        if d.get("resubmit") and grund == (d.get("held") or ""):
+            return "review", grund
+        if grund and grund == (d.get("held") or ""):
+            return "held", grund
+        return "hidden", grund
+    eintrag = (protokoll.get("runs") or {}).get(run_id) or {}
+    gebaut = protokoll.get("built_at") or 0
+    if gebaut >= (d.get("received") or 0):
+        if eintrag.get("state") == "included":
+            return "live", ""
+        if eintrag.get("state") == "skipped":
+            return "skipped", str(eintrag.get("why") or "")
+    return "waiting", ""
+
+
+def oeffentlich(liste: list, versteckt: dict, protokoll: dict, wie_viele: int = 50) -> list:
+    """Die letzten Scans fuer die Seite: Board, Groesse, Zustand. Ohne Absender und Laufnamen.
+
+    Der Grund eines Admins steht nicht darin (er schreibt ihn fuer sich); der Grund der
+    automatischen Pruefungen schon -- er sagt dem Scanner, was fehlte.
+    """
+    raus = []
+    for d in sorted(liste, key=lambda x: x.get("received") or 0, reverse=True)[:wie_viele]:
+        zustand, grund = zustand_von(d, versteckt, protokoll)
+        raus.append({
+            "track": d.get("track"), "class": d.get("class"), "mode": d.get("mode"),
+            "rows": d.get("rows"), "maxRank": d.get("maxRank"), "received": d.get("received"),
+            "state": zustand,
+            "reason": grund if zustand in ("held", "review", "skipped") else "",
+        })
+    return raus
 
 
 def list_scans(root: Path | None = None) -> list:
@@ -681,7 +779,8 @@ def gespeicherter_name(wer: str, run_id: str) -> str:
 def store(install_id: str, zustand: dict, zeilen: list, auffaellig: list,
           contrib_root: Path | None = None, root: Path | None = None,
           now: float | None = None, tool: str | None = None,
-          zurueckhalten: str = "", ausblenden=None, siegel: str = "") -> dict:
+          zurueckhalten: str = "", ausblenden=None, siegel: str = "",
+          erneut: bool = False) -> dict:
     """Ablegen wie import_contrib -- erst fertig daneben, dann in einem Zug an den Platz.
 
     Halb geschriebene Ordner duerfen im contrib-Baum nie stehen: deploy_gnas.py holt
@@ -741,6 +840,8 @@ def store(install_id: str, zustand: dict, zeilen: list, auffaellig: list,
             # Warum das Tor ihn zurueckhielt ("" = von selbst sichtbar). Bleibt stehen,
             # auch wenn der Admin ihn spaeter einblendet.
             "held": zurueckhalten,
+            # Erneut gesendet (seit 2026-10-18): wartet auf den Admin, siehe GRUND_ERNEUT.
+            "resubmit": bool(erneut),
         }
         laps._atomar_schreiben(buch / (k + ".json"), json.dumps(eintrag, ensure_ascii=False, indent=1))
     return eintrag

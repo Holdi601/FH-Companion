@@ -471,6 +471,28 @@ internal sealed class OverlaySettings
     /// <summary>Reifentemperatur in Fahrenheit statt Celsius (die Farben bleiben gleich).</summary>
     [JsonPropertyName("tyres_fahrenheit")] public bool TyresFahrenheit { get; set; }
 
+    // ---- DER EIGENE TACHO (seit 2026-10-18) -----------------------------------------
+    //
+    // Drehzahl, Gang, Tempo und mehr in einem waehlbaren oder selbst gebauten Design
+    // (SpeedoHud, Reiter "Speedometer"). Ab Werk AUS, wie die Reifenuebersicht.
+    [JsonPropertyName("hud_speedo")] public bool HudSpeedo { get; set; }
+    [JsonPropertyName("hud_speedo_x")] public double HudSpeedoX { get; set; } = 0.985;
+    [JsonPropertyName("hud_speedo_y")] public double HudSpeedoY { get; set; } = 0.72;
+    [JsonPropertyName("hud_speedo_align")] public string HudSpeedoAlign { get; set; } = "right";
+    [JsonPropertyName("hud_speedo_scale")] public double HudSpeedoScale { get; set; } = 1.0;
+    /// <summary>Der Name des gewaehlten Designs (eingebaut oder eigenes).</summary>
+    [JsonPropertyName("speedo_design")] public string SpeedoDesign { get; set; } = "Horizon style";
+    [JsonPropertyName("speedo_mph")] public bool SpeedoMph { get; set; }
+    /// <summary>"hp", "kW" oder "PS".</summary>
+    [JsonPropertyName("speedo_power_unit")] public string SpeedoPowerUnit { get; set; } = "hp";
+    /// <summary>Bilder je Sekunde: 15, 30 oder 60. Das Spiel geht vor -- ab Werk 30.</summary>
+    [JsonPropertyName("speedo_fps")] public int SpeedoFps { get; set; } = 30;
+
+    [JsonIgnore]
+    public HudPlacement SpeedoPlacement => new(
+        (float)HudSpeedoX, (float)HudSpeedoY, HudSpeedoAlign ?? "right",
+        (float)HudSpeedoScale);
+
     /// <summary>Reiter "Scan leaderboards": jedes fertige Board gleich an den Server schicken.</summary>
     [JsonPropertyName("scan_upload")] public bool ScanUpload { get; set; } = true;
 
@@ -718,6 +740,7 @@ internal sealed class OverlaySettings
         HudPart.CarNote => CarNotePlacement,
         HudPart.LiveMap => LiveMapPlacement,
         HudPart.Tyres => TyresPlacement,
+        HudPart.Speedo => SpeedoPlacement,
         _ => throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck"),
     };
 
@@ -733,6 +756,7 @@ internal sealed class OverlaySettings
             case HudPart.CarNote: HudCarNoteScale = wert; break;
             case HudPart.LiveMap: HudLiveMapScale = wert; break;
             case HudPart.Tyres: HudTyresScale = wert; break;
+            case HudPart.Speedo: HudSpeedoScale = wert; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
@@ -749,6 +773,7 @@ internal sealed class OverlaySettings
             case HudPart.CarNote: HudCarNoteAlign = wert; break;
             case HudPart.LiveMap: HudLiveMapAlign = wert; break;
             case HudPart.Tyres: HudTyresAlign = wert; break;
+            case HudPart.Speedo: HudSpeedoAlign = wert; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
@@ -765,6 +790,7 @@ internal sealed class OverlaySettings
             case HudPart.CarNote: HudCarNoteX = x; HudCarNoteY = y; break;
             case HudPart.LiveMap: HudLiveMapX = x; HudLiveMapY = y; break;
             case HudPart.Tyres: HudTyresX = x; HudTyresY = y; break;
+            case HudPart.Speedo: HudSpeedoX = x; HudSpeedoY = y; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }

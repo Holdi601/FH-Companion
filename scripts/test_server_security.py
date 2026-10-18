@@ -135,7 +135,7 @@ pruefe(st != 200, f"carOrdinal mit Markup: Runde ohne Auto abgewiesen ({st})")
 admin_html = (WS / "server" / "admin_page.html").read_text(encoding="utf-8")
 roh = [z for z in admin_html.splitlines()
        if re.search(r"<\/?[a-z]", z)
-       and re.search(r"\+\s*\(?\s*(r|lap|x)\.(?!hidden\s*\?|banned\s*\?)[A-Za-z]", z)]
+       and re.search(r"\+\s*\(?\s*(r|lap|x)\.(?![A-Za-z_]+\s*(?:\?|&&|\|\||[<>]=?|[=!]==))[A-Za-z]", z)]
 pruefe(not roh, "Verwaltungsseite setzt keine Rundenfelder unmaskiert ein"
        + ("" if not roh else f": {roh[0].strip()[:60]}"))
 

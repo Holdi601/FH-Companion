@@ -34,7 +34,7 @@ namespace ForzaHaptics.Tester.Scan;
 internal static class ScanUpload
 {
     /// <summary>Ergebnis eines Versands: ob er ankam und was der Server sagte.</summary>
-    internal sealed record Antwort(bool Ok, string Meldung);
+    internal sealed record Antwort(bool Ok, string Meldung, bool Gehalten = false);
 
     public const string Pfad = "/api/scan/submit";
 
@@ -99,15 +99,32 @@ internal static class ScanUpload
     }
 
     /// <summary>Was an /api/scan/submit geht -- unterschrieben wird genau diese Bytefolge.</summary>
-    internal static byte[] Rumpf(JsonObject zustand, string zeilen) =>
-        Encoding.UTF8.GetBytes(new JsonObject
+    internal static byte[] Rumpf(JsonObject zustand, string zeilen, bool erneut = false)
+    {
+        var rumpf = new JsonObject
         {
             ["state"] = zustand.DeepClone(),
             ["rows"] = zeilen,
-        }.ToJsonString(Kompakt));
+        };
+        // ERNEUT GESENDET (seit 2026-10-18): der Server haelt es fuer den Admin an
+        // (scan_submissions.GRUND_ERNEUT) -- "the chance of something doctored is higher".
+        if (erneut) { rumpf["resubmit"] = true; }
+        return Encoding.UTF8.GetBytes(rumpf.ToJsonString(Kompakt));
+    }
 
-    /// <summary>Den Lauf im Ordner <paramref name="laufOrdner"/> senden. Wirft nie.</summary>
-    public static async Task<Antwort> SendenAsync(string laufOrdner, CancellationToken stop)
+    /// <summary>
+    /// Der Laufname fuer ein erneutes Senden: hat der Server den Lauf schon (Quittung), braucht er
+    /// einen neuen Namen -- derselbe gaebe "already on the server" (409) und kaeme nie zur Durchsicht.
+    /// </summary>
+    internal static string ErneutName(string runId, bool schonGesendet, DateTime jetztUtc) =>
+        schonGesendet ? runId + "_r" + jetztUtc.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) : runId;
+
+    /// <summary>
+    /// Den Lauf im Ordner <paramref name="laufOrdner"/> senden. Wirft nie. <paramref name="erneut"/>:
+    /// von Hand noch einmal gesendet (Knopf "Send selected again") -- auch wenn er schon ankam;
+    /// der Server legt ihn dann dem Admin vor.
+    /// </summary>
+    public static async Task<Antwort> SendenAsync(string laufOrdner, CancellationToken stop, bool erneut = false)
     {
         // 1. Der Lauf selbst -- vor allem anderen, ohne Netz.
         var zustandPfad = Path.Combine(laufOrdner, "state.json");
@@ -116,7 +133,8 @@ internal static class ScanUpload
         {
             return new Antwort(false, Loc.T("This folder holds no scan: state.json or rows.jsonl is missing."));
         }
-        if (File.Exists(Path.Combine(laufOrdner, Quittung)))
+        var schonGesendet = File.Exists(Path.Combine(laufOrdner, Quittung));
+        if (schonGesendet && !erneut)
         {
             return new Antwort(true, Loc.T("This scan was already sent."));
         }
@@ -140,6 +158,10 @@ internal static class ScanUpload
         {
             return new Antwort(false, Loc.T("This scan has no rows to send."));
         }
+        if (erneut && zustand["run_id"]?.GetValue<string>() is { Length: > 0 } laufName)
+        {
+            zustand["run_id"] = ErneutName(laufName, schonGesendet, DateTime.UtcNow);
+        }
 
         // 2. Darf gesendet werden? Dasselbe Abschalten wie fuer Runden.
         var einstellungen = OverlaySettings.Load();
@@ -153,7 +175,7 @@ internal static class ScanUpload
         }
 
         // 3. Anmelden (die gemerkte Anmeldung, sonst eine neue) und senden.
-        var rumpf = Rumpf(zustand, zeilen);
+        var rumpf = Rumpf(zustand, zeilen, erneut);
         LapSubmit.Identity wer;
         try
         {
@@ -217,10 +239,15 @@ internal static class ScanUpload
                 // Angenommen ist angenommen -- auch wenn die Antwort nicht die erwartete Form hat.
             }
             Quittieren(laufOrdner, wer.Server, text);
+            if (erneut)
+            {
+                return new Antwort(true, string.Format(CultureInfo.CurrentCulture,
+                    Loc.T("Sent again: {0} rows. A resent scan waits until an admin has looked at it; the website shows it as \"Waiting for manual review\"."), zahl));
+            }
             if (gehalten)
             {
                 return new Antwort(true, string.Format(CultureInfo.CurrentCulture,
-                    Loc.T("Sent: {0} rows, but held back by the server's checks: {1}"), zahl, grund));
+                    Loc.T("Sent: {0} rows, but held back by the server's checks: {1}"), zahl, grund), Gehalten: true);
             }
             return new Antwort(true, string.Format(CultureInfo.CurrentCulture,
                 Loc.T("Sent: {0} rows. They reach the site with the next dataset update."), zahl));

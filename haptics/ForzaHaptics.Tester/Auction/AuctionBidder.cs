@@ -278,9 +278,20 @@ internal sealed class AuctionBidder
         using var b = Sehen();
         if (b.Auktion != AuktionsSchirm.Liste) { return new List<AuktionsKarte>(); }
         var karten = AuctionReader.LiesKarten(b.Bild, _ocr);
-        _wache.Einarbeiten(karten, meineGebote: true);
+        // DER BELEG (seit 2026-10-18): das gelesene Bild und jede Karte, wie sie gelesen wurde --
+        // vorher blieb von einem Lauf nichts, was sich nachpruefen liess.
+        Rivals.OverlayController.AuktionsbildAufheben(b.Bild, "mybids");
+        foreach (var k in karten)
+        {
+            Rivals.OverlayController.WriteAuctionLog(
+                $"my bids card {k.Platz}: {k.Auto ?? "?"} | PI {k.Pi?.ToString() ?? "?"} | status {k.Status ?? "unread"} | {k.Roh}");
+        }
+        _verfolgt = _wache.Einarbeiten(karten, meineGebote: true, alleKarten: true);
         return karten;
     }
+
+    /// <summary>Wie viele Karten der letzte Blick auf "My Bids" als eigene Gebote verfolgt.</summary>
+    private int _verfolgt;
 
     /// <summary>Wie ein Lauf endete.</summary>
     internal enum Ende
@@ -312,7 +323,10 @@ internal sealed class AuctionBidder
             _melden(Loc.T("Auction house: on the way"));
             ZuMeinenGeboten();
             var karten = Lesen();
-            _melden(string.Format(Loc.T("My Bids: {0} auctions read"), karten.Count));
+            _melden(_verfolgt == karten.Count
+                ? string.Format(Loc.T("My Bids: {0} auctions read"), karten.Count)
+                : string.Format(Loc.T("My Bids: {0} auctions read, {1} listed -- the car name of the others could not be read."),
+                                karten.Count, _verfolgt));
             return Ende.Fertig;
         }
         catch (ScanNavigator.Abbruch e)

@@ -872,6 +872,13 @@ def _main(args) -> int:
 
         adresse_pruefen(cfg)
 
+        # DIE NEUE FASSUNG IN DISCORD (seit 2026-10-18): nur wenn wirklich eine andere App
+        # hinausging -- discord_announce vergleicht die Baukennung. Ein Fehler dort haelt
+        # den Deploy nicht auf.
+        if args.apply and not args.nur_code and not args.nur_holen:
+            import discord_announce
+            print("\nDISCORD: " + discord_announce.announce())
+
         if not args.apply:
             print("\nProbelauf. Mit --apply wird es getan.")
         return 0

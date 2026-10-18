@@ -32,7 +32,16 @@ internal sealed class ShapeDisplayClock
     public void RaceEnded() => NewOffer();
 
     /// <summary>Das Rennen beginnt: die Karten sind ohnehin weg, die Frist ruht.</summary>
-    public void RaceStarted() => _bis = DateTime.MaxValue;
+    /// <remarks>
+    /// Seit 2026-10-18 vergisst es auch "abgelaufen": bis dahin blieb ein Angebot nach einem
+    /// Rennstart ohne fertige Runde (Abbruch, Einstieg mitten im Rennen) fuer immer dunkel, und
+    /// Horizon Play zeigt dieselben drei Strecken bei 2/3 und 3/3 wieder.
+    /// </remarks>
+    public void RaceStarted()
+    {
+        _bis = DateTime.MaxValue;
+        Expired = false;
+    }
 
     /// <summary>Die Karten stehen jetzt da. Die Frist beginnt, falls noch keine laeuft.</summary>
     /// <param name="sekunden">0 oder weniger: keine Frist, bis zum Rennstart.</param>
