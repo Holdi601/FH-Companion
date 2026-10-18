@@ -217,9 +217,10 @@ internal sealed class RivalsTab : UserControl
             if (synced) return;
             synced = true;
             BeginInvoke(new Action(() => SyncFromServer(announce: false)));
-            // Und die App selbst. Still, aber mit Rueckfrage, sobald wirklich
-            // etwas Neues da ist -- siehe CheckForUpdate.
-            BeginInvoke(new Action(() => CheckForUpdate(announce: false)));
+            // Die App selbst fragt NICHT hier (seit 2026-10-18): ein Reiter bekommt sein Fenster
+            // erst, wenn man ihn das erste Mal oeffnet. Bis dahin wusste die App nichts von einem
+            // Update -- der Nutzer: "rafft erst, dass es ein Update gibt, wenn ich auf den Tab
+            // klicke". Gefragt wird ab dem ersten Zeigen des Hauptfensters, siehe UpdatesPruefen.
         };
         // The stream is the app's, not the overlay's: shown here so the port never
         // has to be looked for, and set in exactly one place -- the telemetry tab.
@@ -450,6 +451,41 @@ internal sealed class RivalsTab : UserControl
     /// </remarks>
     public void RefreshDatasetInBackground() => SyncFromServer(announce: false);
 
+    private System.Windows.Forms.Timer? _updateUhr;
+    /// <summary>Die Fassung, nach der in diesem Programmlauf schon gefragt wurde -- nie zweimal.</summary>
+    private string? _updateGefragt;
+
+    /// <summary>
+    /// Nach Updates sehen: sofort (vom ersten Zeigen des Hauptfensters) und danach alle 30
+    /// Minuten. Bis 2026-10-18 nur einmal, und erst beim ersten Oeffnen dieses Reiters.
+    /// </summary>
+    public void UpdatesPruefen()
+    {
+        CheckForUpdate(announce: false);
+        if (_updateUhr is not null) { return; }
+        _updateUhr = new System.Windows.Forms.Timer { Interval = 30 * 60 * 1000 };
+        _updateUhr.Tick += (_, _) => CheckForUpdate(announce: false);
+        _updateUhr.Start();
+        Disposed += (_, _) => _updateUhr.Dispose();
+    }
+
+    /// <summary>
+    /// Darf die stille Pruefung jetzt einen Dialog zeigen? Nicht waehrend der Fahrt und nicht,
+    /// waehrend das Spiel vorn ist -- ein Dialog nimmt dem Spiel den Fokus. Dann beim naechsten Mal.
+    /// </summary>
+    private bool DarfFragen()
+    {
+        if (Controller?.FaehrtGerade() == true) { return false; }
+        try
+        {
+            return GameWatch.ForegroundProcessName() != GameWatch.DefaultProcessName;
+        }
+        catch (Exception)
+        {
+            return true;
+        }
+    }
+
     /// <summary>Ask the server, in the background, and swap in anything newer.</summary>
     private async void SyncFromServer(bool announce)
     {
@@ -557,6 +593,13 @@ internal sealed class RivalsTab : UserControl
         }
 
         _updateState.Text = befund.Text;
+        if (!announce)
+        {
+            // Je Programmlauf einmal fragen, und nur, wenn es das Spiel nicht stoert.
+            if (string.Equals(_updateGefragt, kennung, StringComparison.Ordinal)) { return; }
+            if (!DarfFragen()) { return; }
+            _updateGefragt = kennung;
+        }
         var groesse = befund.Server.Bytes / 1e6;
         // IN DER SPRACHE DER APP (seit 2026-09-29) -- bis dahin stand diese Frage fuer
         // jeden Nutzer auf Deutsch da.

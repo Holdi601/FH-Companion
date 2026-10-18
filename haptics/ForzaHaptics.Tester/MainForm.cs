@@ -523,6 +523,9 @@ internal sealed class MainForm : Form, ITelemetryHost
         // Rivals-Karteikarte anklickt -- sonst rechnet die App mit Zahlen von vorletzter
         // Woche, ohne dass irgendetwas darauf hinweist.
         Shown += (_, _) => _rivals?.RefreshDatasetInBackground();
+        // Und nach einer neuen Fassung der App -- hier, nicht im Rivals-Reiter: der bekommt sein
+        // Fenster erst, wenn man ihn oeffnet, und fragte bis 2026-10-18 erst dann.
+        Shown += (_, _) => _rivals?.UpdatesPruefen();
 
         // KONSOLENMODUS: ohne Vibrationstest (kein Controller hier); Blueprint, Tuning und
         // Tunes folgen unten und fallen ebenso weg (Controller, Spielspeicher, Spielstand).
