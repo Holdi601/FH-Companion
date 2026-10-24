@@ -1619,10 +1619,11 @@ internal static class SelfTest
             catch (Exception) { }
         }
 
-        // Ein LAENGERES Paket: seine zusaetzlichen Bytes werden eigene Spalten.
-        var lang = new byte[331];
+        // Ein LAENGERES Paket: seine zusaetzlichen Bytes werden eigene Spalten. 340 statt 331: 331 Bytes
+        // sind seit 2026-10-24 Forza Motorsport (2023) und werden ins Horizon-Layout uebersetzt.
+        var lang = new byte[340];
         paket.CopyTo(lang, 0);
-        lang[330] = 99;
+        lang[339] = 99;
         var spur2 = new Rivals.TelemetryTrack();
         if (!ForzaPacket.TryParse(lang, out var l)) { throw new InvalidOperationException("Das lange Paket parste nicht."); }
         spur2.Add(l, 0f, 0f);
@@ -1632,7 +1633,7 @@ internal static class SelfTest
         {
             var sp = doc2.RootElement.GetProperty("columns").EnumerateArray().Select(e => e.GetString()).ToList();
             var z = doc2.RootElement.GetProperty("data")[0].EnumerateArray().ToList();
-            if (!sp.Contains("Byte330") || z[sp.IndexOf("Byte330")].GetInt32() != 99)
+            if (!sp.Contains("Byte339") || z[sp.IndexOf("Byte339")].GetInt32() != 99)
             {
                 throw new InvalidOperationException("Die Bytes eines laengeren Pakets fehlen in der Spur.");
             }

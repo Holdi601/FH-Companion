@@ -202,13 +202,11 @@ internal sealed class LiveMapHud : LayeredHud
         var aufloesung = GameArea.ResolutionScale(new Rectangle(Point.Empty, flaeche));
         var massstab = platz.Scale * aufloesung;
 
-        var grund = OverlaySettings.ParseColour(s.CourseShapeBack, Color.FromArgb(13, 17, 23));
-        var alpha = Math.Max(0, Math.Min(255, s.CourseShapeBackAlpha));
-        if (alpha > 0)
-        {
-            using var platte = new SolidBrush(Color.FromArgb(alpha, grund));
-            g.FillRectangle(platte, k);
-        }
+        // EIGENE FARBEN (seit 2026-10-24): leer heisst wie die Streckenkarten.
+        var grundFarbe = string.IsNullOrEmpty(s.LiveMapBack)
+            ? Color.FromArgb(Math.Max(0, Math.Min(255, s.CourseShapeBackAlpha)), OverlaySettings.ParseColour(s.CourseShapeBack, Color.FromArgb(13, 17, 23)))
+            : OverlaySettings.ParseColour(s.LiveMapBack, Color.FromArgb(150, 13, 17, 23));
+        HudZeichnen.Platte(g, s, HudElement.LiveMap, k, grundFarbe, 0f);
 
         // DIE AUSDEHNUNG STEHT FEST, sobald es eine Referenz gibt: sonst zoomte die
         // Karte bei jedem Meter der ersten Runde neu. Ohne Referenz waechst sie mit
@@ -226,7 +224,7 @@ internal sealed class LiveMapHud : LayeredHud
         var cy = k.Y + (k.Height / 2f);
         PointF Ort(PointF p) => new(cx + ((p.X - mx) * f), cy - ((p.Y - mz) * f));
 
-        var linie = OverlaySettings.ParseColour(s.CourseShapeLine, Color.FromArgb(127, 211, 255));
+        var linie = OverlaySettings.ParseColour(string.IsNullOrEmpty(s.LiveMapLine) ? s.CourseShapeLine : s.LiveMapLine, Color.FromArgb(127, 211, 255));
         // EIGENE STAERKE UND GLAETTUNG (seit 2026-09-25) -- vorher lieh sich die Karte
         // die Strichstaerke der Anmeldekarten und zeichnete jeden Messpunkt roh.
         var dicke = Math.Max(1f, (float)(s.LiveMapWidth * massstab));
@@ -266,7 +264,7 @@ internal sealed class LiveMapHud : LayeredHud
             var ap = Ort(a);
             var r = Math.Max(3.5f, 5.5f * (float)massstab);
             // Ein Ring in der Farbe der Platte haelt den Punkt auf der Linie lesbar.
-            using var ring = new SolidBrush(Color.FromArgb(255, grund));
+            using var ring = new SolidBrush(Color.FromArgb(255, grundFarbe));
             g.FillEllipse(ring, ap.X - r - 2, ap.Y - r - 2, (2 * r) + 4, (2 * r) + 4);
             using var pinsel = new SolidBrush(OverlaySettings.ParseColour(s.LiveMapCar, Color.White));
             g.FillEllipse(pinsel, ap.X - r, ap.Y - r, 2 * r, 2 * r);

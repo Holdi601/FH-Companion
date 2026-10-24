@@ -173,6 +173,12 @@ internal sealed class TyreHud : LayeredHud
         return null;
     }
 
+    /// <summary>Die Einstellungen des Bildes, das gerade gezeichnet wird -- fuer die Schrift des Stils.</summary>
+    [ThreadStatic] private static OverlaySettings? _s;
+
+    private static Font Schrift(string familie, float px, FontStyle stil = FontStyle.Regular) =>
+        _s is null ? new Font(familie, px, stil, GraphicsUnit.Pixel) : HudZeichnen.Schrift(_s, HudElement.Tyres, familie, px, stil, GraphicsUnit.Pixel);
+
     internal static void Male(Graphics g, OverlaySettings s, Size flaeche, Zustand z)
     {
         var b = Lege(s, flaeche);
@@ -184,13 +190,12 @@ internal sealed class TyreHud : LayeredHud
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
             g.TranslateTransform(b.X, b.Y);
             g.ScaleTransform(k, k);
-            using (var platte = new SolidBrush(OverlaySettings.ParseColour(s.HudBackground, Color.FromArgb(150, 8, 11, 16))))
-            using (var form = Rund(new RectangleF(0, 0, Breite, Hoehe), 12f))
-            {
-                g.FillPath(platte, form);
-            }
-            using var titel = new Font("Segoe UI Semibold", 11f, GraphicsUnit.Pixel);
-            using var leise = new SolidBrush(Color.FromArgb(160, 175, 192));
+            // Der Stil des Elements (HudStil): Platte, Rahmen, Schrift; eigene Farbe oder die des Streifens.
+            _s = s;
+            HudZeichnen.Platte(g, s, HudElement.Tyres, new RectangleF(0, 0, Breite, Hoehe),
+                OverlaySettings.ParseColour(string.IsNullOrEmpty(s.TyresBack) ? s.HudBackground : s.TyresBack, Color.FromArgb(150, 8, 11, 16)), 12f);
+            using var titel = Schrift("Segoe UI Semibold", 11f);
+            using var leise = new SolidBrush(OverlaySettings.ParseColour(s.TyresInk, Color.FromArgb(160, 175, 192)));
             g.DrawString(Loc.T("Tyres").ToUpperInvariant(), titel, leise, 12f, 7f);
 
             // Die Karosserie zwischen den Raedern -- nur ein Schatten, damit vorne und
@@ -233,7 +238,7 @@ internal sealed class TyreHud : LayeredHud
         {
             g.FillRectangle(feder, bx, y + RadH * (1f - weg), 8f, RadH * weg);
         }
-        using (var klein = new Font("Segoe UI Semibold", 11f, GraphicsUnit.Pixel))
+        using (var klein = Schrift("Segoe UI Semibold", 11f))
         using (var hell = new SolidBrush(Color.FromArgb(205, 215, 228)))
         using (var leise = new SolidBrush(Color.FromArgb(140, 155, 172)))
         using (var seite = new StringFormat { Alignment = links ? StringAlignment.Far : StringAlignment.Near })
@@ -281,8 +286,8 @@ internal sealed class TyreHud : LayeredHud
             using var rand = new Pen(farbe, breite);
             g.DrawPath(rand, form);
         }
-        using (var zahl = new Font("Segoe UI", 19f, FontStyle.Bold, GraphicsUnit.Pixel))
-        using (var klein = new Font("Segoe UI Semibold", 13f, GraphicsUnit.Pixel))
+        using (var zahl = Schrift("Segoe UI", 19f, FontStyle.Bold))
+        using (var klein = Schrift("Segoe UI Semibold", 13f))
         using (var schatten = new SolidBrush(Color.FromArgb(170, 0, 0, 0)))
         using (var weiss = new SolidBrush(Color.White))
         using (var mitte = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
@@ -302,7 +307,7 @@ internal sealed class TyreHud : LayeredHud
         // vergleicht sie); uebersetzt wird erst hier, beim Zeichnen.
         if (Schild(r) is { } schild)
         {
-            using var schrift = new Font("Segoe UI", 10f, FontStyle.Bold, GraphicsUnit.Pixel);
+            using var schrift = Schrift("Segoe UI", 10f, FontStyle.Bold);
             var wort = schild.Text switch
             {
                 "LOCK" => Loc.T("LOCK"),
@@ -348,7 +353,7 @@ internal sealed class TyreHud : LayeredHud
         // ZEICHEN: Pfuetze, Curb, Rumpeln.
         var iy = y + RadH + 22f;
         var ix = x;
-        using var zeichenSchrift = new Font("Segoe UI Semibold", 10f, GraphicsUnit.Pixel);
+        using var zeichenSchrift = Schrift("Segoe UI Semibold", 10f);
         // Horizon 6 meldet die Pfuetze als 0 oder 1 (siehe TelemetryValueType.FlagOrFloat32);
         // eine Tiefe in Prozent nur, falls je ein Bruchteil kommt.
         if (r.Puddle > 0.01f && !float.IsNaN(r.Puddle))

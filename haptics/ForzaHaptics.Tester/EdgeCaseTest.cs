@@ -55,6 +55,7 @@ internal static class EdgeCaseTest
         TyreOverview();
         Speedometer();
         GMeter();
+        HudStile();
         UpdateNurWennNeuer();
         AlleForzaFormate();
         ReplacedControllerGoesQuiet();
@@ -2658,6 +2659,48 @@ internal static class EdgeCaseTest
     }
 
     /// <summary>Das G-Meter (2026-10-24): jede Vorlage zeichnet, Richtungen und Spitzen stimmen, Einheiten rechnen.</summary>
+    /// <summary>Stile der HUD-Stuecke (2026-10-24): anwenden, zuruecksetzen, als eigenen ablegen, zeichnen.</summary>
+    private static void HudStile()
+    {
+        var s = new Rivals.OverlaySettings();
+        var werk = new Rivals.OverlaySettings();
+        var neon = Rivals.HudStile.Eingebaut.First(x => x.Name == "Neon");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Delta, neon);
+        Soll(s.HudColorAhead == neon.Good && s.HudBackground == neon.Background && Rivals.HudStile.WahlVon(s, Rivals.HudElement.Delta).Frame == Rivals.SpeedoFrame.Outline,
+             "Stile: Neon liegt nicht auf dem Delta-Streifen");
+        Soll(Rivals.HudStile.WahlVon(s, Rivals.HudElement.Tyres).Name == "Default" && s.TyresBack == string.Empty,
+             "Stile: ein Stil auf dem Streifen veraendert die Reifen");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.CarNote, neon);
+        Soll(s.CarNoteBackAlpha == 0xB0 && s.CarNoteBack == "#050510", $"Stile: Farbe und Deckkraft der Notiz getrennt falsch ({s.CarNoteBack}, {s.CarNoteBackAlpha})");
+        var zurueck = Rivals.HudStile.Eingebaut.First(x => x.Name == "Default");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Delta, zurueck);
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.CarNote, zurueck);
+        Soll(s.HudColorAhead == werk.HudColorAhead && s.HudBackground == werk.HudBackground && s.CarNoteBackAlpha == werk.CarNoteBackAlpha,
+             "Stile: Default stellt das Werksaussehen nicht wieder her");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.LiveMap, neon);
+        var eigen = Rivals.HudStile.AusEinstellungen(s, Rivals.HudElement.LiveMap, "Probe");
+        Soll(eigen.Background == neon.Background && eigen.Line == neon.Line && eigen.Glow == neon.Glow && eigen.Font == neon.Font,
+             "Stile: was ein Stueck traegt, laesst sich nicht als Stil ablegen");
+        Soll(Rivals.HudStil.FromJson(eigen.ToJson())?.ToJson() == eigen.ToJson(), "Stile: ein Stil uebersteht JSON nicht");
+        Soll(!Rivals.OverlaySettings.UnknownLayoutKeys().Any(), "Stile: die Anordnung nennt Schluessel, die es nicht gibt: "
+             + string.Join(", ", Rivals.OverlaySettings.UnknownLayoutKeys()));
+        using var bild = new Bitmap(400, 600, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+        using var g = Graphics.FromImage(bild);
+        foreach (var st in Rivals.HudStile.Eingebaut)
+        {
+            var t = new Rivals.OverlaySettings { HudTyres = true };
+            foreach (var e in Enum.GetValues<Rivals.HudElement>()) { Rivals.HudStile.Anwenden(t, e, st); }
+            try
+            {
+                Rivals.TyreHud.Male(g, t, new Size(1920, 1080), Rivals.TyreHud.Beispiel());
+                Rivals.CarNoteHud.Male(g, t, new Size(1920, 1080), "Titel", "Text", auchWennAus: true);
+                using var f = Rivals.HudZeichnen.Schrift(t, Rivals.HudElement.Delta, "Segoe UI Semibold", 20f);
+                Soll(f.Size == 20f, $"Stile {st.Name}: Schrift in falscher Groesse");
+            }
+            catch (Exception x) { Soll(false, $"Stile {st.Name}: {x.GetType().Name} {x.Message}"); }
+        }
+    }
+
     private static void GMeter()
     {
         Soll(!new Rivals.OverlaySettings().HudGMeter, "das G-Meter ist ab Werk an -- es soll opt-in sein");

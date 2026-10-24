@@ -1090,6 +1090,44 @@ internal sealed class HudPartPanel : Panel
             return n;
         }
         // ANKER UND GROESSE, je Stueck eigene Knoepfe (siehe oben).
+        // DER STIL EINES STUECKS (seit 2026-10-24, HudStil): Vorlage waehlen, selbst gestalten, als eigenen ablegen.
+        void Stil(HudElement element)
+        {
+            Rein(Note(Loc.T("Style")));
+            var zeile = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+            var wahl = new ComboBox { Width = 140, DropDownStyle = ComboBoxStyle.DropDownList };
+            var stile = new List<HudStil>();
+            void Fuellen()
+            {
+                _quiet = true;
+                try
+                {
+                    stile = HudStile.Alle();
+                    wahl.Items.Clear();
+                    foreach (var st in stile) { wahl.Items.Add(HudStilDialog.StilName(st)); }
+                    var jetzt = HudStile.WahlVon(_settings, element).Name;
+                    wahl.SelectedIndex = Math.Max(0, stile.FindIndex(st => string.Equals(st.Name, jetzt, StringComparison.OrdinalIgnoreCase)));
+                }
+                finally { _quiet = false; }
+            }
+            Fuellen();
+            wahl.SelectedIndexChanged += (_, _) =>
+            {
+                if (_quiet || wahl.SelectedIndex < 0 || wahl.SelectedIndex >= stile.Count) { return; }
+                HudStile.Anwenden(_settings, element, stile[wahl.SelectedIndex]);
+                Changed?.Invoke();
+            };
+            var bearbeiten = new Button { Text = Loc.T("Edit ..."), AutoSize = true, FlatStyle = FlatStyle.Flat, ForeColor = Color.Gainsboro, Margin = new Padding(6, 0, 0, 0) };
+            bearbeiten.Click += (_, _) =>
+            {
+                using var dialog = new HudStilDialog(_settings, element, () => Changed?.Invoke());
+                dialog.ShowDialog(FindForm());
+                Fuellen();
+            };
+            zeile.Controls.Add(wahl);
+            zeile.Controls.Add(bearbeiten);
+            Rein(zeile);
+        }
         void Lage(HudPart teil)
         {
             Rein(Note(Loc.T("Anchor")));
@@ -1200,6 +1238,7 @@ internal sealed class HudPartPanel : Panel
         Abschnitt(Titel(HudPart.Delta), HudPart.Delta);
         Schalter(Loc.T("Show the strip while racing"), settings.DeltaHud, v => _settings.DeltaHud = v);
         Lage(HudPart.Delta);
+        Stil(HudElement.Delta);
         Rein(Note(Loc.T("What it compares against")));
         var referenz = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
         _reference = referenz;
@@ -1315,6 +1354,7 @@ internal sealed class HudPartPanel : Panel
         Abschnitt(Titel(HudPart.Tyres), HudPart.Tyres);
         Schalter(Loc.T("Tyre overview while driving"), settings.HudTyres, v => _settings.HudTyres = v);
         Lage(HudPart.Tyres);
+        Stil(HudElement.Tyres);
         Rein(Note(Loc.T(
             "All four tyres at a glance: colour is temperature, the outline turns yellow at the limit and red when the tyre slides, and the tyre tilts with its slip angle. The bars show wheelspin or locking and the suspension travel; icons show puddles, kerbs and bumpy ground.")));
         Schalter(Loc.T("Tyre temperature in Fahrenheit"), settings.TyresFahrenheit,
@@ -1338,6 +1378,7 @@ internal sealed class HudPartPanel : Panel
         Abschnitt(Titel(HudPart.LiveMap), HudPart.LiveMap);
         Schalter(Loc.T("Live map during the race"), settings.LiveMap, v => _settings.LiveMap = v);
         Lage(HudPart.LiveMap);
+        Stil(HudElement.LiveMap);
         Rein(Note(Loc.T(
             "One map of the course you are driving, with your car on it. It is drawn from your own laps -- only they know where on the map the car is. On a course you have not driven yet it grows as you drive.")));
         Regler(Loc.T("Live map: line thickness"), 5, 100, (int)Math.Round(settings.LiveMapWidth * 10),
@@ -1351,6 +1392,7 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Course maps on the Event Sign Up screen"), settings.CourseShapes,
                  v => _settings.CourseShapes = v);
         Lage(HudPart.Course);
+        Stil(HudElement.Course);
         Rein(Note(Loc.T("Before the race: one map per offered route, until you pick a car.")));
         Rein(Note(Loc.T("Where the sign-up maps come from")));
         var quelle = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
@@ -1393,6 +1435,7 @@ internal sealed class HudPartPanel : Panel
         Abschnitt(Titel(HudPart.CarNote), HudPart.CarNote);
         Schalter(Loc.T("Car note"), settings.CarNotes, v => _settings.CarNotes = v);
         Lage(HudPart.CarNote);
+        Stil(HudElement.CarNote);
         Schalter(Loc.T("Show the applied tune's name and description in the car note"), settings.CarNoteTune,
                  v => _settings.CarNoteTune = v);
         Farben(HudPart.CarNote);

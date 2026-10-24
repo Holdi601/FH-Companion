@@ -86,6 +86,7 @@ internal sealed class CourseShapeHud : LayeredHud
     /// </remarks>
     internal static Aufbau Lege(OverlaySettings s, Size flaeche, int anzahl)
     {
+        _s = s;
         var platz = s.CoursePlacement;
         // DIE MASSE SIND 1080p-MASSE: auf 4K doppelt, auf 8K vierfach.
         var aufloesung = GameArea.ResolutionScale(new Rectangle(Point.Empty, flaeche));
@@ -128,6 +129,7 @@ internal sealed class CourseShapeHud : LayeredHud
                               IReadOnlyList<(string Name, CourseShape.Outline? Shape)> kurse,
                               bool auchWennAus = false, IReadOnlyList<TileState>? stati = null)
     {
+        _s = s;
         if ((!s.CourseShapes && !auchWennAus) || kurse.Count == 0) { return; }
         var a = Lege(s, flaeche, kurse.Count);
         var platz = s.CoursePlacement;
@@ -140,11 +142,7 @@ internal sealed class CourseShapeHud : LayeredHud
         var grund = Parse(s.CourseShapeBack, ColorTranslator.FromHtml("#0d1117"));
 
         var alpha = Math.Max(0, Math.Min(255, s.CourseShapeBackAlpha));
-        if (alpha > 0)
-        {
-            using var platte = new SolidBrush(Color.FromArgb(alpha, grund));
-            g.FillRectangle(platte, a.Block);
-        }
+        HudZeichnen.Platte(g, s, HudElement.Course, a.Block, Color.FromArgb(alpha, grund), 0f);
 
         using var text = new SolidBrush(linie);
         using var schwach = new SolidBrush(Color.FromArgb(150, linie));
@@ -245,7 +243,10 @@ internal sealed class CourseShapeHud : LayeredHud
     /// Beschriftung in der Vorschau sonst anderthalbmal so gross wie im Spiel.
     /// </summary>
     private static Font Schrift(float punkt) =>
-        new("Segoe UI", punkt * 96f / 72f, GraphicsUnit.Pixel);
+        _s is null ? new("Segoe UI", punkt * 96f / 72f, GraphicsUnit.Pixel)
+                   : HudZeichnen.Schrift(_s, HudElement.Course, "Segoe UI", punkt * 96f / 72f, FontStyle.Regular, GraphicsUnit.Pixel);
+
+    [ThreadStatic] private static OverlaySettings? _s;
 
     private static Color Parse(string? hex, Color fallback)
     {

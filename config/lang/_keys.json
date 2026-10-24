@@ -1,9 +1,12 @@
 {
+ "\"{0}\" is the G-meter now.": [
+  "Rivals/GMeterTab.cs:281"
+ ],
  "\"{0}\" is the speedometer now.": [
   "Rivals/SpeedoTab.cs:427"
  ],
  "#{0} of {1}": [
-  "Rivals/OverlayController.cs:4667"
+  "Rivals/OverlayController.cs:4673"
  ],
  "(none)": [
   "Rivals/RivalsTab.cs:1022"
@@ -18,31 +21,52 @@
   "Tuning/TunesTab.cs:464"
  ],
  "+{0} more of your cars": [
-  "Rivals/OverlayController.cs:3791"
+  "Rivals/OverlayController.cs:3797"
  ],
  "100 % = last place →": [
   "Rivals/RaceStatsTab.cs:663"
  ],
+ "1D: one direction": [
+  "Rivals/GMeterTab.cs:196",
+  "Rivals/GMeterTab.cs:550"
+ ],
+ "2D: sideways and braking": [
+  "Rivals/GMeterTab.cs:197",
+  "Rivals/GMeterTab.cs:551"
+ ],
+ "3D: with up and down": [
+  "Rivals/GMeterTab.cs:198",
+  "Rivals/GMeterTab.cs:552"
+ ],
  "A car's first time on your list for a course and class": [
-  "Rivals/HudTab.cs:1392"
+  "Rivals/HudTab.cs:1469"
  ],
  "A card with your time, confetti and a short sound, near the top of the screen for about five seconds.": [
-  "Rivals/HudTab.cs:1375"
+  "Rivals/HudTab.cs:1452"
  ],
  "A line under the delta: your car's best time on the website for this route and class. Beat it and the lap goes onto the leaderboard.": [
-  "Rivals/HudTab.cs:1218"
+  "Rivals/HudTab.cs:1284"
  ],
  "A newer version of the app is available.": [
   "Rivals/RivalsTab.cs:607"
  ],
  "A scan reaches the website on its own when it covers at least 3,000 ranks (or the whole board, if it is shorter), its fastest times match the ones already known, and it reads like a real board. Otherwise the server keeps it and the admin decides. Keep \"First ranks only\" at 0 or at least 3,000.": [
-  "Scan/ScanTab.cs:181"
+  "Scan/ScanTab.cs:266"
  ],
  "ABS (locking)": [
   "Rivals/SpeedoTab.cs:109"
  ],
+ "ACCEL": [
+  "Rivals/GMeterRenderer.cs:292",
+  "Rivals/GMeterRenderer.cs:293",
+  "Rivals/GMeterRenderer.cs:688",
+  "Rivals/GMeterRenderer.cs:689"
+ ],
  "Absolute value": [
   "BlueprintEditor.cs:736"
+ ],
+ "Accent": [
+  "Rivals/HudStilDialog.cs:86"
  ],
  "Accent (limiter flash)": [
   "Rivals/SpeedoTab.cs:623"
@@ -86,17 +110,20 @@
  "Aftermarket dealer": [
   "Rivals/CarCollectionTab.cs:462"
  ],
+ "Ahead": [
+  "Rivals/HudStilDialog.cs:90"
+ ],
  "Ahead of the reference": [
-  "Rivals/HudTab.cs:1590"
+  "Rivals/HudTab.cs:1667"
  ],
  "All cars": [
   "Rivals/CarCollectionTab.cs:124"
  ],
  "All four tyres at a glance: colour is temperature, the outline turns yellow at the limit and red when the tyre slides, and the tyre tilts with its slip angle. The bars show wheelspin or locking and the suspension travel; icons show puddles, kerbs and bumpy ground.": [
-  "Rivals/HudTab.cs:1291"
+  "Rivals/HudTab.cs:1358"
  ],
  "All routes": [
-  "Scan/ScanTab.cs:102"
+  "Scan/ScanTab.cs:134"
  ],
  "All telemetry + outputs": [
   "MainForm.cs:411"
@@ -108,25 +135,27 @@
   "Konsole.cs:118"
  ],
  "Also enable the haptic tone": [
-  "MainForm.cs:986"
+  "MainForm.cs:999"
  ],
  "Also show, smaller, under it": [
-  "Rivals/HudTab.cs:1192"
+  "Rivals/HudTab.cs:1258"
  ],
  "Always on Top": [
   "Loc.cs:12",
   "MainForm.cs:249"
  ],
  "Anchor": [
-  "Rivals/HudTab.cs:1068"
+  "Rivals/HudTab.cs:1133"
  ],
  "Angled": [
+  "Rivals/GMeterTab.cs:594",
+  "Rivals/HudStilDialog.cs:162",
   "Rivals/SpeedoTab.cs:836"
  ],
  "Another automation (board scan or auction check) is driving the game. Nothing was pressed.": [
   "Auction/AuctionWatch.cs:207",
-  "Scan/ScanTab.cs:408",
-  "Scan/ScanTab.cs:446"
+  "Scan/ScanTab.cs:586",
+  "Scan/ScanTab.cs:626"
  ],
  "Any class": [
   "Rivals/CarCollectionTab.cs:131"
@@ -144,8 +173,11 @@
   "Rivals/OwnTimesTab.cs:550",
   "Rivals/RaceStatsTab.cs:481"
  ],
+ "Arc": [
+  "Rivals/GMeterTab.cs:559"
+ ],
  "Auction House": [
-  "MainForm.cs:486",
+  "MainForm.cs:493",
   "Rivals/CarCollectionTab.cs:471"
  ],
  "Auction ends in {0} minutes": [
@@ -176,7 +208,7 @@
   "Auction/AuctionBidder.cs:317"
  ],
  "Automatic: your laps, else Rivals": [
-  "Rivals/HudTab.cs:1323"
+  "Rivals/HudTab.cs:1399"
  ],
  "Autoshow": [
   "Rivals/CarCollectionTab.cs:459"
@@ -207,15 +239,26 @@
   "Rivals/RaceStatsTab.cs:143",
   "Rivals/RaceStatsTab.cs:334"
  ],
+ "BRAKE": [
+  "Rivals/GMeterRenderer.cs:292",
+  "Rivals/GMeterRenderer.cs:293",
+  "Rivals/GMeterRenderer.cs:688",
+  "Rivals/GMeterRenderer.cs:689"
+ ],
+ "BRAKE / ACCEL": [
+  "Rivals/GMeterRenderer.cs:459"
+ ],
  "BRK": [
-  "Rivals/DeltaHud.cs:728",
-  "Rivals/HudTab.cs:778"
+  "Rivals/DeltaHud.cs:723",
+  "Rivals/HudTab.cs:804"
  ],
  "Background": [
+  "Rivals/GMeterTab.cs:443",
+  "Rivals/HudStilDialog.cs:83",
   "Rivals/SpeedoTab.cs:614"
  ],
  "Backing plate": [
-  "Rivals/HudTab.cs:1617"
+  "Rivals/HudTab.cs:1694"
  ],
  "Barn Find": [
   "Rivals/CarCollectionTab.cs:464"
@@ -228,10 +271,13 @@
   "Rivals/RaceStatsTab.cs:105"
  ],
  "Before the race: one map per offered route, until you pick a car.": [
-  "Rivals/HudTab.cs:1320"
+  "Rivals/HudTab.cs:1396"
+ ],
+ "Behind": [
+  "Rivals/HudStilDialog.cs:91"
  ],
  "Behind the reference": [
-  "Rivals/HudTab.cs:1592"
+  "Rivals/HudTab.cs:1669"
  ],
  "Best gear for the speed next to the gear": [
   "Rivals/SpeedoTab.cs:655"
@@ -240,7 +286,7 @@
   "Auction/AuctionTab.cs:181"
  ],
  "Black": [
-  "Rivals/HudTab.cs:1427"
+  "Rivals/HudTab.cs:1504"
  ],
  "Blocks": [
   "Rivals/SpeedoTab.cs:808"
@@ -249,10 +295,10 @@
   "MainForm.cs:418"
  ],
  "Board": [
-  "Scan/ScanTab.cs:246"
+  "Scan/ScanTab.cs:331"
  ],
  "Board {0} of {1}: {2}": [
-  "Scan/ScanTab.cs:465"
+  "Scan/ScanTab.cs:648"
  ],
  "Body frequency mix": [
   "BlueprintEditor.cs:1632"
@@ -272,16 +318,16 @@
  "Both body motors": [
   "BlueprintEditor.cs:1317",
   "BlueprintEditor.cs:1335",
-  "MainForm.cs:2014"
+  "MainForm.cs:2027"
  ],
  "Both grips": [
-  "MainForm.cs:2013"
+  "MainForm.cs:2026"
  ],
  "Both motors": [
   "BlueprintEditor.cs:1646"
  ],
  "Both sides": [
-  "MainForm.cs:724"
+  "MainForm.cs:737"
  ],
  "Both trigger motors": [
   "BlueprintEditor.cs:1329"
@@ -292,10 +338,17 @@
  "Bow snap": [
   "BlueprintEditor.cs:1300"
  ],
+ "Brake and throttle": [
+  "Rivals/GMeterTab.cs:180"
+ ],
  "Brake: {0}": [
-  "MainForm.cs:2383"
+  "MainForm.cs:2403"
+ ],
+ "Braking and accelerating": [
+  "Rivals/GMeterTab.cs:574"
  ],
  "Built-in styles stay as they are -- your change went into \"{0}\".": [
+  "Rivals/GMeterTab.cs:365",
   "Rivals/SpeedoTab.cs:537"
  ],
  "Buttons": [
@@ -309,8 +362,8 @@
   "BlueprintEditor.cs:1598"
  ],
  "CLU": [
-  "Rivals/DeltaHud.cs:728",
-  "Rivals/HudTab.cs:778"
+  "Rivals/DeltaHud.cs:723",
+  "Rivals/HudTab.cs:804"
  ],
  "CONSTANT": [
   "BlueprintEditor.cs:1273"
@@ -322,7 +375,7 @@
   "BlueprintEditor.cs:1276"
  ],
  "Calmer, in teal: when the server accepts a lap of a car that was not on that route and class board yet.": [
-  "Rivals/HudTab.cs:1382"
+  "Rivals/HudTab.cs:1459"
  ],
  "Campaign": [
   "Rivals/CarCollectionTab.cs:467"
@@ -354,29 +407,29 @@
   "Rivals/CarCollectionTab.cs:523"
  ],
  "Car collection": [
-  "MainForm.cs:460"
+  "MainForm.cs:467"
  ],
  "Car list from forza.net/fh6cars ({0}); ways to get them from the Forza Wiki (CC BY-SA).": [
   "Rivals/CarCollectionTab.cs:256"
  ],
  "Car note": [
-  "Rivals/HudTab.cs:962",
-  "Rivals/HudTab.cs:1360"
+  "Rivals/HudTab.cs:988",
+  "Rivals/HudTab.cs:1436"
  ],
  "Car note heading": [
-  "Rivals/HudTab.cs:1633"
+  "Rivals/HudTab.cs:1710"
  ],
  "Car note plate": [
-  "Rivals/HudTab.cs:1635"
+  "Rivals/HudTab.cs:1712"
  ],
  "Car note text": [
-  "Rivals/HudTab.cs:1631"
+  "Rivals/HudTab.cs:1708"
  ],
  "Car notes": [
-  "MainForm.cs:453"
+  "MainForm.cs:460"
  ],
  "Car ordinal {0}": [
-  "Rivals/OverlayController.cs:4623"
+  "Rivals/OverlayController.cs:4629"
  ],
  "Cars": [
   "Tuning/TunesTab.cs:484",
@@ -389,17 +442,17 @@
   "Rivals/OwnTimesTab.cs:106",
   "Rivals/RaceStatsTab.cs:62",
   "Rivals/RaceStatsTab.cs:141",
-  "Scan/ScanTab.cs:93",
+  "Scan/ScanTab.cs:124",
   "TelemetryInspector.cs:43"
  ],
  "Celebrate when a lap beats the website's time": [
-  "Rivals/HudTab.cs:1369"
+  "Rivals/HudTab.cs:1446"
  ],
  "Celebrations": [
-  "Rivals/HudTab.cs:1368"
+  "Rivals/HudTab.cs:1445"
  ],
  "Centre": [
-  "Rivals/HudTab.cs:1071"
+  "Rivals/HudTab.cs:1136"
  ],
  "Channel": [
   "TelemetryInspector.cs:79"
@@ -423,10 +476,19 @@
   "BlueprintEditor.cs:1733"
  ],
  "Choose the folder of a saved scan (it holds state.json and rows.jsonl).": [
-  "Scan/ScanTab.cs:691"
+  "Scan/ScanTab.cs:948"
  ],
  "Chrome ring": [
+  "Rivals/GMeterTab.cs:591",
+  "Rivals/HudStilDialog.cs:159",
   "Rivals/SpeedoTab.cs:833"
+ ],
+ "Circle": [
+  "Rivals/GMeterTab.cs:561"
+ ],
+ "Circle and height": [
+  "Rivals/GMeterTab.cs:185",
+  "Rivals/GMeterTab.cs:568"
  ],
  "Class": [
   "Rivals/CarCollectionTab.cs:156",
@@ -434,19 +496,24 @@
   "Rivals/OwnTimesTab.cs:336",
   "Rivals/OwnTimesTab.cs:347",
   "Rivals/RaceStatsTab.cs:72",
-  "Scan/ScanTab.cs:140"
+  "Scan/ScanTab.cs:173",
+  "Scan/ScanTab.cs:209"
  ],
  "Class {0} · {1} – what to drive": [
-  "Rivals/OverlayController.cs:3601"
+  "Rivals/OverlayController.cs:3607"
  ],
  "Class {0} – what to drive": [
-  "Rivals/OverlayController.cs:3600"
+  "Rivals/OverlayController.cs:3606"
  ],
  "Classic": [
+  "Rivals/HudStilDialog.cs:148",
   "Rivals/SpeedoTab.cs:815"
  ],
  "Classic analogue": [
   "Rivals/SpeedoTab.cs:320"
+ ],
+ "Classic circle": [
+  "Rivals/GMeterTab.cs:172"
  ],
  "Clear graph": [
   "BlueprintEditor.cs:108"
@@ -466,20 +533,30 @@
  "Collection Journal": [
   "Rivals/CarCollectionTab.cs:463"
  ],
+ "Colour by strength": [
+  "Rivals/GMeterTab.cs:439"
+ ],
  "Colour runs from low to high": [
   "Rivals/SpeedoTab.cs:611"
  ],
  "Colours": [
-  "Rivals/HudTab.cs:1099",
+  "Rivals/GMeterTab.cs:442",
+  "Rivals/HudStilDialog.cs:82",
+  "Rivals/HudTab.cs:1164",
   "Rivals/SpeedoTab.cs:613"
  ],
  "Combine inputs": [
   "BlueprintEditor.cs:676"
  ],
+ "Combined arc": [
+  "Rivals/GMeterTab.cs:181"
+ ],
  "Compared are laps on the same course, in the same class and with the same start (standing or flying). Each lap shows at most one: a class best before a new car before a car best.": [
-  "Rivals/HudTab.cs:1403"
+  "Rivals/HudTab.cs:1480"
  ],
  "Condensed": [
+  "Rivals/GMeterTab.cs:600",
+  "Rivals/HudStilDialog.cs:168",
   "Rivals/SpeedoTab.cs:824"
  ],
  "Connect the Xbox to the capture card and pick the card here.": [
@@ -502,7 +579,7 @@
  ],
  "Continue": [
   "Disclosure.cs:472",
-  "EdgeCaseTest.cs:121"
+  "EdgeCaseTest.cs:124"
  ],
  "Continuous": [
   "BlueprintEditor.cs:1616",
@@ -521,7 +598,7 @@
   "BlueprintEditor.cs:801"
  ],
  "Controller discovery timed out. The window remains usable; reconnect or power-cycle the controller.": [
-  "MainForm.cs:1894"
+  "MainForm.cs:1907"
  ],
  "Controller output": [
   "BlueprintEditor.cs:447"
@@ -530,54 +607,58 @@
   "BlueprintEditor.cs:744"
  ],
  "Copied as \"{0}\". Change it on the right; it saves itself.": [
+  "Rivals/GMeterTab.cs:291",
   "Rivals/SpeedoTab.cs:437"
  ],
  "Copy as my design": [
+  "Rivals/GMeterTab.cs:94",
   "Rivals/SpeedoTab.cs:148"
  ],
  "Corner radius": [
+  "Rivals/GMeterTab.cs:458",
+  "Rivals/HudStilDialog.cs:96",
   "Rivals/SpeedoTab.cs:635"
  ],
  "Could not check Windows Firewall. If nothing arrives, allow UDP port {0} there:": [
   "Konsole.cs:135"
  ],
  "Could not listen on UDP port {0}: {1}": [
-  "MainForm.cs:2173"
+  "MainForm.cs:2186"
  ],
  "Could not read the routes": [
-  "Rivals/OverlayController.cs:4553"
+  "Rivals/OverlayController.cs:4559"
  ],
  "Could not sign up with the server: ": [
   "Scan/ScanUpload.cs:187",
   "Scan/ScanUpload.cs:192"
  ],
  "Counted down in blue. Telemetry does not carry it, so correct it here if the countdown ends at the wrong moment.": [
-  "Rivals/HudTab.cs:1227"
+  "Rivals/HudTab.cs:1293"
  ],
  "Country": [
   "Rivals/OwnTimesTab.cs:107"
  ],
  "Counts UP once the ghost ends -- the seconds the others take to pop back in, one after another.": [
-  "Rivals/HudTab.cs:1231"
+  "Rivals/HudTab.cs:1297"
  ],
  "Course": [
-  "Rivals/HudTab.cs:744",
-  "Rivals/HudTab.cs:754",
+  "Rivals/HudTab.cs:770",
+  "Rivals/HudTab.cs:780",
   "Rivals/OwnTimesTab.cs:106",
   "Rivals/OwnTimesTab.cs:345",
   "Rivals/RaceStatsTab.cs:63"
  ],
  "Course maps on the Event Sign Up screen": [
-  "Rivals/HudTab.cs:1317"
+  "Rivals/HudTab.cs:1392"
  ],
  "Course outline": [
-  "Rivals/HudTab.cs:1623"
+  "Rivals/HudTab.cs:1700"
  ],
  "Course plate": [
-  "Rivals/HudTab.cs:1627"
+  "Rivals/HudTab.cs:1704"
  ],
  "Course start point": [
-  "Rivals/HudTab.cs:1625"
+  "Rivals/HudTab.cs:1702"
  ],
  "Courses": [
   "Rivals/OwnTimesTab.cs:338"
@@ -589,6 +670,9 @@
   "Tuning/TunesTab.cs:254",
   "Tuning/TunesTab.cs:363"
  ],
+ "Crosshair": [
+  "Rivals/GMeterTab.cs:562"
+ ],
  "Current bid": [
   "Auction/AuctionTab.cs:142"
  ],
@@ -596,6 +680,8 @@
   "TelemetryInspector.cs:46"
  ],
  "Cyberpunk": [
+  "Rivals/GMeterTab.cs:177",
+  "Rivals/HudStilDialog.cs:146",
   "Rivals/SpeedoTab.cs:324"
  ],
  "Dashboard": [
@@ -613,16 +699,22 @@
  "Date": [
   "Rivals/OwnTimesTab.cs:354"
  ],
+ "Default": [
+  "Rivals/HudStilDialog.cs:144"
+ ],
  "Delete": [
-  "Rivals/HudTab.cs:1154",
+  "Rivals/GMeterTab.cs:96",
+  "Rivals/GMeterTab.cs:297",
+  "Rivals/HudTab.cs:1219",
   "Rivals/SpeedoTab.cs:150",
   "Rivals/SpeedoTab.cs:443"
  ],
  "Delete \"{0}\"?": [
+  "Rivals/GMeterTab.cs:297",
   "Rivals/SpeedoTab.cs:443"
  ],
  "Delete layout": [
-  "Rivals/HudTab.cs:1158"
+  "Rivals/HudTab.cs:1223"
  ],
  "Delete node": [
   "BlueprintEditor.cs:1430"
@@ -637,7 +729,7 @@
   "Rivals/OwnTimesTab.cs:191"
  ],
  "Delete the layout \"{0}\"?": [
-  "Rivals/HudTab.cs:1158"
+  "Rivals/HudTab.cs:1223"
  ],
  "Deleted: {0} laps. Freed: {1}.": [
   "Rivals/OwnTimesTab.cs:264"
@@ -649,17 +741,29 @@
   "Tuning/TunesTab.cs:85"
  ],
  "Delta": [
-  "Rivals/HudTab.cs:966"
+  "Rivals/HudTab.cs:993"
  ],
  "Desktop shortcut": [
   "MainForm.cs:321",
-  "MainForm.cs:1592",
-  "MainForm.cs:1643",
-  "MainForm.cs:1680"
+  "MainForm.cs:1605",
+  "MainForm.cs:1656",
+  "MainForm.cs:1693"
  ],
  "Desktop shortcut ✓": [
-  "MainForm.cs:1592",
-  "MainForm.cs:1643"
+  "MainForm.cs:1605",
+  "MainForm.cs:1656"
+ ],
+ "Diamond": [
+  "Rivals/GMeterTab.cs:564"
+ ],
+ "Dimensions": [
+  "Rivals/GMeterTab.cs:415"
+ ],
+ "Direction": [
+  "Rivals/GMeterTab.cs:422"
+ ],
+ "Direction labels": [
+  "Rivals/GMeterTab.cs:430"
  ],
  "Discard waiting laps": [
   "Rivals/RivalsTab.cs:153"
@@ -668,13 +772,14 @@
   "Rivals/RivalsTab.cs:159"
  ],
  "Discovering controllers...": [
-  "MainForm.cs:1883"
+  "MainForm.cs:1896"
  ],
  "Distance": [
   "Rivals/SpeedoTab.cs:660"
  ],
  "Done": [
-  "BlueprintEditor.cs:1161"
+  "BlueprintEditor.cs:1161",
+  "Rivals/HudStilDialog.cs:104"
  ],
  "Done. Starting the new version.": [
   "Rivals/AppUpdate.cs:431"
@@ -682,8 +787,17 @@
  "Done: {runs} run(s), {rows} rows": [
   "scripts/contrib_scan.py:368"
  ],
+ "Dot": [
+  "Rivals/GMeterTab.cs:446"
+ ],
+ "Dot size": [
+  "Rivals/GMeterTab.cs:440"
+ ],
+ "Dots": [
+  "Rivals/GMeterTab.cs:582"
+ ],
  "Double-click: add a point  |  Right-click an inner point: remove it": [
-  "MainForm.cs:1114"
+  "MainForm.cs:1127"
  ],
  "Download and replace it now? The app closes and starts again; your settings stay.": [
   "Rivals/RivalsTab.cs:611"
@@ -695,10 +809,10 @@
   "Rivals/HudTab.cs:108"
  ],
  "Drag the yellow end points vertically and the grey Bézier handles anywhere. Left is 0% grip, right is 100%.": [
-  "MainForm.cs:916"
+  "MainForm.cs:929"
  ],
  "Draw the grip → haptics curve": [
-  "MainForm.cs:908"
+  "MainForm.cs:921"
  ],
  "Drive the car first -- then its values can be kept.": [
   "Rivals/SpeedoTab.cs:267"
@@ -707,19 +821,25 @@
   "Rivals/CarCollectionTab.cs:367"
  ],
  "Duration": [
-  "Scan/ScanTab.cs:247"
+  "Scan/ScanTab.cs:332"
  ],
  "Each press takes the next step, from the narrowest to the widest, and says so on screen. The key only does this while Forza is running.": [
-  "Rivals/HudTab.cs:1214"
+  "Rivals/HudTab.cs:1280"
  ],
  "Each ticked comparison gets its own smaller figure under the delta. The one chosen above is not shown twice.": [
-  "Rivals/HudTab.cs:1201"
+  "Rivals/HudTab.cs:1267"
+ ],
+ "Edit ...": [
+  "Rivals/HudTab.cs:1120"
  ],
  "Edit curve: {0}": [
   "BlueprintEditor.cs:1146"
  ],
  "Edit multi-point Bézier curve": [
   "BlueprintEditor.cs:684"
+ ],
+ "Edit style": [
+  "Rivals/HudStilDialog.cs:26"
  ],
  "Effect": [
   "BlueprintEditor.cs:863"
@@ -731,10 +851,10 @@
   "BlueprintEditor.cs:1067"
  ],
  "Enable live mapping": [
-  "MainForm.cs:979"
+  "MainForm.cs:992"
  ],
  "Enable lock mapping": [
-  "MainForm.cs:1122"
+  "MainForm.cs:1135"
  ],
  "Engine power": [
   "Rivals/SpeedoTab.cs:649"
@@ -749,35 +869,35 @@
   "Rivals/FensterQuelle.cs:857"
  ],
  "Event Sign Up maps": [
-  "Rivals/HudTab.cs:961"
+  "Rivals/HudTab.cs:987"
  ],
  "Event Sign Up maps (before the race)": [
-  "Rivals/HudTab.cs:679"
+  "Rivals/HudTab.cs:701"
  ],
  "Every lap is saved, with its full telemetry. The tab \"{0}\" opens their folder and deletes slower laps when you ask.": [
-  "Rivals/HudTab.cs:1435"
+  "Rivals/HudTab.cs:1512"
  ],
  "Every tune": [
   "Tuning/TunesTab.cs:83"
  ],
  "Every valid lap was read; after them the board holds only invalid laps, which are not needed. Complete.": [
-  "Scan/ScanTab.cs:314",
-  "Scan/ScanTab.cs:315"
+  "Scan/ScanTab.cs:399",
+  "Scan/ScanTab.cs:400"
  ],
  "Example: this is how a personal record looks.": [
-  "Rivals/OverlayController.cs:4945"
+  "Rivals/OverlayController.cs:4951"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:4962"
+  "Rivals/OverlayController.cs:4968"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:4952"
+  "Rivals/OverlayController.cs:4958"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
  ],
  "Exclusive fullscreen hides the overlay entirely — use borderless.": [
-  "Rivals/OverlayController.cs:4548"
+  "Rivals/OverlayController.cs:4554"
  ],
  "Expand workspace": [
   "BlueprintEditor.cs:224"
@@ -786,35 +906,37 @@
   "BlueprintEditor.cs:1132"
  ],
  "Export ...": [
+  "Rivals/GMeterTab.cs:100",
+  "Rivals/GMeterTab.cs:333",
   "Rivals/SpeedoTab.cs:154",
   "Rivals/SpeedoTab.cs:498"
  ],
  "F7 switches to points": [
-  "Rivals/OverlayController.cs:3839"
+  "Rivals/OverlayController.cs:3845"
  ],
  "F7 switches to the time sum": [
-  "Rivals/OverlayController.cs:3839"
+  "Rivals/OverlayController.cs:3845"
  ],
  "FH Companion restarts in PC mode: the game runs on this PC.": [
-  "MainForm.cs:2321"
+  "MainForm.cs:2334"
  ],
  "FH Companion restarts in Xbox / 2nd PC mode: the telemetry comes over the network and the HUD shows in a dashboard window.": [
-  "MainForm.cs:2320"
+  "MainForm.cs:2333"
  ],
  "FH6 on the Xbox / other PC: Data Out On  |  IP {0}  |  Port must match below": [
-  "MainForm.cs:780"
+  "MainForm.cs:793"
  ],
  "FH6 reports a slip ratio for each tyre. Negative slip under braking is normalised here to a lock level of 0-100%.": [
-  "MainForm.cs:1086"
+  "MainForm.cs:1099"
  ],
  "FH6: Data Out On  |  IP 127.0.0.1  |  Format Sled  |  Port must match below": [
-  "MainForm.cs:782"
+  "MainForm.cs:795"
  ],
  "FIRST": [
-  "Rivals/OverlayController.cs:4937"
+  "Rivals/OverlayController.cs:4943"
  ],
  "Feel wheel lock separately": [
-  "MainForm.cs:1078"
+  "MainForm.cs:1091"
  ],
  "Festival Playlist": [
   "Rivals/CarCollectionTab.cs:460",
@@ -834,16 +956,16 @@
   "TelemetryInspector.cs:20"
  ],
  "Finished 10-second vibration test.": [
-  "MainForm.cs:2126"
+  "MainForm.cs:2139"
  ],
  "Finishing position": [
   "Rivals/RaceStatsTab.cs:698"
  ],
  "First lap in class {0} here": [
-  "Rivals/OverlayController.cs:4935"
+  "Rivals/OverlayController.cs:4941"
  ],
  "First ranks only (0 = whole board)": [
-  "Scan/ScanTab.cs:153"
+  "Scan/ScanTab.cs:222"
  ],
  "First shift light at (% of the redline)": [
   "Rivals/SpeedoTab.cs:648"
@@ -871,27 +993,36 @@
   "BlueprintEditor.cs:204"
  ],
  "Font": [
+  "Rivals/GMeterTab.cs:459",
+  "Rivals/HudStilDialog.cs:98",
   "Rivals/SpeedoTab.cs:636"
  ],
  "Forza does not run a clock outside a race -- this app does. Every route you have driven already has a start line, so you can practise one in free roam and the strip works as it does in a race. Custom routes from EventLab count too: a course is recognised by where its line is, never by a name.": [
-  "Rivals/HudTab.cs:1475"
+  "Rivals/HudTab.cs:1552"
  ],
  "Forza haptic graph": [
   "BlueprintEditor.cs:574",
   "BlueprintEditor.cs:590"
  ],
  "Forza is running": [
-  "MainForm.cs:1375"
+  "MainForm.cs:1388"
  ],
  "Forza: Settings → HUD and Gameplay → Data Out": [
-  "Rivals/OverlayController.cs:4588"
+  "Rivals/OverlayController.cs:4594"
  ],
  "Frame": [
+  "Rivals/GMeterTab.cs:444",
+  "Rivals/GMeterTab.cs:457",
+  "Rivals/HudStilDialog.cs:94",
   "Rivals/SpeedoTab.cs:615",
   "Rivals/SpeedoTab.cs:634"
  ],
  "Frame and font": [
+  "Rivals/HudStilDialog.cs:93",
   "Rivals/SpeedoTab.cs:633"
+ ],
+ "Frame colour": [
+  "Rivals/HudStilDialog.cs:95"
  ],
  "Frames per second": [
   "Rivals/SpeedoTab.cs:91"
@@ -920,24 +1051,27 @@
  "Frequency only": [
   "BlueprintEditor.cs:904"
  ],
+ "Friction diamond": [
+  "Rivals/GMeterTab.cs:176"
+ ],
  "From": [
   "Rivals/CarNotesTab.cs:78"
  ],
  "Front left ratio: {0}": [
-  "MainForm.cs:857",
-  "MainForm.cs:2374"
+  "MainForm.cs:870",
+  "MainForm.cs:2394"
  ],
  "Front left: {0}": [
-  "MainForm.cs:838",
-  "MainForm.cs:2362"
+  "MainForm.cs:851",
+  "MainForm.cs:2382"
  ],
  "Front right ratio: {0}": [
-  "MainForm.cs:858",
-  "MainForm.cs:2375"
+  "MainForm.cs:871",
+  "MainForm.cs:2395"
  ],
  "Front right: {0}": [
-  "MainForm.cs:839",
-  "MainForm.cs:2363"
+  "MainForm.cs:852",
+  "MainForm.cs:2383"
  ],
  "Front wheels - grip": [
   "BlueprintEditor.cs:467"
@@ -945,16 +1079,36 @@
  "Front wheels - lock": [
   "BlueprintEditor.cs:472"
  ],
+ "Full scale (G x 10)": [
+  "Rivals/GMeterTab.cs:427"
+ ],
  "Futuristic": [
   "Rivals/SpeedoTab.cs:323"
  ],
+ "G needle": [
+  "Rivals/GMeterTab.cs:182"
+ ],
+ "G-meter": [
+  "MainForm.cs:439",
+  "Rivals/HudTab.cs:992"
+ ],
+ "G-meter (while driving)": [
+  "Rivals/HudTab.cs:705"
+ ],
+ "G-meter design": [
+  "Rivals/GMeterTab.cs:316",
+  "Rivals/GMeterTab.cs:333"
+ ],
+ "G-meter while driving": [
+  "Rivals/HudTab.cs:1372"
+ ],
  "GEAR": [
-  "Rivals/DeltaHud.cs:729",
-  "Rivals/HudTab.cs:778"
+  "Rivals/DeltaHud.cs:724",
+  "Rivals/HudTab.cs:804"
  ],
  "GHOST {0}": [
-  "Rivals/DeltaHud.cs:915",
-  "Rivals/DeltaHud.cs:922",
+  "Rivals/DeltaHud.cs:910",
+  "Rivals/DeltaHud.cs:917",
   "Rivals/HudTab.cs:313"
  ],
  "GROUP": [
@@ -989,33 +1143,40 @@
   "Rivals/SpeedoTab.cs:639"
  ],
  "General": [
+  "Rivals/GMeterTab.cs:412",
   "Rivals/SpeedoTab.cs:596"
  ],
  "Ghost countdown": [
-  "Rivals/HudTab.cs:958"
+  "Rivals/HudTab.cs:984"
  ],
  "Ghost text": [
-  "Rivals/HudTab.cs:1604"
+  "Rivals/HudTab.cs:1681"
  ],
  "Ghost, calm phase": [
-  "Rivals/HudTab.cs:1598"
+  "Rivals/HudTab.cs:1675"
  ],
  "Ghost, warning phase": [
-  "Rivals/HudTab.cs:1600"
+  "Rivals/HudTab.cs:1677"
  ],
  "Gift": [
   "Rivals/CarCollectionTab.cs:468"
  ],
  "Glass": [
+  "Rivals/GMeterTab.cs:592",
+  "Rivals/HudStilDialog.cs:147",
+  "Rivals/HudStilDialog.cs:160",
   "Rivals/SpeedoTab.cs:834"
  ],
  "Glow": [
+  "Rivals/GMeterTab.cs:455",
+  "Rivals/HudStilDialog.cs:97",
   "Rivals/SpeedoTab.cs:626"
  ],
  "Glow grows with the revs": [
   "Rivals/SpeedoTab.cs:627"
  ],
  "Glowing line": [
+  "Rivals/GMeterTab.cs:584",
   "Rivals/SpeedoTab.cs:817"
  ],
  "Graph output enabled": [
@@ -1025,35 +1186,45 @@
   "TelemetryInspector.cs:148"
  ],
  "Green": [
-  "Rivals/HudTab.cs:1427"
+  "Rivals/HudTab.cs:1504"
+ ],
+ "Grid": [
+  "Rivals/GMeterTab.cs:445"
  ],
  "Grip": [
   "BezierCurveEditor.cs:20"
  ],
  "Grip L/R: -- / --   Vibration: -- / --   Tone: -- / --": [
-  "MainForm.cs:1016"
+  "MainForm.cs:1029"
  ],
  "Group: {0}": [
   "BlueprintEditor.cs:1597"
  ],
  "Haptic command failed: {0}": [
-  "MainForm.cs:2086"
+  "MainForm.cs:2099"
  ],
  "Haptic output": [
-  "MainForm.cs:713"
+  "MainForm.cs:726"
  ],
  "Haptic tone on the trackpads": [
-  "MainForm.cs:932"
+  "MainForm.cs:945"
  ],
  "Haptic/trigger firewall active": [
-  "MainForm.cs:1820",
-  "MainForm.cs:1835"
+  "MainForm.cs:1833",
+  "MainForm.cs:1848"
  ],
  "Haptic/trigger firewall applies only to this controller": [
-  "MainForm.cs:1991"
+  "MainForm.cs:2004"
+ ],
+ "Heat map": [
+  "Rivals/GMeterTab.cs:175",
+  "Rivals/GMeterTab.cs:565"
  ],
  "Hide it from the real screen": [
   "Rivals/HudTab.cs:135"
+ ],
+ "High": [
+  "Rivals/GMeterTab.cs:448"
  ],
  "High body": [
   "BlueprintEditor.cs:1630"
@@ -1071,7 +1242,7 @@
   "BlueprintEditor.cs:1316"
  ],
  "High-frequency motor": [
-  "MainForm.cs:2014"
+  "MainForm.cs:2027"
  ],
  "Highlight a car in My Cars, drive one, or add your whole garage below.": [
   "Rivals/CarNotesTab.cs:251"
@@ -1084,6 +1255,7 @@
   "Rivals/SpeedoTab.cs:321"
  ],
  "Horizontal bar": [
+  "Rivals/GMeterTab.cs:557",
   "Rivals/SpeedoTab.cs:797"
  ],
  "How to get it": [
@@ -1099,10 +1271,13 @@
   "scripts/contrib_scan.py:329"
  ],
  "Import ...": [
+  "Rivals/GMeterTab.cs:98",
+  "Rivals/GMeterTab.cs:316",
   "Rivals/SpeedoTab.cs:152",
   "Rivals/SpeedoTab.cs:467"
  ],
  "Imported \"{0}\".": [
+  "Rivals/GMeterTab.cs:326",
   "Rivals/SpeedoTab.cs:484"
  ],
  "In OBS: right-click the preview → Windowed Projector (Program). It may sit behind other windows on a screen, just not minimized.": [
@@ -1121,7 +1296,7 @@
   "BlueprintEditor.cs:891"
  ],
  "Input traces": [
-  "Rivals/HudTab.cs:960"
+  "Rivals/HudTab.cs:986"
  ],
  "Invert 0 ↔ 1": [
   "BlueprintEditor.cs:738"
@@ -1133,20 +1308,25 @@
   "Konsole.cs:570"
  ],
  "Italic": [
+  "Rivals/GMeterTab.cs:460",
+  "Rivals/HudStilDialog.cs:99",
   "Rivals/SpeedoTab.cs:637"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:4826",
-  "Rivals/OverlayController.cs:4951"
+  "Rivals/OverlayController.cs:4832",
+  "Rivals/OverlayController.cs:4957"
  ],
  "Keep these for this car": [
   "Rivals/SpeedoTab.cs:119"
+ ],
+ "Keep trying": [
+  "Scan/ServerFehlerHinweis.cs:68"
  ],
  "Key": [
   "TelemetryInspector.cs:45"
  ],
  "Key colour for OBS": [
-  "Rivals/HudTab.cs:1426"
+  "Rivals/HudTab.cs:1503"
  ],
  "L2 + R2 adaptive": [
   "BlueprintEditor.cs:1635"
@@ -1157,8 +1337,11 @@
  "L2 adaptive trigger": [
   "BlueprintEditor.cs:1344"
  ],
+ "LATERAL": [
+  "Rivals/GMeterRenderer.cs:458"
+ ],
  "LOCK": [
-  "Rivals/TyreHud.cs:308"
+  "Rivals/TyreHud.cs:313"
  ],
  "Lamp sensitivity": [
   "Rivals/SpeedoTab.cs:108"
@@ -1181,39 +1364,48 @@
  "Last checked {0:yyyy-MM-dd HH:mm}: {1} tunes are on a car. Tunes saved after that show \"?\".": [
   "Tuning/TunesTab.cs:170"
  ],
+ "Last scan": [
+  "Scan/ScanTab.cs:173"
+ ],
  "Last seen": [
   "Auction/AuctionTab.cs:143"
  ],
+ "Lateral bar": [
+  "Rivals/GMeterTab.cs:179"
+ ],
  "Layout": [
-  "Rivals/HudTab.cs:1112",
+  "Rivals/HudTab.cs:1177",
   "Rivals/SpeedoTab.cs:598"
+ ],
+ "Leaderboard scan: Server Error": [
+  "Scan/ServerFehlerHinweis.cs:60"
  ],
  "Learned per car (peak power)": [
   "Rivals/SpeedoTab.cs:858"
  ],
  "Left edge": [
-  "Rivals/HudTab.cs:1071"
+  "Rivals/HudTab.cs:1136"
  ],
  "Left grip": [
   "BlueprintEditor.cs:1657",
-  "MainForm.cs:2013"
+  "MainForm.cs:2026"
  ],
  "Left grip motor": [
   "BlueprintEditor.cs:788"
  ],
  "Left grip: {0}": [
-  "MainForm.cs:843",
-  "MainForm.cs:2369"
+  "MainForm.cs:856",
+  "MainForm.cs:2389"
  ],
  "Left lock: {0}": [
-  "MainForm.cs:862",
-  "MainForm.cs:2381"
+  "MainForm.cs:875",
+  "MainForm.cs:2401"
  ],
  "Left pad": [
   "BlueprintEditor.cs:1659"
  ],
  "Left side": [
-  "MainForm.cs:724"
+  "MainForm.cs:737"
  ],
  "Left trackpad": [
   "BlueprintEditor.cs:790"
@@ -1233,63 +1425,70 @@
  "Light and motion": [
   "Rivals/SpeedoTab.cs:625"
  ],
+ "Light, frame and font": [
+  "Rivals/GMeterTab.cs:454"
+ ],
  "Limit": [
   "Tuning/TunesTab.cs:52"
  ],
+ "Line": [
+  "Rivals/GMeterTab.cs:583"
+ ],
  "Line thickness": [
-  "Rivals/HudTab.cs:1265"
+  "Rivals/HudTab.cs:1331"
  ],
  "Lines": [
+  "Rivals/HudStilDialog.cs:87",
   "Rivals/SpeedoTab.cs:809"
  ],
  "Listener stopped.": [
-  "MainForm.cs:811"
+  "MainForm.cs:824"
  ],
  "Listening on UDP port {0} on {1}. Set Data Out on the Xbox/PC to one of these.": [
-  "MainForm.cs:2182"
+  "MainForm.cs:2195"
  ],
  "Listening on UDP port {0}. Drive in FH6 to produce packets...": [
-  "MainForm.cs:2184"
- ],
- "Live FH6 telemetry connected.": [
-  "MainForm.cs:2355"
+  "MainForm.cs:2197"
  ],
  "Live grip telemetry": [
   "MainForm.cs:387"
  ],
  "Live map": [
-  "Rivals/HudTab.cs:963"
+  "Rivals/HudTab.cs:989"
  ],
  "Live map (during the race)": [
-  "Rivals/HudTab.cs:680"
+  "Rivals/HudTab.cs:702"
  ],
  "Live map during the race": [
-  "Rivals/HudTab.cs:1305"
+  "Rivals/HudTab.cs:1379"
  ],
  "Live map: driven part": [
-  "Rivals/HudTab.cs:1643"
+  "Rivals/HudTab.cs:1720"
  ],
  "Live map: line thickness": [
-  "Rivals/HudTab.cs:1309"
+  "Rivals/HudTab.cs:1384"
  ],
  "Live map: smoothing": [
-  "Rivals/HudTab.cs:1311"
+  "Rivals/HudTab.cs:1386"
  ],
  "Live map: your car": [
-  "Rivals/HudTab.cs:1641"
+  "Rivals/HudTab.cs:1718"
  ],
  "Live mapping is sending through the four native haptic channels.": [
-  "MainForm.cs:2670"
+  "MainForm.cs:2690"
  ],
  "Live mapping off.": [
-  "MainForm.cs:1025",
-  "MainForm.cs:1136"
+  "MainForm.cs:1038",
+  "MainForm.cs:1149"
+ ],
+ "Live telemetry connected: {0}.": [
+  "MainForm.cs:2369"
  ],
  "Live: {0}": [
   "BlueprintEditor.cs:1573"
  ],
  "Load": [
-  "Rivals/HudTab.cs:1142"
+  "Rivals/HudTab.cs:1207"
  ],
  "Load graph profile": [
   "BlueprintEditor.cs:106"
@@ -1298,20 +1497,23 @@
   "BlueprintEditor.cs:102"
  ],
  "Load layout": [
-  "Rivals/HudTab.cs:1148"
+  "Rivals/HudTab.cs:1213"
  ],
  "Lock L/R: -- / --   Output: -- / --": [
-  "MainForm.cs:1160"
+  "MainForm.cs:1173"
  ],
  "Lock lamp text": [
   "Rivals/SpeedoTab.cs:657"
  ],
  "Lock mapping off.": [
-  "MainForm.cs:1169",
-  "MainForm.cs:1185"
+  "MainForm.cs:1182",
+  "MainForm.cs:1198"
  ],
  "Looking for a Steam Controller...": [
   "MainForm.cs:199"
+ ],
+ "Low": [
+  "Rivals/GMeterTab.cs:447"
  ],
  "Low body": [
   "BlueprintEditor.cs:1629"
@@ -1329,7 +1531,7 @@
   "BlueprintEditor.cs:1315"
  ],
  "Low-frequency motor": [
-  "MainForm.cs:2014"
+  "MainForm.cs:2027"
  ],
  "Loyalty reward": [
   "Rivals/CarCollectionTab.cs:469"
@@ -1338,7 +1540,7 @@
   "Rivals/CarCollectionTab.cs:536"
  ],
  "Magenta": [
-  "Rivals/HudTab.cs:1427"
+  "Rivals/HudTab.cs:1504"
  ],
  "Make": [
   "Rivals/OwnTimesTab.cs:107"
@@ -1360,7 +1562,11 @@
   "Rivals/RaceStatsTab.cs:367"
  ],
  "Minimal": [
+  "Rivals/HudStilDialog.cs:149",
   "Rivals/SpeedoTab.cs:328"
+ ],
+ "Minimal dot": [
+  "Rivals/GMeterTab.cs:178"
  ],
  "Minimum": [
   "BlueprintEditor.cs:1286",
@@ -1377,7 +1583,12 @@
   "Rivals/RaceStatsTab.cs:141"
  ],
  "Monospace": [
+  "Rivals/GMeterTab.cs:601",
+  "Rivals/HudStilDialog.cs:169",
   "Rivals/SpeedoTab.cs:825"
+ ],
+ "Most needed": [
+  "Scan/ScanTab.cs:113"
  ],
  "Motorcycle": [
   "Rivals/SpeedoTab.cs:325",
@@ -1396,7 +1607,7 @@
   "Rivals/CarNotesTab.cs:190"
  ],
  "My best here with anything": [
-  "Rivals/HudTab.cs:1519"
+  "Rivals/HudTab.cs:1596"
  ],
  "My bids": [
   "Auction/AuctionTab.cs:190",
@@ -1406,19 +1617,23 @@
   "Konsole.cs:194"
  ],
  "My designs": [
+  "Rivals/GMeterTab.cs:199",
   "Rivals/SpeedoTab.cs:344"
  ],
  "My inputs": [
-  "Rivals/HudTab.cs:1608"
+  "Rivals/HudTab.cs:1685"
+ ],
+ "My style": [
+  "Rivals/HudStilDialog.cs:109"
  ],
  "My times": [
-  "MainForm.cs:467",
-  "Rivals/HudTab.cs:1437"
+  "MainForm.cs:474",
+  "Rivals/HudTab.cs:1514"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:4827",
-  "Rivals/OverlayController.cs:4933",
-  "Rivals/OverlayController.cs:4953"
+  "Rivals/OverlayController.cs:4833",
+  "Rivals/OverlayController.cs:4939",
+  "Rivals/OverlayController.cs:4959"
  ],
  "NO OCR LANGUAGE": [
   "Rivals/RivalsTab.cs:814"
@@ -1431,14 +1646,21 @@
  ],
  "Name": [
   "BlueprintEditor.cs:640",
+  "Rivals/GMeterTab.cs:413",
   "Rivals/SpeedoTab.cs:597"
  ],
  "Name assumed from the ordinal — not confirmed.": [
-  "Rivals/OverlayController.cs:4635"
+  "Rivals/OverlayController.cs:4641"
+ ],
+ "Name of the style": [
+  "Rivals/HudStilDialog.cs:131"
  ],
  "Needle": [
   "Rivals/SpeedoTab.cs:607",
   "Rivals/SpeedoTab.cs:620"
+ ],
+ "Needle dial": [
+  "Rivals/GMeterTab.cs:560"
  ],
  "Needle smoothing": [
   "Rivals/SpeedoTab.cs:631"
@@ -1446,18 +1668,27 @@
  "Needs ffmpeg: run “winget install Gyan.FFmpeg” once.": [
   "Konsole.cs:437"
  ],
+ "Neon": [
+  "Rivals/HudStilDialog.cs:145"
+ ],
  "Neon glow": [
   "Rivals/SpeedoTab.cs:322"
  ],
+ "Neon radar": [
+  "Rivals/GMeterTab.cs:174"
+ ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:4824",
-  "Rivals/OverlayController.cs:4950"
+  "Rivals/OverlayController.cs:4830",
+  "Rivals/OverlayController.cs:4956"
  ],
  "New car on your list": [
-  "Rivals/OverlayController.cs:4932"
+  "Rivals/OverlayController.cs:4938"
  ],
  "New version available": [
   "Rivals/RivalsTab.cs:614"
+ ],
+ "Next try at {0} (in {1}:{2:00}).": [
+  "Scan/ServerFehlerHinweis.cs:124"
  ],
  "No = ask again at the next start": [
   "Rivals/RivalsTab.cs:612"
@@ -1466,10 +1697,10 @@
   "Rivals/Bildquelle.cs:78"
  ],
  "No XInput controller found; checking direct PlayStation/SDL devices...": [
-  "MainForm.cs:1913"
+  "MainForm.cs:1926"
  ],
  "No board for these routes in this class yet.": [
-  "Rivals/OverlayController.cs:3616"
+  "Rivals/OverlayController.cs:3622"
  ],
  "No car in view -- highlight one in My Cars, or drive one.": [
   "Rivals/CarNotesTab.cs:184"
@@ -1487,13 +1718,13 @@
   "Rivals/CarNotesTab.cs:250"
  ],
  "No lap by this car in the records yet.": [
-  "Rivals/OverlayController.cs:4642"
+  "Rivals/OverlayController.cs:4648"
  ],
  "No layout called \"{0}\".": [
-  "Rivals/HudTab.cs:1148"
+  "Rivals/HudTab.cs:1213"
  ],
  "No native haptic channel is open.": [
-  "MainForm.cs:2596"
+  "MainForm.cs:2616"
  ],
  "No newer list on the server.": [
   "Rivals/CarCollectionTab.cs:411"
@@ -1506,10 +1737,10 @@
   "Rivals/RaceStatsTab.cs:624"
  ],
  "No reference yet": [
-  "Rivals/HudTab.cs:1594"
+  "Rivals/HudTab.cs:1671"
  ],
  "No route name matched.": [
-  "Rivals/OverlayController.cs:4534"
+  "Rivals/OverlayController.cs:4540"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
@@ -1518,12 +1749,14 @@
   "Rivals/Bildquelle.cs:82"
  ],
  "No writable controller found. Steam: {0}  |  DualSense: {1}  |  Standard: {2}": [
-  "MainForm.cs:1873"
+  "MainForm.cs:1886"
  ],
  "No-contact start: seconds the ghost lasts after GO": [
-  "Rivals/HudTab.cs:1225"
+  "Rivals/HudTab.cs:1291"
  ],
  "None": [
+  "Rivals/GMeterTab.cs:589",
+  "Rivals/HudStilDialog.cs:157",
   "Rivals/SpeedoTab.cs:814",
   "Rivals/SpeedoTab.cs:831"
  ],
@@ -1537,13 +1770,13 @@
   "BlueprintEditor.cs:732"
  ],
  "Normalized combined tire slip": [
-  "MainForm.cs:832"
+  "MainForm.cs:845"
  ],
  "Not checked yet, so this is sorted by all tunes -- press \"Check which tunes are on a car\" to rank by unused ones.": [
   "Tuning/TunesTab.cs:316"
  ],
  "Not listening.": [
-  "MainForm.cs:815"
+  "MainForm.cs:828"
  ],
  "Not obtainable": [
   "Rivals/CarCollectionTab.cs:472"
@@ -1556,10 +1789,13 @@
   "Rivals/CarNotesTab.cs:79"
  ],
  "Note line": [
-  "Rivals/HudTab.cs:959"
+  "Rivals/HudTab.cs:985"
  ],
  "Note: the game area is {0}x{1}, not 16:9. The scan uses its centred 16:9 part; menu positions at this aspect ratio are an assumption.": [
   "scripts/contrib_scan.py:145"
+ ],
+ "Nothing ticked: the next": [
+  "Scan/ScanTab.cs:182"
  ],
  "Nothing to delete in this selection.": [
   "Tuning/TunesTab.cs:393"
@@ -1570,20 +1806,25 @@
  "Nothing to pack -- no board was finished.": [
   "scripts/contrib_scan.py:362"
  ],
+ "Now": [
+  "Scan/ScanTab.cs:173"
+ ],
  "Now it is the time to beat": [
-  "Rivals/OverlayController.cs:4936"
+  "Rivals/OverlayController.cs:4942"
  ],
  "Now line": [
-  "Rivals/HudTab.cs:1612"
+  "Rivals/HudTab.cs:1689"
  ],
  "Number of shift lights": [
   "Rivals/SpeedoTab.cs:647"
  ],
  "Numbers": [
+  "Rivals/GMeterTab.cs:438",
+  "Rivals/GMeterTab.cs:451",
   "Rivals/SpeedoTab.cs:621"
  ],
  "OBS: add a Window Capture of this window above the game capture, then a Color Key filter in the same colour. Keep the window open -- on another screen or behind the game, not minimised.": [
-  "Rivals/HudTab.cs:1429"
+  "Rivals/HudTab.cs:1506"
  ],
  "OCR readers at once. More is faster, but the reader pool has already crashed at twelve on the main machine.": [
   "scripts/contrib_scan.py:296"
@@ -1595,44 +1836,48 @@
   "Rivals/SpeedoTab.cs:853"
  ],
  "Off": [
-  "MainForm.cs:2360",
+  "MainForm.cs:2380",
+  "Rivals/GMeterTab.cs:581",
   "Rivals/SpeedoTab.cs:841",
   "Rivals/SpeedoTab.cs:850",
   "TelemetryInspector.cs:140"
  ],
  "Off: nothing is drawn over Forza, so the overlays cannot affect its frames. The recording window still shows them -- for example on a second screen.": [
-  "Rivals/HudTab.cs:1421"
+  "Rivals/HudTab.cs:1498"
  ],
  "Oldest unused": [
   "Tuning/TunesTab.cs:299"
  ],
  "On": [
   "Konsole.cs:99",
-  "MainForm.cs:2360"
+  "MainForm.cs:2380"
+ ],
+ "On \"Server Error\": retry": [
+  "Scan/ScanTab.cs:252"
  ],
  "On a car": [
   "Tuning/TunesTab.cs:255"
  ],
  "On · 127.0.0.1 · port {0}": [
-  "Rivals/OverlayController.cs:4590"
+  "Rivals/OverlayController.cs:4596"
  ],
  "One list, never both: a glance mid-menu can only hold one order.": [
   "Rivals/RivalsTab.cs:258"
  ],
  "One map of the course you are driving, with your car on it. It is drawn from your own laps -- only they know where on the map the car is. On a course you have not driven yet it grows as you drive.": [
-  "Rivals/HudTab.cs:1307"
+  "Rivals/HudTab.cs:1382"
  ],
  "One socket, one port: the overlay reads the very same telemetry the haptics use, so nothing has to be started twice and there is no second port to keep in step. The game must run BORDERLESS windowed: an exclusive-fullscreen swap chain draws over every other window, so no overlay of any kind can appear on top of it.": [
   "Rivals/RivalsTab.cs:311"
  ],
  "One-make event — the car is fixed.": [
-  "Rivals/OverlayController.cs:3627"
+  "Rivals/OverlayController.cs:3633"
  ],
  "Only a lap that is faster than that car's best leaderboard time is sent: your gamertag, the car, the route, the time and the lap's telemetry. The server checks it again before it appears on the site.": [
   "Rivals/RivalsTab.cs:143"
  ],
  "Only cars that appear on a scanned leaderboard can be placed.": [
-  "Rivals/OverlayController.cs:4645"
+  "Rivals/OverlayController.cs:4651"
  ],
  "Only tunes that are on no car": [
   "Tuning/TunesTab.cs:69"
@@ -1641,7 +1886,7 @@
   "Rivals/RivalsTab.cs:297"
  ],
  "Open FH Companion": [
-  "MainForm.cs:1362"
+  "MainForm.cs:1375"
  ],
  "Open My Tuning Setups for a car in the game once: the applied tune is marked grey, and the app then knows which of that car's tunes are on no car.": [
   "Tuning/TunesTab.cs:367"
@@ -1659,19 +1904,27 @@
   "Auction/AuctionTab.cs:95"
  ],
  "Open scans folder": [
-  "Scan/ScanTab.cs:203"
+  "Scan/ScanTab.cs:288"
  ],
  "Open the Event Sign Up screen, then press again.": [
-  "Rivals/OverlayController.cs:4546"
+  "Rivals/OverlayController.cs:4552"
  ],
  "Open the recording window": [
-  "Rivals/HudTab.cs:1423"
+  "Rivals/HudTab.cs:1500"
  ],
  "Open your stream in the browser, full screen or in theater mode. It runs a few seconds late, which is fine for reading menus; the HUD stays in the dashboard.": [
   "Konsole.cs:353"
  ],
  "Outline": [
+  "Rivals/GMeterTab.cs:593",
+  "Rivals/HudStilDialog.cs:161",
   "Rivals/SpeedoTab.cs:835"
+ ],
+ "Outline and peaks": [
+  "Rivals/GMeterTab.cs:450"
+ ],
+ "Outline of the highest reached": [
+  "Rivals/GMeterTab.cs:436"
  ],
  "Output": [
   "BezierCurveEditor.cs:23"
@@ -1693,39 +1946,52 @@
   "Auction/AuctionTab.cs:181"
  ],
  "POP-IN {0}": [
-  "Rivals/DeltaHud.cs:929"
+  "Rivals/DeltaHud.cs:924"
  ],
  "Packets: --   Rate: --   Race: --": [
-  "MainForm.cs:824"
+  "MainForm.cs:837"
  ],
  "Packets: {0}   Rate: {1}/s   Size: {2} bytes   Race: {3}": [
-  "MainForm.cs:2358"
+  "MainForm.cs:2378"
  ],
  "Page Down / Page Up walk the rest of the field": [
-  "Rivals/OverlayController.cs:3840"
+  "Rivals/OverlayController.cs:3846"
  ],
  "Palette": [
   "BlueprintEditor.cs:194"
  ],
+ "Peak marks": [
+  "Rivals/GMeterTab.cs:437"
+ ],
+ "Peaks, outline and heat map set to zero.": [
+  "Rivals/GMeterTab.cs:74"
+ ],
  "Personal best in a class on a course": [
-  "Rivals/HudTab.cs:1389"
+  "Rivals/HudTab.cs:1466"
  ],
  "Personal best in class {0}!": [
-  "Rivals/OverlayController.cs:4924",
-  "Rivals/OverlayController.cs:4943"
+  "Rivals/OverlayController.cs:4930",
+  "Rivals/OverlayController.cs:4949"
  ],
  "Personal best with a car (every car, class and course)": [
-  "Rivals/HudTab.cs:1390"
+  "Rivals/HudTab.cs:1467"
  ],
  "Personal best with this car": [
-  "Rivals/OverlayController.cs:4928"
+  "Rivals/OverlayController.cs:4934"
  ],
  "Personal records": [
-  "Rivals/HudTab.cs:1386"
+  "Rivals/HudTab.cs:1463"
+ ],
+ "Perspective disc": [
+  "Rivals/GMeterTab.cs:183",
+  "Rivals/GMeterTab.cs:566"
  ],
  "Pick a car on the left": [
   "Rivals/CarNotesTab.cs:100",
   "Rivals/CarNotesTab.cs:285"
+ ],
+ "Pick routes": [
+  "Scan/ScanTab.cs:112"
  ],
  "Pick with a preview …": [
   "Konsole.cs:380"
@@ -1735,26 +2001,30 @@
  ],
  "Pin to taskbar": [
   "MainForm.cs:324",
-  "MainForm.cs:1593",
-  "MainForm.cs:1644",
-  "MainForm.cs:1698",
-  "MainForm.cs:1706"
+  "MainForm.cs:1606",
+  "MainForm.cs:1657",
+  "MainForm.cs:1711",
+  "MainForm.cs:1719"
  ],
  "Pinned to taskbar ✓": [
-  "MainForm.cs:1593",
-  "MainForm.cs:1644"
+  "MainForm.cs:1606",
+  "MainForm.cs:1657"
  ],
  "Plain": [
+  "Rivals/GMeterTab.cs:599",
+  "Rivals/HudStilDialog.cs:167",
   "Rivals/SpeedoTab.cs:823"
  ],
  "Plate": [
+  "Rivals/GMeterTab.cs:590",
+  "Rivals/HudStilDialog.cs:158",
   "Rivals/SpeedoTab.cs:832"
  ],
  "Play a short sound with them": [
-  "Rivals/HudTab.cs:1399"
+  "Rivals/HudTab.cs:1476"
  ],
  "Play a sound with it": [
-  "Rivals/HudTab.cs:1371"
+  "Rivals/HudTab.cs:1448"
  ],
  "Playing on an Xbox or another PC?": [
   "Konsole.cs:321"
@@ -1766,14 +2036,14 @@
   "Rivals/RaceStatsTab.cs:142"
  ],
  "Point +": [
-  "MainForm.cs:957",
-  "MainForm.cs:969",
-  "MainForm.cs:1104"
+  "MainForm.cs:970",
+  "MainForm.cs:982",
+  "MainForm.cs:1117"
  ],
  "Point -": [
-  "MainForm.cs:961",
-  "MainForm.cs:973",
-  "MainForm.cs:1108"
+  "MainForm.cs:974",
+  "MainForm.cs:986",
+  "MainForm.cs:1121"
  ],
  "Points": [
   "Rivals/OwnTimesTab.cs:337"
@@ -1782,25 +2052,28 @@
   "Rivals/RivalsTab.cs:235"
  ],
  "Pop-in phase": [
-  "Rivals/HudTab.cs:1602"
+  "Rivals/HudTab.cs:1679"
  ],
  "Pop-in phase (seconds)": [
-  "Rivals/HudTab.cs:1229"
+  "Rivals/HudTab.cs:1295"
  ],
  "Position and size: drag it in the tab Lap delta HUD. It draws on its own thread, only when something changes, at most as often as the screen refreshes.": [
   "Rivals/SpeedoTab.cs:99"
  ],
+ "Position and size: drag it in the tab Lap delta HUD. It draws with the speedometer, on its own thread, only when something changes.": [
+  "Rivals/GMeterTab.cs:78"
+ ],
  "Position, size and colours are stored under a name. Hotkeys and screen regions are not part of it. Click a block in the picture to jump to its settings; drag the divider on the left to widen this side.": [
-  "Rivals/HudTab.cs:1169"
+  "Rivals/HudTab.cs:1234"
  ],
  "Power": [
   "Rivals/SpeedoTab.cs:89"
  ],
  "Press this where you want a start line of your own -- a back road, a pass, a circuit nobody built. Drive over it again and you have a time. Free-roam times are kept apart from race times: out here there are no track limits.": [
-  "Rivals/HudTab.cs:1488"
+  "Rivals/HudTab.cs:1565"
  ],
  "Previous best with it: {0}": [
-  "Rivals/OverlayController.cs:4929"
+  "Rivals/OverlayController.cs:4935"
  ],
  "Price": [
   "Rivals/CarCollectionTab.cs:158"
@@ -1843,24 +2116,24 @@
   "MainForm.cs:323"
  ],
  "P{0} of {1} on your list": [
-  "Rivals/OverlayController.cs:4917"
+  "Rivals/OverlayController.cs:4923"
  ],
  "P{0} on average": [
   "Rivals/RaceStatsTab.cs:333",
   "Rivals/RaceStatsTab.cs:335"
  ],
  "Queue finished: {0} of {1} board(s) scanned.": [
-  "Scan/ScanTab.cs:538"
+  "Scan/ScanTab.cs:741"
  ],
  "Queue stopped: {0}": [
-  "Scan/ScanTab.cs:517",
-  "Scan/ScanTab.cs:531",
-  "Scan/ScanTab.cs:546",
-  "Scan/ScanTab.cs:551"
+  "Scan/ScanTab.cs:717",
+  "Scan/ScanTab.cs:731",
+  "Scan/ScanTab.cs:749",
+  "Scan/ScanTab.cs:754"
  ],
  "Quit": [
   "Disclosure.cs:481",
-  "MainForm.cs:1364"
+  "MainForm.cs:1377"
  ],
  "R2 adaptive": [
   "BlueprintEditor.cs:1634"
@@ -1875,7 +2148,7 @@
   "Rivals/SpeedoTab.cs:800"
  ],
  "Race statistics": [
-  "MainForm.cs:474"
+  "MainForm.cs:481"
  ],
  "Race time": [
   "Rivals/SpeedoTab.cs:844"
@@ -1883,6 +2156,15 @@
  "Races": [
   "Rivals/RaceStatsTab.cs:142",
   "Rivals/RaceStatsTab.cs:325"
+ ],
+ "Racing": [
+  "Rivals/HudStilDialog.cs:150"
+ ],
+ "Racing crosshair": [
+  "Rivals/GMeterTab.cs:173"
+ ],
+ "Radar": [
+  "Rivals/GMeterTab.cs:563"
  ],
  "Rally": [
   "Rivals/SpeedoTab.cs:332"
@@ -1894,14 +2176,14 @@
   "Rivals/RivalsTab.cs:302"
  ],
  "Read to the end of the board. Complete.": [
-  "Scan/ScanTab.cs:313"
+  "Scan/ScanTab.cs:398"
  ],
  "Reading the screen": [
   "Rivals/RivalsTab.cs:295"
  ],
  "Ready": [
-  "MainForm.cs:738",
-  "MainForm.cs:2144"
+  "MainForm.cs:751",
+  "MainForm.cs:2157"
  ],
  "Real time (12 h)": [
   "Rivals/SpeedoTab.cs:843"
@@ -1910,20 +2192,20 @@
   "Rivals/SpeedoTab.cs:842"
  ],
  "Rear left ratio: {0}": [
-  "MainForm.cs:859",
-  "MainForm.cs:2376"
+  "MainForm.cs:872",
+  "MainForm.cs:2396"
  ],
  "Rear left: {0}": [
-  "MainForm.cs:840",
-  "MainForm.cs:2364"
+  "MainForm.cs:853",
+  "MainForm.cs:2384"
  ],
  "Rear right ratio: {0}": [
-  "MainForm.cs:860",
-  "MainForm.cs:2377"
+  "MainForm.cs:873",
+  "MainForm.cs:2397"
  ],
  "Rear right: {0}": [
-  "MainForm.cs:841",
-  "MainForm.cs:2365"
+  "MainForm.cs:854",
+  "MainForm.cs:2385"
  ],
  "Rear wheels - grip": [
   "BlueprintEditor.cs:468"
@@ -1941,23 +2223,26 @@
   "MainForm.cs:255"
  ],
  "Recording": [
-  "Rivals/HudTab.cs:1433"
+  "Rivals/HudTab.cs:1510"
  ],
  "Recording and streaming": [
-  "Rivals/HudTab.cs:1415"
+  "Rivals/HudTab.cs:1492"
  ],
  "Redline": [
   "Rivals/SpeedoTab.cs:619",
   "Rivals/SpeedoTab.cs:662"
  ],
  "Reference inputs": [
-  "Rivals/HudTab.cs:1610"
+  "Rivals/HudTab.cs:1687"
+ ],
+ "Refresh": [
+  "Scan/ScanTab.cs:179"
  ],
  "Refresh data": [
   "Rivals/RivalsTab.cs:108"
  ],
  "Remaining: {0}": [
-  "Rivals/OverlayController.cs:3605"
+  "Rivals/OverlayController.cs:3611"
  ],
  "Remove selected": [
   "BlueprintEditor.cs:1159"
@@ -1970,16 +2255,19 @@
   "Rivals/RaceStatsTab.cs:121"
  ],
  "Reset curve": [
-  "MainForm.cs:1100"
+  "MainForm.cs:1113"
+ ],
+ "Reset peaks": [
+  "Rivals/GMeterTab.cs:73"
  ],
  "Reset tone": [
-  "MainForm.cs:965"
+  "MainForm.cs:978"
  ],
  "Reset trip": [
   "Rivals/SpeedoTab.cs:94"
  ],
  "Reset vibration": [
-  "MainForm.cs:953"
+  "MainForm.cs:966"
  ],
  "Resistance": [
   "BlueprintEditor.cs:1296"
@@ -2007,7 +2295,7 @@
   "Rivals/SpeedoTab.cs:327"
  ],
  "Rev counter, gear, speed, redline and more. Pick one of the styles or build your own in the tab Speedometer.": [
-  "Rivals/HudTab.cs:1300"
+  "Rivals/HudTab.cs:1367"
  ],
  "Rev fill": [
   "Rivals/SpeedoTab.cs:602"
@@ -2016,28 +2304,28 @@
   "Rivals/SpeedoTab.cs:644"
  ],
  "Right edge": [
-  "Rivals/HudTab.cs:1071"
+  "Rivals/HudTab.cs:1136"
  ],
  "Right grip": [
   "BlueprintEditor.cs:1658",
-  "MainForm.cs:2013"
+  "MainForm.cs:2026"
  ],
  "Right grip motor": [
   "BlueprintEditor.cs:789"
  ],
  "Right grip: {0}": [
-  "MainForm.cs:844",
-  "MainForm.cs:2370"
+  "MainForm.cs:857",
+  "MainForm.cs:2390"
  ],
  "Right lock: {0}": [
-  "MainForm.cs:863",
-  "MainForm.cs:2382"
+  "MainForm.cs:876",
+  "MainForm.cs:2402"
  ],
  "Right pad": [
   "BlueprintEditor.cs:1660"
  ],
  "Right side": [
-  "MainForm.cs:724"
+  "MainForm.cs:737"
  ],
  "Right trackpad": [
   "BlueprintEditor.cs:791"
@@ -2054,62 +2342,71 @@
  "Right wheels - lock": [
   "BlueprintEditor.cs:471"
  ],
+ "Rings or marks": [
+  "Rivals/GMeterTab.cs:428"
+ ],
  "Rivals": [
   "Rivals/OwnTimes.cs:418"
  ],
  "Rivals maps are shown as": [
-  "Rivals/HudTab.cs:1343"
+  "Rivals/HudTab.cs:1419"
  ],
  "Rivals maps only": [
-  "Rivals/HudTab.cs:1325"
+  "Rivals/HudTab.cs:1401"
  ],
  "Rivals overlay": [
   "MainForm.cs:425",
   "Rivals/RivalsTab.cs:94"
  ],
  "Rivals, Horizon Play, races and free roam each keep their own records, so a wall-riding lap never beats a Rivals best. Laps from before the mode was recorded count for every mode.": [
-  "Rivals/HudTab.cs:1397"
+  "Rivals/HudTab.cs:1474"
  ],
  "Round dial": [
   "Rivals/SpeedoTab.cs:795"
  ],
+ "Route": [
+  "Scan/ScanTab.cs:173"
+ ],
  "Rows": [
-  "Scan/ScanTab.cs:246"
+  "Scan/ScanTab.cs:331"
  ],
  "SLIDE": [
-  "Rivals/TyreHud.cs:310"
+  "Rivals/TyreHud.cs:315"
  ],
  "SPIN": [
-  "Rivals/TyreHud.cs:309"
+  "Rivals/TyreHud.cs:314"
  ],
  "STAB (about to slide)": [
   "Rivals/SpeedoTab.cs:109"
  ],
  "STR": [
-  "Rivals/DeltaHud.cs:729",
-  "Rivals/HudTab.cs:778"
+  "Rivals/DeltaHud.cs:724",
+  "Rivals/HudTab.cs:804"
  ],
  "Same PI class, any car": [
-  "Rivals/HudTab.cs:1517"
+  "Rivals/HudTab.cs:1594"
  ],
  "Same car in this PI class": [
-  "Rivals/HudTab.cs:1518"
+  "Rivals/HudTab.cs:1595"
  ],
  "Same car, any tune": [
-  "Rivals/HudTab.cs:1516"
+  "Rivals/HudTab.cs:1593"
  ],
  "Same car, same tune": [
-  "Rivals/HudTab.cs:1515"
+  "Rivals/HudTab.cs:1592"
  ],
  "Save": [
-  "Rivals/HudTab.cs:1125"
+  "Rivals/HudTab.cs:1190"
+ ],
+ "Save as my style ...": [
+  "Rivals/HudStilDialog.cs:106"
  ],
  "Save graph profile": [
   "BlueprintEditor.cs:104"
  ],
  "Save layout": [
-  "Rivals/HudTab.cs:1131",
-  "Rivals/HudTab.cs:1136"
+  "Rivals/HudTab.cs:1196",
+  "Rivals/HudTab.cs:1201"
  ],
  "Save mask preview": [
   "Rivals/RivalsTab.cs:304"
@@ -2122,19 +2419,24 @@
   "Tuning/TunesTab.cs:73"
  ],
  "Saved to {0}": [
+  "Rivals/GMeterTab.cs:338",
   "Rivals/SpeedoTab.cs:504"
  ],
  "Say thanks when your lap adds a new car to the leaderboard": [
-  "Rivals/HudTab.cs:1377"
+  "Rivals/HudTab.cs:1454"
+ ],
+ "Scale": [
+  "Rivals/GMeterTab.cs:426"
  ],
  "Scale marks": [
   "Rivals/SpeedoTab.cs:608"
  ],
  "Scale numbers": [
+  "Rivals/GMeterTab.cs:429",
   "Rivals/SpeedoTab.cs:609"
  ],
  "Scan leaderboards": [
-  "MainForm.cs:480"
+  "MainForm.cs:487"
  ],
  "Scan leaderboards on THIS PC and hand in the result.": [
   "scripts/contrib_scan.py:277"
@@ -2152,10 +2454,10 @@
   "BlueprintEditor.cs:1737"
  ],
  "Seconds of history behind the now line": [
-  "Rivals/HudTab.cs:1259"
+  "Rivals/HudTab.cs:1325"
  ],
  "Seconds of the reference lap shown ahead": [
-  "Rivals/HudTab.cs:1261"
+  "Rivals/HudTab.cs:1327"
  ],
  "Seconds on screen per press": [
   "Rivals/RivalsTab.cs:267"
@@ -2172,26 +2474,26 @@
   "Rivals/CarCollectionTab.cs:355"
  ],
  "Select a force and start the test.": [
-  "MainForm.cs:746"
+  "MainForm.cs:759"
  ],
  "Select a node to edit it.": [
   "BlueprintEditor.cs:620"
  ],
  "Selected: {0}": [
-  "MainForm.cs:1801",
-  "MainForm.cs:1990"
+  "MainForm.cs:1814",
+  "MainForm.cs:2003"
  ],
  "Send a saved scan ...": [
-  "Scan/ScanTab.cs:210"
+  "Scan/ScanTab.cs:295"
  ],
  "Send again": [
-  "Scan/ScanTab.cs:675"
+  "Scan/ScanTab.cs:932"
  ],
  "Send selected again": [
-  "Scan/ScanTab.cs:207"
+  "Scan/ScanTab.cs:292"
  ],
  "Send this board again?\n\nA board sent again is not put on the website on its own: an admin looks at it first, because a resent scan is more likely to have been changed. The website shows it as \"Waiting for manual review\" until then.": [
-  "Scan/ScanTab.cs:674"
+  "Scan/ScanTab.cs:931"
  ],
  "Sending is switched off (tab Rivals overlay, \"Submit my laps when they beat the leaderboard\"). Scans go out only while it is on.": [
   "Scan/ScanUpload.cs:174"
@@ -2210,7 +2512,7 @@
   "Scan/ScanUpload.cs:253"
  ],
  "Separate records per mode": [
-  "Rivals/HudTab.cs:1396"
+  "Rivals/HudTab.cs:1473"
  ],
  "Series milestone, {0} points": [
   "Rivals/CarCollectionTab.cs:564"
@@ -2219,17 +2521,19 @@
   "Rivals/CarCollectionTab.cs:480",
   "Rivals/CarCollectionTab.cs:500"
  ],
- "Server error again: the queue stops. Try again later.": [
-  "Scan/ScanTab.cs:500"
+ "Server error ({0} of {1}): the game cannot reach the leaderboards. Waiting until {2}, then this board once more.": [
+  "Scan/ScanTab.cs:697"
  ],
- "Server error: the game cannot reach the leaderboards. Waiting until {0}, then this board once more.": [
-  "Scan/ScanTab.cs:505"
+ "Server error {0} times in a row: the queue stops. Try again later.": [
+  "Scan/ScanTab.cs:692"
  ],
  "Seven-segment": [
+  "Rivals/GMeterTab.cs:602",
+  "Rivals/HudStilDialog.cs:170",
   "Rivals/SpeedoTab.cs:826"
  ],
  "Shared colours": [
-  "Rivals/HudTab.cs:1407"
+  "Rivals/HudTab.cs:1484"
  ],
  "Shift advice: arrow up or down at the gear": [
   "Rivals/SpeedoTab.cs:654"
@@ -2238,7 +2542,7 @@
   "Rivals/SpeedoTab.cs:646"
  ],
  "Short messages under the strip, for example when a lap was stored. It uses the delta colours.": [
-  "Rivals/HudTab.cs:1284"
+  "Rivals/HudTab.cs:1350"
  ],
  "Show it on the real screen while I set it up": [
   "Rivals/HudTab.cs:125",
@@ -2248,13 +2552,19 @@
   "Rivals/OwnTimesTab.cs:75"
  ],
  "Show overlays over the game": [
-  "Rivals/HudTab.cs:1416"
+  "Rivals/HudTab.cs:1493"
  ],
  "Show panels": [
   "BlueprintEditor.cs:204"
  ],
+ "Show the G-meter while driving": [
+  "Rivals/GMeterTab.cs:47"
+ ],
  "Show the applied tune's name and description in the car note": [
-  "Rivals/HudTab.cs:1362"
+  "Rivals/HudTab.cs:1439"
+ ],
+ "Show the felt force (outward, forward on braking)": [
+  "Rivals/GMeterTab.cs:431"
  ],
  "Show the route panel by itself when it recognises the screen": [
   "Rivals/RivalsTab.cs:270"
@@ -2263,31 +2573,37 @@
   "Rivals/SpeedoTab.cs:75"
  ],
  "Show the strip while racing": [
-  "Rivals/HudTab.cs:1174"
+  "Rivals/HudTab.cs:1239"
  ],
  "Show the time to beat for the website's leaderboard": [
-  "Rivals/HudTab.cs:1216"
+  "Rivals/HudTab.cs:1282"
  ],
  "Show throttle, brake, clutch, steering, gear": [
-  "Rivals/HudTab.cs:1245"
+  "Rivals/HudTab.cs:1311"
  ],
  "Shown AHEAD of the now line, on the shaded side -- what the reference is about to do, so you can copy it. Your own line stops at now: it has no future to show. The reference is read at the place you are, not at the same clock time.": [
-  "Rivals/HudTab.cs:1263"
+  "Rivals/HudTab.cs:1329"
  ],
  "Side by side": [
-  "Rivals/HudTab.cs:1348"
+  "Rivals/HudTab.cs:1424"
+ ],
+ "Sideways": [
+  "Rivals/GMeterTab.cs:573"
+ ],
+ "Sideways and lengthways are the forces in the plane of the car; up and down are bumps, crests and compressions (the game leaves gravity out). Above 8 G is a crash, not driving, and is ignored.": [
+  "Rivals/GMeterTab.cs:464"
  ],
  "Sign-up maps arranged": [
-  "Rivals/HudTab.cs:1347"
+  "Rivals/HudTab.cs:1423"
  ],
  "Sign-up maps disappear after (seconds, 0 = when the race starts)": [
-  "Rivals/HudTab.cs:1341"
+  "Rivals/HudTab.cs:1417"
  ],
  "Sign-up maps: line thickness": [
-  "Rivals/HudTab.cs:1351"
+  "Rivals/HudTab.cs:1427"
  ],
  "Sign-up maps: smoothing": [
-  "Rivals/HudTab.cs:1353"
+  "Rivals/HudTab.cs:1429"
  ],
  "Signal group": [
   "BlueprintEditor.cs:97"
@@ -2296,28 +2612,34 @@
   "BlueprintEditor.cs:1011"
  ],
  "Size (mouse wheel works too)": [
-  "Rivals/HudTab.cs:1080"
+  "Rivals/HudTab.cs:1145"
  ],
  "Size (pixels at 1080p)": [
+  "Rivals/GMeterTab.cs:424",
   "Rivals/SpeedoTab.cs:599"
  ],
  "Small label": [
-  "Rivals/HudTab.cs:1615"
+  "Rivals/HudTab.cs:1692"
  ],
  "Small marks between": [
   "Rivals/SpeedoTab.cs:610"
  ],
  "Small text": [
+  "Rivals/GMeterTab.cs:452",
+  "Rivals/HudStilDialog.cs:85",
   "Rivals/SpeedoTab.cs:622"
  ],
  "Smooth": [
   "Rivals/SpeedoTab.cs:806"
  ],
  "Smooth traced line": [
-  "Rivals/HudTab.cs:1344"
+  "Rivals/HudTab.cs:1420"
+ ],
+ "Smoothing": [
+  "Rivals/GMeterTab.cs:456"
  ],
  "Smoothing takes out the pixel steps of the line. Turned up high, tight hairpins get rounder too.": [
-  "Rivals/HudTab.cs:1355"
+  "Rivals/HudTab.cs:1431"
  ],
  "Snap-back strength (% of output)": [
   "BlueprintEditor.cs:1110"
@@ -2332,7 +2654,7 @@
   "Konsole.cs:661"
  ],
  "Soon the game will refuse new downloads.": [
-  "Rivals/OverlayController.cs:668"
+  "Rivals/OverlayController.cs:674"
  ],
  "Source": [
   "Auction/AuctionTab.cs:182"
@@ -2348,18 +2670,22 @@
   "Rivals/SpeedoTab.cs:638"
  ],
  "Speedometer": [
-  "MainForm.cs:439",
-  "Rivals/HudTab.cs:965"
+  "MainForm.cs:446",
+  "Rivals/HudTab.cs:991"
  ],
  "Speedometer (while driving)": [
-  "Rivals/HudTab.cs:682"
+  "Rivals/HudTab.cs:704"
  ],
  "Speedometer design": [
   "Rivals/SpeedoTab.cs:467",
   "Rivals/SpeedoTab.cs:496"
  ],
  "Speedometer while driving": [
-  "Rivals/HudTab.cs:1298"
+  "Rivals/HudTab.cs:1365"
+ ],
+ "Sphere": [
+  "Rivals/GMeterTab.cs:184",
+  "Rivals/GMeterTab.cs:567"
  ],
  "Sport sweep": [
   "Rivals/SpeedoTab.cs:331"
@@ -2374,7 +2700,7 @@
   "Rivals/SpeedoTab.cs:658"
  ],
  "Stacked": [
-  "Rivals/HudTab.cs:1348"
+  "Rivals/HudTab.cs:1424"
  ],
  "Standard controllers expose low/high motor intensity, not a literal carrier frequency. Select Frequency mix to make frequency modulation crossfade between those motors. Trigger rumble is normally available only on compatible Xbox controllers.": [
   "BlueprintEditor.cs:826"
@@ -2395,25 +2721,25 @@
   "Rivals/SpeedoTab.cs:605"
  ],
  "Start listening": [
-  "MainForm.cs:804"
+  "MainForm.cs:817"
  ],
  "Start overlay": [
   "Rivals/RivalsTab.cs:99",
   "Rivals/RivalsTab.cs:352"
  ],
  "Start scan": [
-  "Scan/ScanTab.cs:194"
+  "Scan/ScanTab.cs:279"
  ],
  "Start with Forza": [
   "MainForm.cs:329",
-  "MainForm.cs:1594",
-  "MainForm.cs:1666"
+  "MainForm.cs:1607",
+  "MainForm.cs:1679"
  ],
  "Start with Forza (waits in the notification area from sign-in)": [
   "Disclosure.cs:446"
  ],
  "Start with Forza ✓": [
-  "MainForm.cs:1594"
+  "MainForm.cs:1607"
  ],
  "Starting position": [
   "Rivals/RaceStatsTab.cs:698"
@@ -2426,45 +2752,51 @@
  ],
  "Status": [
   "Auction/AuctionTab.cs:141",
-  "Scan/ScanTab.cs:246"
+  "Scan/ScanTab.cs:331"
  ],
  "Steam Controller · native four-channel haptics": [
   "BlueprintEditor.cs:33",
-  "MainForm.cs:1931"
+  "MainForm.cs:1944"
  ],
  "Steam Controller: {0} native channels": [
-  "MainForm.cs:1849"
+  "MainForm.cs:1862"
  ],
  "Still waiting for Forza in the notification area. Right-click the icon to quit.": [
-  "MainForm.cs:1437"
+  "MainForm.cs:1450"
  ],
  "Stop": [
   "Auction/AuctionTab.cs:88",
-  "MainForm.cs:808",
-  "Scan/ScanTab.cs:196"
+  "MainForm.cs:821",
+  "Scan/ScanTab.cs:281"
  ],
  "Stop now": [
   "Loc.cs:20",
-  "MainForm.cs:731"
+  "MainForm.cs:744"
  ],
  "Stop overlay": [
   "Rivals/RivalsTab.cs:372"
  ],
+ "Stop the scan": [
+  "Scan/ServerFehlerHinweis.cs:66"
+ ],
+ "Stopped after the Server Error.": [
+  "Scan/ScanTab.cs:705"
+ ],
  "Stopped at the rank limit set under \"First ranks only\". The website takes it on its own only from 3,000 ranks.": [
-  "Scan/ScanTab.cs:316"
+  "Scan/ScanTab.cs:401"
  ],
  "Stopped before the end: by Stop, by the Pause key, or because another window came to the front. What was read is kept and sent; the server holds a board that is too short.": [
-  "Scan/ScanTab.cs:320"
+  "Scan/ScanTab.cs:405"
  ],
  "Stopped.": [
-  "MainForm.cs:734",
-  "Scan/ScanTab.cs:531",
-  "Scan/ScanTab.cs:542",
-  "Scan/ScanTab.cs:546"
+  "MainForm.cs:747",
+  "Scan/ScanTab.cs:731",
+  "Scan/ScanTab.cs:745",
+  "Scan/ScanTab.cs:749"
  ],
  "Stopping ...": [
   "Auction/AuctionTab.cs:93",
-  "Scan/ScanTab.cs:201"
+  "Scan/ScanTab.cs:286"
  ],
  "Stream address": [
   "Konsole.cs:343"
@@ -2487,6 +2819,10 @@
  "Strength only": [
   "BlueprintEditor.cs:903"
  ],
+ "Style": [
+  "Rivals/GMeterTab.cs:419",
+  "Rivals/HudTab.cs:1096"
+ ],
  "Styles": [
   "Rivals/SpeedoTab.cs:344"
  ],
@@ -2504,18 +2840,19 @@
   "Rivals/SpeedoTab.cs:606"
  ],
  "Switch mode": [
-  "MainForm.cs:2322"
+  "MainForm.cs:2335"
  ],
  "Switch points / time": [
   "Rivals/RivalsTab.cs:289"
  ],
  "Switch this while racing": [
-  "Rivals/HudTab.cs:1203"
+  "Rivals/HudTab.cs:1269"
  ],
  "Switch to “Xbox / 2nd PC” at the top of the window.": [
   "Konsole.cs:322"
  ],
  "Synthwave": [
+  "Rivals/HudStilDialog.cs:151",
   "Rivals/SpeedoTab.cs:333"
  ],
  "TC (wheelspin)": [
@@ -2525,17 +2862,20 @@
   "BlueprintEditor.cs:1274"
  ],
  "THR": [
-  "Rivals/DeltaHud.cs:728",
-  "Rivals/HudTab.cs:778"
+  "Rivals/DeltaHud.cs:723",
+  "Rivals/HudTab.cs:804"
+ ],
+ "TOTAL": [
+  "Rivals/GMeterRenderer.cs:461"
  ],
  "Tag written with every recorded lap -- it becomes a folder, so \"wet\" or \"tune-b\" keeps those laps apart. Laps are split by course, PI class, car and tune on their own.": [
-  "Rivals/HudTab.cs:1446"
+  "Rivals/HudTab.cs:1523"
  ],
  "Telemetry field": [
   "BlueprintEditor.cs:708"
  ],
  "Telemetry listener failed: {0}": [
-  "MainForm.cs:2279"
+  "MainForm.cs:2292"
  ],
  "Tension slope": [
   "BlueprintEditor.cs:1297"
@@ -2544,25 +2884,28 @@
   "scripts/contrib_scan.py:165"
  ],
  "Test running. Press Stop now at any time.": [
-  "MainForm.cs:2097"
+  "MainForm.cs:2110"
  ],
  "Test source active": [
   "BlueprintEditor.cs:659"
  ],
  "Test the exact vibration force": [
-  "MainForm.cs:658"
+  "MainForm.cs:671"
  ],
  "Test tone": [
-  "MainForm.cs:1010"
+  "MainForm.cs:1023"
+ ],
+ "Text": [
+  "Rivals/HudStilDialog.cs:84"
  ],
  "That is a whole screen, not a window. Pick the window that shows the game.": [
   "Konsole.cs:505"
  ],
  "The Rivals overlay tab has a \"Save mask preview\" button: it draws both regions on a capture, which is how a mask that has drifted is spotted.": [
-  "Rivals/OverlayController.cs:4555"
+  "Rivals/OverlayController.cs:4561"
  ],
  "The Start menu entry could not be created.": [
-  "MainForm.cs:1696"
+  "MainForm.cs:1709"
  ],
  "The Trial “{0}”": [
   "Rivals/CarCollectionTab.cs:565"
@@ -2573,27 +2916,30 @@
  "The app does not know this car's id yet, so it cannot find it in your garage. Highlight it in My Cars in the game, or tick it if you have it.": [
   "Rivals/CarCollectionTab.cs:374"
  ],
+ "The app is set to offline -- the list comes from the server.": [
+  "Scan/ScanBedarf.cs:32"
+ ],
  "The app is set to offline, so scans are not sent.": [
   "Scan/ScanUpload.cs:170"
  ],
  "The app's Tunes tab lists the ones that are on no car.": [
-  "Rivals/OverlayController.cs:669"
+  "Rivals/OverlayController.cs:675"
  ],
  "The autostart entry could not be created.": [
-  "MainForm.cs:1664"
+  "MainForm.cs:1677"
  ],
  "The bidder is already running.": [
   "Auction/AuctionTab.cs:474"
  ],
  "The board stopped loading new rows before its end; usually the game's online session ran out. What was read is kept. Scan the board again later for the rest.": [
-  "Scan/ScanTab.cs:317"
+  "Scan/ScanTab.cs:402"
  ],
  "The countdown colours its BACKGROUND, not its digits: calm, then warning, then pop-in. The text colour is yours to pick.": [
-  "Rivals/HudTab.cs:1235"
+  "Rivals/HudTab.cs:1301"
  ],
  "The desktop shortcut could not be created.": [
   "Disclosure.cs:342",
-  "MainForm.cs:1678"
+  "MainForm.cs:1691"
  ],
  "The downloaded file does not match what the server announced (expected {0}..., got {1}...). Nothing was replaced.": [
   "Rivals/AppUpdate.cs:275"
@@ -2601,17 +2947,23 @@
  "The file is here, and can be sent by hand:": [
   "scripts/contrib_scan.py:264"
  ],
+ "The forces on the car: sideways, braking and accelerating, and up and down. Pick a style or build your own in the tab G-meter.": [
+  "Rivals/HudTab.cs:1374"
+ ],
  "The game area is {0}x{1}. Below 1280x720 the leaderboard text is too small to read reliably -- use a larger window or resolution.": [
   "scripts/contrib_scan.py:139"
  ],
+ "The game cannot reach its leaderboards (Server Error {0} in a row). The scanner waits and then tries this board again -- {1} times while you are at the PC; without input at the mouse or keyboard it keeps trying, so a scan at night does not stop.": [
+  "Scan/ServerFehlerHinweis.cs:111"
+ ],
  "The game closed during the scan. The queue stops here. Start the game again and scan this board once more.": [
-  "Scan/ScanTab.cs:321"
+  "Scan/ScanTab.cs:406"
  ],
  "The game could not be brought to the front. Click into the game once, come back and press Start scan again.": [
-  "Scan/ScanTab.cs:415"
+  "Scan/ScanTab.cs:593"
  ],
  "The game did not come to the front. Nothing was pressed.": [
-  "Scan/ScanTab.cs:453"
+  "Scan/ScanTab.cs:633"
  ],
  "The game does not record which tune a lap was driven with: \"~\" marks laps given to the tune saved last before them.": [
   "Tuning/TunesTab.cs:499"
@@ -2623,19 +2975,19 @@
   "Auction/AuctionTab.cs:467"
  ],
  "The game is not running. Start it, open any menu, then press Start scan.": [
-  "Scan/ScanTab.cs:398"
+  "Scan/ScanTab.cs:576"
  ],
  "The game runs on:": [
   "Konsole.cs:737"
  ],
  "The game showed \"Server Error\": it could not reach its leaderboards. The scan itself is fine. Try again later; this board is not sent.": [
-  "Scan/ScanTab.cs:319"
+  "Scan/ScanTab.cs:404"
  ],
  "The game will refuse new downloads.": [
-  "Rivals/OverlayController.cs:667"
+  "Rivals/OverlayController.cs:673"
  ],
  "The game's map picture": [
-  "Rivals/HudTab.cs:1345"
+  "Rivals/HudTab.cs:1421"
  ],
  "The game's save folder was not found.": [
   "Tuning/TunesTab.cs:158"
@@ -2647,17 +2999,20 @@
   "MainForm.cs:312"
  ],
  "The layout could not be written.": [
-  "Rivals/HudTab.cs:1136"
+  "Rivals/HudTab.cs:1201"
+ ],
+ "The list could not be loaded: {0}": [
+  "Scan/ScanBedarf.cs:42"
  ],
  "The next tab will map these live grip values through your Bézier curve to the haptics.": [
-  "MainForm.cs:869"
+  "MainForm.cs:882"
  ],
  "The note shows over the game while this car is highlighted in My Cars or driven.": [
   "Rivals/CarNotesTab.cs:120",
   "Rivals/CarNotesTab.cs:294"
  ],
  "The order below is for these routes in general.": [
-  "Rivals/OverlayController.cs:3629"
+  "Rivals/OverlayController.cs:3635"
  ],
  "The package does not carry a valid signature from the publisher. Nothing was replaced: either it was changed on the way, or the server delivers an unsigned package.": [
   "Rivals/AppUpdate.cs:284"
@@ -2669,10 +3024,10 @@
   "Konsole.cs:294"
  ],
  "The route list could not be loaded: {0}": [
-  "Scan/ScanTab.cs:263"
+  "Scan/ScanTab.cs:348"
  ],
  "The route names have to be on screen as text.": [
-  "Rivals/OverlayController.cs:4547"
+  "Rivals/OverlayController.cs:4553"
  ],
  "The scan could not be read: ": [
   "Scan/ScanUpload.cs:155"
@@ -2681,7 +3036,7 @@
   "scripts/contrib_scan.py:357"
  ],
  "The scanner reached what looks like the end, but the scrollbar did not confirm it. The server may hold the scan back.": [
-  "Scan/ScanTab.cs:318"
+  "Scan/ScanTab.cs:403"
  ],
  "The server could not be reached.": [
   "Rivals/CarCollectionTab.cs:410"
@@ -2699,10 +3054,10 @@
   "scripts/contrib_scan.py:246"
  ],
  "The small labels and the backing plate behind the strip, the note line, the input traces and the tyre overview.": [
-  "Rivals/HudTab.cs:1409"
+  "Rivals/HudTab.cs:1486"
  ],
  "The sweep has not reached them. The site's Scan status tab lists what exists.": [
-  "Rivals/OverlayController.cs:3621"
+  "Rivals/OverlayController.cs:3627"
  ],
  "The update did not go through. Nothing was replaced; the app keeps running as before.": [
   "Rivals/RivalsTab.cs:648"
@@ -2717,7 +3072,7 @@
   "Konsole.cs:199"
  ],
  "There is no speaker: audible sound comes straight out of the haptic motors, so it sounds more like a synth than a recording.": [
-  "MainForm.cs:1034"
+  "MainForm.cs:1047"
  ],
  "Thickness": [
   "Rivals/SpeedoTab.cs:604"
@@ -2743,15 +3098,18 @@
  "This car: back to the general values": [
   "Rivals/SpeedoTab.cs:121"
  ],
+ "This file is not a G-meter design.": [
+  "Rivals/GMeterTab.cs:321"
+ ],
  "This file is not a speedometer design.": [
   "Rivals/SpeedoTab.cs:474"
  ],
  "This folder holds no scan: state.json or rows.jsonl is missing.": [
-  "Scan/ScanTab.cs:700",
+  "Scan/ScanTab.cs:957",
   "Scan/ScanUpload.cs:134"
  ],
  "This ordinal matches no car in the records.": [
-  "Rivals/OverlayController.cs:4627"
+  "Rivals/OverlayController.cs:4633"
  ],
  "This race": [
   "Rivals/SpeedoTab.cs:852"
@@ -2764,7 +3122,7 @@
   "Scan/ScanUpload.cs:219"
  ],
  "This stays inside the final tool so you can calibrate the controller at any time.": [
-  "MainForm.cs:666"
+  "MainForm.cs:679"
  ],
  "This window closes by itself. Nothing else is being installed.": [
   "Rivals/AppUpdate.cs:408"
@@ -2773,14 +3131,14 @@
   "Rivals/SpeedoTab.cs:651"
  ],
  "Tick at least one route and one class.": [
-  "Scan/ScanTab.cs:393"
+  "Scan/ScanTab.cs:571"
  ],
  "Time": [
   "Auction/AuctionTab.cs:181",
   "Rivals/OwnTimesTab.cs:348"
  ],
  "Time attack in the free world": [
-  "Rivals/HudTab.cs:1474"
+  "Rivals/HudTab.cs:1551"
  ],
  "Time left": [
   "Auction/AuctionTab.cs:142",
@@ -2792,11 +3150,21 @@
  "To upload: --upload, or just send the file.": [
   "scripts/contrib_scan.py:386"
  ],
+ "Total": [
+  "Rivals/GMeterTab.cs:576"
+ ],
  "Total time": [
   "Rivals/OwnTimesTab.cs:340"
  ],
  "Track day": [
   "Rivals/SpeedoTab.cs:334"
+ ],
+ "Trail": [
+  "Rivals/GMeterTab.cs:434",
+  "Rivals/GMeterTab.cs:449"
+ ],
+ "Trail (0.1 s)": [
+  "Rivals/GMeterTab.cs:435"
  ],
  "Treasure car": [
   "Rivals/CarCollectionTab.cs:465"
@@ -2812,9 +3180,9 @@
   "Rivals/SpeedoTab.cs:95"
  ],
  "Try it": [
-  "Rivals/HudTab.cs:1372",
-  "Rivals/HudTab.cs:1379",
-  "Rivals/HudTab.cs:1400"
+  "Rivals/HudTab.cs:1449",
+  "Rivals/HudTab.cs:1456",
+  "Rivals/HudTab.cs:1477"
  ],
  "Tune": [
   "Rivals/OwnTimesTab.cs:119",
@@ -2824,17 +3192,17 @@
   "Tuning/TunesTab.cs:363"
  ],
  "Tune (probably): {0}": [
-  "Rivals/OverlayController.cs:1361"
+  "Rivals/OverlayController.cs:1367"
  ],
  "Tune storage almost full": [
-  "Rivals/OverlayController.cs:664"
+  "Rivals/OverlayController.cs:670"
  ],
  "Tune storage full": [
-  "Rivals/OverlayController.cs:664"
+  "Rivals/OverlayController.cs:670"
  ],
  "Tune: {0}": [
-  "Rivals/OverlayController.cs:1355",
-  "Rivals/OverlayController.cs:1361"
+  "Rivals/OverlayController.cs:1361",
+  "Rivals/OverlayController.cs:1367"
  ],
  "Tuner": [
   "Tuning/TunesTab.cs:484",
@@ -2847,7 +3215,7 @@
   "Tuning/TunesTab.cs:84"
  ],
  "Tunes": [
-  "MainForm.cs:446"
+  "MainForm.cs:453"
  ],
  "Tunes on a car": [
   "Tuning/TunesTab.cs:504"
@@ -2860,7 +3228,7 @@
   "Rivals/SpeedoTab.cs:799"
  ],
  "Two figures: same car, and same PI class": [
-  "Rivals/HudTab.cs:1520"
+  "Rivals/HudTab.cs:1597"
  ],
  "Two panels over the game, from the same records as the website. They answer different questions, so they are never up together: each has its own button, and neither stays.": [
   "Rivals/RivalsTab.cs:96"
@@ -2870,33 +3238,34 @@
   "Rivals/OwnTimesTab.cs:108"
  ],
  "Type a name for the layout first.": [
-  "Rivals/HudTab.cs:1130"
+  "Rivals/HudTab.cs:1195"
  ],
  "Tyre overview": [
-  "Rivals/HudTab.cs:964"
+  "Rivals/HudTab.cs:990"
  ],
  "Tyre overview (while driving)": [
-  "Rivals/HudTab.cs:681"
+  "Rivals/HudTab.cs:703"
  ],
  "Tyre overview while driving": [
-  "Rivals/HudTab.cs:1289"
+  "Rivals/HudTab.cs:1355"
  ],
  "Tyre temperature in Fahrenheit": [
-  "Rivals/HudTab.cs:1293"
+  "Rivals/HudTab.cs:1360"
  ],
  "Tyres": [
-  "Rivals/TyreHud.cs:194"
+  "Rivals/TyreHud.cs:199"
  ],
  "UDP port": [
-  "MainForm.cs:790"
+  "MainForm.cs:803"
  ],
  "UDP received, but packet length {0} is not a supported Forza packet.": [
-  "MainForm.cs:2228"
+  "MainForm.cs:2241"
  ],
  "Unavailable saved controller ({0})": [
   "BlueprintEditor.cs:750"
  ],
  "Unit": [
+  "Rivals/GMeterTab.cs:60",
   "TelemetryInspector.cs:47"
  ],
  "Unit under the speed": [
@@ -2911,52 +3280,60 @@
  "Unused tunes": [
   "Tuning/TunesTab.cs:298"
  ],
+ "Up and down": [
+  "Rivals/GMeterTab.cs:575"
+ ],
  "Update failed": [
   "Rivals/RivalsTab.cs:646",
   "Rivals/RivalsTab.cs:650"
  ],
  "Upload": [
-  "Scan/ScanTab.cs:247"
+  "Scan/ScanTab.cs:332"
  ],
  "Upload each finished board": [
-  "Scan/ScanTab.cs:167"
+  "Scan/ScanTab.cs:236"
  ],
  "Upload: ": [
-  "Scan/ScanTab.cs:658",
-  "Scan/ScanTab.cs:659"
+  "Scan/ScanTab.cs:915",
+  "Scan/ScanTab.cs:916"
  ],
  "Uploading to {server} ...": [
   "scripts/contrib_scan.py:383"
  ],
  "Use this design": [
+  "Rivals/GMeterTab.cs:92",
   "Rivals/SpeedoTab.cs:146"
  ],
+ "VERTICAL": [
+  "Rivals/GMeterRenderer.cs:460"
+ ],
  "Verify FH6 grip data": [
-  "MainForm.cs:770"
+  "MainForm.cs:783"
  ],
  "Vertical column": [
+  "Rivals/GMeterTab.cs:558",
   "Rivals/SpeedoTab.cs:329",
   "Rivals/SpeedoTab.cs:798"
  ],
  "Vibrate for 10 seconds": [
-  "MainForm.cs:727"
+  "MainForm.cs:740"
  ],
  "Vibrates inside L2/R2. Output strength controls amplitude and output frequency controls trigger pulse frequency.": [
   "BlueprintEditor.cs:1130"
  ],
  "Vibrating at {0}%  |  {1} seconds left": [
-  "MainForm.cs:2095",
-  "MainForm.cs:2131"
+  "MainForm.cs:2108",
+  "MainForm.cs:2144"
  ],
  "Vibration": [
   "BlueprintEditor.cs:1299"
  ],
  "Vibration in the grips": [
-  "MainForm.cs:924"
+  "MainForm.cs:937"
  ],
  "Vibration test": [
   "MainForm.cs:380",
-  "MainForm.cs:2104"
+  "MainForm.cs:2117"
  ],
  "Vs co-players": [
   "Rivals/RaceStatsTab.cs:145",
@@ -2974,16 +3351,16 @@
   "Shortcuts.cs:329"
  ],
  "Waiting for fresh FH6 telemetry; haptics stopped as a precaution.": [
-  "MainForm.cs:2604"
+  "MainForm.cs:2624"
  ],
  "Waiting for telemetry on {0}, port {1}": [
-  "MainForm.cs:2187"
+  "MainForm.cs:2200"
  ],
  "Waiting for telemetry...": [
   "TelemetryInspector.cs:27"
  ],
  "Waiting for the game to come to the front ...": [
-  "Scan/ScanTab.cs:424"
+  "Scan/ScanTab.cs:602"
  ],
  "Waiting for the program to close ...": [
   "Rivals/AppUpdate.cs:411"
@@ -2992,7 +3369,7 @@
   "Auction/AuctionTab.cs:75"
  ],
  "Warn this many seconds before the ghost ends": [
-  "Rivals/HudTab.cs:1233"
+  "Rivals/HudTab.cs:1299"
  ],
  "Watch the Xbox's stream in Discord on this PC, popped out or full screen. Your own stream needs a second Discord account here: your call moves to the Xbox.": [
   "Konsole.cs:352"
@@ -3001,16 +3378,17 @@
   "BlueprintEditor.cs:1298"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:4802",
-  "Rivals/OverlayController.cs:4961"
+  "Rivals/OverlayController.cs:4808",
+  "Rivals/OverlayController.cs:4967"
  ],
  "Wedge": [
   "Rivals/SpeedoTab.cs:818"
  ],
  "What it compares against": [
-  "Rivals/HudTab.cs:1176"
+  "Rivals/HudTab.cs:1242"
  ],
  "What it shows": [
+  "Rivals/GMeterTab.cs:433",
   "Rivals/RivalsTab.cs:233",
   "Rivals/SpeedoTab.cs:641"
  ],
@@ -3022,10 +3400,10 @@
  ],
  "What {0} does": [
   "Disclosure.cs:92",
-  "EdgeCaseTest.cs:121"
+  "EdgeCaseTest.cs:124"
  ],
  "Wheel-lock detection from braking slip ratio": [
-  "MainForm.cs:851"
+  "MainForm.cs:864"
  ],
  "Wheelspin": [
   "Rivals/CarCollectionTab.cs:461"
@@ -3037,7 +3415,7 @@
   "Rivals/SpeedoTab.cs:656"
  ],
  "When a lock-up is detected, this signal overrides the normal grip vibration on the side of the car it happens on.": [
-  "MainForm.cs:1151"
+  "MainForm.cs:1164"
  ],
  "Where the HUD shows": [
   "Konsole.cs:559"
@@ -3046,7 +3424,7 @@
   "Rivals/SpeedoTab.cs:663"
  ],
  "Where the sign-up maps come from": [
-  "Rivals/HudTab.cs:1321"
+  "Rivals/HudTab.cs:1397"
  ],
  "Where you start and finish, in % of the field": [
   "Rivals/RaceStatsTab.cs:620"
@@ -3055,13 +3433,13 @@
   "Konsole.cs:648"
  ],
  "Which mode you are playing, written with every lap. \"automatic\" works it out from the menu you came from: the Rivals screen, a Horizon Play sign-up, or an ordinary sign-up (a solo or co-op race). Free-roam runs prove themselves by their own clock. Only Rivals and Horizon Play laps count on the website; a lap whose mode is unknown is not sent.": [
-  "Rivals/HudTab.cs:1470"
+  "Rivals/HudTab.cs:1547"
  ],
  "Which tune is on a car comes from the game's tune list: open My Tuning Setups for a car once.": [
   "Tuning/TunesTab.cs:169"
  ],
  "While the scan runs, this PC belongs to the scanner: it sends keys to the game and reads the screen. Do not touch the mouse or keyboard. Switching to another window or pressing the Pause key stops it. Start it from a menu in the game, never while you drive.": [
-  "Scan/ScanTab.cs:187"
+  "Scan/ScanTab.cs:272"
  ],
  "Win rate": [
   "Rivals/RaceStatsTab.cs:327"
@@ -3089,7 +3467,7 @@
   "MainForm.cs:326"
  ],
  "Windows only lets you pin programs yourself, so this takes one click from you: right-click this program's icon in the taskbar and choose “Pin to taskbar”. The Start menu entry it needs is in place, and this button shows a tick once the pin is there.": [
-  "MainForm.cs:1705"
+  "MainForm.cs:1718"
  ],
  "Windows only lets you pin to the taskbar yourself: right-click the Start menu entry and choose “Pin to taskbar”.": [
   "Disclosure.cs:462"
@@ -3124,7 +3502,7 @@
   "Konsole.cs:340"
  ],
  "YOUR TIMES ON THESE ROUTES ({0})": [
-  "Rivals/OverlayController.cs:3724"
+  "Rivals/OverlayController.cs:3730"
  ],
  "Year": [
   "Rivals/OwnTimesTab.cs:132"
@@ -3133,43 +3511,43 @@
   "Rivals/RivalsTab.cs:612"
  ],
  "You are driving. Open a menu in the game first: the scanner takes over the keyboard.": [
-  "Scan/ScanTab.cs:403"
+  "Scan/ScanTab.cs:581"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:4799",
-  "Rivals/OverlayController.cs:4960"
+  "Rivals/OverlayController.cs:4805",
+  "Rivals/OverlayController.cs:4966"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:484"
  ],
  "Your car": [
-  "Rivals/OverlayController.cs:4592",
+  "Rivals/OverlayController.cs:4598",
   "Rivals/RivalsTab.cs:285"
  ],
  "Your first lap in a class on a course": [
-  "Rivals/HudTab.cs:1394"
+  "Rivals/HudTab.cs:1471"
  ],
  "Your laps are drawn from where you actually drove; the Rivals maps are the game's own drawings, for routes you have never driven.": [
-  "Rivals/HudTab.cs:1337"
+  "Rivals/HudTab.cs:1413"
  ],
  "Your laps only (telemetry)": [
-  "Rivals/HudTab.cs:1324"
+  "Rivals/HudTab.cs:1400"
  ],
  "Your network is set to Public; the rule then covers that too.": [
   "Konsole.cs:129"
  ],
  "Your own laps decide, not the website. Smaller and shorter than the website celebration: green for a personal best, blue for a new car on your list.": [
-  "Rivals/HudTab.cs:1387"
+  "Rivals/HudTab.cs:1464"
  ],
  "Your previous best here: {0}": [
-  "Rivals/OverlayController.cs:4925",
-  "Rivals/OverlayController.cs:4944"
+  "Rivals/OverlayController.cs:4931",
+  "Rivals/OverlayController.cs:4950"
  ],
  "Your window is not in the list? Copy the list of all windows": [
   "Konsole.cs:395"
  ],
  "a low place usually means few surviving laps, not a slow car": [
-  "Rivals/OverlayController.cs:3857"
+  "Rivals/OverlayController.cs:3863"
  ],
  "a newer version is ready (skipped)": [
   "Rivals/RivalsTab.cs:591"
@@ -3213,30 +3591,34 @@
  "automatic": [
   "Rivals/OwnTimes.cs:417"
  ],
+ "being scanned until {0}": [
+  "Scan/ScanTab.cs:515"
+ ],
  "best fit: {0} {1} (#{2} of {3})": [
-  "Rivals/OverlayController.cs:4681"
+  "Rivals/OverlayController.cs:4687"
  ],
  "best here {0}": [
-  "Rivals/OverlayController.cs:1813"
+  "Rivals/OverlayController.cs:1819"
  ],
  "best per car and course": [
   "Rivals/OwnTimesTab.cs:176"
  ],
  "built-in, changes make your own copy": [
+  "Rivals/GMeterTab.cs:265",
   "Rivals/SpeedoTab.cs:412"
  ],
  "built: {0}": [
   "Rivals/RivalsTab.cs:609"
  ],
  "by points · {0} route(s)": [
-  "Rivals/OverlayController.cs:3798"
+  "Rivals/OverlayController.cs:3804"
  ],
  "by time sum · {0} route(s)": [
-  "Rivals/OverlayController.cs:3799"
+  "Rivals/OverlayController.cs:3805"
  ],
  "car {0}": [
   "Rivals/CarNotesTab.cs:197",
-  "Rivals/OverlayController.cs:1191",
+  "Rivals/OverlayController.cs:1197",
   "Rivals/RaceStatsTab.cs:256",
   "Tuning/TunesTab.cs:218"
  ],
@@ -3245,19 +3627,19 @@
   "Rivals/RivalsTab.cs:492"
  ],
  "class guessed from the {0}": [
-  "Rivals/OverlayController.cs:3855"
+  "Rivals/OverlayController.cs:3861"
  ],
  "class {0}": [
-  "Rivals/OverlayController.cs:4608"
+  "Rivals/OverlayController.cs:4614"
  ],
  "class: none": [
   "Rivals/RivalsTab.cs:836"
  ],
  "class: not found": [
-  "Rivals/OverlayController.cs:4538"
+  "Rivals/OverlayController.cs:4544"
  ],
  "class: {0}": [
-  "Rivals/OverlayController.cs:4539",
+  "Rivals/OverlayController.cs:4545",
   "Rivals/RivalsTab.cs:835"
  ],
  "co-op races only": [
@@ -3267,40 +3649,43 @@
   "scripts/contrib_scan.py:285"
  ],
  "compare: two figures -- same car, and same PI class": [
-  "Rivals/OverlayController.cs:972"
+  "Rivals/OverlayController.cs:978"
  ],
  "compare: {0}": [
-  "Rivals/OverlayController.cs:973"
+  "Rivals/OverlayController.cs:979"
  ],
  "complete": [
-  "Scan/ScanTab.cs:327"
+  "Scan/ScanTab.cs:412"
  ],
  "complete (valid laps)": [
-  "Scan/ScanTab.cs:328"
+  "Scan/ScanTab.cs:413"
  ],
  "console mode -- telemetry over the network, no video source (screen reading off)": [
-  "Rivals/OverlayController.cs:2799"
+  "Rivals/OverlayController.cs:2805"
  ],
  "console mode -- telemetry over the network, {0}": [
-  "Rivals/OverlayController.cs:2796"
+  "Rivals/OverlayController.cs:2802"
  ],
  "console mode -- waiting for telemetry from the network": [
-  "Rivals/OverlayController.cs:2813"
+  "Rivals/OverlayController.cs:2819"
  ],
  "could not load {0}": [
   "Rivals/RivalsTab.cs:364"
  ],
  "cut short": [
-  "Scan/ScanTab.cs:330"
+  "Scan/ScanTab.cs:415"
  ],
  "dataset failed to load: {0}": [
   "Rivals/RivalsTab.cs:405"
+ ],
+ "deepest rank {0:n0}": [
+  "Scan/ScanTab.cs:522"
  ],
  "do not scan, only pack what is already there": [
   "scripts/contrib_scan.py:302"
  ],
  "done": [
-  "Rivals/CourseShapeHud.cs:222"
+  "Rivals/CourseShapeHud.cs:220"
  ],
  "down": [
   "Rivals/OwnTimes.cs:435",
@@ -3316,7 +3701,7 @@
   "Rivals/AppUpdate.cs:260"
  ],
  "drift -- {0} points": [
-  "Rivals/OverlayController.cs:1810"
+  "Rivals/OverlayController.cs:1816"
  ],
  "driven": [
   "Rivals/CarNotesTab.cs:189"
@@ -3328,17 +3713,17 @@
   "scripts/contrib_scan.py:287"
  ],
  "end not confirmed": [
-  "Scan/ScanTab.cs:331"
+  "Scan/ScanTab.cs:416"
  ],
  "ended": [
   "Auction/AuctionTab.cs:266",
   "Auction/AuctionWatch.cs:180",
-  "EdgeCaseTest.cs:1211"
+  "EdgeCaseTest.cs:1214"
  ],
  "ended ~{0}": [
   "Auction/AuctionTab.cs:273",
-  "EdgeCaseTest.cs:1212",
-  "EdgeCaseTest.cs:1213"
+  "EdgeCaseTest.cs:1215",
+  "EdgeCaseTest.cs:1216"
  ],
  "estimate field size for older races": [
   "Rivals/RaceStatsTab.cs:89"
@@ -3356,43 +3741,46 @@
   "Rivals/RaceStatsTab.cs:351"
  ],
  "first ranks read": [
-  "Scan/ScanTab.cs:329"
+  "Scan/ScanTab.cs:414"
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:147",
   "Rivals/OwnTimesTab.cs:442"
  ],
  "flying lap": [
-  "Rivals/OverlayController.cs:3921"
+  "Rivals/OverlayController.cs:3927"
  ],
  "flying sprint": [
-  "Rivals/OverlayController.cs:3920"
+  "Rivals/OverlayController.cs:3926"
  ],
  "for games in full screen": [
   "Rivals/FensterQuelle.cs:858"
  ],
  "free roam -- cross one of your {0} start lines to start the clock": [
-  "Rivals/OverlayController.cs:1936"
+  "Rivals/OverlayController.cs:1942"
  ],
  "free roam -- no start lines known yet; drive a route once, or set one": [
-  "Rivals/OverlayController.cs:1935"
+  "Rivals/OverlayController.cs:1941"
  ],
  "from": [
   "Rivals/OwnTimesTab.cs:133"
  ],
+ "from the top": [
+  "Scan/ScanTab.cs:191"
+ ],
  "game area {0}x{1} at {2},{3}": [
-  "Rivals/OverlayController.cs:2328"
+  "Rivals/OverlayController.cs:2334"
  ],
  "game crashed": [
-  "EdgeCaseTest.cs:1397",
-  "Scan/ScanTab.cs:334",
-  "Scan/ScanTab.cs:517"
+  "EdgeCaseTest.cs:1422",
+  "Scan/ScanTab.cs:419",
+  "Scan/ScanTab.cs:717"
  ],
  "garage": [
   "Rivals/CarNotesTab.cs:191"
  ],
  "head to head ({0}): {1}": [
-  "Rivals/OverlayController.cs:3889"
+  "Rivals/OverlayController.cs:3895"
  ],
  "highlighted in My Cars": [
   "Rivals/CarNotesTab.cs:183"
@@ -3401,23 +3789,23 @@
   "Rivals/CarNotesTab.cs:77"
  ],
  "idle - no telemetry on UDP {0}; set FH6 Data Out On": [
-  "MainForm.cs:1833"
+  "MainForm.cs:1846"
  ],
  "idle - waiting for {0}; tests still work": [
-  "MainForm.cs:1827"
+  "MainForm.cs:1840"
  ],
  "idle — waiting for {0}.exe": [
-  "Rivals/OverlayController.cs:2853"
+  "Rivals/OverlayController.cs:2859"
  ],
  "idle — {0}.exe is not the active window": [
-  "Rivals/OverlayController.cs:2852"
+  "Rivals/OverlayController.cs:2858"
  ],
  "kept the previous one ({0})": [
   "Rivals/RivalsTab.cs:407"
  ],
  "lap stored: {0} s, {1} m": [
   "Rivals/HudTab.cs:314",
-  "Rivals/OverlayController.cs:2371"
+  "Rivals/OverlayController.cs:2377"
  ],
  "lap stored: {0} s, {1} m, car {2}, PI {3}, wet {4}": [
   "Rivals/OverlayController.cs:264"
@@ -3434,6 +3822,9 @@
  "last time; it can come back": [
   "Rivals/CarCollectionTab.cs:508"
  ],
+ "lat": [
+  "Rivals/GMeterRenderer.cs:355"
+ ],
  "later": [
   "Rivals/RivalsTab.cs:626"
  ],
@@ -3441,17 +3832,29 @@
   "Rivals/SpeedoTab.cs:91"
  ],
  "listening on {0}, no packets yet": [
-  "Rivals/OverlayController.cs:4594"
+  "Rivals/OverlayController.cs:4600"
+ ],
+ "loading ...": [
+  "Scan/ScanTab.cs:494"
+ ],
+ "long": [
+  "Rivals/GMeterRenderer.cs:355"
  ],
  "lost": [
   "Auction/AuctionWatch.cs:178",
-  "EdgeCaseTest.cs:1218"
+  "EdgeCaseTest.cs:1221"
  ],
  "minimized": [
   "Rivals/FensterQuelle.cs:706"
  ],
+ "minutes each time": [
+  "Scan/ScanTab.cs:262"
+ ],
  "motor intensity": [
   "TelemetryInspector.cs:138"
+ ],
+ "never": [
+  "Scan/ScanTab.cs:513"
  ],
  "new version: {0}": [
   "Rivals/AppUpdate.cs:210"
@@ -3460,28 +3863,28 @@
   "Rivals/RivalsTab.cs:608"
  ],
  "next": [
-  "Rivals/CourseShapeHud.cs:224"
+  "Rivals/CourseShapeHud.cs:222"
  ],
  "no": [
   "Tuning/TunesTab.cs:263"
  ],
  "no board yet for {0}": [
-  "Rivals/OverlayController.cs:3844"
+  "Rivals/OverlayController.cs:3850"
  ],
  "no dataset — set dataset_url, or restore the shipped {0}": [
   "Rivals/RivalsTab.cs:387"
  ],
  "no map harvested": [
-  "Rivals/CourseShapeHud.cs:188"
+  "Rivals/CourseShapeHud.cs:186"
  ],
  "no position yet -- drive a moment, then press again": [
-  "Rivals/OverlayController.cs:946"
+  "Rivals/OverlayController.cs:952"
  ],
  "no records to answer from — check the server address, or unzip the package again: it ships {0}": [
   "Rivals/RivalsTab.cs:362"
  ],
  "no running clock -- nothing is being timed": [
-  "Rivals/OverlayController.cs:1945"
+  "Rivals/OverlayController.cs:1951"
  ],
  "no server set": [
   "Rivals/AppUpdate.cs:188"
@@ -3490,29 +3893,32 @@
   "Rivals/FensterQuelle.cs:705"
  ],
  "none": [
-  "MainForm.cs:2001"
+  "MainForm.cs:2014"
  ],
  "not driven yet": [
-  "Rivals/CourseShapeHud.cs:189"
+  "Rivals/CourseShapeHud.cs:187"
+ ],
+ "not in the route list": [
+  "Scan/ScanTab.cs:517"
  ],
  "not scanned yet: {0}": [
-  "Rivals/OverlayController.cs:4686"
+  "Rivals/OverlayController.cs:4692"
  ],
  "not sent": [
-  "Scan/ScanTab.cs:641",
-  "Scan/ScanTab.cs:649"
+  "Scan/ScanTab.cs:898",
+  "Scan/ScanTab.cs:906"
  ],
  "not uploaded: {error}": [
   "scripts/contrib_scan.py:263"
  ],
  "now": [
-  "Rivals/CourseShapeHud.cs:223"
+  "Rivals/CourseShapeHud.cs:221"
  ],
  "now: TC {0:0.0} of {1:0.0} · ABS {2:0.0} of {3:0.0} · STAB {4:0.0} of {5:0.0}": [
   "Rivals/SpeedoTab.cs:234"
  ],
  "off": [
-  "Scan/ScanTab.cs:578"
+  "Scan/ScanTab.cs:782"
  ],
  "one-make event": [
   "Rivals/RivalsTab.cs:839"
@@ -3521,14 +3927,14 @@
   "Rivals/CarNotesTab.cs:289"
  ],
  "ordinal {0}": [
-  "Rivals/OverlayController.cs:4619"
+  "Rivals/OverlayController.cs:4625"
  ],
  "outbid": [
   "Auction/AuctionWatch.cs:172"
  ],
  "outcome not seen": [
   "Auction/AuctionTab.cs:283",
-  "EdgeCaseTest.cs:1216"
+  "EdgeCaseTest.cs:1219"
  ],
  "overlay for recording": [
   "Rivals/AufnahmeFenster.cs:31"
@@ -3537,25 +3943,25 @@
   "scripts/contrib_scan.py:280"
  ],
  "personal best, any car": [
-  "Rivals/OverlayController.cs:1203"
+  "Rivals/OverlayController.cs:1209"
  ],
  "places from start to finish": [
   "Rivals/RaceStatsTab.cs:344"
  ],
  "preview -- {0}": [
-  "Rivals/OverlayController.cs:2362",
-  "Rivals/OverlayController.cs:2364",
-  "Rivals/OverlayController.cs:2367"
+  "Rivals/OverlayController.cs:2368",
+  "Rivals/OverlayController.cs:2370",
+  "Rivals/OverlayController.cs:2373"
  ],
  "preview failed: {0}": [
   "Rivals/RivalsTab.cs:872"
  ],
  "preview: {0}": [
-  "Rivals/OverlayController.cs:2370",
-  "Rivals/OverlayController.cs:2398"
+  "Rivals/OverlayController.cs:2376",
+  "Rivals/OverlayController.cs:2404"
  ],
  "read failed: {0}": [
-  "Rivals/OverlayController.cs:3147",
+  "Rivals/OverlayController.cs:3153",
   "Rivals/RivalsTab.cs:849"
  ],
  "rebuilt on this machine": [
@@ -3568,7 +3974,7 @@
   "Rivals/RivalsTab.cs:638"
  ],
  "routes recognised": [
-  "Rivals/OverlayController.cs:4523"
+  "Rivals/OverlayController.cs:4529"
  ],
  "routes: none matched": [
   "Rivals/RivalsTab.cs:833"
@@ -3577,30 +3983,30 @@
   "Rivals/RivalsTab.cs:832"
  ],
  "same PI class": [
-  "Rivals/OverlayController.cs:1036"
+  "Rivals/OverlayController.cs:1042"
  ],
  "same PI class, this course": [
-  "Rivals/OverlayController.cs:1201"
+  "Rivals/OverlayController.cs:1207"
  ],
  "same car in this PI class": [
-  "Rivals/OverlayController.cs:1202"
+  "Rivals/OverlayController.cs:1208"
  ],
  "same car, same tune": [
-  "Rivals/OverlayController.cs:1204"
+  "Rivals/OverlayController.cs:1210"
  ],
  "same car, this course": [
   "Rivals/HudTab.cs:324",
-  "Rivals/OverlayController.cs:1200",
-  "Rivals/OverlayController.cs:2364"
+  "Rivals/OverlayController.cs:1206",
+  "Rivals/OverlayController.cs:2370"
  ],
  "saved": [
   "Rivals/CarNotesTab.cs:306"
  ],
  "saved scan": [
-  "Scan/ScanTab.cs:703"
+  "Scan/ScanTab.cs:960"
  ],
  "scanning ...": [
-  "Scan/ScanTab.cs:466"
+  "Scan/ScanTab.cs:649"
  ],
  "search car": [
   "Rivals/OwnTimesTab.cs:172"
@@ -3612,37 +4018,40 @@
   "scripts/contrib_scan.py:281"
  ],
  "sending ...": [
-  "Scan/ScanTab.cs:578",
-  "Scan/ScanTab.cs:679"
+  "Scan/ScanTab.cs:782",
+  "Scan/ScanTab.cs:936"
  ],
  "sent": [
-  "Scan/ScanTab.cs:643"
+  "Scan/ScanTab.cs:900"
  ],
  "sent again, for review": [
-  "Scan/ScanTab.cs:642"
+  "Scan/ScanTab.cs:899"
  ],
  "sent, held back": [
-  "Scan/ScanTab.cs:643"
+  "Scan/ScanTab.cs:900"
  ],
  "server error": [
-  "Scan/ScanTab.cs:332",
-  "Scan/ScanTab.cs:497"
+  "Scan/ScanTab.cs:417",
+  "Scan/ScanTab.cs:687"
  ],
  "server not reachable: {0}": [
   "Rivals/AppUpdate.cs:215"
  ],
  "several of your courses share these lengths — cannot tell them apart": [
-  "Rivals/OverlayController.cs:3734"
+  "Rivals/OverlayController.cs:3740"
  ],
  "showing the points order": [
-  "Rivals/OverlayController.cs:2654"
+  "Rivals/OverlayController.cs:2660"
  ],
  "showing the time order": [
-  "Rivals/OverlayController.cs:2655"
+  "Rivals/OverlayController.cs:2661"
  ],
  "sold": [
   "Auction/AuctionWatch.cs:176",
-  "EdgeCaseTest.cs:1220"
+  "EdgeCaseTest.cs:1223"
+ ],
+ "someone else is scanning it": [
+  "Scan/ScanTab.cs:655"
  ],
  "sprint": [
   "Rivals/OwnTimesTab.cs:443"
@@ -3655,26 +4064,26 @@
   "Rivals/OwnTimesTab.cs:442"
  ],
  "standing lap": [
-  "Rivals/OverlayController.cs:3919"
+  "Rivals/OverlayController.cs:3925"
  ],
  "standing sprint": [
-  "Rivals/OverlayController.cs:3918"
+  "Rivals/OverlayController.cs:3924"
  ],
  "start line \"{0}\" set here; cross it again to stop the clock": [
-  "Rivals/OverlayController.cs:947"
+  "Rivals/OverlayController.cs:953"
  ],
  "stock class": [
   "Rivals/OwnTimes.cs:436",
   "Rivals/OwnTimesTab.cs:122"
  ],
  "stopped": [
-  "EdgeCaseTest.cs:1397",
-  "Rivals/OverlayController.cs:684",
-  "Rivals/OverlayController.cs:710",
+  "EdgeCaseTest.cs:1422",
+  "Rivals/OverlayController.cs:690",
+  "Rivals/OverlayController.cs:716",
   "Rivals/RivalsTab.cs:813",
-  "Scan/ScanTab.cs:333",
-  "Scan/ScanTab.cs:529",
-  "Scan/ScanTab.cs:556"
+  "Scan/ScanTab.cs:418",
+  "Scan/ScanTab.cs:729",
+  "Scan/ScanTab.cs:759"
  ],
  "telemetry: not connected to the app's listener": [
   "Rivals/RivalsTab.cs:798"
@@ -3689,16 +4098,16 @@
   "Rivals/AppUpdate.cs:211"
  ],
  "the game writes lap time and progress here": [
-  "Rivals/HudTab.cs:457"
+  "Rivals/HudTab.cs:463"
  ],
  "the listener is not running on {0}": [
-  "Rivals/OverlayController.cs:4595"
+  "Rivals/OverlayController.cs:4601"
  ],
  "the program file is not where it is expected": [
   "Shortcuts.cs:322"
  ],
  "the screen did not give a distance for every route": [
-  "Rivals/OverlayController.cs:3736"
+  "Rivals/OverlayController.cs:3742"
  ],
  "the server names no version": [
   "Rivals/AppUpdate.cs:199"
@@ -3714,35 +4123,38 @@
   "Konsole.cs:100"
  ],
  "this car": [
-  "Rivals/OverlayController.cs:1018"
+  "Rivals/OverlayController.cs:1024"
  ],
  "this copy does not know its own version": [
   "Rivals/AppUpdate.cs:206"
  ],
  "this course": [
-  "Rivals/OverlayController.cs:4914"
+  "Rivals/OverlayController.cs:4920"
  ],
  "this version stays skipped": [
   "Rivals/RivalsTab.cs:621"
  ],
  "tick failed: {0}": [
-  "Rivals/OverlayController.cs:2912"
+  "Rivals/OverlayController.cs:2918"
+ ],
+ "times, waiting": [
+  "Scan/ScanTab.cs:257"
  ],
  "to": [
   "Rivals/OwnTimesTab.cs:134"
  ],
  "to beat: nothing -- this car is not on the website's board yet": [
-  "Rivals/OverlayController.cs:1082"
+  "Rivals/OverlayController.cs:1088"
  ],
  "to beat: {0} -- website best, this car": [
-  "Rivals/OverlayController.cs:1085",
-  "Rivals/OverlayController.cs:2368"
+  "Rivals/OverlayController.cs:1091",
+  "Rivals/OverlayController.cs:2374"
  ],
  "to beat: {0} -- your submitted time": [
-  "Rivals/OverlayController.cs:1083"
+  "Rivals/OverlayController.cs:1089"
  ],
  "too thin for the time sum: {0}": [
-  "Rivals/OverlayController.cs:3848"
+  "Rivals/OverlayController.cs:3854"
  ],
  "top 3 in {0} of {1} race(s) with 5 or more drivers": [
   "Rivals/RaceStatsTab.cs:331"
@@ -3752,7 +4164,7 @@
  ],
  "understeers from turn 3, tyres go off after 4 laps": [
   "Rivals/HudTab.cs:318",
-  "Rivals/OverlayController.cs:2399"
+  "Rivals/OverlayController.cs:2405"
  ],
  "unknown": [
   "Auction/AuctionWatch.cs:181",
@@ -3776,32 +4188,36 @@
  "usable: yes": [
   "Rivals/RivalsTab.cs:840"
  ],
+ "vert": [
+  "Rivals/GMeterRenderer.cs:712",
+  "Rivals/GMeterRenderer.cs:774"
+ ],
  "waiting for Forza": [
-  "MainForm.cs:1375"
+  "MainForm.cs:1388"
  ],
  "watching — OCR {0}": [
-  "Rivals/OverlayController.cs:698",
-  "Rivals/OverlayController.cs:2834"
+  "Rivals/OverlayController.cs:704",
+  "Rivals/OverlayController.cs:2840"
  ],
  "watching — no OCR language installed, the route panel cannot read": [
-  "Rivals/OverlayController.cs:699",
-  "Rivals/OverlayController.cs:2835"
+  "Rivals/OverlayController.cs:705",
+  "Rivals/OverlayController.cs:2841"
  ],
  "week {0}": [
   "Rivals/CarCollectionTab.cs:554"
  ],
  "what usually fixes it": [
-  "Rivals/OverlayController.cs:4542"
+  "Rivals/OverlayController.cs:4548"
  ],
  "window: {0}": [
-  "Rivals/OverlayController.cs:2798"
+  "Rivals/OverlayController.cs:2804"
  ],
  "winning": [
   "Auction/AuctionWatch.cs:173"
  ],
  "won": [
   "Auction/AuctionWatch.cs:177",
-  "EdgeCaseTest.cs:1220"
+  "EdgeCaseTest.cs:1223"
  ],
  "wrote {0} — the routes box must hold the 01/02/03 list, the class box only the badge": [
   "Rivals/RivalsTab.cs:866"
@@ -3810,10 +4226,10 @@
   "Tuning/TunesTab.cs:263"
  ],
  "you have no recorded laps on these routes": [
-  "Rivals/OverlayController.cs:3737"
+  "Rivals/OverlayController.cs:3743"
  ],
  "your best lap on each of the three routes above": [
-  "Rivals/OverlayController.cs:3869"
+  "Rivals/OverlayController.cs:3875"
  ],
  "your gamertag (optional)": [
   "Rivals/RivalsTab.cs:131"
@@ -3822,28 +4238,28 @@
   "Rivals/RivalsTab.cs:610"
  ],
  "{0} (standing start)": [
-  "Rivals/OverlayController.cs:1898"
+  "Rivals/OverlayController.cs:1904"
  ],
  "{0} -- final": [
-  "Rivals/OverlayController.cs:1887"
+  "Rivals/OverlayController.cs:1893"
  ],
  "{0} -- no flying lap here yet, recording ({1} m)": [
-  "Rivals/OverlayController.cs:1880"
- ],
- "{0} -- no standing-start lap here yet, recording ({1} m)": [
-  "Rivals/OverlayController.cs:1879"
- ],
- "{0} -- none yet": [
-  "Rivals/OverlayController.cs:1918"
- ],
- "{0} -- off the reference line": [
-  "Rivals/OverlayController.cs:1894"
- ],
- "{0} -- reference lap ended here": [
   "Rivals/OverlayController.cs:1886"
  ],
+ "{0} -- no standing-start lap here yet, recording ({1} m)": [
+  "Rivals/OverlayController.cs:1885"
+ ],
+ "{0} -- none yet": [
+  "Rivals/OverlayController.cs:1924"
+ ],
+ "{0} -- off the reference line": [
+  "Rivals/OverlayController.cs:1900"
+ ],
+ "{0} -- reference lap ended here": [
+  "Rivals/OverlayController.cs:1892"
+ ],
  "{0} -- switched off": [
-  "Rivals/HudTab.cs:695"
+  "Rivals/HudTab.cs:719"
  ],
  "{0} -- {1} tunes": [
   "Tuning/TunesTab.cs:375"
@@ -3853,7 +4269,7 @@
   "Rivals/CarCollectionTab.cs:514"
  ],
  "{0} Xbox/PlayStation/8BitDo-compatible gamepad(s)": [
-  "MainForm.cs:1854"
+  "MainForm.cs:1867"
  ],
  "{0} best laps of yours, on tunes by {1} tuners.": [
   "Tuning/TunesTab.cs:497"
@@ -3862,7 +4278,7 @@
   "Rivals/RaceStatsTab.cs:360"
  ],
  "{0} board(s) selected": [
-  "Scan/ScanTab.cs:380"
+  "Scan/ScanTab.cs:558"
  ],
  "{0} boards": [
   "Rivals/RivalsTab.cs:396",
@@ -3870,8 +4286,11 @@
   "Rivals/RivalsTab.cs:524",
   "Rivals/RivalsTab.cs:815"
  ],
+ "{0} boards, the ones that need a scan most at the top. Boards someone is scanning now are at the end.": [
+  "Scan/ScanTab.cs:532"
+ ],
  "{0} car(s) hidden: the dataset has no name for them, only an id": [
-  "Rivals/OverlayController.cs:3862"
+  "Rivals/OverlayController.cs:3868"
  ],
  "{0} car(s) in {1} class(es), scored over {2} course(s). On each course, place 1 earns as many points as cars you drove there, like on the website; standing and flying starts count separately. * = the total includes the slowest time on courses that car did not drive.": [
   "Rivals/OwnTimesTab.cs:398"
@@ -3883,7 +4302,10 @@
   "Tuning/TunesTab.cs:315"
  ],
  "{0} cyl": [
-  "Rivals/OverlayController.cs:4616"
+  "Rivals/OverlayController.cs:4622"
+ ],
+ "{0} d": [
+  "Scan/ScanTab.cs:513"
  ],
  "{0} file(s) could not be deleted -- another program may have them open. Try again later.": [
   "Rivals/OwnTimesTab.cs:267"
@@ -3894,8 +4316,8 @@
  "{0} hp": [
   "Rivals/CarNotesTab.cs:288",
   "Rivals/HudTab.cs:294",
-  "Rivals/OverlayController.cs:1269",
-  "Rivals/OverlayController.cs:2397"
+  "Rivals/OverlayController.cs:1275",
+  "Rivals/OverlayController.cs:2403"
  ],
  "{0} is not writable: the app sits in a protected folder. Unpack the package by hand, or move the app to a folder you can write to.": [
   "Rivals/AppUpdate.cs:325"
@@ -3910,13 +4332,13 @@
   "Rivals/OwnTimesTab.cs:465"
  ],
  "{0} lines of text in the masks": [
-  "Rivals/OverlayController.cs:4554"
+  "Rivals/OverlayController.cs:4560"
  ],
  "{0} more with a car not on the leaderboard": [
   "Rivals/RaceStatsTab.cs:379"
  ],
  "{0} native DualSense controller(s)": [
-  "MainForm.cs:1859"
+  "MainForm.cs:1872"
  ],
  "{0} of {1} cars owned -- {2} missing": [
   "Rivals/CarCollectionTab.cs:246",
@@ -3926,7 +4348,7 @@
   "Tuning/TunesTab.cs:164"
  ],
  "{0} of {1} tunes -- {2} free.": [
-  "Rivals/OverlayController.cs:665"
+  "Rivals/OverlayController.cs:671"
  ],
  "{0} owned · {1} missing · {2} not sure": [
   "Rivals/CarCollectionTab.cs:245"
@@ -3941,7 +4363,7 @@
   "Rivals/CarCollectionTab.cs:528"
  ],
  "{0} pts": [
-  "Rivals/OverlayController.cs:3831"
+  "Rivals/OverlayController.cs:3837"
  ],
  "{0} race(s) shown of {1}: {2} recorded while driving, {3} rebuilt from saved laps. The field size is read from the start grid before each race; {4} race(s) have it. Positions in % of the field: 0% = first, 100% = last.": [
   "Rivals/RaceStatsTab.cs:305"
@@ -3971,7 +4393,7 @@
   "Rivals/RaceStatsTab.cs:326"
  ],
  "{0}/{1} routes": [
-  "Rivals/OverlayController.cs:4671"
+  "Rivals/OverlayController.cs:4677"
  ],
  "{0}: general values": [
   "Rivals/SpeedoTab.cs:230"
@@ -3980,7 +4402,7 @@
   "Rivals/SpeedoTab.cs:230"
  ],
  "{0}: opacity": [
-  "Rivals/HudTab.cs:1708"
+  "Rivals/HudTab.cs:1785"
  ],
  "{0}–{1}% of the field\nStarting position: {2} ({3} race(s))\nFinishing position: {4} ({5} race(s))": [
   "Rivals/RaceStatsTab.cs:739"

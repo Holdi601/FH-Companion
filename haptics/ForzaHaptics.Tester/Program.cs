@@ -2185,6 +2185,34 @@ internal static class Program
             return;
         }
 
+        if (args.Length >= 2 && string.Equals(args[0], "--hud-style-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // DIE STILE DER HUD-STUECKE ALS BILD (HudStil): Reifen und Autonotiz in jedem eingebauten
+            // Stil, mit eigenen Einstellungen -- die des Nutzers bleiben unberuehrt.
+            //   --hud-style-frames <ordner>
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            var flaeche = new System.Drawing.Size(1920, 1080);
+            using var bild = new System.Drawing.Bitmap(380 * HudStile.Eingebaut.Count, 560, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            using var g = System.Drawing.Graphics.FromImage(bild);
+            g.Clear(System.Drawing.Color.FromArgb(70, 76, 84));
+            for (var i = 0; i < HudStile.Eingebaut.Count; i++)
+            {
+                var s = new OverlaySettings { HudTyres = true, CarNotes = true, HudTyresX = 0, HudTyresY = 0, HudTyresAlign = "left", HudTyresScale = 1.0,
+                                              HudCarNoteX = 0, HudCarNoteY = 0.34, HudCarNoteAlign = "left" };
+                HudStile.Anwenden(s, HudElement.Tyres, HudStile.Eingebaut[i]);
+                HudStile.Anwenden(s, HudElement.CarNote, HudStile.Eingebaut[i]);
+                var zustand = g.Save();
+                g.TranslateTransform(i * 380 + 10, 10);
+                g.SetClip(new System.Drawing.Rectangle(0, 0, 370, 540));
+                TyreHud.Male(g, s, flaeche, TyreHud.Beispiel());
+                CarNoteHud.Male(g, s, flaeche, "Porsche 911 GT3 RS '19 · PI 900", HudStile.Eingebaut[i].Name + ": understeers from turn 3");
+                g.Restore(zustand);
+            }
+            bild.Save(Path.Combine(ordner, "hud_styles.png"));
+            Console.WriteLine(ordner);
+            return;
+        }
+
         if (args.Length >= 2 && string.Equals(args[0], "--gmeter-frames", StringComparison.OrdinalIgnoreCase))
         {
             // JEDES G-METER ALS BILD -- ohne Fenster ueber dem Spiel (GMeterRenderer): vier Augenblicke

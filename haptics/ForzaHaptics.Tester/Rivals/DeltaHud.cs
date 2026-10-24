@@ -654,11 +654,9 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         var top = _flaeche.Height * place.Y;
         Merke(left, top, width, height);
 
-        using (var shade = new SolidBrush(
-                   plate ?? Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16))))
-        {
-            g.FillRectangle(shade, left, top, width, height);
-        }
+        // Der Stil (HudStil): ohne Wahl wie bisher eine eckige Platte.
+        HudZeichnen.Platte(g, _settings, HudElement.Delta, new RectangleF(left, top, width, height),
+                           plate ?? Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16)), 0f);
         using (var pen = new SolidBrush(colour))
         {
             g.DrawString(big, bigFont, pen, left + (width - bigSize.Width) / 2, top + 2);
@@ -710,11 +708,8 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         Merke(links, oben, breite, hoehe);
         _merkeSpur = false;
 
-        using (var platte = new SolidBrush(
-                   Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16))))
-        {
-            g.FillRectangle(platte, links, oben, breite, hoehe);
-        }
+        HudZeichnen.Platte(g, _settings, HudElement.Delta, new RectangleF(links, oben, breite, hoehe),
+                           Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16)), 0f);
 
         var meine = Parse(_settings.HudColorMine, ColorTranslator.FromHtml("#e7ecf3"));
         var fremde = Parse(_settings.HudColorTheirs, ColorTranslator.FromHtml("#ffb454"));
@@ -728,7 +723,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
             (Loc.T("THR"), false), (Loc.T("BRK"), false), (Loc.T("CLU"), false),
             (Loc.T("STR"), true), (Loc.T("GEAR"), false),
         };
-        using var klein = new Font("Segoe UI", Math.Max(5f, _unit * 0.46f * place.Scale));
+        using var klein = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", Math.Max(5f, _unit * 0.46f * place.Scale));
         var strich = (float)Math.Clamp(_settings.HudInputsLineWidth, 0.2, 6.0);
         using var stiftMeins = new Pen(meine,
             Math.Max(0.5f, _unit * 0.09f * place.Scale * strich));
@@ -890,10 +885,10 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         var ghostPlace = _settings.GhostPlacement;
         var notePlace = _settings.NotePlacement;
 
-        using var deltaFont = new Font("Segoe UI Semibold", _unit * 2.2f * deltaPlace.Scale);
-        using var labelFont = new Font("Segoe UI", _unit * 0.72f * deltaPlace.Scale);
-        using var ghostFont = new Font("Segoe UI Semibold", _unit * 1.2f * ghostPlace.Scale);
-        using var noteFont = new Font("Segoe UI", _unit * 0.72f * notePlace.Scale);
+        using var deltaFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI Semibold", _unit * 2.2f * deltaPlace.Scale);
+        using var labelFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", _unit * 0.72f * deltaPlace.Scale);
+        using var ghostFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI Semibold", _unit * 1.2f * ghostPlace.Scale);
+        using var noteFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", _unit * 0.72f * notePlace.Scale);
 
         if (_nurNotiz)
         {
@@ -964,8 +959,8 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
                     unten = Math.Max(unten, ghostPlace.Y + (geistHoehe / Math.Max(1, _flaeche.Height)) + 0.004f);
                 }
                 var klein = deltaPlace with { Scale = deltaPlace.Scale * 0.62f };
-                using var extraFont = new Font("Segoe UI Semibold", _unit * 2.2f * klein.Scale);
-                using var extraLabelFont = new Font("Segoe UI", _unit * 0.72f * klein.Scale);
+                using var extraFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI Semibold", _unit * 2.2f * klein.Scale);
+                using var extraLabelFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", _unit * 0.72f * klein.Scale);
                 foreach (var (extraDelta, extraLabel) in _extras)
                 {
                     var zeile = klein with { Y = unten };
@@ -979,7 +974,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
             // die Feier, die kommt, wenn sie geschlagen ist.
             if (!string.IsNullOrEmpty(_target))
             {
-                using var zielFont = new Font("Segoe UI Semibold", _unit * 0.8f * deltaPlace.Scale);
+                using var zielFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI Semibold", _unit * 0.8f * deltaPlace.Scale);
                 Draw(g, deltaPlace with { Y = unten }, _target, Color.FromArgb(255, 209, 102), string.Empty,
                      zielFont, zielFont);
             }

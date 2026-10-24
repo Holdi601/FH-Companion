@@ -89,6 +89,7 @@ internal sealed class CarNoteHud : LayeredHud
     internal static Aufbau Lege(Graphics g, OverlaySettings s, Size flaeche, string titel,
                                 string text)
     {
+        _s = s;
         var platz = s.CarNotePlacement;
         // 1080p-Masse, wie beim Umriss-Overlay: sonst ist die Notiz auf 8K ein
         // Briefmarkenrest und auf 720p ein halber Schirm.
@@ -124,7 +125,11 @@ internal sealed class CarNoteHud : LayeredHud
     // Zeichenflaeche, und Vorschau (Schirm) und Overlay (Bitmap, 96 DPI) liefen
     // auf einem skalierten Schirm sonst auseinander. Siehe CourseShapeHud.Schrift.
     private static Font Schrift(string familie, float punkt) =>
-        new(familie, punkt * 96f / 72f, GraphicsUnit.Pixel);
+        _s is null ? new(familie, punkt * 96f / 72f, GraphicsUnit.Pixel)
+                   : HudZeichnen.Schrift(_s, HudElement.CarNote, familie, punkt * 96f / 72f, FontStyle.Regular, GraphicsUnit.Pixel);
+
+    /// <summary>Die Einstellungen des Bildes, das gerade gemessen oder gezeichnet wird (Stil der Schrift).</summary>
+    [ThreadStatic] private static OverlaySettings? _s;
 
     /// <summary>Die Notiz auf eine Spielflaeche dieser Groesse zeichnen.</summary>
     /// <param name="auchWennAus">
@@ -134,6 +139,7 @@ internal sealed class CarNoteHud : LayeredHud
     internal static void Male(Graphics g, OverlaySettings s, Size flaeche, string titel,
                               string text, bool auchWennAus = false)
     {
+        _s = s;
         if ((!s.CarNotes && !auchWennAus) || string.IsNullOrWhiteSpace(text)) { return; }
         var a = Lege(g, s, flaeche, titel, text);
         var k = a.Kasten;
@@ -144,11 +150,8 @@ internal sealed class CarNoteHud : LayeredHud
                                                     Color.FromArgb(127, 211, 255));
 
         var alpha = Math.Max(0, Math.Min(255, s.CarNoteBackAlpha));
-        if (alpha > 0)
-        {
-            using var platte = new SolidBrush(Color.FromArgb(alpha, grund));
-            g.FillRectangle(platte, k);
-        }
+        // Der Stil (HudStil): ohne Wahl wie bisher eine eckige Platte.
+        HudZeichnen.Platte(g, s, HudElement.CarNote, k, Color.FromArgb(alpha, grund), 0f);
 
         using var kopfSchrift = Schrift("Segoe UI Semibold", a.KopfPunkt);
         using var textSchrift = Schrift("Segoe UI", a.TextPunkt);

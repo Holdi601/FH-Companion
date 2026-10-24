@@ -501,6 +501,16 @@ internal sealed class OverlaySettings
     /// <summary>Je Auto (CarOrdinal) eigene Werte fuer TC, ABS, STAB -- sie gehen den allgemeinen vor.</summary>
     [JsonPropertyName("speedo_car_sensitivity")] public Dictionary<string, int[]> SpeedoCarSensitivity { get; set; } = new();
 
+    // ---- STILE DER HUD-STUECKE (seit 2026-10-24, HudStil) ----------------------------
+    /// <summary>Je Element (HudElement) der gewaehlte Stil: Rahmen, Ecken, Leuchten, Schrift.</summary>
+    [JsonPropertyName("hud_styles")] public Dictionary<string, HudStilWahl> HudStyles { get; set; } = new();
+    /// <summary>Eigene Farben der Reifenuebersicht -- leer: wie der Delta-Streifen (hud_background).</summary>
+    [JsonPropertyName("tyres_back")] public string TyresBack { get; set; } = string.Empty;
+    [JsonPropertyName("tyres_ink")] public string TyresInk { get; set; } = string.Empty;
+    /// <summary>Eigene Farben der Live-Karte -- leer: wie die Streckenkarten (course_shape_*).</summary>
+    [JsonPropertyName("livemap_back")] public string LiveMapBack { get; set; } = string.Empty;
+    [JsonPropertyName("livemap_line")] public string LiveMapLine { get; set; } = string.Empty;
+
     // ---- DAS G-METER (seit 2026-10-24) ------------------------------------------------
     [JsonPropertyName("hud_gmeter")] public bool HudGMeter { get; set; }
     [JsonPropertyName("hud_gmeter_x")] public double HudGMeterX { get; set; } = 0.015;
@@ -627,6 +637,10 @@ internal sealed class OverlaySettings
         "livemap_width", "livemap_smooth",
         "hud_tyres", "hud_tyres_x", "hud_tyres_y", "hud_tyres_align", "hud_tyres_scale",
         "tyres_fahrenheit",
+        // Seit 2026-10-24: Tacho, G-Meter und die Stile gehoeren zur Anordnung.
+        "hud_speedo", "hud_speedo_x", "hud_speedo_y", "hud_speedo_align", "hud_speedo_scale", "speedo_design",
+        "hud_gmeter", "hud_gmeter_x", "hud_gmeter_y", "hud_gmeter_align", "hud_gmeter_scale", "gmeter_design",
+        "hud_styles", "tyres_back", "tyres_ink", "livemap_back", "livemap_line",
     };
 
     /// <summary>Jede Einstellung nach ihrem Namen in der Datei.</summary>
