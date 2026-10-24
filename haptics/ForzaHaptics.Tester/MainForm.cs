@@ -436,6 +436,13 @@ internal sealed class MainForm : Form, ITelemetryHost
             Padding = new Padding(0)
         };
 
+        var gMeterTab = new TabPage(Loc.T("G-meter"))
+        {
+            BackColor = PanelColor,
+            ForeColor = Color.WhiteSmoke,
+            Padding = new Padding(0)
+        };
+
         var speedoTab = new TabPage(Loc.T("Speedometer"))
         {
             BackColor = PanelColor,
@@ -556,6 +563,11 @@ internal sealed class MainForm : Form, ITelemetryHost
             design => { _rivals.Controller?.TachoNeu(design); hudEinstellungen.Invalidate(true); },
             () => _rivals.Controller?.TachoTripZurueck(),
             () => _rivals.Controller?.TachoLive()));
+        // DAS G-METER (seit 2026-10-24): wie der Tacho, auf demselben Faden.
+        gMeterTab.Controls.Add(new Rivals.GMeterTab(
+            _rivals.Settings,
+            design => { _rivals.Controller?.GMeterNeu(design); hudEinstellungen.Invalidate(true); },
+            () => _rivals.Controller?.GMeterZurueck()));
         hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
         hudEinstellungen.PersoenlichProbe += () => _rivals.PreviewPersonalRecord();
         hudEinstellungen.NeuesAutoProbe += () => _rivals.PreviewNewCar();
@@ -631,6 +643,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         tabs.TabPages.Add(rivalsTab);
         tabs.TabPages.Add(hudTab);
         tabs.TabPages.Add(speedoTab);
+        tabs.TabPages.Add(gMeterTab);
         if (!konsole)
         {
             Erweiterung.Reiter(tabs, new Erweiterung.Umgebung(

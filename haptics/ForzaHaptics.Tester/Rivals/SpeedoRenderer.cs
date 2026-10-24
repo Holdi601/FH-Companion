@@ -310,9 +310,9 @@ internal sealed class SpeedoRenderer : IDisposable
         }
     }
 
-    private static readonly StringFormat Mitte = new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
-    private static readonly StringFormat Links = new() { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
-    private static readonly StringFormat Rechts = new() { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
+    internal static readonly StringFormat Mitte = new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
+    internal static readonly StringFormat Links = new() { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
+    internal static readonly StringFormat Rechts = new() { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
 
     /// <summary>Text in ein Feld -- bei Schrift "Digital" und Ziffern als Sieben-Segment-Anzeige.</summary>
     /// <summary>
@@ -326,7 +326,7 @@ internal sealed class SpeedoRenderer : IDisposable
     /// echten Grenzen gesetzt, senkrecht nach der Hoehe einer Ziffer (sonst huepfte "rpm" gegen
     /// "RPM"), und verkleinert, bis er in Breite UND Hoehe passt.
     /// </remarks>
-    private static void Schreibe(Graphics g, SpeedoDesign d, string text, RectangleF r, float px, Color farbe,
+    internal static void Schreibe(Graphics g, SpeedoDesign d, string text, RectangleF r, float px, Color farbe,
                                  StringFormat? lage = null, bool gross = false, float leuchten = 0f)
     {
         if (_nurFuellung) { return; }
@@ -481,7 +481,7 @@ internal sealed class SpeedoRenderer : IDisposable
     // Rahmen
     // ================================================================== //
 
-    private static GraphicsPath Platte(SpeedoDesign d, RectangleF r, bool kreis)
+    internal static GraphicsPath Platte(SpeedoDesign d, RectangleF r, bool kreis)
     {
         var p = new GraphicsPath();
         if (kreis)
@@ -514,7 +514,7 @@ internal sealed class SpeedoRenderer : IDisposable
     }
 
     /// <summary>Hintergrund und Rahmen; <paramref name="kreis"/> fuer runde Instrumente.</summary>
-    private static void Rahmen(Graphics g, SpeedoDesign d, RectangleF r, bool kreis)
+    internal static void Rahmen(Graphics g, SpeedoDesign d, RectangleF r, bool kreis)
     {
         var grund = F(d.Background, Color.FromArgb(190, 12, 14, 18));
         var rahmen = F(d.FrameColour, Color.Gray);

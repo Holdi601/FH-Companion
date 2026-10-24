@@ -54,6 +54,7 @@ internal static class EdgeCaseTest
         OverlayOutputAndCost();
         TyreOverview();
         Speedometer();
+        GMeter();
         UpdateNurWennNeuer();
         AlleForzaFormate();
         ReplacedControllerGoesQuiet();
@@ -2654,6 +2655,81 @@ internal static class EdgeCaseTest
              "Update: ohne Bauzeit gilt eine andere Kennung nicht mehr als neuer");
         Soll(!Rivals.AppUpdate.IstNeuer("a", "2026-10-18T12:00:00+00:00", "b", "2026-10-18T13:00:00+02:00"),
              "Update: Zeitzonen werden nicht verglichen (13:00 MESZ ist vor 12:00 UTC)");
+    }
+
+    /// <summary>Das G-Meter (2026-10-24): jede Vorlage zeichnet, Richtungen und Spitzen stimmen, Einheiten rechnen.</summary>
+    private static void GMeter()
+    {
+        Soll(!new Rivals.OverlaySettings().HudGMeter, "das G-Meter ist ab Werk an -- es soll opt-in sein");
+        var namen = Rivals.GMeterDesigns.Eingebaut.Select(d => d.Name).ToList();
+        Soll(namen.Distinct(StringComparer.OrdinalIgnoreCase).Count() == namen.Count && namen.Count >= 12, "G-Meter: Vorlagen fehlen oder heissen gleich");
+        foreach (var dim in Enum.GetValues<Rivals.GMeterDimension>())
+        {
+            Soll(Rivals.GMeterDesigns.Eingebaut.Any(d => d.Dimension == dim), $"G-Meter: keine Vorlage fuer {dim}");
+        }
+        Soll(Enum.GetValues<Rivals.GMeterLayout>().All(l => Rivals.GMeterDesigns.Eingebaut.Any(d => d.Layout == l)), "G-Meter: eine Form hat keine Vorlage");
+        var leer = new Rivals.GMeterState().Bild(0, 0, 0, 2f, DateTime.UtcNow, 0);
+        using (var bild = new Bitmap(400, 400, System.Drawing.Imaging.PixelFormat.Format32bppPArgb))
+        using (var g = Graphics.FromImage(bild))
+        using (var maler = new Rivals.GMeterRenderer())
+        {
+            foreach (var d in Rivals.GMeterDesigns.Eingebaut)
+            {
+                foreach (var e in new[] { new Rivals.GMeterEinheit(Rivals.GUnit.G), new Rivals.GMeterEinheit(Rivals.GUnit.FeetPerSecond2) })
+                {
+                    foreach (var b in new[] { leer, Rivals.GMeterState.Vorfuehrung(1.0), Rivals.GMeterState.Vorfuehrung(4.4) })
+                    {
+                        try { maler.Male(g, d, b, new RectangleF(0, 0, 400, 400), e); }
+                        catch (Exception x) { Soll(false, $"G-Meter {d.Name}: {x.GetType().Name} {x.Message}"); }
+                    }
+                }
+            }
+        }
+        var k = Rivals.GMeterDesigns.Eingebaut[2].Clone();
+        Soll(Rivals.GMeterDesign.FromJson(k.ToJson())?.ToJson() == k.ToJson(), "G-Meter: ein Design uebersteht JSON nicht");
+        Soll(Rivals.GMeterDesign.FromJson("{\"maxG\": 99, \"rings\": 0, \"layout\": \"Sphere\"}") is { MaxG: 6f, Rings: 1, Layout: Rivals.GMeterLayout.Sphere },
+             "G-Meter: unsinnige Werte bleiben stehen");
+        Soll(Rivals.GMeterDesign.DimensionVon(Rivals.GMeterLayout.Needle) == Rivals.GMeterDimension.One
+             && Rivals.GMeterDesign.DimensionVon(Rivals.GMeterLayout.Heat) == Rivals.GMeterDimension.Two
+             && Rivals.GMeterDesign.LayoutsVon(Rivals.GMeterDimension.Three).Count() == 3, "G-Meter: Formen und Dimensionen passen nicht");
+
+        // Rechtskurve mit 1,5 G und Bremsen mit 1 G (Forza: X rechts, Z vorwaerts, m/s²).
+        var z = new Rivals.GMeterState();
+        var t = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);
+        void Fahre(float ax, float az, float ay, int ms)
+        {
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 4715, 700, 5, speed: 30f);
+            BitConverter.GetBytes(ax).CopyTo(roh, 20);
+            BitConverter.GetBytes(ay).CopyTo(roh, 24);
+            BitConverter.GetBytes(az).CopyTo(roh, 28);
+            ForzaPacket.TryParse(roh, out var p);
+            z.Aufnehmen(p, t.AddMilliseconds(ms));
+        }
+        Fahre(14.71f, 0f, 0f, 0);
+        Fahre(0f, -9.81f, 2f, 20);
+        Fahre(100f, 0f, 0f, 40);   // ein Aufprall: 10 G -- kein Fahren
+        var gb = z.Bild(z.X, z.Z, z.Y, 2f, t.AddMilliseconds(40), 0);
+        Soll(Math.Abs(gb.Rechts - 1.5f) < 0.01f && Math.Abs(gb.Brems - 1f) < 0.01f && gb.Links == 0f && gb.Vor == 0f && Math.Abs(gb.Hoch - 0.204f) < 0.01f,
+             $"G-Meter: Spitzen falsch (rechts {gb.Rechts}, bremsen {gb.Brems}, hoch {gb.Hoch})");
+        Soll(Math.Abs(z.X) < 0.01f && Math.Abs(z.Z + 1f) < 0.01f, "G-Meter: ein Aufprall ueber 8 G wurde als Messwert genommen");
+        Soll(gb.Huelle.Count(h => h > 0f) == 2 && gb.Spur.Length >= 2, "G-Meter: Huelle oder Spur fehlt");
+        Soll(Rivals.GMeterState.Sektor(1f, 0f) != Rivals.GMeterState.Sektor(-1f, 0f)
+             && Rivals.GMeterState.Sektor(0f, 1f) != Rivals.GMeterState.Sektor(0f, -1f), "G-Meter: Sektoren unterscheiden die Richtungen nicht");
+        var ms = new Rivals.GMeterEinheit(Rivals.GUnit.MetresPerSecond2);
+        var ft = new Rivals.GMeterEinheit(Rivals.GUnit.FeetPerSecond2);
+        Soll(new Rivals.GMeterEinheit(Rivals.GUnit.G).Wert(1.234f) == "1.23" && ms.Wert(1f) == "9.8" && ft.Wert(1f) == "32.2" && ft.Kurz == "ft/s²",
+             "G-Meter: Einheiten rechnen falsch");
+        var s = new Rivals.OverlaySettings();
+        s.GMeterUnit = Rivals.GUnit.FeetPerSecond2;
+        Soll(s.GMeterUnitName == "fts2" && s.GMeterUnit == Rivals.GUnit.FeetPerSecond2, "G-Meter: die Einheit wird nicht gemerkt");
+        foreach (var flaeche in new[] { new Size(1920, 1080), new Size(1280, 720), new Size(3840, 2160) })
+        {
+            foreach (var d in Rivals.GMeterDesigns.Eingebaut)
+            {
+                var r = Rivals.GMeterHud.Lege(s, d, flaeche);
+                Soll(r.X >= 0 && r.Y >= 0 && r.Right <= flaeche.Width && r.Bottom <= flaeche.Height, $"G-Meter {d.Name}: {r} liegt nicht auf {flaeche}");
+            }
+        }
     }
 
     private static void Speedometer()

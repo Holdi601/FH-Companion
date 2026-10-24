@@ -47,6 +47,10 @@ internal sealed class SpeedoMotor : IDisposable
     private volatile bool _vorschau;
     private SpeedoHud? _hud;
     private SpeedoDesign _design;
+    // DAS G-METER (seit 2026-10-24) laeuft auf demselben Faden, im selben Takt.
+    private GMeterHud? _gHud;
+    private GMeterDesign _gDesign;
+    private readonly GMeterState _gDaten = new();
     private readonly object _liveSperre = new();
     private (int Auto, SpeedoMesswerte Werte) _live;
 
@@ -54,6 +58,7 @@ internal sealed class SpeedoMotor : IDisposable
     {
         _settings = settings;
         _design = SpeedoDesigns.Finde(settings.SpeedoDesign);
+        _gDesign = GMeterDesigns.Finde(settings.GMeterDesign);
         _daten = new SpeedoState(merken);
         _faden = new Thread(() => Lauf(flaeche)) { IsBackground = true, Name = "Tacho" };
         _faden.SetApartmentState(ApartmentState.STA);
@@ -97,10 +102,22 @@ internal sealed class SpeedoMotor : IDisposable
         _neuZeichnen = true;
     });
 
+    /// <summary>Das G-Meter: Design neu lesen -- oder dieses nehmen.</summary>
+    public void GDesign(GMeterDesign? design) => Auftrag(() =>
+    {
+        GMeterDesigns.Vergessen();
+        _gDesign = design ?? GMeterDesigns.Finde(_settings.GMeterDesign);
+        _gHud?.DesignNeu(_gDesign);
+        _neuZeichnen = true;
+    });
+
+    /// <summary>Spitzen, Huelle und Waermekarte des G-Meters auf null.</summary>
+    public void GZuruecksetzen() => Auftrag(() => { _gDaten.Zuruecksetzen(); _neuZeichnen = true; });
+
     /// <summary>Beim naechsten Bild neu zeichnen (Lage, Groesse, Einheiten geaendert).</summary>
     public void NeuZeichnen() => Auftrag(() => _neuZeichnen = true);
 
-    public void Flaeche(Rectangle flaeche) => Auftrag(() => { _hud?.SetArea(flaeche); _neuZeichnen = true; });
+    public void Flaeche(Rectangle flaeche) => Auftrag(() => { _hud?.SetArea(flaeche); _gHud?.SetArea(flaeche); _neuZeichnen = true; });
 
     public void TripZurueck() => Auftrag(() => _daten.TripZurueck());
 
@@ -141,6 +158,8 @@ internal sealed class SpeedoMotor : IDisposable
         {
             _hud = new SpeedoHud(_settings, flaeche);
             _hud.DesignNeu(_design);
+            _gHud = new GMeterHud(_settings, flaeche);
+            _gHud.DesignNeu(_gDesign);
             var uhr = Stopwatch.StartNew();
             var zuletzt = uhr.Elapsed.TotalSeconds;
             SpeedoBild? roh = null;
@@ -160,6 +179,7 @@ internal sealed class SpeedoMotor : IDisposable
                 {
                     var auto = (int)e.Paket.Get("CarOrdinal");
                     roh = _daten.Aufnehmen(e.Paket, 0f, _design, SpeedoSchwellen.Fuer(_settings, auto), e.Zeit);
+                    _gDaten.Aufnehmen(e.Paket, e.Zeit);
                     paketZeit = e.Zeit;
                     rennt = e.Paket.Get("IsRaceOn") >= 0.5;
                     neu = true;
@@ -174,56 +194,18 @@ internal sealed class SpeedoMotor : IDisposable
                 zuletzt = jetzt;
 
                 var frisch = DateTime.UtcNow - paketZeit < TimeSpan.FromSeconds(1.5);
-                var zeigen = _settings.HudSpeedo && (_vorschau || (rennt && _vorne && frisch && roh is not null));
-                if (!zeigen)
-                {
-                    if (_hud.Visible) { _hud.Hide(); _daten.Speichern(); }
-                    _neuZeichnen = true;
-                    _wecker.WaitOne(_settings.HudSpeedo ? 50 : 250);
-                    continue;
-                }
-
-                SpeedoBild bild;
-                if (_vorschau && !(rennt && frisch && roh is not null))
-                {
-                    bild = SpeedoState.Vorfuehrung(0, ruhig: true);
-                }
-                else
-                {
-                    // NACH ZEIT GLAETTEN, nicht je Paket: so laeuft die Nadel bei jeder Paketrate und
-                    // jeder Bildrate gleich. Zeitkonstante aus dem Regler "Needle smoothing":
-                    // 0 = roh, Vorgabe 0,5 = 37 ms, 0,95 = 135 ms.
-                    var r = roh!.Value;
-                    var tau = _design.Smoothing * _design.Smoothing * 0.15f;
-                    var k = tau <= 0.001f ? 1f : 1f - (float)Math.Exp(-dt / tau);
-                    _rpmAnzeige += (r.Rpm - _rpmAnzeige) * k;
-                    _tempoAnzeige += (r.SpeedMs - _tempoAnzeige) * k;
-                    if (Math.Abs(r.Rpm - _rpmAnzeige) < 1f) { _rpmAnzeige = r.Rpm; }
-                    var alter = (float)(DateTime.UtcNow - paketZeit).TotalSeconds;
-                    bild = r with
-                    {
-                        Rpm = _rpmAnzeige,
-                        SpeedMs = _tempoAnzeige,
-                        SeitGangwechsel = r.SeitGangwechsel + alter,
-                        Uhr = jetzt,
-                    };
-                }
-
+                var faehrt = rennt && _vorne && frisch && roh is not null;
                 // Ein Bildschirmbild hoechstens so oft wie eingestellt (0 = so oft der Schirm kann).
                 var fps = _settings.SpeedoFps;
                 var faellig = fps <= 0 || (DateTime.UtcNow - _letztesBild).TotalSeconds >= 1.0 / Math.Clamp(fps, 10, 1000) - 0.0005;
-                var zeichen = Zeichen(bild, _design);
-                var bewegt = (_design.GearPop && bild.SeitGangwechsel < 0.3f)
-                             || (bild.ImRoten && (_design.RedlinePulse || _design.ShowShiftLights))
-                             || (bild.AtLimiter && _design.LimiterFlash)
-                             || (bild.Stab == 2 && _design.ShowStability)
-                             || (bild.Rat != 0 && _design.ShowShiftAdvice)
-                             || Math.Abs(bild.Rpm - (roh?.Rpm ?? bild.Rpm)) >= 1f;
-                if (faellig && (_neuZeichnen || zeichen != _zeichen || bewegt || !_hud.Visible))
+                var gezeichnet = false;
+                if (faellig)
                 {
-                    _hud.Setze(bild);
-                    if (!_hud.Visible) { _hud.Show(); _hud.TopMost = true; }
-                    _zeichen = zeichen;
+                    gezeichnet |= Tacho(faehrt, roh, paketZeit, jetzt, dt);
+                    gezeichnet |= GMeter(faehrt, neu, paketZeit, jetzt, dt);
+                }
+                if (gezeichnet)
+                {
                     _neuZeichnen = false;
                     _letztesBild = DateTime.UtcNow;
                     // Bis zum naechsten Bild des Schirms warten -- der natuerliche Takt.
@@ -231,8 +213,9 @@ internal sealed class SpeedoMotor : IDisposable
                 }
                 else
                 {
-                    // Nichts zu tun: auf das naechste Paket warten, hoechstens ein paar Millisekunden.
-                    _wecker.WaitOne(4);
+                    var irgendwas = _settings.HudSpeedo || _settings.HudGMeter;
+                    // Nichts zu tun: auf das naechste Paket warten -- sichtbar kurz, unsichtbar laenger.
+                    _wecker.WaitOne(_hud.Visible || _gHud.Visible ? 4 : irgendwas ? 50 : 250);
                 }
             }
         }
@@ -244,7 +227,86 @@ internal sealed class SpeedoMotor : IDisposable
         {
             try { _daten.Speichern(); } catch (Exception) { }
             try { _hud?.Close(); _hud?.Dispose(); } catch (Exception) { }
+            try { _gHud?.Close(); _gHud?.Dispose(); } catch (Exception) { }
         }
+    }
+
+    /// <summary>Den Tacho zeigen, aendern oder verstecken. true = es wurde gezeichnet.</summary>
+    private bool Tacho(bool faehrt, SpeedoBild? roh, DateTime paketZeit, double jetzt, float dt)
+    {
+        var hud = _hud!;
+        if (!_settings.HudSpeedo || !(_vorschau || faehrt))
+        {
+            if (hud.Visible) { hud.Hide(); _daten.Speichern(); }
+            return false;
+        }
+        SpeedoBild bild;
+        if (!faehrt)
+        {
+            bild = SpeedoState.Vorfuehrung(0, ruhig: true);
+        }
+        else
+        {
+            // NACH ZEIT GLAETTEN, nicht je Paket: so laeuft die Nadel bei jeder Paketrate und jeder
+            // Bildrate gleich. Zeitkonstante aus "Needle smoothing": 0 = roh, 0,5 = 37 ms, 0,95 = 135 ms.
+            var r = roh!.Value;
+            var tau = _design.Smoothing * _design.Smoothing * 0.15f;
+            var k = tau <= 0.001f ? 1f : 1f - (float)Math.Exp(-dt / tau);
+            _rpmAnzeige += (r.Rpm - _rpmAnzeige) * k;
+            _tempoAnzeige += (r.SpeedMs - _tempoAnzeige) * k;
+            if (Math.Abs(r.Rpm - _rpmAnzeige) < 1f) { _rpmAnzeige = r.Rpm; }
+            var alter = (float)(DateTime.UtcNow - paketZeit).TotalSeconds;
+            bild = r with { Rpm = _rpmAnzeige, SpeedMs = _tempoAnzeige, SeitGangwechsel = r.SeitGangwechsel + alter, Uhr = jetzt };
+        }
+        var zeichen = Zeichen(bild, _design);
+        var bewegt = (_design.GearPop && bild.SeitGangwechsel < 0.3f)
+                     || (bild.ImRoten && (_design.RedlinePulse || _design.ShowShiftLights))
+                     || (bild.AtLimiter && _design.LimiterFlash)
+                     || (bild.Stab == 2 && _design.ShowStability)
+                     || (bild.Rat != 0 && _design.ShowShiftAdvice)
+                     || Math.Abs(bild.Rpm - (roh?.Rpm ?? bild.Rpm)) >= 1f;
+        if (!_neuZeichnen && zeichen == _zeichen && !bewegt && hud.Visible) { return false; }
+        hud.Setze(bild);
+        if (!hud.Visible) { hud.Show(); hud.TopMost = true; }
+        _zeichen = zeichen;
+        return true;
+    }
+
+    private float _gx, _gz, _gy;
+    private bool _gBewegt;
+
+    /// <summary>Das G-Meter zeigen, aendern oder verstecken. true = es wurde gezeichnet.</summary>
+    private bool GMeter(bool faehrt, bool neu, DateTime paketZeit, double jetzt, float dt)
+    {
+        var hud = _gHud!;
+        if (!_settings.HudGMeter || !(_vorschau || faehrt))
+        {
+            if (hud.Visible) { hud.Hide(); }
+            return false;
+        }
+        GMeterBild bild;
+        if (!faehrt)
+        {
+            if (!_neuZeichnen && hud.Visible) { return false; }
+            bild = GMeterState.Vorfuehrung(0, ruhig: true);
+        }
+        else
+        {
+            var tau = _gDesign.Smoothing * _gDesign.Smoothing * 0.2f;
+            var k = tau <= 0.001f ? 1f : 1f - (float)Math.Exp(-dt / tau);
+            _gx += (_gDaten.X - _gx) * k;
+            _gz += (_gDaten.Z - _gz) * k;
+            _gy += (_gDaten.Y - _gy) * k;
+            var wandert = MathF.Abs(_gDaten.X - _gx) + MathF.Abs(_gDaten.Z - _gz) + MathF.Abs(_gDaten.Y - _gy) > 0.002f;
+            // Neue Pakete, eine Spur, die verblasst, oder ein Punkt, der noch wandert: zeichnen.
+            if (!neu && !wandert && !_gBewegt && !_neuZeichnen && hud.Visible) { return false; }
+            _gBewegt = wandert || (_gDesign.Trail != GMeterTrail.Off && DateTime.UtcNow - paketZeit < TimeSpan.FromSeconds(_gDesign.TrailSeconds))
+                       || _gDesign.Layout == GMeterLayout.Radar;
+            bild = _gDaten.Bild(_gx, _gz, _gy, _gDesign.TrailSeconds, DateTime.UtcNow, jetzt);
+        }
+        hud.Setze(bild);
+        if (!hud.Visible) { hud.Show(); hud.TopMost = true; }
+        return true;
     }
 
     /// <summary>Was im Bild sichtbar ist, als Zahl -- gleich heisst: nicht neu zeichnen.</summary>

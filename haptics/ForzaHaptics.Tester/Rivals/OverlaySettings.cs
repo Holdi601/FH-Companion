@@ -501,6 +501,32 @@ internal sealed class OverlaySettings
     /// <summary>Je Auto (CarOrdinal) eigene Werte fuer TC, ABS, STAB -- sie gehen den allgemeinen vor.</summary>
     [JsonPropertyName("speedo_car_sensitivity")] public Dictionary<string, int[]> SpeedoCarSensitivity { get; set; } = new();
 
+    // ---- DAS G-METER (seit 2026-10-24) ------------------------------------------------
+    [JsonPropertyName("hud_gmeter")] public bool HudGMeter { get; set; }
+    [JsonPropertyName("hud_gmeter_x")] public double HudGMeterX { get; set; } = 0.015;
+    [JsonPropertyName("hud_gmeter_y")] public double HudGMeterY { get; set; } = 0.70;
+    [JsonPropertyName("hud_gmeter_align")] public string HudGMeterAlign { get; set; } = "left";
+    [JsonPropertyName("hud_gmeter_scale")] public double HudGMeterScale { get; set; } = 1.0;
+    [JsonPropertyName("gmeter_design")] public string GMeterDesign { get; set; } = "Classic circle";
+    /// <summary>G, m/s² oder ft/s² -- fuer jedes G-Meter-Design.</summary>
+    [JsonPropertyName("gmeter_unit")] public string GMeterUnitName { get; set; } = "g";
+
+    [JsonIgnore]
+    public GUnit GMeterUnit
+    {
+        get => (GMeterUnitName ?? "g").Trim().ToLowerInvariant() switch
+        {
+            "ms2" => GUnit.MetresPerSecond2,
+            "fts2" => GUnit.FeetPerSecond2,
+            _ => GUnit.G,
+        };
+        set => GMeterUnitName = value switch { GUnit.MetresPerSecond2 => "ms2", GUnit.FeetPerSecond2 => "fts2", _ => "g" };
+    }
+
+    [JsonIgnore]
+    public HudPlacement GMeterPlacement => new(
+        (float)HudGMeterX, (float)HudGMeterY, HudGMeterAlign ?? "left", (float)HudGMeterScale);
+
     [JsonIgnore]
     public HudPlacement SpeedoPlacement => new(
         (float)HudSpeedoX, (float)HudSpeedoY, HudSpeedoAlign ?? "right",
@@ -763,6 +789,7 @@ internal sealed class OverlaySettings
         HudPart.LiveMap => LiveMapPlacement,
         HudPart.Tyres => TyresPlacement,
         HudPart.Speedo => SpeedoPlacement,
+        HudPart.GMeter => GMeterPlacement,
         _ => throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck"),
     };
 
@@ -779,6 +806,7 @@ internal sealed class OverlaySettings
             case HudPart.LiveMap: HudLiveMapScale = wert; break;
             case HudPart.Tyres: HudTyresScale = wert; break;
             case HudPart.Speedo: HudSpeedoScale = wert; break;
+            case HudPart.GMeter: HudGMeterScale = wert; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
@@ -796,6 +824,7 @@ internal sealed class OverlaySettings
             case HudPart.LiveMap: HudLiveMapAlign = wert; break;
             case HudPart.Tyres: HudTyresAlign = wert; break;
             case HudPart.Speedo: HudSpeedoAlign = wert; break;
+            case HudPart.GMeter: HudGMeterAlign = wert; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }
@@ -813,6 +842,7 @@ internal sealed class OverlaySettings
             case HudPart.LiveMap: HudLiveMapX = x; HudLiveMapY = y; break;
             case HudPart.Tyres: HudTyresX = x; HudTyresY = y; break;
             case HudPart.Speedo: HudSpeedoX = x; HudSpeedoY = y; break;
+            case HudPart.GMeter: HudGMeterX = x; HudGMeterY = y; break;
             default: throw new ArgumentOutOfRangeException(nameof(part), part, "unbekanntes HUD-Stueck");
         }
     }

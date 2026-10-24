@@ -7,7 +7,7 @@ namespace ForzaHaptics.Tester.Rivals;
 // Course: die Umrisse der angebotenen Strecken. Anders als die uebrigen Teile
 // gehoert er zum Anmeldeschirm und nicht ins Rennen -- geschoben wird er aber
 // genauso, und darum steht er hier.
-internal enum HudPart { Delta, Ghost, Note, Inputs, Course, CarNote, LiveMap, Tyres, Speedo }
+internal enum HudPart { Delta, Ghost, Note, Inputs, Course, CarNote, LiveMap, Tyres, Speedo, GMeter }
 
 /// <summary>
 /// Der Reiter, auf dem der Streifen eingerichtet wird -- durch Ziehen, nicht Tippen.
@@ -365,6 +365,12 @@ internal sealed class HudLayoutCanvas : Control
             var b = SpeedoHud.Lege(_settings, SpeedoDesigns.Gewaehlt(_settings), echt);
             return new RectangleF(schirm.X + b.X * f, schirm.Y + b.Y * f, b.Width * f, b.Height * f);
         }
+        if (part == HudPart.GMeter)
+        {
+            var (echt, f) = NotizMassstab(schirm);
+            var b = GMeterHud.Lege(_settings, GMeterDesigns.Gewaehlt(_settings), echt);
+            return new RectangleF(schirm.X + b.X * f, schirm.Y + b.Y * f, b.Width * f, b.Height * f);
+        }
         if (part == HudPart.CarNote)
         {
             // DIESELBE RECHNUNG WIE IM SPIEL -- nicht nachgebaut, sondern aufgerufen
@@ -461,7 +467,7 @@ internal sealed class HudLayoutCanvas : Control
 
         _boxes.Clear();
         foreach (var part in new[]
-                 { HudPart.Course, HudPart.LiveMap, HudPart.Tyres, HudPart.Speedo, HudPart.CarNote, HudPart.Inputs, HudPart.Note,
+                 { HudPart.Course, HudPart.LiveMap, HudPart.Tyres, HudPart.Speedo, HudPart.GMeter, HudPart.CarNote, HudPart.Inputs, HudPart.Note,
                    HudPart.Ghost, HudPart.Delta })
         {
             var kasten = BoxOf(g, part, _screen);
@@ -567,6 +573,22 @@ internal sealed class HudLayoutCanvas : Control
                     using var leer = new Pen(Color.FromArgb(120, 127, 211, 255), 1f) { DashStyle = DashStyle.Dot };
                     g.DrawRectangle(leer, b);
                 }
+            }
+            finally { g.Restore(zustand); }
+            if (part == _selected) { Rahmen(g, kasten, part); }
+            return;
+        }
+        if (part == HudPart.GMeter)
+        {
+            var (echt, f) = NotizMassstab(_screen);
+            var zustand = g.Save();
+            try
+            {
+                g.TranslateTransform(_screen.X, _screen.Y);
+                g.ScaleTransform(f, f);
+                var gDesign = GMeterDesigns.Gewaehlt(_settings);
+                _gMaler.Male(g, gDesign, _gProbe ??= GMeterState.Vorfuehrung(0, ruhig: true), GMeterHud.Lege(_settings, gDesign, echt),
+                             GMeterEinheit.Aus(_settings));
             }
             finally { g.Restore(zustand); }
             if (part == _selected) { Rahmen(g, kasten, part); }
@@ -680,6 +702,7 @@ internal sealed class HudLayoutCanvas : Control
             HudPart.LiveMap => Loc.T("Live map (during the race)"),
             HudPart.Tyres => Loc.T("Tyre overview (while driving)"),
             HudPart.Speedo => Loc.T("Speedometer (while driving)"),
+            HudPart.GMeter => Loc.T("G-meter (while driving)"),
             _ => HudPartPanel.Titel(part),
         };
         var aus = part switch
@@ -688,6 +711,7 @@ internal sealed class HudLayoutCanvas : Control
             HudPart.LiveMap => !_settings.LiveMap,
             HudPart.Tyres => !_settings.HudTyres,
             HudPart.Speedo => !_settings.HudSpeedo,
+            HudPart.GMeter => !_settings.HudGMeter,
             HudPart.CarNote => !_settings.CarNotes,
             HudPart.Inputs => !_settings.HudInputs,
             _ => false,
@@ -724,6 +748,8 @@ internal sealed class HudLayoutCanvas : Control
     private List<PointF>? _probePfad;
     /// <summary>Der Tacho der Vorschau, mit Merker -- ohne ihn baute jedes Neuzeichnen ihn neu.</summary>
     private readonly SpeedoRenderer _tachoMaler = new();
+    private readonly GMeterRenderer _gMaler = new();
+    private GMeterBild? _gProbe;
 
     private List<(string Name, CourseShape.Outline? Shape)> VorschauKurse()
     {
@@ -835,7 +861,7 @@ internal sealed class HudLayoutCanvas : Control
         // wuerde sonst jeden Griff auf die kleineren Anzeigen abfangen.
         foreach (var part in new[]
                  { HudPart.Delta, HudPart.Ghost, HudPart.Note, HudPart.Inputs,
-                   HudPart.CarNote, HudPart.Speedo, HudPart.Tyres, HudPart.LiveMap, HudPart.Course })
+                   HudPart.CarNote, HudPart.Speedo, HudPart.GMeter, HudPart.Tyres, HudPart.LiveMap, HudPart.Course })
         {
             if (!_boxes.TryGetValue(part, out var kasten)) { continue; }
             if (!kasten.Contains(e.Location)) { continue; }
@@ -963,6 +989,7 @@ internal sealed class HudPartPanel : Panel
         HudPart.LiveMap => Loc.T("Live map"),
         HudPart.Tyres => Loc.T("Tyre overview"),
         HudPart.Speedo => Loc.T("Speedometer"),
+        HudPart.GMeter => Loc.T("G-meter"),
         _ => Loc.T("Delta"),
     };
 
@@ -1299,6 +1326,13 @@ internal sealed class HudPartPanel : Panel
         Lage(HudPart.Speedo);
         Rein(Note(Loc.T(
             "Rev counter, gear, speed, redline and more. Pick one of the styles or build your own in the tab Speedometer.")));
+
+        // ---- DAS G-METER (seit 2026-10-24, ab Werk aus) --------------------------------
+        Abschnitt(Titel(HudPart.GMeter), HudPart.GMeter);
+        Schalter(Loc.T("G-meter while driving"), settings.HudGMeter, v => _settings.HudGMeter = v);
+        Lage(HudPart.GMeter);
+        Rein(Note(Loc.T(
+            "The forces on the car: sideways, braking and accelerating, and up and down. Pick a style or build your own in the tab G-meter.")));
 
         // ---- LIVE-KARTE ---------------------------------------------------------------
         Abschnitt(Titel(HudPart.LiveMap), HudPart.LiveMap);

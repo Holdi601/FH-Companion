@@ -341,6 +341,12 @@ internal sealed class OverlayController : IDisposable
     /// <summary>Nach einer Aenderung im Reiter "Speedometer": das Design neu lesen und zeigen.</summary>
     public void TachoNeu(SpeedoDesign? design = null) => _tacho.Design(design);
 
+    /// <summary>Nach einer Aenderung im Reiter "G-meter": das Design neu lesen und zeigen.</summary>
+    public void GMeterNeu(GMeterDesign? design = null) => _tacho.GDesign(design);
+
+    /// <summary>Spitzen, Huelle und Waermekarte des G-Meters auf null.</summary>
+    public void GMeterZurueck() => _tacho.GZuruecksetzen();
+
     /// <summary>Fuer den Reiter: welches Auto gerade faehrt, und was die Lampen gerade messen.</summary>
     public (int Auto, string? Name, SpeedoMesswerte Werte) TachoLive()
     {

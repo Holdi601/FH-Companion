@@ -2185,6 +2185,50 @@ internal static class Program
             return;
         }
 
+        if (args.Length >= 2 && string.Equals(args[0], "--gmeter-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // JEDES G-METER ALS BILD -- ohne Fenster ueber dem Spiel (GMeterRenderer): vier Augenblicke
+            // der Vorfuehrung je Design, dazu was ein Bild kostet.
+            //   --gmeter-frames <ordner>
+            var ordner = Directory.CreateDirectory(args[1]).FullName;
+            foreach (var d in GMeterDesigns.Alle())
+            {
+                var groesse = GMeterRenderer.Groesse(d, 1f);
+                var w = (int)Math.Ceiling(groesse.Width) + 20;
+                var h = (int)Math.Ceiling(groesse.Height) + 20;
+                using var bild = new System.Drawing.Bitmap(w * 4, h, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using var g = System.Drawing.Graphics.FromImage(bild);
+                g.Clear(System.Drawing.Color.FromArgb(70, 76, 84));
+                using var maler = new GMeterRenderer();
+                var momente = new[] { 0.6, 2.2, 3.9, 5.5 };
+                for (var i = 0; i < momente.Length; i++)
+                {
+                    var einheit = new GMeterEinheit(i == 3 ? GUnit.MetresPerSecond2 : GUnit.G);
+                    maler.Male(g, d, GMeterState.Vorfuehrung(momente[i]), new System.Drawing.RectangleF(i * w + 10, 10, w - 20, h - 20), einheit);
+                }
+                var datei = new string(d.Name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());
+                bild.Save(Path.Combine(ordner, "g_" + datei + ".png"));
+            }
+            using (var flaeche = new System.Drawing.Bitmap(300, 300, System.Drawing.Imaging.PixelFormat.Format32bppPArgb))
+            using (var gm = System.Drawing.Graphics.FromImage(flaeche))
+            using (var maler = new GMeterRenderer())
+            {
+                var probe = Enumerable.Range(0, 30).Select(i => GMeterState.Vorfuehrung(i / 10.0)).ToArray();
+                foreach (var d in GMeterDesigns.Eingebaut)
+                {
+                    var takt = System.Diagnostics.Stopwatch.StartNew();
+                    for (var i = 0; i < 300; i++)
+                    {
+                        gm.Clear(System.Drawing.Color.Transparent);
+                        maler.Male(gm, d, probe[i % probe.Length], new System.Drawing.RectangleF(0, 0, 300, 300));
+                    }
+                    Console.WriteLine($"{d.Name,-20} {takt.Elapsed.TotalMilliseconds / 300:0.00} ms/frame");
+                }
+            }
+            Console.WriteLine(ordner);
+            return;
+        }
+
         if (args.Contains("--self-test", StringComparer.OrdinalIgnoreCase))
         {
             SelfTest.Run();
