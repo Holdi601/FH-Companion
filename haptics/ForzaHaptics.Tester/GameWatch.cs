@@ -27,6 +27,21 @@ internal sealed class GameWatch
 
     private static readonly TimeSpan Period = TimeSpan.FromSeconds(2);
 
+    /// <summary>
+    /// Ist dieser Prozess ein Forza mit Data Out? (seit 2026-10-24: alle, nicht nur Horizon)
+    /// </summary>
+    /// <remarks>
+    /// Horizon 4/5/6 heissen "ForzaHorizonN", Motorsport 7 "ForzaMotorsport7", Forza Motorsport
+    /// (2023) "forza_steamworks_release_final" (Steam) bzw. "forza_gaming.desktop.x64_release_final"
+    /// (Microsoft Store). Weiterhin BEIDE Woerter verlangt -- "forza" allein traefe auch
+    /// Werkzeuge mit dem Namen im Titel.
+    /// </remarks>
+    public static bool IstForza(string name) =>
+        name.Contains("forza", StringComparison.OrdinalIgnoreCase)
+        && (name.Contains("horizon", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("motorsport", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("release_final", StringComparison.OrdinalIgnoreCase));
+
     private readonly string _name;
     private DateTime _asked = DateTime.MinValue;
     private bool _running;
@@ -161,8 +176,7 @@ internal sealed class GameWatch
             {
                 return false;
             }
-            return name.Contains("forza", StringComparison.OrdinalIgnoreCase)
-                   && name.Contains("horizon", StringComparison.OrdinalIgnoreCase);
+            return IstForza(name);
         }
         catch (Exception)
         {
@@ -190,8 +204,7 @@ internal sealed class GameWatch
             {
                 var name = process.ProcessName;
                 process.Dispose();
-                if (name.Contains("forza", StringComparison.OrdinalIgnoreCase)
-                    && name.Contains("horizon", StringComparison.OrdinalIgnoreCase))
+                if (IstForza(name))
                 {
                     return true;
                 }

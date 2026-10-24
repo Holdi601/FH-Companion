@@ -727,6 +727,8 @@ let HP = null;
 /* Die zuletzt aus der App gesendeten Scans, live von /api/scan/recent (seit 2026-10-18).
    null = noch nicht geladen, [] = keine. */
 let RECENT = null;
+/* Was gerade gescannt wird (seit 2026-10-24): "Strecke|Klasse" klein -> bis (Unix-Sekunden). */
+let CLAIMS = {};
 let RECENT_ALL = false;
 function pickCars(board, need, forbid) {
   return pickWithSources(D, board, pickCarsRivals(board, need, forbid), SUBMITTED, HP, F.source);
@@ -2001,7 +2003,12 @@ function renderRescan(host) {
   // Every class, always: the class chips start on one class, and a visitor would see a
   // seventh of the boards. Category and track narrow it.
   list = list.filter(r => (!F.cat.size || F.cat.has(r.cat)) && (!F.tracks.size || F.tracks.has(r.track)));
+  const claimKey = r => r.track.toLowerCase().split(/\s+/).join(" ") + "|" + r.cls;
+  const nowS = Date.now() / 1000;
+  list.forEach(r => { const u = CLAIMS[claimKey(r)]; r.claimed = u && u > nowS ? u : null; });
   list.sort((a, b) => {
+    // Wer gerade gescannt wird, rueckt nach hinten -- gesperrt ist es nicht.
+    if (!a.claimed !== !b.claimed) return a.claimed ? 1 : -1;
     if (!a.when !== !b.when) return a.when ? 1 : -1;
     if (a.when !== b.when) return a.when < b.when ? -1 : 1;
     return a.track.localeCompare(b.track) || CLASS_ORDER.indexOf(a.cls) - CLASS_ORDER.indexOf(b.cls);
@@ -2035,7 +2042,7 @@ function renderRescan(host) {
   const table = el("table");
   const head = el("tr");
   [["#", true], ["Route", false], ["Class", false], ["Category", false], ["Last scan", false],
-   ["Age", true], ["Deepest rank", true], ["Scans", true]]
+   ["Age", true], ["Deepest rank", true], ["Scans", true], ["Now", false]]
     .forEach(([text, isNum]) => head.appendChild(el("th", isNum ? "num" : null, text)));
   table.appendChild(head);
   const shown = RESCAN_ALL ? list : list.slice(0, 50);
@@ -2049,6 +2056,12 @@ function renderRescan(host) {
     tr.appendChild(el("td", "num", r.days === null ? "—" : r.days + (r.days === 1 ? " day" : " days")));
     tr.appendChild(el("td", "num", r.depth ? num(r.depth) : "—"));
     tr.appendChild(el("td", "num", num(r.scans)));
+    const jetzt = el("td", "small", "");
+    if (r.claimed) {
+      jetzt.appendChild(el("span", "sstate waiting", "being scanned"));
+      jetzt.title = "until " + new Date(r.claimed * 1000).toLocaleTimeString();
+    }
+    tr.appendChild(jetzt);
     table.appendChild(tr);
   });
   wrap.appendChild(table);
@@ -2339,6 +2352,18 @@ function render() {
   // so sieht man einen laufenden Stapel wachsen.
   loadRecent();
   setInterval(() => { if (TAB === "scans" && !document.hidden) loadRecent(); }, 60000);
+  // Wer gerade scannt -- fuer "Needs a rescan".
+  const loadClaims = () => fetch("/api/scan/needs", { cache: "no-store" })
+    .then(r => r.json().then(d => (r.ok ? d : { boards: [] }), () => ({ boards: [] })))
+    .then(d => {
+      const neu = {};
+      (d.boards || []).forEach(b => { if (b.beingScannedUntil) neu[String(b.track).toLowerCase().split(/\s+/).join(" ") + "|" + b["class"]] = b.beingScannedUntil; });
+      CLAIMS = neu;
+      if (TAB === "rescan") render();
+    })
+    .catch(() => {});
+  loadClaims();
+  setInterval(() => { if (TAB === "rescan" && !document.hidden) loadClaims(); }, 60000);
 })();
 </script>
 """

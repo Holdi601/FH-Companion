@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Drawing;
 using System.Windows.Forms;
 using ForzaHaptics.Tester.Rivals;
@@ -35,7 +36,13 @@ internal sealed class ScanTab : UserControl
     internal static readonly string[] TabKlassen = { "D", "C", "B", "A", "S1", "S2", "R" };
 
     /// <summary>So lange wird nach einem "Server Error" gewartet, bevor das Board noch einmal versucht wird.</summary>
-    internal static readonly TimeSpan ServerPause = TimeSpan.FromMinutes(8);
+    internal static TimeSpan ServerPause(OverlaySettings s) => TimeSpan.FromMinutes(Math.Clamp(s.ScanServerWaitMinutes, 1, 60));
+
+    /// <summary>
+    /// Noch einmal versuchen? Nach <paramref name="fehlerInFolge"/> Server-Fehlern hintereinander --
+    /// solange es nicht mehr sind als eingestellt (0 = nie neu versuchen).
+    /// </summary>
+    internal static bool NochEinmal(int fehlerInFolge, OverlaySettings s) => fehlerInFolge <= Math.Clamp(s.ScanServerRetries, 0, 50);
 
     private static readonly Color Grund = Color.FromArgb(24, 26, 31);
     private static readonly Color Feld = Color.FromArgb(18, 20, 24);
@@ -61,6 +68,16 @@ internal sealed class ScanTab : UserControl
     private readonly ListView _tabelle = new();
     private readonly FlowLayoutPanel _oben;
     private readonly Panel _links;
+
+    // DIE LISTE "AM NOETIGSTEN" (seit 2026-10-24): vom Server, angemeldet vor jedem Board.
+    private readonly RadioButton _modusStrecken = new();
+    private readonly RadioButton _modusBedarf = new();
+    private readonly Panel _bedarfFlaeche = new();
+    private readonly ListView _bedarf = new();
+    private readonly NumericUpDown _abarbeiten = new();
+    private readonly Label _bedarfStand = new();
+    private List<ScanBedarf.Eintrag> _bedarfListe = new();
+    private Label? _kategorieTitel;
 
     private CancellationTokenSource? _lauf;
     /// <summary>Fuer die Versaende: sie laufen nach "Stop" weiter, nur nicht ueber das Ende der App hinaus.</summary>
@@ -90,7 +107,22 @@ internal sealed class ScanTab : UserControl
             Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
             FlowDirection = FlowDirection.TopDown, WrapContents = false,
         };
-        kopf.Controls.Add(Beschriftung(Loc.T("Category")));
+        // ZWEI WEGE: selbst Strecken waehlen -- oder von oben abarbeiten, was am noetigsten ist.
+        var wege = Zeile();
+        _modusStrecken.Text = Loc.T("Pick routes");
+        _modusBedarf.Text = Loc.T("Most needed");
+        foreach (var r in new[] { _modusStrecken, _modusBedarf })
+        {
+            r.AutoSize = true;
+            r.ForeColor = Color.WhiteSmoke;
+            r.Margin = new Padding(3, 3, 12, 6);
+            wege.Controls.Add(r);
+        }
+        _modusStrecken.Checked = true;
+        _modusBedarf.CheckedChanged += (_, _) => ModusZeigen();
+        kopf.Controls.Add(wege);
+        _kategorieTitel = Beschriftung(Loc.T("Category"));
+        kopf.Controls.Add(_kategorieTitel);
         _kategorie.DropDownStyle = ComboBoxStyle.DropDownList;
         _kategorie.FlatStyle = FlatStyle.Flat;
         _kategorie.BackColor = Feld;
@@ -128,6 +160,43 @@ internal sealed class ScanTab : UserControl
             BeginInvoke(new Action(AlleNachziehen));
         };
         _links.Controls.Add(_strecken);
+
+        _bedarfFlaeche.Dock = DockStyle.Fill;
+        _bedarfFlaeche.Visible = false;
+        _bedarf.Dock = DockStyle.Fill;
+        _bedarf.View = View.Details;
+        _bedarf.CheckBoxes = true;
+        _bedarf.FullRowSelect = true;
+        _bedarf.BackColor = Feld;
+        _bedarf.ForeColor = Color.WhiteSmoke;
+        _bedarf.BorderStyle = BorderStyle.None;
+        foreach (var (text, breite) in new[] { (Loc.T("Route"), 130), (Loc.T("Class"), 40), (Loc.T("Last scan"), 70), (Loc.T("Now"), 80) })
+        {
+            _bedarf.Columns.Add(text, breite);
+        }
+        _bedarf.ItemChecked += (_, _) => { if (!_still) { Bereit(); } };
+        var bedarfOben = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, Padding = new Padding(0, 0, 0, 4) };
+        var neu = Knopf(Loc.T("Refresh"));
+        neu.Click += (_, _) => BedarfLaden();
+        bedarfOben.Controls.Add(neu);
+        bedarfOben.Controls.Add(Beschriftung(Loc.T("Nothing ticked: the next")));
+        _abarbeiten.Minimum = 1;
+        _abarbeiten.Maximum = 100;
+        _abarbeiten.Value = 10;
+        _abarbeiten.Width = 50;
+        _abarbeiten.BackColor = Feld;
+        _abarbeiten.ForeColor = Color.WhiteSmoke;
+        _abarbeiten.ValueChanged += (_, _) => Bereit();
+        bedarfOben.Controls.Add(_abarbeiten);
+        bedarfOben.Controls.Add(Beschriftung(Loc.T("from the top")));
+        _bedarfStand.AutoSize = true;
+        _bedarfStand.ForeColor = Color.Gray;
+        _bedarfStand.MaximumSize = new Size(320, 0);
+        _bedarfStand.Margin = new Padding(3, 2, 3, 2);
+        bedarfOben.Controls.Add(_bedarfStand);
+        _bedarfFlaeche.Controls.Add(_bedarf);
+        _bedarfFlaeche.Controls.Add(bedarfOben);
+        _links.Controls.Add(_bedarfFlaeche);
         _links.Controls.Add(kopf);
 
         // RECHTS OBEN: Klassen, Optionen, Warnung, Knoepfe, Stand.
@@ -176,6 +245,22 @@ internal sealed class ScanTab : UserControl
         };
         optionen.Controls.Add(_hochladen);
         _oben.Controls.Add(optionen);
+
+        // "SERVER ERROR": warten und neu versuchen, wie oft und wie lange (seit 2026-10-24, der Nutzer:
+        // "should not cancel after 1 or 2 server errors ... wait 5 minutes and then retry ... 5-10 times").
+        var server = Zeile();
+        server.Controls.Add(Beschriftung(Loc.T("On \"Server Error\": retry")));
+        var versuche = new NumericUpDown { Minimum = 0, Maximum = 50, Width = 55, BackColor = Feld, ForeColor = Color.WhiteSmoke,
+                                           Value = Math.Clamp(_einstellungen.ScanServerRetries, 0, 50) };
+        versuche.ValueChanged += (_, _) => { _einstellungen.ScanServerRetries = (int)versuche.Value; _einstellungen.Save(); };
+        server.Controls.Add(versuche);
+        server.Controls.Add(Beschriftung(Loc.T("times, waiting")));
+        var minuten = new NumericUpDown { Minimum = 1, Maximum = 60, Width = 55, BackColor = Feld, ForeColor = Color.WhiteSmoke,
+                                          Value = Math.Clamp(_einstellungen.ScanServerWaitMinutes, 1, 60) };
+        minuten.ValueChanged += (_, _) => { _einstellungen.ScanServerWaitMinutes = (int)minuten.Value; _einstellungen.Save(); };
+        server.Controls.Add(minuten);
+        server.Controls.Add(Beschriftung(Loc.T("minutes each time")));
+        _oben.Controls.Add(server);
 
         // WAS DER SERVER VERLANGT (seit 2026-10-11) -- vor dem Scan zu lesen, nicht erst danach.
         _anforderungen.Text = Loc.T("A scan reaches the website on its own when it covers at least 3,000 ranks (or the whole board, if it is shorter), its fastest times match the ones already known, and it reads like a real board. Otherwise the server keeps it and the admin decides. Keep \"First ranks only\" at 0 or at least 3,000.");
@@ -367,10 +452,103 @@ internal sealed class ScanTab : UserControl
 
     private List<ScanNavigator.Ziel> Auswahl()
     {
+        if (_modusBedarf.Checked) { return BedarfsAuswahl(); }
         var kat = Kategorie();
         if (kat is null) { return new List<ScanNavigator.Ziel>(); }
         var klassen = _klassen.Controls.OfType<CheckBox>().Where(c => c.Checked).Select(c => (string)c.Tag!);
         return Warteschlange(kat.Name, kat.Strecken.Count, _strecken.CheckedIndices.Cast<int>().ToList(), klassen);
+    }
+
+    /// <summary>
+    /// Im Modus "am noetigsten": die angehakten Boards, sonst die naechsten N von oben -- ohne die,
+    /// die gerade ein anderer scannt, und ohne Strecken, die der Scanner nicht kennt.
+    /// </summary>
+    private List<ScanNavigator.Ziel> BedarfsAuswahl()
+    {
+        if (_routen is null) { return new(); }
+        var angehakt = _bedarf.CheckedItems.Cast<ListViewItem>().Select(i => i.Tag).OfType<ScanBedarf.Eintrag>().ToList();
+        if (angehakt.Count > 0)
+        {
+            return angehakt.Select(e => ScanBedarf.AlsZiel(_routen, e)).OfType<ScanNavigator.Ziel>().ToList();
+        }
+        return ScanBedarf.VonOben(_routen, _bedarfListe, (int)_abarbeiten.Value).Select(t => t.Ziel).ToList();
+    }
+
+    private void ModusZeigen()
+    {
+        var bedarf = _modusBedarf.Checked;
+        _strecken.Visible = !bedarf;
+        _kategorie.Visible = !bedarf;
+        _alle.Visible = !bedarf;
+        if (_kategorieTitel is not null) { _kategorieTitel.Visible = !bedarf; }
+        _bedarfFlaeche.Visible = bedarf;
+        // Die Klassen gelten im Bedarfsmodus nicht -- das Board bringt seine mit.
+        _klassen.Enabled = !bedarf && _lauf is null;
+        if (bedarf && _bedarfListe.Count == 0) { BedarfLaden(); }
+        Bereit();
+    }
+
+    /// <summary>Die Liste vom Server holen und zeigen -- ohne die Oberflaeche aufzuhalten.</summary>
+    private void BedarfLaden()
+    {
+        _bedarfStand.Text = Loc.T("loading ...");
+        _ = Task.Run(async () =>
+        {
+            var (liste, fehler) = await ScanBedarf.LadenAsync(_einstellungen).ConfigureAwait(false);
+            Zurueck(() => BedarfZeigen(liste, fehler));
+        });
+    }
+
+    private void BedarfZeigen(List<ScanBedarf.Eintrag> liste, string? fehler)
+    {
+        _bedarfListe = liste;
+        _still = true;
+        _bedarf.BeginUpdate();
+        try
+        {
+            _bedarf.Items.Clear();
+            foreach (var e in liste.Take(200))
+            {
+                var bekannt = _routen is not null && ScanBedarf.AlsZiel(_routen, e) is not null;
+                var alter = e.Tage is { } t ? string.Format(Loc.T("{0} d"), t) : Loc.T("never");
+                var jetzt = e.WirdGescannt
+                    ? string.Format(Loc.T("being scanned until {0}"),
+                        DateTimeOffset.FromUnixTimeSeconds((long)e.WirdGescanntBis!.Value).ToLocalTime().ToString("HH:mm", CultureInfo.CurrentCulture))
+                    : bekannt ? string.Empty : Loc.T("not in the route list");
+                var zeile = new ListViewItem(new[] { e.Strecke, e.Klasse, alter, jetzt }) { Tag = e };
+                if (e.WirdGescannt) { zeile.ForeColor = Color.FromArgb(240, 180, 80); }
+                else if (!bekannt) { zeile.ForeColor = Color.Gray; }
+                zeile.ToolTipText = e.Kategorie + " / " + e.Strecke + " / " + e.Klasse
+                                    + (e.Tiefe > 0 ? "  ·  " + string.Format(Loc.T("deepest rank {0:n0}"), e.Tiefe) : string.Empty);
+                _bedarf.Items.Add(zeile);
+            }
+        }
+        finally
+        {
+            _bedarf.EndUpdate();
+            _still = false;
+        }
+        _bedarf.ShowItemToolTips = true;
+        _bedarfStand.Text = fehler ?? string.Format(Loc.T("{0} boards, the ones that need a scan most at the top. Boards someone is scanning now are at the end."), liste.Count);
+        Bereit();
+    }
+
+    /// <summary>Vor jedem Board im Bedarfsmodus: beim Server anmelden. null = los, sonst warum nicht.</summary>
+    private string? Anmelden(ScanNavigator.Ziel z)
+    {
+        var kat = _routen?.Finde(z.Kategorie);
+        if (kat is null || z.RouteIndex < 0 || z.RouteIndex >= kat.Strecken.Count) { return null; }
+        var (ok, meldung) = ScanBedarf.AnmeldenAsync(_einstellungen, kat.Strecken[z.RouteIndex], z.Klasse).GetAwaiter().GetResult();
+        if (!ok) { return meldung; }
+        if (meldung.Length > 0) { Log("claim: " + meldung); }
+        return null;
+    }
+
+    private void Freigeben(ScanNavigator.Ziel z)
+    {
+        var kat = _routen?.Finde(z.Kategorie);
+        if (kat is null || z.RouteIndex < 0 || z.RouteIndex >= kat.Strecken.Count) { return; }
+        _ = ScanBedarf.AnmeldenAsync(_einstellungen, kat.Strecken[z.RouteIndex], z.Klasse, freigeben: true);
     }
 
     /// <summary>Im Ruhezustand: wie viele Boards die Auswahl ergibt.</summary>
@@ -422,14 +600,16 @@ internal sealed class ScanTab : UserControl
         Sperren(true);
         _tabelle.Items.Clear();
         Status(Loc.T("Waiting for the game to come to the front ..."));
-        new Thread(() => Lauf(ziele, obergrenze, hochladen, stop))
+        var bedarf = _modusBedarf.Checked;
+        new Thread(() => Lauf(ziele, obergrenze, hochladen, stop, bedarf ? Anmelden : null, bedarf ? Freigeben : null))
         {
             IsBackground = true, Name = "Board-Scan",
         }.Start();
     }
 
     /// <summary>Die Warteschlange abarbeiten -- auf dem eigenen Faden, nie auf dem der Oberflaeche.</summary>
-    private void Lauf(IReadOnlyList<ScanNavigator.Ziel> ziele, int obergrenze, bool hochladen, CancellationToken stop)
+    private void Lauf(IReadOnlyList<ScanNavigator.Ziel> ziele, int obergrenze, bool hochladen, CancellationToken stop,
+                      Func<ScanNavigator.Ziel, string?>? vorher = null, Action<ScanNavigator.Ziel>? nachher = null)
     {
         var schluss = string.Empty;
         var fertig = 0;
@@ -455,7 +635,10 @@ internal sealed class ScanTab : UserControl
             }
             // Das erste Board von irgendwo im Spiel; danach steht es auf der vorigen Bestenliste.
             var vomBoard = false;
-            var gewartet = false;
+            var fehlerInFolge = 0;
+            // War waehrend der letzten Wartezeit jemand an Maus oder Tastatur? Nur dann gilt die
+            // eingestellte Hoechstzahl -- ohne Eingabe wird immer weiter versucht (Nachtscan).
+            var jemandDa = false;
             for (var i = 0; i < ziele.Count; i++)
             {
                 stop.ThrowIfCancellationRequested();
@@ -465,6 +648,13 @@ internal sealed class ScanTab : UserControl
                 Zurueck(() => _aktuell.Text = string.Format(Loc.T("Board {0} of {1}: {2}"), nr, ziele.Count, name));
                 var zeile = new ListViewItem(new[] { name, Loc.T("scanning ..."), string.Empty, string.Empty, string.Empty });
                 Zurueck(() => { _tabelle.Items.Add(zeile); zeile.EnsureVisible(); });
+                // Im Bedarfsmodus: beim Server anmelden. Scannt es gerade ein anderer, das naechste.
+                if (vorher?.Invoke(ziel) is { } nein)
+                {
+                    Log($"{name}: skipped -- {nein}");
+                    Setze(zeile, Loc.T("someone else is scanning it"), string.Empty, string.Empty, nein);
+                    continue;
+                }
                 offen = zeile;
 
                 var uhr = Stopwatch.StartNew();
@@ -495,17 +685,27 @@ internal sealed class ScanTab : UserControl
                 {
                     Log($"server error on {name}" + (abbruch is null ? string.Empty : ": " + abbruch));
                     Setze(zeile, Loc.T("server error"), zeilen, dauer, "–");
-                    if (gewartet)
+                    fehlerInFolge++;
+                    var hoechstens = Math.Clamp(_einstellungen.ScanServerRetries, 0, 50);
+                    if (jemandDa && !NochEinmal(fehlerInFolge, _einstellungen))
                     {
-                        schluss = Loc.T("Server error again: the queue stops. Try again later.");
+                        schluss = string.Format(Loc.T("Server error {0} times in a row: the queue stops. Try again later."), fehlerInFolge);
                         return;
                     }
-                    gewartet = true;
-                    var bis = DateTime.Now + ServerPause;
-                    var text = string.Format(Loc.T("Server error: the game cannot reach the leaderboards. Waiting until {0}, then this board once more."),
-                                             bis.ToString("HH:mm"));
+                    var pause = ServerPause(_einstellungen);
+                    var bis = DateTime.Now + pause;
+                    var text = string.Format(Loc.T("Server error ({0} of {1}): the game cannot reach the leaderboards. Waiting until {2}, then this board once more."),
+                                             fehlerInFolge, hoechstens, bis.ToString("HH:mm"));
                     Zurueck(() => Status(text));
-                    if (stop.WaitHandle.WaitOne(ServerPause)) { throw new OperationCanceledException(stop); }
+                    Log($"waiting {pause.TotalMinutes:0} min after server error {fehlerInFolge}{(jemandDa ? string.Empty : " (nobody at the PC: no limit)")}");
+                    var ergebnis = ServerPauseAbwarten(pause, bis, fehlerInFolge, hoechstens, stop);
+                    jemandDa = ergebnis.JemandDa;
+                    if (ergebnis.Beenden)
+                    {
+                        schluss = Loc.T("Stopped after the Server Error.");
+                        return;
+                    }
+                    if (ergebnis.Weiter) { fehlerInFolge = 0; }
                     DialogWegdruecken(stop);
                     i--;
                     continue;
@@ -533,7 +733,10 @@ internal sealed class ScanTab : UserControl
                 }
 
                 fertig++;
+                fehlerInFolge = 0;
                 Abgelegt(e!, zeile, name, zeilen, dauer, hochladen);
+                // Ohne Versand weiss der Server nicht, dass es fertig ist: die Anmeldung loesen.
+                if (!hochladen) { nachher?.Invoke(ziel); }
             }
             schluss = string.Format(Loc.T("Queue finished: {0} of {1} board(s) scanned."), fertig, ziele.Count);
         }
@@ -563,6 +766,7 @@ internal sealed class ScanTab : UserControl
                 Sperren(false);
                 Bereit();
                 Status(text);
+                if (_modusBedarf.Checked) { BedarfLaden(); }
             });
         }
     }
@@ -585,6 +789,59 @@ internal sealed class ScanTab : UserControl
         });
         Log($"{name}: {e.Status}, {e.Zeilen} rows up to rank {e.HoechsterPlatz} in {dauer} -> {e.Ordner}");
         if (versand) { Senden(e.Ordner, zeile); }
+    }
+
+    /// <summary>
+    /// Die Wartezeit nach einem "Server Error" -- und wer in der Zeit an Maus oder Tastatur war.
+    /// </summary>
+    /// <remarks>
+    /// Waehrend der Pause drueckt der Scanner nichts; aendert sich die letzte Eingabe des Systems,
+    /// war es also ein Mensch. Dann kommt der Hinweis mitten auf den Schirm, mit "Keep trying"
+    /// (frische Versuche) und "Stop the scan". Vor dem naechsten Versuch geht er wieder zu, und das
+    /// Spiel kommt nach vorn (der Klick auf den Hinweis hat ihm den Fokus genommen).
+    /// </remarks>
+    private (bool JemandDa, bool Weiter, bool Beenden) ServerPauseAbwarten(TimeSpan pause, DateTime bis, int fehler,
+                                                                          int hoechstens, CancellationToken stop)
+    {
+        var anfang = ServerFehlerHinweis.LetzteEingabe();
+        var jemandDa = false;
+        ServerFehlerHinweis? hinweis = null;
+        var entscheidung = 0; // 1 weiter, 2 beenden
+        var ende = DateTime.UtcNow + pause;
+        try
+        {
+            while (DateTime.UtcNow < ende && entscheidung != 2)
+            {
+                if (stop.WaitHandle.WaitOne(500)) { throw new OperationCanceledException(stop); }
+                if (!jemandDa && ServerFehlerHinweis.LetzteEingabe() != anfang)
+                {
+                    jemandDa = true;
+                    Log("input during the Server Error wait -- showing the notice");
+                    Zurueck(() =>
+                    {
+                        hinweis = new ServerFehlerHinweis();
+                        hinweis.Entschieden += weiter => Interlocked.Exchange(ref entscheidung, weiter ? 1 : 2);
+                        hinweis.Melde(fehler, hoechstens, bis);
+                        hinweis.Show();
+                    });
+                }
+            }
+        }
+        finally
+        {
+            Zurueck(() =>
+            {
+                try { hinweis?.Close(); hinweis?.Dispose(); } catch (Exception) { }
+                // Wer auf den Hinweis geklickt hat, hat dem Spiel den Fokus genommen.
+                if (entscheidung == 1) { ScanEingabe.SpielNachVorn(); }
+            });
+        }
+        if (entscheidung == 1)
+        {
+            // Dem Spiel einen Moment geben, nach vorn zu kommen.
+            stop.WaitHandle.WaitOne(1500);
+        }
+        return (jemandDa, entscheidung == 1, entscheidung == 2);
     }
 
     /// <summary>Wie --scan-board: das Spiel dreimal nacheinander vorn, sonst wird nichts gedrueckt.</summary>
@@ -762,7 +1019,9 @@ internal sealed class ScanTab : UserControl
         _kategorie.Enabled = !laeuft;
         _alle.Enabled = !laeuft;
         _strecken.Enabled = !laeuft;
-        _klassen.Enabled = !laeuft;
+        _klassen.Enabled = !laeuft && !_modusBedarf.Checked;
+        _modusStrecken.Enabled = !laeuft;
+        _modusBedarf.Enabled = !laeuft;
         _obergrenze.Enabled = !laeuft;
         _hochladen.Enabled = !laeuft;
     }

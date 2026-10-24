@@ -57,6 +57,7 @@ import ip_bans  # noqa: E402
 import lap_submissions as laps  # noqa: E402
 import race_submissions as rennen_api  # noqa: E402
 import scan_submissions as scans  # noqa: E402
+import scan_needs  # noqa: E402
 import submit_tickets as tickets  # noqa: E402
 import leaderboard_check as bestenliste  # noqa: E402
 import usage  # noqa: E402
@@ -888,6 +889,11 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
             d = scans.store(install_id, zustand, zeilen, auffaellig,
                             contrib_root=contrib_root, root=root, now=now,
                             zurueckhalten=grund, ausblenden=ausblenden, siegel=siegel, erneut=erneut)
+            # Gescannt: die Anmeldung des Boards ist erledigt, von wem auch immer.
+            try:
+                scan_needs.freigeben(zustand.get("track"), zustand.get("performance_class"), now=now)
+            except OSError:
+                pass
             return as_json(200, {"ok": True, "id": d["id"], "run_id": d["run_id"],
                                  "rows": d["rows"], "flags": auffaellig,
                                  "held": bool(grund), "reason": grund, "review": erneut,
@@ -902,6 +908,40 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
             return as_json(200, {"scans": scans.oeffentlich(scans.list_scans(root), _versteckt(visibility),
                                                              scans.bauprotokoll()),
                                  "now": now or time.time()})
+
+        # WAS AM NOETIGSTEN EINEN SCAN BRAUCHT, und was gerade gescannt wird (seit 2026-10-24) --
+        # fuer die App ("work down the list") und die Seite. Ohne Anmeldung, ohne Absender.
+        if method == "GET" and path == "/api/scan/needs":
+            versteckt_n = _versteckt(visibility)
+            angenommen = [d for d in scans.list_scans(root) if d.get("run_id") not in versteckt_n]
+            try:
+                boards = scan_needs.liste(DATASET_FILE, angenommen, scan_needs.anmeldungen(now=now), now)
+            except (OSError, ValueError, KeyError):
+                raise ApiError(503, "The dataset is not readable right now.") from None
+            return as_json(200, {"boards": boards, "claimMinutes": scan_needs.ANMELDUNG_SEKUNDEN // 60,
+                                 "now": now or time.time()})
+
+        # Ein Board zum Scannen anmelden oder wieder freigeben -- unterschrieben wie ein Scan, aber
+        # ohne Ticket: es sendet keine Daten, es sagt nur "ich bin dran".
+        if method == "POST" and path in ("/api/scan/claim", "/api/scan/release"):
+            try:
+                install_id, _ = laps.verify(headers, method, path, body, now=now)
+            except laps.SubmitError as e:
+                if e.status == 401:
+                    ip_bans.fehlversuch(client, "scan claim signature", now)
+                raise
+            anfrage = rumpf()
+            strecke, klasse = str(anfrage.get("track") or ""), str(anfrage.get("class") or "")
+            if not strecke or not klasse:
+                raise ApiError(400, "track and class are needed")
+            if path.endswith("/release"):
+                return as_json(200, {"ok": True, "released": scan_needs.freigeben(strecke, klasse, install_id, now=now)})
+            ok, bis = scan_needs.anmelden(install_id, strecke, klasse, now=now)
+            if not ok:
+                return as_json(409, {"ok": False, "until": bis,
+                                     "error": ("Another scanner is on this board until %s UTC." % time.strftime("%H:%M", time.gmtime(bis)))
+                                     if bis else "Too many boards claimed at once."})
+            return as_json(200, {"ok": True, "until": bis})
 
         # --- ab hier nur mit Admin-Unterschrift ---
         keys = load_keys() if keys is None else keys

@@ -512,6 +512,15 @@ internal sealed class OverlaySettings
     /// <summary>Reiter "Scan leaderboards": nur die ersten N Plaetze je Board lesen (0 = das ganze Board).</summary>
     [JsonPropertyName("scan_row_cap")] public int ScanRowCap { get; set; }
 
+    /// <summary>
+    /// Nach einem "Server Error" so oft hintereinander warten und neu versuchen, bevor die Schlange
+    /// stoppt (seit 2026-10-24; vorher genau einmal). Ein gelungenes Board setzt die Zaehlung zurueck.
+    /// </summary>
+    [JsonPropertyName("scan_server_retries")] public int ScanServerRetries { get; set; } = 6;
+
+    /// <summary>So viele Minuten wird nach einem "Server Error" gewartet.</summary>
+    [JsonPropertyName("scan_server_wait_minutes")] public int ScanServerWaitMinutes { get; set; } = 5;
+
     [JsonIgnore]
     public HudPlacement TyresPlacement => new(
         (float)HudTyresX, (float)HudTyresY, HudTyresAlign ?? "right",

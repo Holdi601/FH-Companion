@@ -672,6 +672,48 @@ with tempfile.TemporaryDirectory() as tmp:
         pruefe("copied from another board" not in json.dumps(offen_l),
                "der Grund des Admins bleibt in der Verwaltung")
 
+        print("\nWas am noetigsten einen Scan braucht, und wer dran ist")
+        import scan_needs
+        scan_needs.ANMELDUNGEN = ordner / "scan_claims.json"
+        st_b, liste_b = ruf(port, "GET", "/api/scan/needs")
+        boards_b = liste_b.get("boards", []) if st_b == 200 else []
+        pruefe(st_b == 200 and {(b_["track"], b_["class"]) for b_ in boards_b} >= {("Festival Chase", "A"), ("Festival Chase", "B")}
+               and all("install" not in json.dumps(b_) for b_ in boards_b),
+               "die Liste kennt beide Boards, ohne Absender (%d, %d Boards)" % (st_b, len(boards_b)))
+        fa = next((b_ for b_ in boards_b if (b_["track"], b_["class"]) == ("Festival Chase", "A")), {})
+        fb = next((b_ for b_ in boards_b if (b_["track"], b_["class"]) == ("Festival Chase", "B")), {})
+        pruefe(fa.get("lastScan") and fb.get("lastScan") is None and boards_b.index(fb) < boards_b.index(fa),
+               "ein nie gescanntes Board steht vor einem, das eben angenommen wurde (%s, %s)" % (fa.get("lastScan"), fb.get("lastScan")))
+
+        def anmelden_bei(geheim, wer_id, pfad, strecke, klasse):
+            b_a = json.dumps({"track": strecke, "class": klasse}).encode("utf-8")
+            return ruf(port, "POST", pfad, b_a, unterschrieben(geheim, wer_id, pfad, b_a, next(nonce)))
+        st_a, a_a = anmelden_bei(secret, install_id, "/api/scan/claim", "Festival Chase", "B")
+        pruefe(st_a == 200 and a_a.get("until", 0) > time.time() + 30 * 60,
+               "ein Board anmelden: gilt rund 40 Minuten (%d, %s)" % (st_a, a_a))
+        st_a2, a_a2 = anmelden_bei(neu_geheim, neu_id, "/api/scan/claim", "festival chase", "b")
+        pruefe(st_a2 == 409 and "Another scanner" in a_a2.get("error", ""),
+               "eine zweite Installation bekommt dasselbe Board nicht (%d, %s)" % (st_a2, a_a2.get("error")))
+        st_a3, _ = anmelden_bei(secret, install_id, "/api/scan/claim", "Festival Chase", "B")
+        pruefe(st_a3 == 200, "die eigene Anmeldung laesst sich erneuern (%d)" % st_a3)
+        st_b, liste_b = ruf(port, "GET", "/api/scan/needs")
+        boards_b = liste_b.get("boards", [])
+        fb = next((b_ for b_ in boards_b if (b_["track"], b_["class"]) == ("Festival Chase", "B")), {})
+        pruefe(fb.get("beingScannedUntil") and boards_b[-1] is fb or boards_b.index(fb) == len(boards_b) - 1,
+               "ein angemeldetes Board ist markiert und steht hinten, nicht gesperrt (%s)" % fb.get("beingScannedUntil"))
+        b_ohne = json.dumps({"track": "Festival Chase", "class": "B"}).encode("utf-8")
+        st_u, _ = ruf(port, "POST", "/api/scan/claim", b_ohne, {"X-Forza-Install": install_id})
+        pruefe(st_u == 401, "anmelden ohne Unterschrift: 401 (%d)" % st_u)
+        st_r, a_r = anmelden_bei(neu_geheim, neu_id, "/api/scan/release", "Festival Chase", "B")
+        pruefe(st_r == 200 and a_r.get("released") is False, "eine fremde Anmeldung laesst sich nicht loesen (%s)" % a_r)
+        # Ein angenommener Scan des Boards loest die Anmeldung.
+        z_c, r_c = ein_lauf("ocr_claimed_1", klasse="B", basis=90.0, n=3000)
+        st_c, a_c = einreichen(z_c, r_c)
+        pruefe(st_c == 200 and "festival chase|B" not in scan_needs.anmeldungen(), "der Scan loest die Anmeldung (%d)" % st_c)
+        # Und sie verfaellt von selbst.
+        scan_needs.anmelden(install_id, "Festival Chase", "A", now=time.time() - 41 * 60)
+        pruefe("festival chase|A" not in scan_needs.anmeldungen(), "eine Anmeldung verfaellt nach 40 Minuten")
+
         print("\nDas Tor: ein eigener Namensraum")
         # Ein lokaler Lauf und ein App-Lauf mit demselben Namen: der zurueckgehaltene App-Lauf
         # blendet den lokalen nicht aus, und ein "Show" des App-Laufs blendet keinen

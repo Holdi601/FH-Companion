@@ -55,6 +55,7 @@ internal static class EdgeCaseTest
         TyreOverview();
         Speedometer();
         UpdateNurWennNeuer();
+        AlleForzaFormate();
         ReplacedControllerGoesQuiet();
         LiveMapStaysWithoutStrip();
         LapModeFromMenus();
@@ -1367,7 +1368,29 @@ internal static class EdgeCaseTest
              "Server-Fehler falsch erkannt");
         Soll(!Scan.ScanTab.LohntVersand("server_error") && Scan.ScanTab.LohntVersand("end_detected") && Scan.ScanTab.LohntVersand("row_cap_reached"),
              "ein vom Server-Fehler abgeschnittenes Board darf nicht hinausgehen, ein fertiges schon");
-        Soll(Scan.ScanTab.ServerPause == TimeSpan.FromMinutes(8), "nach einem Server-Fehler acht Minuten Pause");
+        // DIE LISTE "AM NOETIGSTEN" (2026-10-24): lesen, auf die Strecken des Scanners abbilden, angemeldete auslassen.
+        var bis = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 1200;
+        var bedarf = Scan.ScanBedarf.Lesen("{\"boards\": ["
+            + "{\"category\": \"Road Racing\", \"track\": \"ito sprint\", \"class\": \"a\", \"lastScan\": null, \"days\": null, \"depth\": 0, \"scans\": 0, \"beingScannedUntil\": " + bis + "},"
+            + "{\"category\": \"Road Racing\", \"track\": \"Ito Sprint\", \"class\": \"B\", \"lastScan\": 1.7e9, \"days\": 40, \"depth\": 5664, \"scans\": 1, \"beingScannedUntil\": null},"
+            + "{\"category\": \"Road Racing\", \"track\": \"Nowhere Ring\", \"class\": \"C\", \"lastScan\": null, \"days\": null, \"depth\": 0, \"scans\": 0, \"beingScannedUntil\": null},"
+            + "{\"category\": \"Touge\", \"track\": \"\", \"class\": \"D\"}]}");
+        Soll(bedarf.Count == 3 && bedarf[0].WirdGescannt && !bedarf[1].WirdGescannt && bedarf[1].Tage == 40 && bedarf[1].Tiefe == 5664,
+             $"Bedarfsliste: {bedarf.Count} Eintraege oder Felder falsch gelesen");
+        var routenB = Scan.ScanRoutes.Laden();
+        var zielB = Scan.ScanBedarf.AlsZiel(routenB, bedarf[1]);
+        Soll(zielB is { Kategorie: "Road Racing", Klasse: "B" } && routenB.Finde("Road Racing")!.Strecken[zielB.RouteIndex] == "Ito Sprint",
+             "Bedarfsliste: Ito Sprint B findet keine Strecke des Scanners");
+        Soll(Scan.ScanBedarf.AlsZiel(routenB, bedarf[2]) is null, "Bedarfsliste: eine unbekannte Strecke wird gescannt");
+        var oben = Scan.ScanBedarf.VonOben(routenB, bedarf, 5);
+        Soll(oben.Count == 1 && oben[0].Eintrag.Klasse == "B", "Bedarfsliste: von oben nimmt ein angemeldetes oder unbekanntes Board");
+
+        var serverEinst = new Rivals.OverlaySettings();
+        Soll(Scan.ScanTab.ServerPause(serverEinst) == TimeSpan.FromMinutes(5), "nach einem Server-Fehler fuenf Minuten Pause");
+        Soll(Scan.ScanTab.NochEinmal(1, serverEinst) && Scan.ScanTab.NochEinmal(6, serverEinst) && !Scan.ScanTab.NochEinmal(7, serverEinst),
+             "nach einem Server-Fehler sechsmal neu versuchen, beim siebten Fehler stoppen");
+        serverEinst.ScanServerRetries = 0;
+        Soll(!Scan.ScanTab.NochEinmal(1, serverEinst), "mit 0 Versuchen stoppt schon der erste Server-Fehler nicht");
         // Der Reiter baut sich ohne Spiel und ohne Fenster auf (nur erzeugt, nie gezeigt).
         using var reiter = new Scan.ScanTab(new Rivals.OverlaySettings(), () => false);
         Soll(reiter.Controls.Count == 3, "der Scan-Reiter baut sich nicht auf");
@@ -2555,6 +2578,71 @@ internal static class EdgeCaseTest
     /// Der eigene Tacho (2026-10-18): ab Werk aus, jedes Design zeichnet in jedem Zustand (auch ohne
     /// Telemetrie), Designs ueberstehen JSON, der Schaltpunkt wird gelernt, und der Tacho bleibt auf dem Schirm.
     /// </summary>
+    /// <summary>
+    /// Jedes Forza mit Data Out (2026-10-24): FM7 Sled (232) und Dash (311), Horizon (324) und Forza
+    /// Motorsport (331) lesen dieselben Felder; das Spiel wird am Prozessnamen erkannt.
+    /// </summary>
+    private static void AlleForzaFormate()
+    {
+        // Ein Dash-Paket nach FM7-Layout: Sled-Teil, dann die Dash-Felder ab 232.
+        byte[] Dash(int laenge)
+        {
+            var p = new byte[laenge];
+            BitConverter.GetBytes(1).CopyTo(p, 0);            // IsRaceOn
+            BitConverter.GetBytes(7500f).CopyTo(p, 8);        // EngineMaxRpm
+            BitConverter.GetBytes(5123f).CopyTo(p, 16);       // CurrentEngineRpm
+            BitConverter.GetBytes(30f).CopyTo(p, 32);         // VelocityX
+            BitConverter.GetBytes(40f).CopyTo(p, 40);         // VelocityZ
+            BitConverter.GetBytes(0.4f).CopyTo(p, 180);       // TireCombinedSlipFrontLeft
+            BitConverter.GetBytes(2345).CopyTo(p, 212);       // CarOrdinal
+            BitConverter.GetBytes(801).CopyTo(p, 220);        // PI
+            if (laenge >= 311)
+            {
+                BitConverter.GetBytes(123.5f).CopyTo(p, 232);  // PositionX
+                BitConverter.GetBytes(49.9f).CopyTo(p, 244);   // Speed
+                BitConverter.GetBytes(250000f).CopyTo(p, 248); // Power
+                BitConverter.GetBytes(61.25f).CopyTo(p, 292);  // CurrentLap
+                BitConverter.GetBytes((ushort)3).CopyTo(p, 300); // LapNumber
+                p[303] = 200;                                  // Accel
+                p[307] = 4;                                    // Gear
+            }
+            if (laenge >= 331)
+            {
+                BitConverter.GetBytes(0.25f).CopyTo(p, 311);   // TireWearFrontLeft
+                BitConverter.GetBytes(0.75f).CopyTo(p, 323);   // TireWearRearRight
+                BitConverter.GetBytes(512).CopyTo(p, 327);     // TrackOrdinal
+            }
+            return p;
+        }
+        foreach (var (laenge, name) in new[] { (311, "FM7 Dash"), (331, "Forza Motorsport") })
+        {
+            Soll(ForzaPacket.TryParse(Dash(laenge), out var p), $"{name}: Paket wird nicht gelesen");
+            Soll(p.Get("Speed") == 49.9f && p.Get("CurrentLap") == 61.25f && p.Get("Gear") == 4 && p.Get("Accel") == 200
+                 && p.Get("LapNumber") == 3 && p.Get("PositionX") == 123.5f && p.Get("CarOrdinal") == 2345
+                 && p.Get("CurrentEngineRpm") == 5123f && (int)p.Get("Game.Format") == laenge,
+                 $"{name}: Felder landen an der falschen Stelle (Tempo {p.Get("Speed")}, Runde {p.Get("CurrentLap")}, Gang {p.Get("Gear")})");
+            Soll(p.Raw.Length == 324 && p.Get("CarGroup") == 0, $"{name}: nicht ins Horizon-Layout uebersetzt");
+        }
+        ForzaPacket.TryParse(Dash(331), out var fm);
+        Soll(fm.Get("TireWearFrontLeft") == 0.25f && fm.Get("TireWearRearRight") == 0.75f && fm.Get("TrackOrdinal") == 512,
+             "Forza Motorsport: Reifenverschleiss oder Strecke fehlen");
+        Soll(ForzaPacket.TryParse(Dash(232), out var sled) && Math.Abs(sled.Get("Speed") - 50.0) < 0.01
+             && sled.Get("CurrentEngineRpm") == 5123f && sled.Get("CurrentLap") == 0,
+             $"FM7 Sled: Tempo aus dem Geschwindigkeitsvektor ({sled?.Get("Speed")}) oder Drehzahl falsch");
+        Soll(!ForzaPacket.TryParse(new byte[300], out _) && !ForzaPacket.TryParse(new byte[100], out _),
+             "ein Paket fremder Laenge gilt als Forza");
+        // Das Horizon-Paket wie bisher.
+        Soll(ForzaPacket.TryParse(SelfTest.LapPacket(1, 2, 100f, 33f, 0f, 1234, 700, 5, speed: 20f), out var fh)
+             && fh.Get("Speed") == 20f && (int)fh.Get("Game.Format") == 324, "Horizon: das bisherige Format liest nicht mehr");
+        foreach (var n in new[] { "ForzaHorizon4", "ForzaHorizon5", "forzahorizon6", "ForzaMotorsport7",
+                                  "forza_steamworks_release_final", "forza_gaming.desktop.x64_release_final" })
+        {
+            Soll(GameWatch.IstForza(n), $"Spiel nicht erkannt: {n}");
+        }
+        Soll(!GameWatch.IstForza("ForzaTelemetryTool") && !GameWatch.IstForza("notepad") && !GameWatch.IstForza("horizon"),
+             "kein Forza wird als Forza erkannt");
+    }
+
     /// <summary>Ein Update nur, wenn der Server spaeter gebaut hat -- nie eine aeltere Fassung (2026-10-18).</summary>
     private static void UpdateNurWennNeuer()
     {

@@ -179,7 +179,14 @@ internal sealed class ForzaPacket
         D("Derived.LockFront", "Wheel lock front", "Derived / Groups", -1, TelemetryValueType.Float32),
         D("Derived.LockRear", "Wheel lock rear", "Derived / Groups", -1, TelemetryValueType.Float32),
         D("Derived.SpeedKmh", "Speed", "Derived / Vehicle", -1, TelemetryValueType.Float32, "km/h", 0, 500),
-        D("Derived.RpmNormalized", "RPM normalized", "Derived / Engine", -1, TelemetryValueType.Float32)
+        D("Derived.RpmNormalized", "RPM normalized", "Derived / Engine", -1, TelemetryValueType.Float32),
+        D("Game.Format", "Packet format (bytes)", "Game", -1, TelemetryValueType.Float32, "", 232, 331),
+        // Nur Forza Motorsport (2023); in allen anderen Spielen 0.
+        D("TireWearFrontLeft", "Tire wear FL", "Tires", -1, TelemetryValueType.Float32, "", 0, 1),
+        D("TireWearFrontRight", "Tire wear FR", "Tires", -1, TelemetryValueType.Float32, "", 0, 1),
+        D("TireWearRearLeft", "Tire wear RL", "Tires", -1, TelemetryValueType.Float32, "", 0, 1),
+        D("TireWearRearRight", "Tire wear RR", "Tires", -1, TelemetryValueType.Float32, "", 0, 1),
+        D("TrackOrdinal", "Track id", "Race", -1, TelemetryValueType.Float32, "", 0, 10000)
     ];
 
     public static IReadOnlyList<TelemetryDescriptor> AllDescriptors { get; } =
@@ -208,13 +215,71 @@ internal sealed class ForzaPacket
 
     public double Get(string key) => _values.GetValueOrDefault(key);
 
-    public static bool TryParse(ReadOnlySpan<byte> packet, out ForzaPacket telemetry)
+    /// <summary>Welches Paketformat ankam (seit 2026-10-24).</summary>
+    internal enum Format
     {
-        if (packet.Length < PacketLength)
+        /// <summary>Forza Motorsport 7 "Sled": 232 Bytes, nur Fahrphysik -- kein Tempo, keine Runde.</summary>
+        Sled = 232,
+        /// <summary>Forza Motorsport 7 "Dash": 311 Bytes.</summary>
+        Fm7Dash = 311,
+        /// <summary>Forza Horizon 4, 5 und 6: 324 Bytes, mit 12 Bytes Horizon-Feldern nach dem Sled-Teil.</summary>
+        Horizon = 324,
+        /// <summary>Forza Motorsport (2023): 331 Bytes -- Dash wie FM7, dazu Reifenverschleiss und Strecke.</summary>
+        Motorsport = 331,
+    }
+
+    /// <summary>Das Format eines Pakets nach seiner Laenge -- null, wenn es keins von Forza ist.</summary>
+    internal static Format? FormatVon(int laenge) => laenge switch
+    {
+        232 => Format.Sled,
+        311 => Format.Fm7Dash,
+        331 => Format.Motorsport,
+        >= 324 => Format.Horizon,
+        _ => null,
+    };
+
+    /// <summary>
+    /// JEDES FORZA MIT DATA OUT (seit 2026-10-24, Wunsch des Nutzers: "unterstuetze alle forza games
+    /// die telemetrie ausgaenge haben").
+    /// </summary>
+    /// <remarks>
+    /// Alles in dieser App liest das Horizon-Layout (324 Bytes). Die anderen Formate werden darauf
+    /// UEBERSETZT, statt jede Stelle zwei Layouts kennen zu lassen: der Sled-Teil (0..231) ist bei
+    /// allen gleich; die Dash-Felder von FM7 und Forza Motorsport beginnen bei 232 statt bei 244 --
+    /// Horizon schiebt dort 12 Bytes eigene Felder ein (Autogruppe, Zerstoerbares). Sled hat kein
+    /// Tempo: es kommt aus dem Betrag des Geschwindigkeitsvektors. Forza Motorsport (2023) traegt
+    /// dahinter Reifenverschleiss (311..323) und die Strecke (327) -- als eigene Werte.
+    /// <see cref="Raw"/> ist danach das uebersetzte Paket, damit die abgelegte Spur ueberall gleich liest.
+    /// </remarks>
+    internal static byte[] AlsHorizon(ReadOnlySpan<byte> packet, Format format)
+    {
+        if (format == Format.Horizon) { return packet.ToArray(); }
+        var raus = new byte[PacketLength];
+        packet[..232].CopyTo(raus);
+        if (format is Format.Fm7Dash or Format.Motorsport)
+        {
+            packet.Slice(232, 79).CopyTo(raus.AsSpan(244, 79));
+        }
+        else
+        {
+            var vx = BitConverter.ToSingle(packet.Slice(32, 4));
+            var vy = BitConverter.ToSingle(packet.Slice(36, 4));
+            var vz = BitConverter.ToSingle(packet.Slice(40, 4));
+            var tempo = MathF.Sqrt(vx * vx + vy * vy + vz * vz);
+            BitConverter.TryWriteBytes(raus.AsSpan(256, 4), float.IsFinite(tempo) ? tempo : 0f);
+        }
+        return raus;
+    }
+
+    public static bool TryParse(ReadOnlySpan<byte> original, out ForzaPacket telemetry)
+    {
+        if (FormatVon(original.Length) is not { } format)
         {
             telemetry = null!;
             return false;
         }
+        var umgesetzt = AlsHorizon(original, format);
+        ReadOnlySpan<byte> packet = umgesetzt;
 
         var values = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         foreach (var descriptor in Descriptors)
@@ -230,7 +295,16 @@ internal sealed class ForzaPacket
         }
 
         AddDerived(values);
-        telemetry = new ForzaPacket(values, packet.ToArray());
+        values["Game.Format"] = (int)format;
+        if (format == Format.Motorsport)
+        {
+            values["TireWearFrontLeft"] = BitConverter.ToSingle(original.Slice(311, 4));
+            values["TireWearFrontRight"] = BitConverter.ToSingle(original.Slice(315, 4));
+            values["TireWearRearLeft"] = BitConverter.ToSingle(original.Slice(319, 4));
+            values["TireWearRearRight"] = BitConverter.ToSingle(original.Slice(323, 4));
+            values["TrackOrdinal"] = BitConverter.ToInt32(original.Slice(327, 4));
+        }
+        telemetry = new ForzaPacket(values, umgesetzt);
         return true;
     }
 

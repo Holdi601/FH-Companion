@@ -2352,7 +2352,14 @@ internal sealed class MainForm : Form, ITelemetryHost
         // Beschriftungen zehnmal je Sekunde, sonst auch hinter dem Spiel.
         if (!SiehtJemandHin(_packetStatus)) { return; }
 
-        _telemetryStatus.Text = Loc.T("Live FH6 telemetry connected.");
+        // Welches Spiel, am Paketformat (seit 2026-10-24 jedes Forza mit Data Out).
+        _telemetryStatus.Text = string.Format(Loc.T("Live telemetry connected: {0}."), ((int)telemetry.Get("Game.Format")) switch
+        {
+            232 => "Forza Motorsport 7 (Sled)",
+            311 => "Forza Motorsport 7",
+            331 => "Forza Motorsport",
+            _ => "Forza Horizon",
+        });
         _telemetryStatus.ForeColor = SuccessColor;
         _packetStatus.Text =
             string.Format(Loc.T("Packets: {0}   Rate: {1}/s   Size: {2} bytes   Race: {3}"),
