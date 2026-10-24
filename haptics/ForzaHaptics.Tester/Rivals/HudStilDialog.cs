@@ -85,7 +85,7 @@ internal sealed class HudStilDialog : Form
         Farbe(Loc.T("Small text"), () => _stil.Dim, v => _stil.Dim = v);
         Farbe(Loc.T("Accent"), () => _stil.Accent, v => _stil.Accent = v);
         Farbe(Loc.T("Lines"), () => _stil.Line, v => _stil.Line = v);
-        if (element == HudElement.Delta)
+        if (element is HudElement.Delta or HudElement.Ghost or HudElement.Panels or HudElement.Inputs)
         {
             Farbe(Loc.T("Ahead"), () => _stil.Good, v => _stil.Good = v);
             Farbe(Loc.T("Behind"), () => _stil.Bad, v => _stil.Bad = v);
@@ -99,6 +99,9 @@ internal sealed class HudStilDialog : Form
         var kursiv = new CheckBox { Text = Loc.T("Italic"), Checked = _stil.Italic, AutoSize = true, ForeColor = Color.Gainsboro };
         kursiv.CheckedChanged += (_, _) => { _stil.Italic = kursiv.Checked; Anwenden(); };
         liste.Controls.Add(kursiv);
+        var platte = new CheckBox { Text = Loc.T("Background plate (off: only the content over the game)"), Checked = _stil.ShowPlate, AutoSize = true, ForeColor = Color.Gainsboro };
+        platte.CheckedChanged += (_, _) => { _stil.ShowPlate = platte.Checked; Anwenden(); };
+        liste.Controls.Add(platte);
 
         var unten = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
         var fertig = new Button { Text = Loc.T("Done"), AutoSize = true };
@@ -149,7 +152,8 @@ internal sealed class HudStilDialog : Form
         "Minimal" => Loc.T("Minimal"),
         "Racing" => Loc.T("Racing"),
         "Synthwave" => Loc.T("Synthwave"),
-        _ => s.Name,
+        "No plate" => Loc.T("No plate"),
+        _ => Farbthemen.Anzeige(s.Name),
     };
 
     private static string Rahmenname(SpeedoFrame v) => v switch

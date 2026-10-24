@@ -519,7 +519,8 @@ internal sealed class SpeedoRenderer : IDisposable
         var grund = F(d.Background, Color.FromArgb(190, 12, 14, 18));
         var rahmen = F(d.FrameColour, Color.Gray);
         using var form = Platte(d, r, kreis);
-        if (grund.A > 0)
+        // Ohne Platte (seit 2026-10-24): nichts fuellen -- der Rahmen kommt trotzdem, wenn einer gewaehlt ist.
+        if (grund.A > 0 && d.ShowPlate)
         {
             using var pinsel = new SolidBrush(grund);
             g.FillPath(pinsel, form);

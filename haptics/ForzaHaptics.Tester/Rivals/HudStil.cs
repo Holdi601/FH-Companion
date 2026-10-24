@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace ForzaHaptics.Tester.Rivals;
 
 /// <summary>Die HUD-Stuecke, die einen Stil tragen (Tacho und G-Meter haben ihren eigenen Baukasten).</summary>
-internal enum HudElement { Delta, Tyres, LiveMap, Course, CarNote }
+internal enum HudElement { Delta, Tyres, LiveMap, Course, CarNote, Ghost, Note, Inputs, Panels, Message }
 
 /// <summary>Was ein Element vom gewaehlten Stil behaelt, ueber die Farben hinaus: Rahmen, Ecken, Leuchten, Schrift.</summary>
 internal sealed class HudStilWahl
@@ -18,6 +18,8 @@ internal sealed class HudStilWahl
     [JsonPropertyName("glow")] public float Glow { get; set; }
     [JsonPropertyName("font")] public SpeedoFont Font { get; set; } = SpeedoFont.Sans;
     [JsonPropertyName("italic")] public bool Italic { get; set; }
+    /// <summary>false: keine Hintergrundplatte -- nur Rahmen (falls gewaehlt) und Inhalt.</summary>
+    [JsonPropertyName("plate")] public bool ShowPlate { get; set; } = true;
 }
 
 /// <summary>
@@ -46,6 +48,7 @@ internal sealed class HudStil
     [JsonPropertyName("glow")] public float Glow { get; set; }
     [JsonPropertyName("font")] public SpeedoFont Font { get; set; } = SpeedoFont.Sans;
     [JsonPropertyName("italic")] public bool Italic { get; set; }
+    [JsonPropertyName("plate")] public bool ShowPlate { get; set; } = true;
 
     [JsonIgnore] public bool BuiltIn { get; set; }
 
@@ -62,6 +65,8 @@ internal sealed class HudStil
 
 internal static class HudStile
 {
+    private static string Oder(string? eigen, string sonst) => string.IsNullOrWhiteSpace(eigen) ? sonst : eigen;
+
     private static string Mit(string farbe, int deck)
     {
         var c = SpeedoDesign.Farbe(farbe, Color.Black);
@@ -88,7 +93,12 @@ internal static class HudStile
                 Good = "#FF22C55E", Bad = "#FFEF4444", Frame = SpeedoFrame.Plate, FrameColour = "#FF2A2E33", Corner = 6f, Font = SpeedoFont.Condensed, Italic = true },
         new() { Name = "Synthwave", Background = "#B0140A26", Text = "#FFFFE3F3", Dim = "#FFC9A3E8", Accent = "#FFFF2E97", Line = "#FFFF7A18",
                 Good = "#FF2DE2E6", Bad = "#FFFF2E97", Frame = SpeedoFrame.Glass, FrameColour = "#FFB15CFF", Glow = 0.6f, Font = SpeedoFont.Condensed, Italic = true },
-    }.Select(s => { s.BuiltIn = true; return s; }).ToList();
+        // Ohne Platte: nur der Inhalt ueber dem Spiel.
+        new() { Name = "No plate", ShowPlate = false, Frame = SpeedoFrame.None },
+    }.Select(s => { s.BuiltIn = true; return s; })
+     // DAZU JEDES FARBTHEMA (seit 2026-10-24): dieselben 24 wie bei Tacho und G-Meter.
+     .Concat(Farbthemen.Alle.Select(Farbthemen.AlsHudStil))
+     .ToList();
 
     public static List<HudStil> Eigene()
     {
@@ -141,10 +151,34 @@ internal static class HudStile
                 s.HudColorLabel = R(st.Dim, werk.HudColorLabel);
                 s.HudColorAhead = R(st.Good, werk.HudColorAhead);
                 s.HudColorBehind = R(st.Bad, werk.HudColorBehind);
+                break;
+            case HudElement.Ghost:
                 s.HudColorGhost = R(st.Accent, werk.HudColorGhost);
+                s.HudColorGhostWarn = R(st.Line, werk.HudColorGhostWarn);
+                s.HudColorPopIn = R(st.Bad, werk.HudColorPopIn);
+                s.HudColorGhostText = R(st.Background.Length == 9 ? "#FF" + st.Background[3..] : st.Background, werk.HudColorGhostText);
+                break;
+            case HudElement.Note:
+                s.NoteBack = R(st.Background, string.Empty);
+                s.NoteInk = R(st.Text, string.Empty);
+                break;
+            case HudElement.Inputs:
+                s.InputsBack = R(st.Background, string.Empty);
                 s.HudColorMine = R(st.Text, werk.HudColorMine);
                 s.HudColorTheirs = R(st.Accent, werk.HudColorTheirs);
                 s.HudColorNow = R(st.Good, werk.HudColorNow);
+                break;
+            case HudElement.Panels:
+                s.PanelBack = R(st.Background, string.Empty);
+                s.PanelInk = R(st.Text, string.Empty);
+                s.PanelMuted = R(st.Dim, string.Empty);
+                s.PanelAccent = R(st.Accent, string.Empty);
+                s.PanelGood = R(st.Good, string.Empty);
+                s.PanelWarn = R(st.Bad, string.Empty);
+                break;
+            case HudElement.Message:
+                s.MessageBack = R(st.Background, string.Empty);
+                s.MessageInk = R(st.Text, string.Empty);
                 break;
             case HudElement.Tyres:
                 s.TyresBack = R(st.Background, string.Empty);
@@ -180,6 +214,7 @@ internal static class HudStile
         s.HudStyles[e.ToString()] = new HudStilWahl
         {
             Name = st.Name, Frame = st.Frame, FrameColour = st.FrameColour, Corner = st.Corner, Glow = st.Glow, Font = st.Font, Italic = st.Italic,
+            ShowPlate = st.ShowPlate,
         };
     }
 
@@ -194,12 +229,28 @@ internal static class HudStile
     public static HudStil AusEinstellungen(OverlaySettings s, HudElement e, string name)
     {
         var w = WahlVon(s, e);
-        var st = new HudStil { Name = name, Frame = w.Frame, FrameColour = w.FrameColour, Corner = w.Corner, Glow = w.Glow, Font = w.Font, Italic = w.Italic };
+        var st = new HudStil { Name = name, Frame = w.Frame, FrameColour = w.FrameColour, Corner = w.Corner, Glow = w.Glow, Font = w.Font, Italic = w.Italic, ShowPlate = w.ShowPlate };
         switch (e)
         {
             case HudElement.Delta:
                 st.Background = s.HudBackground; st.Text = s.HudColorNeutral; st.Dim = s.HudColorLabel; st.Good = s.HudColorAhead;
                 st.Bad = s.HudColorBehind; st.Accent = s.HudColorGhost; st.Line = s.HudColorNow;
+                break;
+            case HudElement.Ghost:
+                st.Accent = s.HudColorGhost; st.Line = s.HudColorGhostWarn; st.Bad = s.HudColorPopIn; st.Background = s.HudColorGhostText;
+                break;
+            case HudElement.Note:
+                st.Background = Oder(s.NoteBack, s.HudBackground); st.Text = Oder(s.NoteInk, s.HudColorAhead);
+                break;
+            case HudElement.Inputs:
+                st.Background = Oder(s.InputsBack, s.HudBackground); st.Text = s.HudColorMine; st.Accent = s.HudColorTheirs; st.Good = s.HudColorNow;
+                break;
+            case HudElement.Panels:
+                st.Background = Oder(s.PanelBack, "#FF0B1017"); st.Text = Oder(s.PanelInk, "#FFE7ECF3"); st.Dim = Oder(s.PanelMuted, "#FF93A2B5");
+                st.Accent = Oder(s.PanelAccent, "#FF22B8E6"); st.Good = Oder(s.PanelGood, "#FF7EE787"); st.Bad = Oder(s.PanelWarn, "#FFF0A22E");
+                break;
+            case HudElement.Message:
+                st.Background = Oder(s.MessageBack, "#E10D1117"); st.Text = Oder(s.MessageInk, "#FFE7ECF3");
                 break;
             case HudElement.Tyres:
                 st.Background = string.IsNullOrEmpty(s.TyresBack) ? s.HudBackground : s.TyresBack;
@@ -232,6 +283,8 @@ internal static class HudZeichnen
     {
         var w = HudStile.WahlVon(s, e);
         var radius = w.Corner >= 0f ? w.Corner : standardRadius;
+        // UNSICHTBARE PLATTE (seit 2026-10-24, Wunsch des Nutzers): ohne Fuellung, nur der Rahmen, falls einer gewaehlt ist.
+        if (!w.ShowPlate) { hintergrund = Color.Transparent; }
         if (w.Frame == SpeedoFrame.Plate && w.Glow <= 0.01f && SpeedoDesign.Farbe(w.FrameColour, Color.Transparent).A == 0)
         {
             if (hintergrund.A == 0) { return; }
@@ -243,6 +296,7 @@ internal static class HudZeichnen
         var stil = new SpeedoDesign
         {
             Frame = w.Frame, Background = OverlaySettings.ToHex(hintergrund), FrameColour = w.FrameColour, CornerRadius = radius, Glow = w.Glow,
+            ShowPlate = w.ShowPlate,
         };
         SpeedoRenderer.Rahmen(g, stil, r, kreis: false);
     }

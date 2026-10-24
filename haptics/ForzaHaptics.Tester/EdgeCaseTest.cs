@@ -2658,7 +2658,6 @@ internal static class EdgeCaseTest
              "Update: Zeitzonen werden nicht verglichen (13:00 MESZ ist vor 12:00 UTC)");
     }
 
-    /// <summary>Das G-Meter (2026-10-24): jede Vorlage zeichnet, Richtungen und Spitzen stimmen, Einheiten rechnen.</summary>
     /// <summary>Stile der HUD-Stuecke (2026-10-24): anwenden, zuruecksetzen, als eigenen ablegen, zeichnen.</summary>
     private static void HudStile()
     {
@@ -2682,6 +2681,23 @@ internal static class EdgeCaseTest
         Soll(eigen.Background == neon.Background && eigen.Line == neon.Line && eigen.Glow == neon.Glow && eigen.Font == neon.Font,
              "Stile: was ein Stueck traegt, laesst sich nicht als Stil ablegen");
         Soll(Rivals.HudStil.FromJson(eigen.ToJson())?.ToJson() == eigen.ToJson(), "Stile: ein Stil uebersteht JSON nicht");
+        // Mehr Stile, jedes Stueck, unsichtbare Platte (2026-10-24).
+        Soll(Rivals.Farbthemen.Alle.Count >= 20 && Rivals.Farbthemen.Alle.All(t => Rivals.HudStile.Eingebaut.Any(x => x.Name == t.Name)),
+             "Stile: ein Farbthema fehlt bei den HUD-Stilen");
+        var namenStile = Rivals.HudStile.Eingebaut.Select(x => x.Name).ToList();
+        Soll(namenStile.Distinct(StringComparer.OrdinalIgnoreCase).Count() == namenStile.Count, "Stile: zwei HUD-Stile heissen gleich");
+        var ohne = Rivals.HudStile.Eingebaut.First(x => x.Name == "No plate");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Tyres, ohne);
+        Soll(!Rivals.HudStile.WahlVon(s, Rivals.HudElement.Tyres).ShowPlate && Rivals.HudStile.WahlVon(s, Rivals.HudElement.Delta).ShowPlate,
+             "Stile: die unsichtbare Platte gilt nicht nur fuer ihr Stueck");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Panels, neon);
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Message, neon);
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Ghost, neon);
+        Soll(s.PanelBack == neon.Background && s.PanelInk == neon.Text && s.MessageInk == neon.Text && s.HudColorGhost == neon.Accent
+             && s.HudColorAhead == werk.HudColorAhead,
+             "Stile: Panels, Meldungen oder Geist tragen ihren Stil nicht (oder faerben den Streifen mit)");
+        Rivals.HudStile.Anwenden(s, Rivals.HudElement.Panels, zurueck);
+        Soll(s.PanelBack == string.Empty && s.PanelInk == string.Empty, "Stile: Default laesst den Panels fremde Farben");
         Soll(!Rivals.OverlaySettings.UnknownLayoutKeys().Any(), "Stile: die Anordnung nennt Schluessel, die es nicht gibt: "
              + string.Join(", ", Rivals.OverlaySettings.UnknownLayoutKeys()));
         using var bild = new Bitmap(400, 600, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
@@ -2734,7 +2750,17 @@ internal static class EdgeCaseTest
              "G-Meter: unsinnige Werte bleiben stehen");
         Soll(Rivals.GMeterDesign.DimensionVon(Rivals.GMeterLayout.Needle) == Rivals.GMeterDimension.One
              && Rivals.GMeterDesign.DimensionVon(Rivals.GMeterLayout.Heat) == Rivals.GMeterDimension.Two
-             && Rivals.GMeterDesign.LayoutsVon(Rivals.GMeterDimension.Three).Count() == 3, "G-Meter: Formen und Dimensionen passen nicht");
+             && Rivals.GMeterDesign.DimensionVon(Rivals.GMeterLayout.Cartesian) == Rivals.GMeterDimension.Two
+             && Rivals.GMeterDesign.DimensionVon(Rivals.GMeterLayout.Cartesian3D) == Rivals.GMeterDimension.Three
+             && Rivals.GMeterDesign.LayoutsVon(Rivals.GMeterDimension.Three).Count() == 4, "G-Meter: Formen und Dimensionen passen nicht");
+        Soll(Rivals.Farbthemen.Alle.All(t => Rivals.GMeterDesigns.Eingebaut.Any(d => d.Thema == t.Name))
+             && Rivals.Farbthemen.Alle.All(t => Rivals.SpeedoDesigns.Eingebaut.Any(d => d.Thema == t.Name)),
+             "Stile: ein Farbthema hat keine Vorlage bei Tacho oder G-Meter");
+        var tachoNamen = Rivals.SpeedoDesigns.Eingebaut.Select(d => d.Name).ToList();
+        Soll(tachoNamen.Distinct(StringComparer.OrdinalIgnoreCase).Count() == tachoNamen.Count, "Tacho: zwei Vorlagen heissen gleich");
+        var ohnePlatte = Rivals.GMeterDesigns.Eingebaut[0].Clone();
+        ohnePlatte.ShowPlate = false;
+        Soll(Rivals.GMeterDesign.FromJson(ohnePlatte.ToJson()) is { ShowPlate: false }, "G-Meter: die unsichtbare Platte uebersteht JSON nicht");
 
         // Rechtskurve mit 1,5 G und Bremsen mit 1 G (Forza: X rechts, Z vorwaerts, m/s²).
         var z = new Rivals.GMeterState();

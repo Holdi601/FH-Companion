@@ -635,7 +635,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
     /// <summary>Einen Block zeichnen und seine Hoehe zurueckgeben.</summary>
     private float Draw(Graphics g, HudPlacement place, string big, Color colour,
                        string small, Font bigFont, Font smallFont,
-                       Color? plate = null)
+                       Color? plate = null, HudElement teil = HudElement.Delta)
     {
         var bigSize = g.MeasureString(big, bigFont);
         var smallSize = string.IsNullOrEmpty(small)
@@ -655,7 +655,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         Merke(left, top, width, height);
 
         // Der Stil (HudStil): ohne Wahl wie bisher eine eckige Platte.
-        HudZeichnen.Platte(g, _settings, HudElement.Delta, new RectangleF(left, top, width, height),
+        HudZeichnen.Platte(g, _settings, teil, new RectangleF(left, top, width, height),
                            plate ?? Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16)), 0f);
         using (var pen = new SolidBrush(colour))
         {
@@ -708,8 +708,8 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         Merke(links, oben, breite, hoehe);
         _merkeSpur = false;
 
-        HudZeichnen.Platte(g, _settings, HudElement.Delta, new RectangleF(links, oben, breite, hoehe),
-                           Parse(_settings.HudBackground, Color.FromArgb(150, 8, 11, 16)), 0f);
+        HudZeichnen.Platte(g, _settings, HudElement.Inputs, new RectangleF(links, oben, breite, hoehe),
+                           Parse(string.IsNullOrEmpty(_settings.InputsBack) ? _settings.HudBackground : _settings.InputsBack, Color.FromArgb(150, 8, 11, 16)), 0f);
 
         var meine = Parse(_settings.HudColorMine, ColorTranslator.FromHtml("#e7ecf3"));
         var fremde = Parse(_settings.HudColorTheirs, ColorTranslator.FromHtml("#ffb454"));
@@ -723,7 +723,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
             (Loc.T("THR"), false), (Loc.T("BRK"), false), (Loc.T("CLU"), false),
             (Loc.T("STR"), true), (Loc.T("GEAR"), false),
         };
-        using var klein = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", Math.Max(5f, _unit * 0.46f * place.Scale));
+        using var klein = HudZeichnen.Schrift(_settings, HudElement.Inputs, "Segoe UI", Math.Max(5f, _unit * 0.46f * place.Scale));
         var strich = (float)Math.Clamp(_settings.HudInputsLineWidth, 0.2, 6.0);
         using var stiftMeins = new Pen(meine,
             Math.Max(0.5f, _unit * 0.09f * place.Scale * strich));
@@ -887,12 +887,15 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
 
         using var deltaFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI Semibold", _unit * 2.2f * deltaPlace.Scale);
         using var labelFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", _unit * 0.72f * deltaPlace.Scale);
-        using var ghostFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI Semibold", _unit * 1.2f * ghostPlace.Scale);
-        using var noteFont = HudZeichnen.Schrift(_settings, HudElement.Delta, "Segoe UI", _unit * 0.72f * notePlace.Scale);
+        using var ghostFont = HudZeichnen.Schrift(_settings, HudElement.Ghost, "Segoe UI Semibold", _unit * 1.2f * ghostPlace.Scale);
+        using var noteFont = HudZeichnen.Schrift(_settings, HudElement.Note, "Segoe UI", _unit * 0.72f * notePlace.Scale);
+        // Die Notizzeile mit eigenem Hintergrund und eigener Schrift (seit 2026-10-24) -- leer: wie bisher.
+        Color? notizPlatte = string.IsNullOrEmpty(_settings.NoteBack) ? null : Parse(_settings.NoteBack, Color.FromArgb(150, 8, 11, 16));
+        var notizTinte = string.IsNullOrEmpty(_settings.NoteInk) ? (Color?)null : Parse(_settings.NoteInk, Color.White);
 
         if (_nurNotiz)
         {
-            if (NoteActive) { Draw(g, notePlace, _note, ahead, string.Empty, noteFont, noteFont); }
+            if (NoteActive) { Draw(g, notePlace, _note, notizTinte ?? ahead, string.Empty, noteFont, noteFont, notizPlatte, HudElement.Note); }
             return;
         }
 
@@ -909,21 +912,21 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
             // Ruhig: niemand kann dich anfassen.
             Draw(g, ghostPlace, string.Format(Loc.T("GHOST {0}"), _ghostLeft.ToString("0.0")),
                  schrift, string.Empty, ghostFont, labelFont,
-                 Parse(_settings.HudColorGhost, ColorTranslator.FromHtml("#22b8e6")));
+                 Parse(_settings.HudColorGhost, ColorTranslator.FromHtml("#22b8e6")), HudElement.Ghost);
         }
         else if (_ghostLeft > 0)
         {
             // Warnung: gleich ist es vorbei.
             Draw(g, ghostPlace, string.Format(Loc.T("GHOST {0}"), _ghostLeft.ToString("0.0")),
                  schrift, string.Empty, ghostFont, labelFont,
-                 Parse(_settings.HudColorGhostWarn, ColorTranslator.FromHtml("#ffd21e")));
+                 Parse(_settings.HudColorGhostWarn, ColorTranslator.FromHtml("#ffd21e")), HudElement.Ghost);
         }
         else if (_ghostLeft > -(float)_settings.PopInSeconds)
         {
             // Und jetzt tauchen sie wieder auf, einer nach dem anderen.
             Draw(g, ghostPlace, string.Format(Loc.T("POP-IN {0}"), (-_ghostLeft).ToString("0.0")),
                  schrift, string.Empty, ghostFont, labelFont,
-                 Parse(_settings.HudColorPopIn, ColorTranslator.FromHtml("#ff8c1a")));
+                 Parse(_settings.HudColorPopIn, ColorTranslator.FromHtml("#ff8c1a")), HudElement.Ghost);
         }
 
         if (_settings.HudInputs)
@@ -933,7 +936,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
 
         if (DateTime.UtcNow < _noteUntil && _note.Length > 0)
         {
-            Draw(g, notePlace, _note, ahead, string.Empty, noteFont, noteFont);
+            Draw(g, notePlace, _note, notizTinte ?? ahead, string.Empty, noteFont, noteFont, notizPlatte, HudElement.Note);
         }
 
         if (_delta is not null || !string.IsNullOrEmpty(_label))

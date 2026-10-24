@@ -167,8 +167,12 @@ internal sealed class GMeterTab : UserControl
 
     // ---- Galerie ----
 
-    internal static string Anzeige(GMeterDesign d) => !d.BuiltIn ? d.Name : d.Name switch
+    internal static string Anzeige(GMeterDesign d) => !d.BuiltIn ? d.Name : d.Thema is { } thema
+        ? Farbthemen.Anzeige(thema) + " · " + Layoutname(d.Layout)
+        : d.Name switch
     {
+        "Cartesian axes" => Loc.T("Cartesian axes"),
+        "Cartesian 3D" => Loc.T("Cartesian 3D"),
         "Classic circle" => Loc.T("Classic circle"),
         "Racing crosshair" => Loc.T("Racing crosshair"),
         "Neon radar" => Loc.T("Neon radar"),
@@ -411,6 +415,7 @@ internal sealed class GMeterTab : UserControl
 
         Gruppe(Loc.T("General"));
         Text(Loc.T("Name"), d.Name, v => Aendern(x => x.Name = v));
+        Thema(t => Aendern(x => Farbthemen.Auf(x, t), neuAufbauen: true));
         // ERST DIE DIMENSION, DANN DIE FORMEN DAZU: wechselt die Dimension, nimmt sie ihre erste Form.
         Wahl(Loc.T("Dimensions"), d.Dimension, v => Aendern(x =>
         {
@@ -455,6 +460,7 @@ internal sealed class GMeterTab : UserControl
         Regler(Loc.T("Glow"), d.Glow * 100f, 0f, 100f, v => Aendern(x => x.Glow = v / 100f));
         Regler(Loc.T("Smoothing"), d.Smoothing * 100f, 0f, 95f, v => Aendern(x => x.Smoothing = v / 100f));
         Wahl(Loc.T("Frame"), d.Frame, v => Aendern(x => x.Frame = v), Rahmenname, Enum.GetValues<SpeedoFrame>());
+        Schalter(Loc.T("Background plate"), d.ShowPlate, v => Aendern(x => x.ShowPlate = v));
         Regler(Loc.T("Corner radius"), d.CornerRadius, 0f, 60f, v => Aendern(x => x.CornerRadius = v));
         Wahl(Loc.T("Font"), d.Font, v => Aendern(x => x.Font = v), Schriftname, Enum.GetValues<SpeedoFont>());
         Schalter(Loc.T("Italic"), d.Italic, v => Aendern(x => x.Italic = v));
@@ -466,6 +472,16 @@ internal sealed class GMeterTab : UserControl
         });
         _baukasten.ResumeLayout();
         _still = false;
+    }
+
+    private void Thema(Action<Farbthema> anwenden)
+    {
+        var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180, BackColor = Grund, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, DropDownWidth = 240 };
+        c.Items.Add(Loc.T("-- pick a theme --"));
+        foreach (var t in Farbthemen.Alle) { c.Items.Add(Farbthemen.Anzeige(t.Name)); }
+        c.SelectedIndex = 0;
+        c.SelectedIndexChanged += (_, _) => { if (c.SelectedIndex > 0) { anwenden(Farbthemen.Alle[c.SelectedIndex - 1]); } };
+        Zeile(Loc.T("Colour theme")).Controls.Add(c);
     }
 
     private void Gruppe(string titel) =>
@@ -565,6 +581,8 @@ internal sealed class GMeterTab : UserControl
         GMeterLayout.Heat => Loc.T("Heat map"),
         GMeterLayout.Perspective => Loc.T("Perspective disc"),
         GMeterLayout.Sphere => Loc.T("Sphere"),
+        GMeterLayout.Cartesian => Loc.T("Cartesian axes"),
+        GMeterLayout.Cartesian3D => Loc.T("Cartesian 3D"),
         _ => Loc.T("Circle and height"),
     };
 

@@ -20,8 +20,11 @@ internal sealed class MessageHud : LayeredHud
 
     public override int Ebene => 4;
 
-    public MessageHud(Rectangle screen) : base(screen)
+    private readonly OverlaySettings? _settings;
+
+    public MessageHud(Rectangle screen, OverlaySettings? settings = null) : base(screen)
     {
+        _settings = settings;
         _weg.Tick += (_, _) =>
         {
             _weg.Stop();
@@ -45,18 +48,20 @@ internal sealed class MessageHud : LayeredHud
     }
 
     protected override Rectangle Extent(Graphics messung) =>
-        string.IsNullOrEmpty(_text) ? Rectangle.Empty : Rectangle.Ceiling(Lege(messung, AreaSize, _titel, _text).Kasten);
+        string.IsNullOrEmpty(_text) ? Rectangle.Empty : Rectangle.Ceiling(Lege(messung, AreaSize, _titel, _text, _settings).Kasten);
 
-    protected override void Draw(Graphics g) => Male(g, AreaSize, _titel, _text, _farbe);
+    protected override void Draw(Graphics g) => Male(g, AreaSize, _titel, _text, _farbe, _settings);
 
     internal readonly record struct Aufbau(RectangleF Kasten, Font Titel, Font Text, float Rand);
 
-    internal static Aufbau Lege(Graphics g, Size flaeche, string titel, string text)
+    internal static Aufbau Lege(Graphics g, Size flaeche, string titel, string text, OverlaySettings? s = null)
     {
         var skala = GameArea.ResolutionScale(new Rectangle(Point.Empty, flaeche));
-        // In PIXELN, nicht in Punkten -- siehe CourseShapeHud.Schrift.
-        var titelFont = new Font("Segoe UI Semibold", 15f * 96f / 72f * skala, GraphicsUnit.Pixel);
-        var textFont = new Font("Segoe UI", 11f * 96f / 72f * skala, GraphicsUnit.Pixel);
+        // In PIXELN, nicht in Punkten -- siehe CourseShapeHud.Schrift. Im Stil des Elements (HudStil).
+        Font Neu(string familie, float px) => s is null ? new Font(familie, px, GraphicsUnit.Pixel)
+                                                        : HudZeichnen.Schrift(s, HudElement.Message, familie, px, FontStyle.Regular, GraphicsUnit.Pixel);
+        var titelFont = Neu("Segoe UI Semibold", 15f * 96f / 72f * skala);
+        var textFont = Neu("Segoe UI", 11f * 96f / 72f * skala);
         var rand = 14f * skala;
         var breite = Math.Min(flaeche.Width * 0.6f, 720f * skala);
         var t1 = g.MeasureString(titel, titelFont, (int)(breite - (2 * rand)));
@@ -67,14 +72,22 @@ internal sealed class MessageHud : LayeredHud
         return new Aufbau(new RectangleF(x, y, breite, hoehe), titelFont, textFont, rand);
     }
 
-    internal static void Male(Graphics g, Size flaeche, string titel, string text, Color farbe)
+    internal static void Male(Graphics g, Size flaeche, string titel, string text, Color farbe, OverlaySettings? s = null)
     {
         if (string.IsNullOrEmpty(text)) { return; }
-        var a = Lege(g, flaeche, titel, text);
+        var a = Lege(g, flaeche, titel, text, s);
         try
         {
-            using var grund = new SolidBrush(Color.FromArgb(225, 13, 17, 23));
-            g.FillRectangle(grund, a.Kasten);
+            var grundFarbe = OverlaySettings.ParseColour(s?.MessageBack, Color.FromArgb(225, 13, 17, 23));
+            if (s is null)
+            {
+                using var grund = new SolidBrush(grundFarbe);
+                g.FillRectangle(grund, a.Kasten);
+            }
+            else
+            {
+                HudZeichnen.Platte(g, s, HudElement.Message, a.Kasten, grundFarbe, 0f);
+            }
             using var leiste = new SolidBrush(farbe);
             g.FillRectangle(leiste, a.Kasten.X, a.Kasten.Y, Math.Max(4f, a.Rand * 0.35f), a.Kasten.Height);
             var innen = new RectangleF(a.Kasten.X + a.Rand, a.Kasten.Y + a.Rand,
@@ -82,7 +95,7 @@ internal sealed class MessageHud : LayeredHud
             using var titelPinsel = new SolidBrush(farbe);
             var h1 = g.MeasureString(titel, a.Titel, (int)innen.Width).Height;
             g.DrawString(titel, a.Titel, titelPinsel, new RectangleF(innen.X, innen.Y, innen.Width, h1));
-            using var textPinsel = new SolidBrush(Color.FromArgb(231, 236, 243));
+            using var textPinsel = new SolidBrush(OverlaySettings.ParseColour(s?.MessageInk, Color.FromArgb(231, 236, 243)));
             g.DrawString(text, a.Text, textPinsel,
                          new RectangleF(innen.X, innen.Y + h1 + (a.Rand * 0.4f), innen.Width, innen.Height - h1));
         }

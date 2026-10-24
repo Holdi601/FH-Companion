@@ -88,14 +88,46 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
     private int _pinned;
     private int _shown;
 
-    public OverlayPanel(Rectangle bounds, double opacity)
+    // DIE FARBEN DIESES PANELS (seit 2026-10-24, HudStil "Panels"): ohne Stil die der App.
+    private Color _ground = Ground;
+    private Color _surface = Surface;
+    private Color _ink = Ink;
+    private Color _muted = Muted;
+    private Color _bar = Bar;
+    private OverlaySettings? _stil;
+    private string? _stilSchluessel;
+
+    /// <summary>Farben und Schrift aus dem Stil der Panels neu nehmen.</summary>
+    public void StilAnwenden(OverlaySettings? s)
     {
+        // Nur bei einer echten Aenderung: das hier laeuft mit jeder Auffrischung des HUD.
+        var w = s is null ? null : HudStile.WahlVon(s, HudElement.Panels);
+        var schluessel = string.Join("|", s?.PanelBack, s?.PanelInk, s?.PanelMuted, s?.PanelAccent, w?.Font, w?.Italic);
+        if (schluessel == _stilSchluessel && ReferenceEquals(s, _stil)) { return; }
+        _stilSchluessel = schluessel;
+        _stil = s;
+        _ground = OverlaySettings.ParseColour(s?.PanelBack, Ground);
+        _ground = Color.FromArgb(255, _ground);
+        // Die Kopfleiste etwas heller als der Grund, wie in den Farben der App.
+        _surface = string.IsNullOrEmpty(s?.PanelBack) ? Surface
+            : Color.FromArgb(255, Math.Min(255, _ground.R + 10), Math.Min(255, _ground.G + 12), Math.Min(255, _ground.B + 14));
+        _ink = OverlaySettings.ParseColour(s?.PanelInk, Ink);
+        _muted = OverlaySettings.ParseColour(s?.PanelMuted, Muted);
+        _bar = OverlaySettings.ParseColour(s?.PanelAccent, Bar);
+        BackColor = _ground;
+        if (IsHandleCreated) { MakeFonts(Bounds); Invalidate(); }
+    }
+
+    public OverlayPanel(Rectangle bounds, double opacity, OverlaySettings? settings = null)
+    {
+        _stil = settings;
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;
         Bounds = bounds;
         BackColor = Ground;
         Opacity = Math.Clamp(opacity, 0.2, 1.0);
+        StilAnwenden(settings);
         TopMost = true;
         DoubleBuffered = true;
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
@@ -169,11 +201,18 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
     private void MakeFonts(Rectangle bounds)
     {
         var unit = Math.Max(9f, bounds.Height / 108f);
-        _titleFont = new Font("Segoe UI Semibold", unit + 3f);
-        _subFont = new Font("Segoe UI", unit - 1.5f);
-        _rowFont = new Font("Segoe UI", unit - 0.5f);
+        _titleFont?.Dispose();
+        _subFont?.Dispose();
+        _rowFont?.Dispose();
+        _numFont?.Dispose();
+        _noteFont?.Dispose();
+        Font Neu(string familie, float groesse) =>
+            _stil is null ? new Font(familie, groesse) : HudZeichnen.Schrift(_stil, HudElement.Panels, familie, groesse);
+        _titleFont = Neu("Segoe UI Semibold", unit + 3f);
+        _subFont = Neu("Segoe UI", unit - 1.5f);
+        _rowFont = Neu("Segoe UI", unit - 0.5f);
         _numFont = new Font("Consolas", unit - 0.5f);
-        _noteFont = new Font("Segoe UI", unit - 2.5f);
+        _noteFont = Neu("Segoe UI", unit - 2.5f);
         _pad = (int)Math.Max(8, unit);
     }
 
@@ -339,19 +378,19 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
         var g = e.Graphics;
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.Clear(Ground);
+        g.Clear(_ground);
 
         var width = ClientSize.Width;
         var textWidth = width - 2 * _pad;
 
         // head
         var headHeight = _pad + _titleFont.Height + 2 + _subFont.Height + _pad;
-        using (var surface = new SolidBrush(Surface))
+        using (var surface = new SolidBrush(_surface))
         {
             g.FillRectangle(surface, 0, 0, width, headHeight);
         }
-        using (var ink = new SolidBrush(Ink))
-        using (var muted = new SolidBrush(Muted))
+        using (var ink = new SolidBrush(_ink))
+        using (var muted = new SolidBrush(_muted))
         {
             g.DrawString(_title, _titleFont, ink,
                          new RectangleF(_pad, _pad, textWidth, _titleFont.Height + 4));
@@ -366,7 +405,7 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
         if (!string.IsNullOrEmpty(_note))
         {
             noteHeight = (int)g.MeasureString(_note, _noteFont, textWidth).Height + _pad / 2;
-            using var muted = new SolidBrush(Muted);
+            using var muted = new SolidBrush(_muted);
             g.DrawString(_note, _noteFont, muted,
                          new RectangleF(_pad, Height - noteHeight, textWidth,
                                         noteHeight), noteFormat);
@@ -413,7 +452,7 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
             }
             if (line.Heading)
             {
-                using var bar = new SolidBrush(Bar);
+                using var bar = new SolidBrush(_bar);
                 g.DrawString(line.Left.ToUpperInvariant(), _noteFont, bar,
                              new PointF(_pad, y + 5));
                 // How far down the list this window is. Drawn here rather than
@@ -468,7 +507,7 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
                     // Rechtsbuendig, aber um die Wertspalte nach links geholt. In
                     // der Leitfarbe, damit auf einen Blick zu sehen ist, welche der
                     // empfohlenen Autos man ueberhaupt schon gefahren hat.
-                    using var mein = new SolidBrush(Bar);
+                    using var mein = new SolidBrush(_bar);
                     g.DrawString(line.Mine, _noteFont, mein,
                                  new RectangleF(_pad, y, textWidth - 120,
                                                 font.Height + 2),
@@ -476,7 +515,7 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
                 }
                 if (!string.IsNullOrEmpty(line.Right))
                 {
-                    using var value = new SolidBrush(line.Small ? Muted : line.Tone);
+                    using var value = new SolidBrush(line.Small ? _muted : line.Tone);
                     g.DrawString(line.Right, line.Small ? _noteFont : _numFont, value,
                                  new RectangleF(_pad, y, textWidth, font.Height + 2),
                                  right);

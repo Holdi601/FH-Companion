@@ -176,6 +176,15 @@ internal sealed class TyreHud : LayeredHud
     /// <summary>Die Einstellungen des Bildes, das gerade gezeichnet wird -- fuer die Schrift des Stils.</summary>
     [ThreadStatic] private static OverlaySettings? _s;
 
+    /// <summary>
+    /// Die Schriftfarbe des Stils, abgestuft -- auf hellen Platten (Glas, Papier) waeren die festen hellen
+    /// Grautoene unlesbar. Ohne eigene Farbe die bisherigen Toene.
+    /// </summary>
+    private static Color Tinte(int deckung, Color sonst) =>
+        _s is { } s && !string.IsNullOrEmpty(s.TyresInk)
+            ? Color.FromArgb(deckung, OverlaySettings.ParseColour(s.TyresInk, sonst))
+            : sonst;
+
     private static Font Schrift(string familie, float px, FontStyle stil = FontStyle.Regular) =>
         _s is null ? new Font(familie, px, stil, GraphicsUnit.Pixel) : HudZeichnen.Schrift(_s, HudElement.Tyres, familie, px, stil, GraphicsUnit.Pixel);
 
@@ -201,11 +210,11 @@ internal sealed class TyreHud : LayeredHud
             // Die Karosserie zwischen den Raedern -- nur ein Schatten, damit vorne und
             // hinten sofort klar sind.
             using (var koerper = Rund(new RectangleF(141f, 46f, 48f, 248f), 20f))
-            using (var stift = new Pen(Color.FromArgb(45, 255, 255, 255), 2f))
+            using (var stift = new Pen(Tinte(70, Color.FromArgb(45, 255, 255, 255)), 2f))
             {
                 g.DrawPath(stift, koerper);
             }
-            using (var pfeil = new SolidBrush(Color.FromArgb(55, 255, 255, 255)))
+            using (var pfeil = new SolidBrush(Tinte(85, Color.FromArgb(55, 255, 255, 255))))
             {
                 g.FillPolygon(pfeil, new[] { new PointF(165f, 56f), new PointF(157f, 68f), new PointF(173f, 68f) });
             }
@@ -228,7 +237,7 @@ internal sealed class TyreHud : LayeredHud
     {
         // FEDERWEG aussen neben dem Reifen: voll = eingefedert, rot = auf Anschlag.
         var bx = links ? x - 18f : x + RadB + 10f;
-        using (var grund = new SolidBrush(Color.FromArgb(40, 255, 255, 255)))
+        using (var grund = new SolidBrush(Tinte(45, Color.FromArgb(40, 255, 255, 255))))
         {
             g.FillRectangle(grund, bx, y, 8f, RadH);
         }
@@ -239,8 +248,8 @@ internal sealed class TyreHud : LayeredHud
             g.FillRectangle(feder, bx, y + RadH * (1f - weg), 8f, RadH * weg);
         }
         using (var klein = Schrift("Segoe UI Semibold", 11f))
-        using (var hell = new SolidBrush(Color.FromArgb(205, 215, 228)))
-        using (var leise = new SolidBrush(Color.FromArgb(140, 155, 172)))
+        using (var hell = new SolidBrush(Tinte(255, Color.FromArgb(205, 215, 228))))
+        using (var leise = new SolidBrush(Tinte(190, Color.FromArgb(140, 155, 172))))
         using (var seite = new StringFormat { Alignment = links ? StringAlignment.Far : StringAlignment.Near })
         {
             var tx = links ? new RectangleF(bx - 42f, y + RadH / 2f - 13f, 39f, 14f)
@@ -331,7 +340,7 @@ internal sealed class TyreHud : LayeredHud
 
         // LAENGSSCHLUPF als Balken unter dem Reifen: links rot (Bremsen), rechts orange.
         var sy = y + RadH + 9f;
-        using (var grund = new SolidBrush(Color.FromArgb(40, 255, 255, 255)))
+        using (var grund = new SolidBrush(Tinte(45, Color.FromArgb(40, 255, 255, 255))))
         {
             g.FillRectangle(grund, x, sy, RadB, 7f);
         }

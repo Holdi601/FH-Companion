@@ -510,6 +510,20 @@ internal sealed class OverlaySettings
     /// <summary>Eigene Farben der Live-Karte -- leer: wie die Streckenkarten (course_shape_*).</summary>
     [JsonPropertyName("livemap_back")] public string LiveMapBack { get; set; } = string.Empty;
     [JsonPropertyName("livemap_line")] public string LiveMapLine { get; set; } = string.Empty;
+    /// <summary>Notizzeile und Eingabe-Spuren mit eigenem Hintergrund -- leer: wie der Delta-Streifen.</summary>
+    [JsonPropertyName("note_back")] public string NoteBack { get; set; } = string.Empty;
+    [JsonPropertyName("note_ink")] public string NoteInk { get; set; } = string.Empty;
+    [JsonPropertyName("inputs_back")] public string InputsBack { get; set; } = string.Empty;
+    /// <summary>Die Farben der Rivals-Panels -- leer: die Farben der App (OverlayPanel).</summary>
+    [JsonPropertyName("panel_back")] public string PanelBack { get; set; } = string.Empty;
+    [JsonPropertyName("panel_ink")] public string PanelInk { get; set; } = string.Empty;
+    [JsonPropertyName("panel_muted")] public string PanelMuted { get; set; } = string.Empty;
+    [JsonPropertyName("panel_accent")] public string PanelAccent { get; set; } = string.Empty;
+    [JsonPropertyName("panel_good")] public string PanelGood { get; set; } = string.Empty;
+    [JsonPropertyName("panel_warn")] public string PanelWarn { get; set; } = string.Empty;
+    /// <summary>Meldungen oben in der Mitte -- leer: wie bisher.</summary>
+    [JsonPropertyName("message_back")] public string MessageBack { get; set; } = string.Empty;
+    [JsonPropertyName("message_ink")] public string MessageInk { get; set; } = string.Empty;
 
     // ---- DAS G-METER (seit 2026-10-24) ------------------------------------------------
     [JsonPropertyName("hud_gmeter")] public bool HudGMeter { get; set; }
@@ -641,6 +655,8 @@ internal sealed class OverlaySettings
         "hud_speedo", "hud_speedo_x", "hud_speedo_y", "hud_speedo_align", "hud_speedo_scale", "speedo_design",
         "hud_gmeter", "hud_gmeter_x", "hud_gmeter_y", "hud_gmeter_align", "hud_gmeter_scale", "gmeter_design",
         "hud_styles", "tyres_back", "tyres_ink", "livemap_back", "livemap_line",
+        "note_back", "note_ink", "inputs_back", "panel_back", "panel_ink", "panel_muted", "panel_accent",
+        "panel_good", "panel_warn", "message_back", "message_ink",
     };
 
     /// <summary>Jede Einstellung nach ihrem Namen in der Datei.</summary>

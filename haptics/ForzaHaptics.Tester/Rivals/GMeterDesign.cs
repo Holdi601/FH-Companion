@@ -12,9 +12,9 @@ internal enum GMeterLayout
     // 1D
     Bar, Column, Arc, Needle,
     // 2D
-    Circle, Crosshair, Radar, Diamond, Heat,
+    Circle, Crosshair, Radar, Diamond, Heat, Cartesian,
     // 3D
-    Perspective, Sphere, CircleWithHeight,
+    Perspective, Sphere, CircleWithHeight, Cartesian3D,
 }
 
 /// <summary>Welche Richtung ein eindimensionales G-Meter zeigt.</summary>
@@ -68,18 +68,22 @@ internal sealed class GMeterDesign
     [JsonPropertyName("glow")] public float Glow { get; set; } = 0.3f;
     [JsonPropertyName("smoothing")] public float Smoothing { get; set; } = 0.4f;
     [JsonPropertyName("frame")] public SpeedoFrame Frame { get; set; } = SpeedoFrame.Bezel;
+    [JsonPropertyName("plate")] public bool ShowPlate { get; set; } = true;
     [JsonPropertyName("cornerRadius")] public float CornerRadius { get; set; } = 14f;
     [JsonPropertyName("font")] public SpeedoFont Font { get; set; } = SpeedoFont.Condensed;
     [JsonPropertyName("italic")] public bool Italic { get; set; }
 
     [JsonIgnore] public bool BuiltIn { get; set; }
 
+    /// <summary>Bei Vorlagen aus einem Farbthema: welches -- fuer den Namen in der Galerie.</summary>
+    [JsonIgnore] public string? Thema { get; set; }
+
     [JsonIgnore] public GMeterDimension Dimension => DimensionVon(Layout);
 
     public static GMeterDimension DimensionVon(GMeterLayout l) => l switch
     {
         GMeterLayout.Bar or GMeterLayout.Column or GMeterLayout.Arc or GMeterLayout.Needle => GMeterDimension.One,
-        GMeterLayout.Perspective or GMeterLayout.Sphere or GMeterLayout.CircleWithHeight => GMeterDimension.Three,
+        GMeterLayout.Perspective or GMeterLayout.Sphere or GMeterLayout.CircleWithHeight or GMeterLayout.Cartesian3D => GMeterDimension.Three,
         _ => GMeterDimension.Two,
     };
 
@@ -95,6 +99,7 @@ internal sealed class GMeterDesign
         GMeterLayout.Arc => 0.62f,
         GMeterLayout.Perspective => 0.9f,
         GMeterLayout.CircleWithHeight => 0.82f,
+        GMeterLayout.Cartesian3D => 0.86f,
         _ => 1f,
     };
 
@@ -211,6 +216,38 @@ internal static class GMeterDesigns
                 Trail = GMeterTrail.Line, Size = 280,
             },
         };
+        liste.Add(new GMeterDesign
+        {
+            Name = "Cartesian axes", Layout = GMeterLayout.Cartesian, Frame = SpeedoFrame.Plate, Background = "#C8101317",
+            Trail = GMeterTrail.Line, Envelope = false, Size = 260,
+        });
+        liste.Add(new GMeterDesign
+        {
+            Name = "Cartesian 3D", Layout = GMeterLayout.Cartesian3D, Frame = SpeedoFrame.Plate, Background = "#C8101317",
+            Trail = GMeterTrail.Line, Envelope = false, Size = 300,
+        });
+        // JEDES FARBTHEMA AUF EINER FORM (seit 2026-10-24, der Nutzer: "viel zu wenig"): reihum durch alle
+        // Formen, damit jede in mehreren Farben vorkommt. Der Name setzt sich in der Galerie zusammen.
+        var formen = new[]
+        {
+            GMeterLayout.Cartesian3D, GMeterLayout.Radar, GMeterLayout.Circle, GMeterLayout.Cartesian, GMeterLayout.Crosshair,
+            GMeterLayout.Perspective, GMeterLayout.Diamond, GMeterLayout.Heat, GMeterLayout.Sphere, GMeterLayout.CircleWithHeight,
+            GMeterLayout.Arc, GMeterLayout.Needle, GMeterLayout.Bar, GMeterLayout.Column,
+        };
+        for (var i = 0; i < Farbthemen.Alle.Count; i++)
+        {
+            var thema = Farbthemen.Alle[i];
+            var form = formen[i % formen.Length];
+            var d = new GMeterDesign
+            {
+                Name = thema.Name + " " + form, Layout = form, Thema = thema.Name,
+                Axis = form is GMeterLayout.Column ? GMeterAxis.Longitudinal : form is GMeterLayout.Bar ? GMeterAxis.Lateral : GMeterAxis.Combined,
+                Frame = SpeedoFrame.Plate, Trail = i % 3 == 0 ? GMeterTrail.Glow : GMeterTrail.Line, Envelope = i % 2 == 0,
+                Size = form is GMeterLayout.Bar ? 320 : form is GMeterLayout.Column ? 90 : 260,
+            };
+            Farbthemen.Auf(d, thema);
+            liste.Add(d);
+        }
         foreach (var d in liste) { d.BuiltIn = true; d.Bereinigt(); }
         return liste;
     }

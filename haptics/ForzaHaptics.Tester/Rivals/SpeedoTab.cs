@@ -315,7 +315,11 @@ internal sealed class SpeedoTab : UserControl
     // ------------------------------------------------------------------ //
 
     /// <summary>Der Name, wie er dasteht -- die eingebauten uebersetzt.</summary>
-    internal static string Anzeige(SpeedoDesign d) => !d.BuiltIn ? d.Name : d.Name switch
+    internal static string Anzeige(SpeedoDesign d) => !d.BuiltIn ? d.Name
+        : d.Thema is { } thema ? Farbthemen.Anzeige(thema) + " · " + Vorlagenname(d.Vorlage ?? d.Name)
+        : Vorlagenname(d.Name);
+
+    private static string Vorlagenname(string name) => name switch
     {
         "Classic analogue" => Loc.T("Classic analogue"),
         "Horizon style" => Loc.T("Horizon style"),
@@ -332,7 +336,7 @@ internal sealed class SpeedoTab : UserControl
         "Rally" => Loc.T("Rally"),
         "Synthwave" => Loc.T("Synthwave"),
         "Track day" => Loc.T("Track day"),
-        _ => d.Name,
+        _ => name,
     };
 
     private void GalerieAufbauen()
@@ -516,8 +520,9 @@ internal sealed class SpeedoTab : UserControl
     // ------------------------------------------------------------------ //
 
     /// <summary>Eine Aenderung: an einer eigenen Kopie, gespeichert kurz danach, im Spiel sofort.</summary>
-    private void Aendern(Action<SpeedoDesign> aenderung)
+    private void Aendern(Action<SpeedoDesign> aenderung, bool neuAufbauen = false)
     {
+        if (neuAufbauen && !_design.BuiltIn && !_still) { BeginInvoke(new Action(BaukastenAufbauen)); }
         if (_still) { return; }
         if (_design.BuiltIn)
         {
@@ -595,6 +600,8 @@ internal sealed class SpeedoTab : UserControl
 
         Gruppe(Loc.T("General"));
         Text(Loc.T("Name"), d.Name, v => Aendern(x => x.Name = v));
+        // EIN FARBTHEMA AUF DIESE FORM (seit 2026-10-24): Farben, Rahmen, Leuchten, Schrift auf einmal.
+        Thema(t => Aendern(x => Farbthemen.Auf(x, t), neuAufbauen: true));
         Wahl(Loc.T("Layout"), d.Layout, v => Aendern(x => x.Layout = v), Layoutname);
         Zahl(Loc.T("Size (pixels at 1080p)"), d.Size, 120, 900, v => Aendern(x => x.Size = v));
 
@@ -632,6 +639,7 @@ internal sealed class SpeedoTab : UserControl
 
         Gruppe(Loc.T("Frame and font"));
         Wahl(Loc.T("Frame"), d.Frame, v => Aendern(x => x.Frame = v), Rahmenname);
+        Schalter(Loc.T("Background plate"), d.ShowPlate, v => Aendern(x => x.ShowPlate = v));
         Regler(Loc.T("Corner radius"), d.CornerRadius, 0f, 60f, v => Aendern(x => x.CornerRadius = v));
         Wahl(Loc.T("Font"), d.Font, v => Aendern(x => x.Font = v), Schriftname);
         Schalter(Loc.T("Italic"), d.Italic, v => Aendern(x => x.Italic = v));
@@ -670,6 +678,17 @@ internal sealed class SpeedoTab : UserControl
         });
         _baukasten.ResumeLayout();
         _still = false;
+    }
+
+    /// <summary>Eine Auswahl der Farbthemen -- angewandt, sobald eins gewaehlt ist.</summary>
+    private void Thema(Action<Farbthema> anwenden)
+    {
+        var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160, BackColor = Grund, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, DropDownWidth = 220 };
+        c.Items.Add(Loc.T("-- pick a theme --"));
+        foreach (var t in Farbthemen.Alle) { c.Items.Add(Farbthemen.Anzeige(t.Name)); }
+        c.SelectedIndex = 0;
+        c.SelectedIndexChanged += (_, _) => { if (c.SelectedIndex > 0) { anwenden(Farbthemen.Alle[c.SelectedIndex - 1]); } };
+        Zeile(Loc.T("Colour theme")).Controls.Add(c);
     }
 
     private void Gruppe(string titel) =>

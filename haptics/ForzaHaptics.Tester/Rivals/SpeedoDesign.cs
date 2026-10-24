@@ -102,6 +102,8 @@ internal sealed class SpeedoDesign
 
     // ---- Rahmen und Schrift ----
     [JsonPropertyName("frame")] public SpeedoFrame Frame { get; set; } = SpeedoFrame.Bezel;
+    /// <summary>false: keine Hintergrundplatte -- der Tacho steht frei ueber dem Spiel.</summary>
+    [JsonPropertyName("plate")] public bool ShowPlate { get; set; } = true;
     [JsonPropertyName("cornerRadius")] public float CornerRadius { get; set; } = 14f;
     [JsonPropertyName("font")] public SpeedoFont Font { get; set; } = SpeedoFont.Sans;
     [JsonPropertyName("speedSize")] public float SpeedSize { get; set; } = 1f;
@@ -139,6 +141,10 @@ internal sealed class SpeedoDesign
 
     /// <summary>Eine eingebaute Vorlage -- nicht zu ueberschreiben, nur zu kopieren.</summary>
     [JsonIgnore] public bool BuiltIn { get; set; }
+
+    /// <summary>Bei Vorlagen aus einem Farbthema: welches, und auf welcher Vorlage es liegt -- fuer den Namen.</summary>
+    [JsonIgnore] public string? Thema { get; set; }
+    [JsonIgnore] public string? Vorlage { get; set; }
 
     private static readonly JsonSerializerOptions Optionen = new()
     {
@@ -354,6 +360,20 @@ internal static class SpeedoDesigns
                 Distance = SpeedoDistance.Race,
             },
         };
+        // JEDES FARBTHEMA AUF EINER FORM (seit 2026-10-24, der Nutzer: "das koennten auch mehr Stile sein"):
+        // die Form einer der Vorlagen oben, reihum, mit den Farben, dem Rahmen und der Schrift des Themas.
+        var formen = liste.ToArray();
+        for (var i = 0; i < Farbthemen.Alle.Count; i++)
+        {
+            var thema = Farbthemen.Alle[i];
+            var form = formen[(i * 7) % formen.Length];
+            var d = form.Clone();
+            Farbthemen.Auf(d, thema);
+            d.Name = thema.Name + " / " + form.Name;
+            d.Thema = thema.Name;
+            d.Vorlage = form.Name;
+            liste.Add(d);
+        }
         foreach (var d in liste) { d.BuiltIn = true; d.Bereinigt(); }
         return liste;
     }

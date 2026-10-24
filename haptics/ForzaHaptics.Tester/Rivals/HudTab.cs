@@ -1094,7 +1094,8 @@ internal sealed class HudPartPanel : Panel
         void Stil(HudElement element)
         {
             Rein(Note(Loc.T("Style")));
-            var zeile = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+            // Bricht um, wenn "Bearbeiten ..." in einer langen Sprache nicht mehr neben die Wahl passt.
+            var zeile = new FlowLayoutPanel { AutoSize = true, WrapContents = true, MaximumSize = new Size(236, 0), Margin = new Padding(0) };
             var wahl = new ComboBox { Width = 140, DropDownStyle = ComboBoxStyle.DropDownList };
             var stile = new List<HudStil>();
             void Fuellen()
@@ -1288,6 +1289,7 @@ internal sealed class HudPartPanel : Panel
         // ---- GEISTER-COUNTDOWN ------------------------------------------------------
         Abschnitt(Titel(HudPart.Ghost), HudPart.Ghost);
         Lage(HudPart.Ghost);
+        Stil(HudElement.Ghost);
         Rein(Note(Loc.T("No-contact start: seconds the ghost lasts after GO")));
         Zahl(settings.GhostSeconds, 0, 120, 1, 0.5m, v => _settings.GhostSeconds = v);
         Rein(Note(Loc.T(
@@ -1322,6 +1324,7 @@ internal sealed class HudPartPanel : Panel
         };
         Rein(spuren);
         Lage(HudPart.Inputs);
+        Stil(HudElement.Inputs);
         Rein(Note(Loc.T("Seconds of history behind the now line")));
         Zahl(settings.HudInputsSeconds, 1, 60, 0, 1m, v => _settings.HudInputsSeconds = v);
         Rein(Note(Loc.T("Seconds of the reference lap shown ahead")));
@@ -1347,6 +1350,7 @@ internal sealed class HudPartPanel : Panel
         // ---- NOTIZZEILE ---------------------------------------------------------------
         Abschnitt(Titel(HudPart.Note), HudPart.Note);
         Lage(HudPart.Note);
+        Stil(HudElement.Note);
         Rein(Note(Loc.T(
             "Short messages under the strip, for example when a lap was stored. It uses the delta colours.")));
 
@@ -1366,6 +1370,14 @@ internal sealed class HudPartPanel : Panel
         Lage(HudPart.Speedo);
         Rein(Note(Loc.T(
             "Rev counter, gear, speed, redline and more. Pick one of the styles or build your own in the tab Speedometer.")));
+
+        // ---- WEITERE STUECKE: Rivals-Panels und Meldungen (seit 2026-10-24) -------------
+        Abschnitt(Loc.T("Rivals panels and messages"));
+        Rein(Note(Loc.T("The two Rivals panels take colours and font from their style; frame, glow and an invisible plate need a see-through window and work on everything else.")));
+        Rein(Note(Loc.T("Rivals panels")));
+        Stil(HudElement.Panels);
+        Rein(Note(Loc.T("Messages at the top of the screen")));
+        Stil(HudElement.Message);
 
         // ---- DAS G-METER (seit 2026-10-24, ab Werk aus) --------------------------------
         Abschnitt(Titel(HudPart.GMeter), HudPart.GMeter);

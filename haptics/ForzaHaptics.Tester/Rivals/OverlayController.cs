@@ -537,13 +537,13 @@ internal sealed class OverlayController : IDisposable
         _area = screen;
         OverlayAusgabe.Flaeche = screen;
         var (rechts, links) = PanelRects(screen);
-        _right = new OverlayPanel(rechts, _settings.Opacity);
-        _left = new OverlayPanel(links, _settings.Opacity);
+        _right = new OverlayPanel(rechts, _settings.Opacity, _settings);
+        _left = new OverlayPanel(links, _settings.Opacity, _settings);
         // Ueber den ganzen Schirm, gezeichnet wird nur der eigene Block: so kann er
         // ueberall hin, ohne dass das Fenster mitwandern muss.
         _shapes = new CourseShapeHud(_settings, screen);
         _carNote = new CarNoteHud(_settings, screen);
-        _meldung = new MessageHud(screen);
+        _meldung = new MessageHud(screen, _settings);
         _feier = new CelebrationHud(screen);
         // DIE FEIER (seit 2026-09-27): der Einreicher meldet eine Runde, die die
         // Website schlaegt, aus einem Hintergrundfaden -- gezeigt wird im Fenster-Faden.
@@ -2469,6 +2469,9 @@ internal sealed class OverlayController : IDisposable
             else if (_reifen.Visible) { _reifen.Render(); }
             // Nur neu zeichnen -- das Design neu lesen (Dateien) tut der Reiter Speedometer selbst.
             _tacho.NeuZeichnen();
+            // Die Rivals-Panels nehmen ihren Stil neu (HudStil "Panels").
+            _left.StilAnwenden(_settings);
+            _right.StilAnwenden(_settings);
             if (!_settings.DeltaHud) { HideStrip(); return; }
             if (_hud is not null && !_hud.IsDisposed) { _hud.Invalidate(); }
         }

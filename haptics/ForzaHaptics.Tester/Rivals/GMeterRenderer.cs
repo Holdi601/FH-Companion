@@ -84,7 +84,7 @@ internal sealed class GMeterRenderer : IDisposable
     private static SpeedoDesign Stil(GMeterDesign d) => new()
     {
         Frame = d.Frame, Background = d.Background, FrameColour = d.FrameColour, CornerRadius = d.CornerRadius,
-        Glow = d.Glow, Font = d.Font, Italic = d.Italic, TextColour = d.TextColour, DimColour = d.DimColour,
+        Glow = d.Glow, Font = d.Font, Italic = d.Italic, TextColour = d.TextColour, DimColour = d.DimColour, ShowPlate = d.ShowPlate,
     };
 
     public void Male(Graphics g, GMeterDesign d, GMeterBild b, RectangleF ziel, GMeterEinheit e = default)
@@ -148,6 +148,8 @@ internal sealed class GMeterRenderer : IDisposable
             case GMeterLayout.Needle: Zeiger(g, d, stil, b, w, h, s); break;
             case GMeterLayout.Perspective: Perspektive(g, d, stil, b, w, h, s); break;
             case GMeterLayout.Sphere: Kugel(g, d, stil, b, w, h, s); break;
+            case GMeterLayout.Cartesian: Kartesisch(g, d, stil, b, w, h, s); break;
+            case GMeterLayout.Cartesian3D: Kartesisch3D(g, d, stil, b, w, h, s); break;
             case GMeterLayout.CircleWithHeight:
             {
                 if (s == Schicht.Grund) { SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
@@ -756,6 +758,226 @@ internal sealed class GMeterRenderer : IDisposable
         {
             var px = w * 0.065f;
             SpeedoRenderer.Schreibe(g, stil, GE(b.Gesamt), new RectangleF(c.X - r * 0.6f, c.Y + r * 0.45f, r * 1.2f, px * 1.2f), px, F(d.TextColour, Color.White), gross: true);
+        }
+    }
+
+    // ================================================================== //
+    // KARTESISCH (seit 2026-10-24, der Nutzer: "ein kartesisches System, wo man die Achsen sieht und den
+    // Punkt im System, sowie auf der jeweiligen Achse am Balken den Ausschlag")
+    // ================================================================== //
+
+    /// <summary>Ein Balken entlang einer Achse, vom Ursprung bis zum Wert.</summary>
+    private static void Achsbalken(Graphics g, GMeterDesign d, PointF von, PointF bis, float wert, float dicke)
+    {
+        if (MathF.Abs(wert) < 0.005f) { return; }
+        var farbe = Punktfarbe(d, MathF.Abs(wert));
+        if (d.Glow > 0.05f)
+        {
+            using var schein = new Pen(Alpha(farbe, 0.25f * d.Glow), dicke * 2.2f) { StartCap = LineCap.Flat, EndCap = LineCap.Round };
+            g.DrawLine(schein, von, bis);
+        }
+        using (var stift = new Pen(Alpha(farbe, 0.85f), dicke) { StartCap = LineCap.Flat, EndCap = LineCap.Flat })
+        {
+            g.DrawLine(stift, von, bis);
+        }
+    }
+
+    /// <summary>
+    /// Die Zahl am Ende eines Achsbalkens, um <paramref name="versatz"/> (in Schrifthoehen) daneben und auf einem
+    /// kleinen Schild, damit sie ueber der Teilung lesbar bleibt.
+    /// </summary>
+    private static void Achszahl(Graphics g, GMeterDesign d, SpeedoDesign stil, PointF bis, float wert, float px, PointF versatz)
+    {
+        if (!d.Numbers || MathF.Abs(wert) < 0.005f) { return; }
+        var p = new PointF(bis.X + versatz.X * px, bis.Y + versatz.Y * px);
+        var schild = new RectangleF(p.X - px * 1.4f, p.Y - px * 0.62f, px * 2.8f, px * 1.24f);
+        var grund = F(d.Background, Color.Black);
+        using (var pinsel = new SolidBrush(Color.FromArgb(d.ShowPlate && grund.A > 0 ? 220 : 150, grund.A > 0 ? grund : Color.Black)))
+        using (var pfad = SpeedoRenderer.Platte(stil, schild, kreis: false))
+        {
+            g.FillPath(pinsel, pfad);
+        }
+        SpeedoRenderer.Schreibe(g, stil, G(MathF.Abs(wert)), schild, px * 0.9f, F(d.TextColour, Color.White));
+    }
+
+    private static void Gestrichelt(Graphics g, Color c, float dicke, PointF a, PointF b)
+    {
+        using var stift = new Pen(c, dicke) { DashStyle = DashStyle.Dash };
+        g.DrawLine(stift, a, b);
+    }
+
+    private void Kartesisch(Graphics g, GMeterDesign d, SpeedoDesign stil, GMeterBild b, float w, float h, Schicht s)
+    {
+        var rand = w * 0.12f;
+        var c = new PointF(w / 2f, h / 2f);
+        var r = w / 2f - rand;
+        PointF P(float rechts, float oben) => new(c.X + Math.Clamp(rechts / d.MaxG, -1f, 1f) * r, c.Y - Math.Clamp(oben / d.MaxG, -1f, 1f) * r);
+        var gitter = F(d.GridColour, Color.FromArgb(60, 255, 255, 255));
+        var leise = F(d.DimColour, Color.Gray);
+        var px = Math.Max(7f, w * 0.04f);
+        if (s == Schicht.Grund)
+        {
+            SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false);
+            using var fein = new Pen(Alpha(gitter, 0.55f), 1f);
+            using var achse = new Pen(Alpha(gitter, 1.6f), Math.Max(1.5f, w * 0.006f)) { EndCap = LineCap.ArrowAnchor };
+            for (var i = -d.Rings; i <= d.Rings; i++)
+            {
+                if (i == 0) { continue; }
+                var o = r * i / d.Rings;
+                g.DrawLine(fein, c.X + o, c.Y - r, c.X + o, c.Y + r);
+                g.DrawLine(fein, c.X - r, c.Y + o, c.X + r, c.Y + o);
+                if (d.ScaleNumbers)
+                {
+                    var wert = d.MaxG * i / d.Rings;
+                    SpeedoRenderer.Schreibe(g, stil, _e.Skala(MathF.Abs(wert)), new RectangleF(c.X + o - px, c.Y + px * 0.25f, px * 2f, px), px * 0.8f, leise);
+                    SpeedoRenderer.Schreibe(g, stil, _e.Skala(MathF.Abs(wert)), new RectangleF(c.X - px * 2.3f, c.Y - o - px * 0.5f, px * 2f, px), px * 0.8f, leise, SpeedoRenderer.Rechts);
+                }
+            }
+            g.DrawLine(achse, c.X - r - rand * 0.3f, c.Y, c.X + r + rand * 0.45f, c.Y);
+            g.DrawLine(achse, c.X, c.Y + r + rand * 0.3f, c.X, c.Y - r - rand * 0.45f);
+            if (d.DirectionLabels)
+            {
+                SpeedoRenderer.Schreibe(g, stil, Loc.T("LATERAL"), new RectangleF(c.X + r * 0.45f, c.Y - px * 1.7f, r * 0.6f, px * 1.1f), px * 0.8f, leise, SpeedoRenderer.Rechts);
+                SpeedoRenderer.Schreibe(g, stil, d.FeltForce ? Loc.T("BRAKE") : Loc.T("ACCEL"), new RectangleF(c.X + px * 0.5f, c.Y - r - rand * 0.7f, r * 0.8f, px * 1.1f), px * 0.8f, leise, SpeedoRenderer.Links);
+            }
+            return;
+        }
+        if (d.Envelope)
+        {
+            var punkte = new List<PointF>();
+            for (var i = 0; i < GMeterBild.Sektoren; i++)
+            {
+                var wert = b.Huelle[i];
+                if (wert <= 0.02f) { continue; }
+                var a = ((i + 0.5f) / GMeterBild.Sektoren) * 2f * MathF.PI - MathF.PI;
+                var (rr, oo) = Anzeige(d, MathF.Cos(a) * wert, MathF.Sin(a) * wert);
+                punkte.Add(P(rr, oo));
+            }
+            if (punkte.Count >= 3)
+            {
+                using var flaeche = new SolidBrush(Alpha(F(d.EnvelopeColour, Color.Orange), 0.3f));
+                g.FillPolygon(flaeche, punkte.ToArray());
+            }
+        }
+        Spur(g, d, b, (x, z) => { var (rr, oo) = Anzeige(d, x, z); return P(rr, oo); }, w);
+        var (jr, jo) = Anzeige(d, b.X, b.Z);
+        var punkt = P(jr, jo);
+        var lot = Alpha(F(d.DimColour, Color.Gray), 0.8f);
+        Gestrichelt(g, lot, 1f, punkt, new PointF(punkt.X, c.Y));
+        Gestrichelt(g, lot, 1f, punkt, new PointF(c.X, punkt.Y));
+        var dicke = Math.Max(3f, w * 0.03f);
+        // Die Zahl steht auf der dem Punkt abgewandten Seite -- dort liegt kein Lot.
+        Achsbalken(g, d, c, new PointF(punkt.X, c.Y), jr, dicke);
+        Achsbalken(g, d, c, new PointF(c.X, punkt.Y), jo, dicke);
+        Punkt(g, d, punkt, w * 0.03f * d.DotSize, Punktfarbe(d, b.Gesamt));
+        Achszahl(g, d, stil, new PointF(punkt.X, c.Y), jr, px, new PointF(0f, jo > 0 ? 1.1f : -1.1f));
+        Achszahl(g, d, stil, new PointF(c.X, punkt.Y), jo, px, new PointF(jr > 0 ? -2f : 2f, 0f));
+        if (d.Numbers)
+        {
+            SpeedoRenderer.Schreibe(g, stil, GE(b.Gesamt), new RectangleF(w * 0.05f, h - rand * 0.95f, w * 0.5f, rand * 0.8f), rand * 0.55f, F(d.TextColour, Color.White), SpeedoRenderer.Links, gross: true);
+        }
+    }
+
+    private void Kartesisch3D(Graphics g, GMeterDesign d, SpeedoDesign stil, GMeterBild b, float w, float h, Schicht s)
+    {
+        // Die Achsen im Bild: seitwaerts waagrecht, laengs schraeg in die Tiefe, senkrecht nach oben.
+        var o = new PointF(w * 0.46f, h * 0.6f);
+        var l = w * 0.29f;
+        var ex = new PointF(l, 0f);
+        var ez = new PointF(l * 0.45f, -l * 0.55f);
+        var ey = new PointF(0f, -l);
+        PointF Ort(float x, float z, float y)
+        {
+            var ux = Math.Clamp(x / d.MaxG, -1.1f, 1.1f);
+            var uz = Math.Clamp(z / d.MaxG, -1.1f, 1.1f);
+            var uy = Math.Clamp(y / d.MaxG, -1.1f, 1.1f);
+            return new PointF(o.X + ex.X * ux + ez.X * uz + ey.X * uy, o.Y + ex.Y * ux + ez.Y * uz + ey.Y * uy);
+        }
+        var gitter = F(d.GridColour, Color.FromArgb(60, 255, 255, 255));
+        var leise = F(d.DimColour, Color.Gray);
+        var px = Math.Max(7f, w * 0.036f);
+        if (s == Schicht.Grund)
+        {
+            if (d.Frame != SpeedoFrame.None) { SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
+            // Die Ebene: ein Gitter fuer seitwaerts und laengs.
+            using (var ebene = new SolidBrush(Alpha(gitter, 0.25f)))
+            {
+                g.FillPolygon(ebene, new[] { Ort(-d.MaxG, -d.MaxG, 0), Ort(d.MaxG, -d.MaxG, 0), Ort(d.MaxG, d.MaxG, 0), Ort(-d.MaxG, d.MaxG, 0) });
+            }
+            using var fein = new Pen(Alpha(gitter, 0.6f), 1f);
+            for (var i = -d.Rings; i <= d.Rings; i++)
+            {
+                var v = d.MaxG * i / d.Rings;
+                g.DrawLine(fein, Ort(-d.MaxG, v, 0), Ort(d.MaxG, v, 0));
+                g.DrawLine(fein, Ort(v, -d.MaxG, 0), Ort(v, d.MaxG, 0));
+            }
+            using var achse = new Pen(Alpha(gitter, 1.8f), Math.Max(1.5f, w * 0.006f)) { EndCap = LineCap.ArrowAnchor };
+            g.DrawLine(achse, Ort(-d.MaxG * 1.05f, 0, 0), Ort(d.MaxG * 1.18f, 0, 0));
+            g.DrawLine(achse, Ort(0, -d.MaxG * 1.05f, 0), Ort(0, d.MaxG * 1.18f, 0));
+            g.DrawLine(achse, Ort(0, 0, -d.MaxG * 0.6f), Ort(0, 0, d.MaxG * 1.0f));
+            if (d.ScaleNumbers)
+            {
+                for (var i = 1; i <= d.Rings; i++)
+                {
+                    var v = d.MaxG * i / d.Rings;
+                    var p1 = Ort(v, 0, 0);
+                    SpeedoRenderer.Schreibe(g, stil, _e.Skala(v), new RectangleF(p1.X - px, p1.Y + px * 0.2f, px * 2f, px), px * 0.75f, leise);
+                    if (i * 2 <= d.Rings + 1)
+                    {
+                        var p3 = Ort(0, 0, v);
+                        g.DrawLine(fein, p3.X - px * 0.4f, p3.Y, p3.X + px * 0.4f, p3.Y);
+                        SpeedoRenderer.Schreibe(g, stil, _e.Skala(v), new RectangleF(p3.X + px * 0.5f, p3.Y - px * 0.5f, px * 2f, px), px * 0.75f, leise, SpeedoRenderer.Links);
+                    }
+                }
+            }
+            if (d.DirectionLabels)
+            {
+                var a1 = Ort(d.MaxG * 1.2f, 0, 0);
+                SpeedoRenderer.Schreibe(g, stil, Loc.T("LATERAL"), new RectangleF(a1.X - px * 4f, a1.Y + px * 0.4f, px * 4.4f, px), px * 0.8f, leise, SpeedoRenderer.Rechts);
+                var a2 = Ort(0, d.MaxG * 1.2f, 0);
+                SpeedoRenderer.Schreibe(g, stil, d.FeltForce ? Loc.T("BRAKE") : Loc.T("ACCEL"), new RectangleF(a2.X + px * 0.3f, a2.Y - px * 1.2f, px * 5f, px), px * 0.8f, leise, SpeedoRenderer.Links);
+                var a3 = Ort(0, 0, d.MaxG * 1.02f);
+                SpeedoRenderer.Schreibe(g, stil, Loc.T("VERTICAL"), new RectangleF(a3.X + px * 0.4f, a3.Y - px * 0.4f, px * 5f, px), px * 0.8f, leise, SpeedoRenderer.Links);
+            }
+            return;
+        }
+        var (jr, jo) = Anzeige(d, b.X, b.Z);
+        // Die Spur liegt im Raum -- mit ihrer senkrechten G.
+        if (d.Trail != GMeterTrail.Off && b.Spur.Length > 1)
+        {
+            var spurFarbe = F(d.TrailColour, Color.DeepSkyBlue);
+            var punkte = b.Spur.Where(p => p.Alter <= d.TrailSeconds).OrderByDescending(p => p.Alter).ToArray();
+            for (var i = 1; i < punkte.Length; i += 2)
+            {
+                var (r0, o0) = Anzeige(d, punkte[i - 1].X, punkte[i - 1].Z);
+                var (r1, o1) = Anzeige(d, punkte[i].X, punkte[i].Z);
+                using var stift = new Pen(Alpha(spurFarbe, 1f - punkte[i].Alter / d.TrailSeconds), Math.Max(1f, w * 0.006f));
+                g.DrawLine(stift, Ort(r0, o0, punkte[i - 1].Y), Ort(r1, o1, punkte[i].Y));
+            }
+        }
+        var boden = Ort(jr, jo, 0);
+        var punkt = Ort(jr, jo, b.Y);
+        var lot = Alpha(F(d.DimColour, Color.Gray), 0.85f);
+        // Vom Punkt auf die Ebene, und von dort parallel zu den Achsen auf die Achsen.
+        Gestrichelt(g, lot, 1f, punkt, boden);
+        Gestrichelt(g, lot, 1f, boden, Ort(jr, 0, 0));
+        Gestrichelt(g, lot, 1f, boden, Ort(0, jo, 0));
+        using (var schatten = new SolidBrush(Color.FromArgb(110, 0, 0, 0)))
+        {
+            g.FillEllipse(schatten, boden.X - w * 0.025f, boden.Y - w * 0.01f, w * 0.05f, w * 0.02f);
+        }
+        var dicke = Math.Max(3f, w * 0.026f);
+        Achsbalken(g, d, o, Ort(jr, 0, 0), jr, dicke);
+        Achsbalken(g, d, o, Ort(0, jo, 0), jo, dicke);
+        Achsbalken(g, d, o, Ort(0, 0, b.Y), b.Y, dicke);
+        Punkt(g, d, punkt, w * 0.028f * d.DotSize, Punktfarbe(d, MathF.Sqrt(b.Gesamt * b.Gesamt + b.Y * b.Y)));
+        // Seitwaerts unter der Achse, laengs neben ihrem Ende, senkrecht links -- so treffen sie sich nicht im Ursprung.
+        Achszahl(g, d, stil, Ort(jr, 0, 0), jr, px, new PointF(jr > 0 ? 0.8f : -0.8f, jo < 0 ? -1.3f : 1.3f));
+        Achszahl(g, d, stil, Ort(0, jo, 0), jo, px, new PointF(jo > 0 ? 2f : -2f, jo > 0 ? -0.4f : 0.6f));
+        Achszahl(g, d, stil, Ort(0, 0, b.Y), b.Y, px, new PointF(-2f, b.Y >= 0 ? -0.5f : 0.5f));
+        if (d.Numbers)
+        {
+            SpeedoRenderer.Schreibe(g, stil, GE(b.Gesamt), new RectangleF(w * 0.04f, h * 0.03f, w * 0.5f, px * 1.5f), px * 1.3f, F(d.TextColour, Color.White), SpeedoRenderer.Links, gross: true);
         }
     }
 
