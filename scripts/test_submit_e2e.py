@@ -34,7 +34,7 @@ import urllib.request
 from pathlib import Path
 
 WS = Path(__file__).resolve().parent.parent
-EXE = WS / "haptics/ForzaHaptics.Tester/bin/Release/net9.0-windows10.0.19041.0/win-x64/FH Companion.exe"
+EXE = WS / "haptics/ForzaHaptics.Tester/bin/Release/net9.0-windows10.0.26100.0/win-x64/FH Companion.exe"
 sys.path.insert(0, str(WS / "server"))
 import local_settings  # noqa: E402
 

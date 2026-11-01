@@ -167,6 +167,10 @@ internal static class GameArea
         return Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
     }
 
+    /// <summary>Das Fenster des Spiels -- Zero, wenn es nicht laeuft (fuer <see cref="Rivals.Spielaufnahme"/>).</summary>
+    public static IntPtr Spielfenster(string? processName) =>
+        GameWindow(string.IsNullOrWhiteSpace(processName) ? GameWatch.DefaultProcessName : processName!);
+
     /// <summary>
     /// The game's visible top-level "App" window -- the same class the navigator
     /// looks for. The game also owns a ForzaFullscreenShadeWindow, which is not it.
@@ -267,6 +271,14 @@ internal static class GameArea
             var uhrQ = System.Diagnostics.Stopwatch.StartNew();
             try { return Rivals.Bildquellen.Ausschnitt(quelle.Neuestes(), source, target); }
             finally { Leistung.Griff(uhrQ.ElapsedTicks); }
+        }
+        // Aus dem Fenster des Spiels statt vom Schirm (seit 2026-11-01): dann darf der HUD in
+        // Aufnahmen sichtbar sein, ohne dass die Leser ihn mitlesen. Siehe Spielaufnahme.
+        var uhrF = System.Diagnostics.Stopwatch.StartNew();
+        if (Rivals.Spielaufnahme.Ausschnitt(source, target, PixelFormat.Format24bppRgb) is { } ausFenster)
+        {
+            Leistung.Griff(uhrF.ElapsedTicks);
+            return ausFenster;
         }
         // 24 Bit, nicht 32: GDI schreibt keinen Alphakanal, ein ARGB-Ziel kaeme mit
         // Alpha 0 zurueck -- voellig durchsichtig fuer alles, was danach zeichnet.

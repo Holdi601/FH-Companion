@@ -1509,6 +1509,22 @@ internal sealed class HudPartPanel : Panel
         });
         Rein(Note(Loc.T(
             "Off: nothing is drawn over Forza, so the overlays cannot affect its frames. The recording window still shows them -- for example on a second screen.")));
+        Schalter(Loc.T("Show the HUD in screen shares and recordings"), settings.HudInCaptures, v =>
+        {
+            _settings.HudInCaptures = v;
+            HudAufnahme.Einstellen(_settings);
+            AufnahmeStand();
+        });
+        _aufnahmeStand = Note(string.Empty);
+        Rein(_aufnahmeStand);
+        AufnahmeStand();
+        // Startet oder endet Forza, aendert sich, was der Schalter bewirkt.
+        Action aufnahmeGeaendert = () =>
+        {
+            if (IsHandleCreated && !IsDisposed) { try { BeginInvoke(AufnahmeStand); } catch (Exception) { } }
+        };
+        HudAufnahme.Geaendert += aufnahmeGeaendert;
+        Disposed += (_, _) => HudAufnahme.Geaendert -= aufnahmeGeaendert;
         var fenster = Small(Loc.T("Open the recording window"), () => AufnahmeFensterWunsch?.Invoke(), mindestens: 232);
         fenster.Margin = new Padding(0, 4, 0, 4);
         Rein(fenster);
@@ -1870,6 +1886,23 @@ internal sealed class HudPartPanel : Panel
         MaximumSize = new Size(232, 0),
         Margin = new Padding(0, 12, 0, 4),
     };
+
+    private Label? _aufnahmeStand;
+
+    /// <summary>Was der Schalter "HUD in Aufnahmen" gerade bewirkt -- in Worten, unter ihm.</summary>
+    private void AufnahmeStand()
+    {
+        if (_aufnahmeStand is null) { return; }
+        _aufnahmeStand.Text = !Spielaufnahme.Moeglich
+            ? Loc.T("Needs Windows 11: only there can the app read the game from its own window without a yellow frame around it. Here the HUD stays out of captures; the recording window shows it for OBS.")
+            : !_settings.HudInCaptures
+                ? Loc.T("Off: the HUD stays out of every capture. The recording window shows it for OBS.")
+                : Spielaufnahme.NurSchwarz
+                    ? Loc.T("The game's window gave only black pictures, so the HUD stays out of captures again until the app restarts.")
+                    : Spielaufnahme.Bereit
+                        ? Loc.T("On: Discord and OBS show the HUD. The app reads the game from its own window, so it never reads its own HUD.")
+                        : Loc.T("On as soon as Forza runs: the app then reads the game from its own window, and Discord and OBS show the HUD.");
+    }
 
     private static Label Note(string text) => new()
     {

@@ -236,6 +236,11 @@ internal sealed class RivalsScreenReader
     /// <summary>The primary screen, or one fractional region of it.</summary>
     public static Bitmap Grab(Rectangle bounds)
     {
+        // From the game's own window when it is being captured: our HUD is not in that picture.
+        if (Spielaufnahme.Ausschnitt(bounds, bounds.Size, PixelFormat.Format32bppArgb) is { } fromGame)
+        {
+            return fromGame;
+        }
         var shot = new Bitmap(Math.Max(1, bounds.Width), Math.Max(1, bounds.Height),
                               PixelFormat.Format32bppArgb);
         using var canvas = Graphics.FromImage(shot);

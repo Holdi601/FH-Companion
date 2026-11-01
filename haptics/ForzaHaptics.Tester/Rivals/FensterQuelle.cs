@@ -21,8 +21,10 @@ namespace ForzaHaptics.Tester.Rivals;
 /// Schirm, egal. Nur MINIMIERT liefert ein Fenster nichts.
 ///
 /// Windows zeichnet waehrenddessen einen gelben Rahmen um das Fenster: das ist die
-/// Anzeige, dass ein Programm es aufnimmt, und bei dieser SDK-Fassung nicht
-/// abzuschalten.
+/// Anzeige, dass ein Programm es aufnimmt. Ab Windows 11 laesst er sich abschalten
+/// (<see cref="RahmenAbschaltbar"/>, seit 2026-11-01) -- noetig, seit das Spielfenster
+/// selbst so gelesen wird (<see cref="Spielaufnahme"/>): ein gelber Rahmen um Forza
+/// waere fuer jeden zu sehen, auch im Stream.
 ///
 /// Aus dem Bild wird die Innenflaeche geschnitten (ohne Titelleiste), und davon das
 /// 16:9-Spielbild, wenn es mit Balken darin liegt -- siehe <see cref="Bildquellen.Spielbild"/>.
@@ -52,6 +54,23 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
     // soll es nicht unter der Hand verlieren.
     private Bitmap? _altesBild;
     private DateTime _bildAm = DateTime.MinValue;
+    // Seit der letzten Umwandlung ein neues Bild gekommen? Sonst ist das umgewandelte noch richtig.
+    private bool _neuSeitUmwandlung;
+
+    /// <summary>
+    /// Wie alt ein umgewandeltes Bild hoechstens sein darf, wenn inzwischen ein neues kam. Ein
+    /// Lesevorgang fragt mehrmals; der Scanner aber wartet nach jedem Tastendruck auf das neue Bild.
+    /// </summary>
+    internal TimeSpan Frische { get; init; } = TimeSpan.FromMilliseconds(150);
+
+    /// <summary>Das Fenster, das gerade aufgenommen wird (Zero: keins).</summary>
+    internal IntPtr Aufgenommenes => _fenster;
+
+    /// <summary>Kam schon ein Bild? (Ohne es umzuwandeln.)</summary>
+    internal bool HatBild
+    {
+        get { lock (_schloss) { return _letzter is not null || _bild is not null; } }
+    }
     // Wo im aufgenommenen Bild das Spielbild zuletzt lag (Bildkoordinaten) -- fuer den
     // HUD ueber dem Fenster (Schirmflaeche).
     private Rectangle? _spielImBild;
@@ -171,6 +190,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         _pool.FrameArrived += Angekommen;
         _sitzung = _pool.CreateCaptureSession(item);
         try { _sitzung.IsCursorCaptureEnabled = false; } catch (Exception) { }
+        OhneRahmen(_sitzung);
         _sitzung.StartCapture();
         _fenster = fenster;
         _programm = Fenster.ProgrammDatei(fenster);
@@ -188,11 +208,58 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         _pool.FrameArrived += Angekommen;
         _sitzung = _pool.CreateCaptureSession(item);
         try { _sitzung.IsCursorCaptureEnabled = false; } catch (Exception) { }
+        OhneRahmen(_sitzung);
         _sitzung.StartCapture();
         _fenster = IntPtr.Zero;
         _programm = string.Empty;
         _schirm = schirm.Bounds;
     }
+
+    /// <summary>
+    /// Kann diese Windows-Fassung ohne den gelben Rahmen aufnehmen? (Windows 11; IsBorderRequired.)
+    /// </summary>
+    public static bool RahmenAbschaltbar
+    {
+        get
+        {
+            if (_rahmenAbschaltbar is { } schon) { return schon; }
+            bool da;
+            try
+            {
+                da = Windows.Foundation.Metadata.ApiInformation.IsPropertyPresent(
+                    "Windows.Graphics.Capture.GraphicsCaptureSession", "IsBorderRequired");
+                if (da)
+                {
+                    // Eine Desktop-App ohne Paket bekommt die Erlaubnis ohne Rueckfrage; gefragt
+                    // werden muss trotzdem, sonst bleibt der Rahmen.
+                    // Auf einem Faden des Pools: ein Warten auf der Oberflaeche koennte sich selbst blockieren.
+                    var frage = Task.Run(() => GraphicsCaptureAccess.RequestAccessAsync(GraphicsCaptureAccessKind.Borderless).AsTask());
+                    da = frage.Wait(TimeSpan.FromSeconds(3))
+                         && frage.Result == Windows.Security.Authorization.AppCapabilityAccess.AppCapabilityAccessStatus.Allowed;
+                }
+            }
+            catch (Exception) { da = false; }
+            _rahmenAbschaltbar = da;
+            return da;
+        }
+    }
+
+    private static bool? _rahmenAbschaltbar;
+
+    private static void OhneRahmen(GraphicsCaptureSession sitzung)
+    {
+        // Hoechstens 30 Bilder je Sekunde (Windows 11 24H2): die Leser brauchen nicht jedes Bild des
+        // Spiels, und jedes kopierte kostet Grafikleistung -- seit das Spielfenster selbst gelesen wird.
+        if (_takt ??= Windows.Foundation.Metadata.ApiInformation.IsPropertyPresent(
+                "Windows.Graphics.Capture.GraphicsCaptureSession", "MinUpdateInterval"))
+        {
+            try { sitzung.MinUpdateInterval = TimeSpan.FromMilliseconds(33); } catch (Exception) { }
+        }
+        if (!RahmenAbschaltbar) { return; }
+        try { sitzung.IsBorderRequired = false; } catch (Exception) { }
+    }
+
+    private static bool? _takt;
 
     /// <summary>Das aufgenommene Fenster, fuer den Bericht: Programm, Klasse, versteckt.</summary>
     public string Aufgenommen => _schirmNummer is { } n ? $"screen {n} {_schirm}"
@@ -216,6 +283,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
             }
             _letzter?.Dispose();
             _letzter = bild;
+            _neuSeitUmwandlung = true;
             var neu = bild.ContentSize;
             if (neu.Width > 0 && neu.Height > 0 && (neu.Width != _groesse.Width || neu.Height != _groesse.Height))
             {
@@ -232,8 +300,9 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
         lock (_schloss)
         {
             if (_letzter is null) { return _bild; }
-            // Hoechstens alle 150 ms neu umwandeln -- ein Lesevorgang fragt mehrmals.
-            if (_bild is not null && DateTime.UtcNow - _bildAm < TimeSpan.FromMilliseconds(150)) { return _bild; }
+            // Nichts Neues seit der letzten Umwandlung: das Bild ist noch richtig (ein Menue, das
+            // stillsteht, schickt keine Bilder). Sonst hoechstens so oft wie Frische erlaubt.
+            if (_bild is not null && (!_neuSeitUmwandlung || DateTime.UtcNow - _bildAm < Frische)) { return _bild; }
             try
             {
                 using var weich = SoftwareBitmap.CreateCopyFromSurfaceAsync(_letzter.Surface, BitmapAlphaMode.Ignore)
@@ -249,6 +318,7 @@ internal sealed unsafe class FensterQuelle : IBildquelle, IFensterBild
                 _altesBild = _bild;
                 _bild = neu;
                 _bildAm = DateTime.UtcNow;
+                _neuSeitUmwandlung = false;
             }
             catch (Exception)
             {

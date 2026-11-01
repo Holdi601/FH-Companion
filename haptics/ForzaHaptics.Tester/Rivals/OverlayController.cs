@@ -2965,7 +2965,8 @@ internal sealed class OverlayController : IDisposable
         var blinked = new List<OverlayPanel>();
         foreach (var panel in new[] { _left, _right })
         {
-            if (!panel.Visible || panel.ExcludedFromCapture || panel.ExcludeFromCapture())
+            // Liest der Leser das Spielfenster selbst, steht das Panel nicht im Bild (Spielaufnahme).
+            if (!panel.Visible || panel.ExcludedFromCapture || HudAufnahme.Sichtbar || panel.ExcludeFromCapture())
             {
                 continue;
             }

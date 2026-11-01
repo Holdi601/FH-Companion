@@ -16,7 +16,7 @@ panel is up. Every key and pad button is set on the tab, and stored in
 ```powershell
 cd haptics\ForzaHaptics.Tester
 dotnet build
-.\bin\Debug\net9.0-windows10.0.19041.0\win-x64\"FH Companion.exe" --overlay
+.\bin\Debug\net9.0-windows10.0.26100.0\win-x64\"FH Companion.exe" --overlay
 ```
 
 `--overlay` opens straight on the tab and starts watching; without it, press

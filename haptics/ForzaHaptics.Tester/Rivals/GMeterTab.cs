@@ -33,8 +33,10 @@ internal sealed class GMeterTab : UserControl
     private string? _gespeichertAls;
     private bool _still;
 
-    public GMeterTab(OverlaySettings settings, Action<GMeterDesign?> geaendert, Action zuruecksetzen)
+    public GMeterTab(OverlaySettings settings, Action<GMeterDesign?> geaendert, Action zuruecksetzen,
+                     Func<int, string?>? autoName = null)
     {
+        autoName ??= _ => null;
         _settings = settings;
         _geaendert = geaendert;
         _zuruecksetzen = zuruecksetzen;
@@ -71,8 +73,17 @@ internal sealed class GMeterTab : UserControl
         einheitFeld.Controls.Add(einheit);
         oben.Controls.Add(einheitFeld);
         var zurueck = Knopf(Loc.T("Reset peaks"));
-        zurueck.Click += (_, _) => { _zuruecksetzen(); Melde(Loc.T("Peaks, outline and heat map set to zero.")); };
+        zurueck.Click += (_, _) => { _zuruecksetzen(); Melde(Loc.T("Peaks, outline, heat map and impacts of this car set to zero.")); };
         oben.Controls.Add(zurueck);
+        // JE AUTO UND EINSCHLAEGE (seit 2026-11-01): was das G-Meter ueber das Auto weiss, und die Klaenge.
+        var rekorde = Knopf(Loc.T("Car records and impacts ..."));
+        rekorde.Click += (_, _) =>
+        {
+            using var dialog = new AufprallDialog(_settings, () => SpeedoMotor.Aktiv?.GStand, autoName, _zuruecksetzen);
+            dialog.ShowDialog(FindForm());
+            _geaendert(null);
+        };
+        oben.Controls.Add(rekorde);
         oben.Controls.Add(new Label
         {
             Text = Loc.T("Position and size: drag it in the tab Lap delta HUD. It draws with the speedometer, on its own thread, only when something changes."),

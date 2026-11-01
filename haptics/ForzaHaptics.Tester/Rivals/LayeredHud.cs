@@ -193,11 +193,21 @@ internal abstract class LayeredHud : Form, IAufnahmeQuelle
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        if (!_aufnahmeErlaubt) { try { SetWindowDisplayAffinity(Handle, WdaExcludeFromCapture); } catch (Exception) { } }
+        // Aus Aufnahmen heraus -- ausser die Leser lesen das Spielfenster selbst (HudAufnahme).
+        if (!_aufnahmeErlaubt && !_angemeldet)
+        {
+            _angemeldet = true;
+            HudAufnahme.Anmelden(this);
+        }
+        else if (!_aufnahmeErlaubt)
+        {
+            HudAufnahme.Anwenden(this);
+        }
         Render();
     }
 
     private bool _aufnahmeErlaubt;
+    private bool _angemeldet;
 
     /// <summary>
     /// Nur fuer den Selbsttest: vor dem ersten Zeigen aufrufen, dann haelt sich das

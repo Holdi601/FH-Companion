@@ -236,6 +236,30 @@ internal sealed class OverlaySettings
     /// </summary>
     [JsonPropertyName("overlay_in_game")] public bool OverlayInGame { get; set; } = true;
 
+    /// <summary>
+    /// Der HUD in Bildschirmfreigaben und Aufnahmen (Discord, OBS-Bildschirmaufnahme) -- seit 2026-11-01,
+    /// ab Werk an. Geht nur, wo die App das Spielfenster selbst lesen kann (Windows 11), siehe Spielaufnahme.
+    /// </summary>
+    [JsonPropertyName("hud_in_captures")] public bool HudInCaptures { get; set; } = true;
+
+    /// <summary>Das G-Meter passt seine Skala an das Auto an (seit 2026-11-01, ab Werk an).</summary>
+    [JsonPropertyName("gmeter_auto_scale")] public bool GMeterAutoScale { get; set; } = true;
+
+    /// <summary>Einschlaege auf dem G-Meter zeigen: Richtung und Staerke, vier Sekunden lang.</summary>
+    [JsonPropertyName("gmeter_show_impacts")] public bool GMeterShowImpacts { get; set; } = true;
+
+    /// <summary>
+    /// Ab welchem Sprung der Beschleunigung (G, gegen die 150 ms davor) ein Einschlag zaehlt. 3,5 aus dem
+    /// Rundenarchiv: ab 3 G Sprung verlor das Auto im Mittel 17 km/h. Siehe AufprallMelder.
+    /// </summary>
+    [JsonPropertyName("impact_threshold")] public double ImpactThreshold { get; set; } = 3.5;
+
+    /// <summary>Klaenge bei Einschlaegen abspielen (die Regeln stehen in impact_sounds).</summary>
+    [JsonPropertyName("impact_sounds_on")] public bool ImpactSoundsOn { get; set; } = true;
+
+    /// <summary>Die Klaenge: die erste passende Regel spielt.</summary>
+    [JsonPropertyName("impact_sounds")] public List<AufprallRegel> ImpactSounds { get; set; } = new();
+
     /// <summary>Das Aufnahmefenster beim Start wieder oeffnen.</summary>
     [JsonPropertyName("recording_window")] public bool RecordingWindow { get; set; }
 

@@ -207,7 +207,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            try { SetWindowDisplayAffinity(Handle, WdaExcludeFromCapture); } catch (Exception) { }
+            HudAufnahme.Anmelden(this);
         }
 
         protected override void OnPaintBackground(PaintEventArgs e) { }
@@ -276,7 +276,7 @@ internal sealed class DeltaHud : Form, IAufnahmeQuelle
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        SetWindowDisplayAffinity(Handle, WdaExcludeFromCapture);
+        HudAufnahme.Anmelden(this);
         BuildSurface();
         Render();
     }

@@ -567,7 +567,8 @@ internal sealed class MainForm : Form, ITelemetryHost
         gMeterTab.Controls.Add(new Rivals.GMeterTab(
             _rivals.Settings,
             design => { _rivals.Controller?.GMeterNeu(design); hudEinstellungen.Invalidate(true); },
-            () => _rivals.Controller?.GMeterZurueck()));
+            () => _rivals.Controller?.GMeterZurueck(),
+            auto => _rivals.Controller?.TachoLive() is { } l && l.Auto == auto ? l.Name : null));
         hudEinstellungen.FeierProbe += () => _rivals.PreviewCelebration();
         hudEinstellungen.PersoenlichProbe += () => _rivals.PreviewPersonalRecord();
         hudEinstellungen.NeuesAutoProbe += () => _rivals.PreviewNewCar();

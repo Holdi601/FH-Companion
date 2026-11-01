@@ -50,7 +50,11 @@ internal sealed class SpeedoMotor : IDisposable
     // DAS G-METER (seit 2026-10-24) laeuft auf demselben Faden, im selben Takt.
     private GMeterHud? _gHud;
     private GMeterDesign _gDesign;
-    private readonly GMeterState _gDaten = new();
+    private readonly GMeterState _gDaten;
+    // Das gezeichnete Design: das gewaehlte, mit der Skala des Autos (seit 2026-11-01).
+    private GMeterDesign _gAngezeigt;
+    private GMeterStand _gStand;
+    private DateTime _gStandAm = DateTime.MinValue;
     private readonly object _liveSperre = new();
     private (int Auto, SpeedoMesswerte Werte) _live;
 
@@ -59,6 +63,8 @@ internal sealed class SpeedoMotor : IDisposable
         _settings = settings;
         _design = SpeedoDesigns.Finde(settings.SpeedoDesign);
         _gDesign = GMeterDesigns.Finde(settings.GMeterDesign);
+        _gAngezeigt = _gDesign;
+        _gDaten = new GMeterState(merken ? new GMeterRekorde() : null);
         _daten = new SpeedoState(merken);
         _faden = new Thread(() => Lauf(flaeche)) { IsBackground = true, Name = "Tacho" };
         _faden.SetApartmentState(ApartmentState.STA);
@@ -107,9 +113,16 @@ internal sealed class SpeedoMotor : IDisposable
     {
         GMeterDesigns.Vergessen();
         _gDesign = design ?? GMeterDesigns.Finde(_settings.GMeterDesign);
+        _gAngezeigt = _gDesign;
         _gHud?.DesignNeu(_gDesign);
         _neuZeichnen = true;
     });
+
+    /// <summary>Was das G-Meter ueber das Auto weiss -- fuer den Reiter (hoechstens vier Mal je Sekunde frisch).</summary>
+    public GMeterStand GStand
+    {
+        get { lock (_liveSperre) { return _gStand; } }
+    }
 
     /// <summary>Spitzen, Huelle und Waermekarte des G-Meters auf null.</summary>
     public void GZuruecksetzen() => Auftrag(() => { _gDaten.Zuruecksetzen(); _neuZeichnen = true; });
@@ -179,7 +192,12 @@ internal sealed class SpeedoMotor : IDisposable
                 {
                     var auto = (int)e.Paket.Get("CarOrdinal");
                     roh = _daten.Aufnehmen(e.Paket, 0f, _design, SpeedoSchwellen.Fuer(_settings, auto), e.Zeit);
-                    _gDaten.Aufnehmen(e.Paket, e.Zeit);
+                    _gDaten.Melder.Schwelle = (float)Math.Clamp(_settings.ImpactThreshold, 1.5, 20.0);
+                    // EINSCHLAEGE (seit 2026-11-01): der Klang kommt sofort, nicht erst mit dem naechsten Bild.
+                    if (_gDaten.Aufnehmen(e.Paket, e.Zeit) is { } einschlag && _settings.ImpactSoundsOn)
+                    {
+                        AufprallKlang.Melden(_settings, einschlag);
+                    }
                     paketZeit = e.Zeit;
                     rennt = e.Paket.Get("IsRaceOn") >= 0.5;
                     neu = true;
@@ -187,6 +205,13 @@ internal sealed class SpeedoMotor : IDisposable
                 if (neu)
                 {
                     lock (_liveSperre) { _live = (_daten.Auto, _daten.Messwerte); }
+                    if (DateTime.UtcNow - _gStandAm > TimeSpan.FromMilliseconds(250))
+                    {
+                        _gStandAm = DateTime.UtcNow;
+                        var stand = new GMeterStand(_gDaten.Auto, _gDaten.Rechts, _gDaten.Links, _gDaten.Vor, _gDaten.Brems,
+                            _gAngezeigt.MaxG, _gDaten.Fahrzeit, _gDaten.LetzterAufprall, _gDaten.AufprallRekord, _gDaten.Aufpralle);
+                        lock (_liveSperre) { _gStand = stand; }
+                    }
                 }
 
                 var jetzt = uhr.Elapsed.TotalSeconds;
@@ -226,6 +251,7 @@ internal sealed class SpeedoMotor : IDisposable
         finally
         {
             try { _daten.Speichern(); } catch (Exception) { }
+            try { _gDaten.Merken(sofort: true); } catch (Exception) { }
             try { _hud?.Close(); _hud?.Dispose(); } catch (Exception) { }
             try { _gHud?.Close(); _gHud?.Dispose(); } catch (Exception) { }
         }
@@ -303,6 +329,19 @@ internal sealed class SpeedoMotor : IDisposable
             _gBewegt = wandert || (_gDesign.Trail != GMeterTrail.Off && DateTime.UtcNow - paketZeit < TimeSpan.FromSeconds(_gDesign.TrailSeconds))
                        || _gDesign.Layout == GMeterLayout.Radar;
             bild = _gDaten.Bild(_gx, _gz, _gy, _gDesign.TrailSeconds, DateTime.UtcNow, jetzt);
+            if (!_settings.GMeterShowImpacts) { bild = bild with { Aufprall = null }; }
+            // Ein Einschlag verblasst ueber vier Sekunden: so lange weiterzeichnen.
+            else if (bild.AufprallAlter < 4.2f) { _gBewegt = true; }
+            // DIE SKALA DES AUTOS: etwas ueber dem, was es gehalten hat -- nur wenn sie sich aendert, neu.
+            var skala = _settings.GMeterAutoScale ? _gDaten.AutoSkala(_gDesign.MaxG) : _gDesign.MaxG;
+            if (MathF.Abs(skala - _gAngezeigt.MaxG) > 0.001f)
+            {
+                var angepasst = _gDesign.Clone();
+                angepasst.MaxG = skala;
+                angepasst.BuiltIn = _gDesign.BuiltIn;
+                _gAngezeigt = angepasst;
+                hud.DesignNeu(angepasst);
+            }
         }
         hud.Setze(bild);
         if (!hud.Visible) { hud.Show(); hud.TopMost = true; }

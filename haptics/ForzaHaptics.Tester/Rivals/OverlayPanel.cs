@@ -279,7 +279,9 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
         {
             return false;
         }
-        ExcludedFromCapture = SetWindowDisplayAffinity(Handle, WdaExcludeFromCapture);
+        // Seit 2026-11-01 ueber HudAufnahme: lesen die Leser das Spielfenster selbst, darf das Panel
+        // in Aufnahmen erscheinen (Discord, OBS) -- dann ist es nicht ausgeschlossen, und muss es nicht.
+        ExcludedFromCapture = HudAufnahme.Anwenden(this);
         return ExcludedFromCapture;
     }
 
@@ -287,6 +289,20 @@ internal sealed class OverlayPanel : Form, IAufnahmeQuelle
     {
         base.OnHandleCreated(e);
         ExcludeFromCapture();
+        if (!_angemeldet)
+        {
+            _angemeldet = true;
+            HudAufnahme.Geaendert += Umschalten;
+            Disposed += (_, _) => HudAufnahme.Geaendert -= Umschalten;
+        }
+    }
+
+    private bool _angemeldet;
+
+    private void Umschalten()
+    {
+        if (IsDisposed || !IsHandleCreated) { return; }
+        try { BeginInvoke(() => ExcludeFromCapture()); } catch (Exception) { }
     }
 
     /// <summary>When this panel takes itself away again; MinValue means it is not up.</summary>

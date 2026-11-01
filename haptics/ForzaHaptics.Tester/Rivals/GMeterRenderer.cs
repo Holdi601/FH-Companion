@@ -123,11 +123,59 @@ internal sealed class GMeterRenderer : IDisposable
             g.TranslateTransform(platz.X, platz.Y);
             g.ScaleTransform(k, k);
             Lage(g, d, _stil!, b, w, h, Schicht.Licht);
+            Einschlag(g, d, _stil!, b, w, h);
         }
         finally
         {
             g.Restore(zustand);
         }
+    }
+
+    /// <summary>
+    /// EIN EINSCHLAG (seit 2026-11-01): oben rechts ein rotes Zeichen, darin ein Pfeil von der Seite, von
+    /// der der Stoss kam, daneben seine Staerke -- vier Sekunden, in der letzten anderthalb verblassend.
+    /// Fuer jede Form gleich, damit es auch auf einem Balken zu sehen ist.
+    /// </summary>
+    private static void Einschlag(Graphics g, GMeterDesign d, SpeedoDesign stil, GMeterBild b, float w, float h)
+    {
+        if (b.Aufprall is not { } a || b.AufprallAlter >= 4f) { return; }
+        var deck = b.AufprallAlter < 2.5f ? 1f : 1f - (b.AufprallAlter - 2.5f) / 1.5f;
+        var r = Math.Clamp(Math.Min(w, h) * 0.13f, 9f, 34f);
+        var m = new PointF(w - r * 1.35f, r * 1.35f);
+        var rot = Color.FromArgb((int)(235 * deck), 255, 59, 48);
+        // In den ersten 300 ms ein Ring, der aufgeht: das Auge findet es sofort.
+        if (b.AufprallAlter < 0.3f)
+        {
+            var aufgehen = b.AufprallAlter / 0.3f;
+            using var ring = new Pen(Color.FromArgb((int)(200 * (1f - aufgehen)), rot), r * 0.25f);
+            var rr = r * (1f + aufgehen * 0.8f);
+            g.DrawEllipse(ring, m.X - rr, m.Y - rr, rr * 2f, rr * 2f);
+        }
+        using (var pinsel = new SolidBrush(rot))
+        {
+            g.FillEllipse(pinsel, m.X - r, m.Y - r, r * 2f, r * 2f);
+        }
+        // Der Pfeil kommt von der Seite des Stosses (0 Grad vorn = oben im Bild) und zeigt zur Mitte.
+        var bogen = a.Winkel * MathF.PI / 180f;
+        var aussen = new PointF(m.X + MathF.Sin(bogen) * r * 0.75f, m.Y - MathF.Cos(bogen) * r * 0.75f);
+        var innen = new PointF(m.X - MathF.Sin(bogen) * r * 0.35f, m.Y + MathF.Cos(bogen) * r * 0.35f);
+        using (var pfeil = new Pen(Color.FromArgb((int)(255 * deck), Color.White), r * 0.2f)
+        {
+            StartCap = LineCap.Round,
+            CustomEndCap = new AdjustableArrowCap(2.2f, 2.2f, true),
+        })
+        {
+            g.DrawLine(pfeil, aussen, innen);
+        }
+        var text = (a.G * _e.Faktor).ToString("0.0", CultureInfo.InvariantCulture) + " " + _e.Kurz;
+        var feld = new RectangleF(m.X - r * 7.4f, m.Y - r * 0.6f, r * 6.2f, r * 1.2f);
+        using (var schild = new SolidBrush(Color.FromArgb((int)(170 * deck), 0, 0, 0)))
+        using (var form = SpeedoRenderer.Platte(stil, new RectangleF(feld.Right - r * 4.2f, feld.Y, r * 4.2f, feld.Height), kreis: false))
+        {
+            g.FillPath(schild, form);
+        }
+        SpeedoRenderer.Schreibe(g, stil, text, new RectangleF(feld.Right - r * 4.1f, feld.Y, r * 4f, feld.Height), r * 0.85f,
+            Color.FromArgb((int)(255 * deck), Color.White));
     }
 
     private static void Vorbereiten(Graphics g, bool merker)

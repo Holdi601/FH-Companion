@@ -28,7 +28,7 @@ import lap_submissions as laps       # noqa: E402
 import race_submissions as rennen    # noqa: E402
 import serve_analytics as srv        # noqa: E402
 
-EXE = WORKSPACE / "haptics" / "ForzaHaptics.Tester" / "bin" / "Release" / "net9.0-windows10.0.19041.0" / "win-x64" / "FH Companion.exe"
+EXE = WORKSPACE / "haptics" / "ForzaHaptics.Tester" / "bin" / "Release" / "net9.0-windows10.0.26100.0" / "win-x64" / "FH Companion.exe"
 
 
 def main() -> int:

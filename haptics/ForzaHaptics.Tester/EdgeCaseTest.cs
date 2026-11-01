@@ -2762,26 +2762,119 @@ internal static class EdgeCaseTest
         ohnePlatte.ShowPlate = false;
         Soll(Rivals.GMeterDesign.FromJson(ohnePlatte.ToJson()) is { ShowPlate: false }, "G-Meter: die unsichtbare Platte uebersteht JSON nicht");
 
-        // Rechtskurve mit 1,5 G und Bremsen mit 1 G (Forza: X rechts, Z vorwaerts, m/s²).
+        // Rechtskurve mit 1,5 G und Bremsen mit 1 G (Forza: X rechts, Z vorwaerts, m/s²) -- je 150 ms
+        // lang, denn die Spitzen kommen seit 2026-11-01 aus dem Mittel von 100 ms.
         var z = new Rivals.GMeterState();
         var t = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);
-        void Fahre(float ax, float az, float ay, int ms)
+        var uhr = 0;
+        Rivals.AufprallEreignis? Fahre(float ax, float az, float ay, int ms, int auto = 4715, float tempo = 30f, Rivals.GMeterState? wer = null)
         {
-            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 4715, 700, 5, speed: 30f);
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, auto, 700, 5, speed: tempo);
             BitConverter.GetBytes(ax).CopyTo(roh, 20);
             BitConverter.GetBytes(ay).CopyTo(roh, 24);
             BitConverter.GetBytes(az).CopyTo(roh, 28);
             ForzaPacket.TryParse(roh, out var p);
-            z.Aufnehmen(p, t.AddMilliseconds(ms));
+            Rivals.AufprallEreignis? erst = null;
+            for (var i = 0; i < ms; i += 9)
+            {
+                uhr += 9;
+                erst ??= (wer ?? z).Aufnehmen(p, t.AddMilliseconds(uhr));
+            }
+            return erst;
         }
-        Fahre(14.71f, 0f, 0f, 0);
-        Fahre(0f, -9.81f, 2f, 20);
-        Fahre(100f, 0f, 0f, 40);   // ein Aufprall: 10 G -- kein Fahren
-        var gb = z.Bild(z.X, z.Z, z.Y, 2f, t.AddMilliseconds(40), 0);
-        Soll(Math.Abs(gb.Rechts - 1.5f) < 0.01f && Math.Abs(gb.Brems - 1f) < 0.01f && gb.Links == 0f && gb.Vor == 0f && Math.Abs(gb.Hoch - 0.204f) < 0.01f,
+        Fahre(14.71f, 0f, 0f, 150);
+        Fahre(0f, -9.81f, 2f, 150);
+        Fahre(100f, 0f, 0f, 9);   // ein Aufprall: 10 G -- kein Fahren
+        var gb = z.Bild(z.X, z.Z, z.Y, 2f, t.AddMilliseconds(uhr), 0);
+        Soll(Math.Abs(gb.Rechts - 1.5f) < 0.01f && Math.Abs(gb.Brems - 1f) < 0.01f && gb.Links < 0.001f && gb.Vor < 0.001f && Math.Abs(gb.Hoch - 0.204f) < 0.01f,
              $"G-Meter: Spitzen falsch (rechts {gb.Rechts}, bremsen {gb.Brems}, hoch {gb.Hoch})");
         Soll(Math.Abs(z.X) < 0.01f && Math.Abs(z.Z + 1f) < 0.01f, "G-Meter: ein Aufprall ueber 8 G wurde als Messwert genommen");
-        Soll(gb.Huelle.Count(h => h > 0f) == 2 && gb.Spur.Length >= 2, "G-Meter: Huelle oder Spur fehlt");
+        Soll(gb.Huelle.Count(h => h > 0f) >= 2 && gb.Spur.Length >= 2, "G-Meter: Huelle oder Spur fehlt");
+        // EIN BORDSTEIN (ein Paket 7 G seitwaerts) ist keine Grenze des Autos, und kein Einschlag unter 3,5 G Sprung.
+        var bord = new Rivals.GMeterState();
+        Fahre(0f, 0f, 0f, 150, wer: bord);
+        Fahre(29.4f, 0f, 0f, 9, wer: bord);
+        Fahre(0f, 0f, 0f, 300, wer: bord);
+        Soll(bord.Grenze < 1.0f, $"G-Meter: ein einzelner Ausschlag zaehlt als Grenze des Autos ({bord.Grenze:0.00} G)");
+
+        // EINSCHLAEGE (2026-11-01): am Sprung, mit Richtung; hartes Bremsen ist keiner.
+        var melder = new Rivals.AufprallMelder();
+        Rivals.AufprallEreignis? Melde(float x, float zz, int ms, bool zaehlt = true)
+        {
+            Rivals.AufprallEreignis? erst = null;
+            for (var i = 0; i < ms; i += 9)
+            {
+                uhr += 9;
+                erst ??= melder.Aufnehmen(x, zz, 200f, zaehlt, t.AddMilliseconds(uhr));
+            }
+            return erst;
+        }
+        Rivals.AufprallEreignis? bremsen = null;
+        for (var stufe = 0; stufe <= 30; stufe++) { bremsen ??= Melde(0f, -5f * stufe / 30f, 9); }
+        bremsen ??= Melde(0f, -5f, 300);
+        Soll(bremsen is null, "Einschlag: 5 G Bremsen, in 300 ms aufgebaut, gilt als Einschlag");
+        // Loslassen dauert auch: in 300 ms zurueck auf null.
+        for (var stufe = 30; stufe >= 0; stufe--) { bremsen ??= Melde(0f, -5f * stufe / 30f, 9); }
+        Soll(bremsen is null, "Einschlag: Loslassen der Bremse gilt als Einschlag");
+        Melde(0f, 0f, 200);
+        var vorn = Melde(0f, -15f, 40) ?? Melde(0f, -2f, 200);
+        Soll(vorn is { G: > 14f and < 16f } v && (v.Winkel < 5f || v.Winkel > 355f) && v.Richtung == Loc.T("front"),
+             $"Einschlag von vorn falsch erkannt: {vorn}");
+        Soll(Melde(0f, -15f, 9) is null && Melde(0f, -15f, 200) is null, "Einschlag: zwei Meldungen fuer einen Stoss");
+        Melde(0f, 0f, 900);
+        var links = Melde(8f, 0f, 30) ?? Melde(0f, 0f, 200);
+        Soll(links is { } li && Math.Abs(li.Winkel - 270f) < 5f, $"Einschlag von links: Winkel {links?.Winkel}");
+        Melde(0f, 0f, 900);
+        Soll((Melde(0f, -15f, 40, zaehlt: false) ?? Melde(0f, 0f, 200, zaehlt: false)) is null, "Einschlag im Menue (IsRaceOn 0) gezaehlt");
+        // Die Regeln: Seite, Bereich, erste passende.
+        Soll(Rivals.AufprallRegel.ImBogen(350f, 315f, 45f) && Rivals.AufprallRegel.ImBogen(10f, 315f, 45f) && !Rivals.AufprallRegel.ImBogen(90f, 315f, 45f)
+             && Rivals.AufprallRegel.ImBogen(200f, 0f, 360f), "Einschlag: Winkelbereich ueber 0 hinweg falsch");
+        var klang = new Rivals.OverlaySettings();
+        klang.ImpactSounds.Add(new Rivals.AufprallRegel { File = "leicht.wav", Side = Rivals.AufprallSeite.Front, MinG = 3f, MaxG = 8f });
+        klang.ImpactSounds.Add(new Rivals.AufprallRegel { File = "hart.wav", MinG = 8f });
+        klang.ImpactSounds.Add(new Rivals.AufprallRegel { File = "seite.wav", Side = Rivals.AufprallSeite.Custom, From = 60f, To = 120f, MinG = 3f });
+        var jetzt = DateTime.UtcNow;
+        Soll(Rivals.AufprallKlang.Regel(klang, new(5f, 10f, 100f, jetzt))?.File == "leicht.wav"
+             && Rivals.AufprallKlang.Regel(klang, new(12f, 10f, 100f, jetzt))?.File == "hart.wav"
+             && Rivals.AufprallKlang.Regel(klang, new(5f, 90f, 100f, jetzt))?.File == "seite.wav"
+             && Rivals.AufprallKlang.Regel(klang, new(5f, 180f, 100f, jetzt)) is null
+             && Rivals.AufprallKlang.Regel(klang, new(2f, 0f, 100f, jetzt)) is null, "Einschlag: die falsche Klangregel greift");
+        var json = System.Text.Json.JsonSerializer.Serialize(klang);
+        Soll(System.Text.Json.JsonSerializer.Deserialize<Rivals.OverlaySettings>(json)?.ImpactSounds is { Count: 3 } r3
+             && r3[2].Side == Rivals.AufprallSeite.Custom && r3[2].From == 60f, "Einschlag: die Klangregeln ueberstehen das Speichern nicht");
+
+        // JE AUTO: Rekorde bleiben beim Auto, auch ueber einen Neustart; die Skala folgt ihm.
+        var datei = Path.Combine(Path.GetTempPath(), "fhc-gmeter-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            var speicher = new Rivals.GMeterRekorde(datei);
+            var a = new Rivals.GMeterState(speicher);
+            Fahre(0f, -19.6f, 0f, 25000, auto: 111, wer: a);        // 25 s, 2 G Bremsen
+            Fahre(0f, 0f, 0f, 200, auto: 111, wer: a);
+            Fahre(0f, -150f, 0f, 40, auto: 111, wer: a);            // ein Einschlag von vorn
+            Fahre(0f, 0f, 0f, 300, auto: 111, wer: a);
+            Soll(a.AufprallRekord is { G: > 10f } && a.Aufpralle == 1, $"Einschlag: Rekord des Autos fehlt ({a.AufprallRekord}, {a.Aufpralle})");
+            Soll(Math.Abs(a.AutoSkala(4f) - 2.5f) < 0.001f, $"Skala des Autos: {a.AutoSkala(4f)} statt 2.5 (2 G gehalten, mal 1,1, auf halbe G)");
+            Fahre(9.81f, 0f, 0f, 1000, auto: 222, wer: a);          // anderes Auto
+            Soll(a.Auto == 222 && a.Grenze < 1.1f && a.AutoSkala(4f) == 4f, "Je Auto: das neue Auto erbt die Werte des alten");
+            Fahre(0f, 0f, 0f, 100, auto: 111, wer: a);
+            Soll(a.Brems > 1.9f && a.Aufpralle == 1, "Je Auto: zurueck im ersten Auto sind seine Werte weg");
+            a.Merken(sofort: true);
+            var b = new Rivals.GMeterState(new Rivals.GMeterRekorde(datei));
+            Fahre(0f, 0f, 0f, 50, auto: 111, wer: b);
+            Soll(b.Brems > 1.9f && b.AufprallRekord is { G: > 10f } && b.Fahrzeit > 20f, "Je Auto: nach einem Neustart ist der Rekord weg");
+            b.Zuruecksetzen();
+            Soll(b.Grenze == 0f && b.AufprallRekord is null && new Rivals.GMeterRekorde(datei).Fuer(111) is null, "Je Auto: Zuruecksetzen vergisst das Auto nicht");
+        }
+        finally
+        {
+            try { File.Delete(datei); } catch (Exception) { }
+        }
+        Soll(Rivals.GMeterState.Runde(1.507f) == 1.75f && Rivals.GMeterState.Runde(2.2f) == 2.5f && Rivals.GMeterState.Runde(4.6f) == 5f
+             && Rivals.GMeterState.Runde(0.2f) == 0.5f && Rivals.GMeterState.Runde(9f) == 6f, "Skala des Autos: falsch gerundet");
+        var werk = new Rivals.OverlaySettings();
+        Soll(werk.HudInCaptures && werk.GMeterAutoScale && werk.GMeterShowImpacts && Math.Abs(werk.ImpactThreshold - 3.5) < 0.001 && werk.ImpactSounds.Count == 0,
+             "Ab Werk: HUD in Aufnahmen, Skala je Auto, Einschlaege oder Schwelle falsch");
         Soll(Rivals.GMeterState.Sektor(1f, 0f) != Rivals.GMeterState.Sektor(-1f, 0f)
              && Rivals.GMeterState.Sektor(0f, 1f) != Rivals.GMeterState.Sektor(0f, -1f), "G-Meter: Sektoren unterscheiden die Richtungen nicht");
         var ms = new Rivals.GMeterEinheit(Rivals.GUnit.MetresPerSecond2);

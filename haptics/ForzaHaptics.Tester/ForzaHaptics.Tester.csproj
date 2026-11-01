@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
+    <!-- Laeuft weiter ab Windows 10 2004; Neueres (Aufnahme ohne gelben Rahmen) nur nach Pruefung. -->
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <UseWindowsForms>true</UseWindowsForms>
     <!-- Pro Bildschirm DPI-bewusst: Overlays und Bildschirmleser rechnen in echten
          Bildpunkten. Mit dem Standard (SystemAware) waere ein Spiel auf einem zweiten

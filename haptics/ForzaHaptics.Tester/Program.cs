@@ -2185,6 +2185,45 @@ internal static class Program
             return;
         }
 
+        if (args.Length >= 2 && string.Equals(args[0], "--play-sound", StringComparison.OrdinalIgnoreCase))
+        {
+            // Spielt eine Datei so ab wie ein Einschlag es tut, und sagt, ob sie zu Ende lief.
+            using var ende = new ManualResetEventSlim();
+            var gut = false;
+            AufprallKlang.Spielen(args[1], 60, ok => { gut = ok; ende.Set(); });
+            Console.WriteLine(ende.Wait(TimeSpan.FromSeconds(15)) ? (gut ? "played to the end" : "failed") : "no answer within 15 s");
+            Environment.ExitCode = gut ? 0 : 1;
+            return;
+        }
+
+        if (args.Length >= 2 && string.Equals(args[0], "--impact-dialog-preview", StringComparison.OrdinalIgnoreCase))
+        {
+            // DER DIALOG "AUTO UND EINSCHLAEGE" ALS BILD, mit einem ausgedachten Auto und zwei Klangregeln --
+            // die Einstellungen des Nutzers bleiben unberuehrt.
+            //   --impact-dialog-preview <bild.png>
+            var s = new OverlaySettings();
+            s.ImpactSounds.Add(new AufprallRegel { File = @"E:\sounds\crunch.wav", Side = AufprallSeite.Front, MinG = 3.5f, MaxG = 10f });
+            s.ImpactSounds.Add(new AufprallRegel { File = @"E:\sounds\big-hit.mp3", Side = AufprallSeite.Custom, From = 300f, To = 60f, MinG = 10f, Volume = 100 });
+            var jetzt = DateTime.UtcNow;
+            var stand = new GMeterStand(2177, 1.42f, 1.38f, 0.61f, 1.87f, 2.25f, 1260f,
+                new AufprallEreignis(6.8f, 80f, 142f, jetzt.AddSeconds(-20)), new AufprallEreignis(17.3f, 350f, 188f, jetzt.AddDays(-2)), 23);
+            using var dialog = new AufprallDialog(s, () => stand, _ => "Porsche 911 GT3 RS '19", () => { }) { StartPosition = FormStartPosition.Manual, Location = new System.Drawing.Point(-4000, 0) };
+            dialog.Show();
+            Application.DoEvents();
+            using var bild = new System.Drawing.Bitmap(dialog.Width, dialog.Height);
+            dialog.DrawToBitmap(bild, new System.Drawing.Rectangle(0, 0, bild.Width, bild.Height));
+            bild.Save(args[1], System.Drawing.Imaging.ImageFormat.Png);
+            dialog.Close();
+            return;
+        }
+
+        if (args.Length >= 1 && string.Equals(args[0], "--hud-capture-check", StringComparison.OrdinalIgnoreCase))
+        {
+            // SIEHT DISCORD DEN HUD, UND DIE APP NICHT? Mit echten Fenstern auf dem Schirm.
+            Environment.ExitCode = HudAufnahmePruefung.Run();
+            return;
+        }
+
         if (args.Length >= 2 && string.Equals(args[0], "--hud-style-frames", StringComparison.OrdinalIgnoreCase))
         {
             // DIE STILE DER HUD-STUECKE ALS BILD (HudStil): Reifen und Autonotiz in jedem eingebauten
@@ -2232,7 +2271,10 @@ internal static class Program
                 for (var i = 0; i < momente.Length; i++)
                 {
                     var einheit = new GMeterEinheit(i == 3 ? GUnit.MetresPerSecond2 : GUnit.G);
-                    maler.Male(g, d, GMeterState.Vorfuehrung(momente[i]), new System.Drawing.RectangleF(i * w + 10, 10, w - 20, h - 20), einheit);
+                    var vorf = GMeterState.Vorfuehrung(momente[i]);
+                    // Im dritten Bild ein Einschlag von vorn links, eben passiert: so sieht man das Zeichen.
+                    if (i == 2) { vorf = vorf with { Aufprall = new AufprallEreignis(12.4f, 315f, 143f, DateTime.UtcNow), AufprallAlter = 0.5f }; }
+                    maler.Male(g, d, vorf, new System.Drawing.RectangleF(i * w + 10, 10, w - 20, h - 20), einheit);
                 }
                 var datei = new string(d.Name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());
                 bild.Save(Path.Combine(ordner, "g_" + datei + ".png"));
