@@ -300,6 +300,7 @@ internal sealed class SpeedoMotor : IDisposable
 
     private float _gx, _gz, _gy;
     private bool _gBewegt;
+    private float _gNaehe;
 
     /// <summary>Das G-Meter zeigen, aendern oder verstecken. true = es wurde gezeichnet.</summary>
     private bool GMeter(bool faehrt, bool neu, DateTime paketZeit, double jetzt, float dt)
@@ -329,6 +330,19 @@ internal sealed class SpeedoMotor : IDisposable
             _gBewegt = wandert || (_gDesign.Trail != GMeterTrail.Off && DateTime.UtcNow - paketZeit < TimeSpan.FromSeconds(_gDesign.TrailSeconds))
                        || _gDesign.Layout == GMeterLayout.Radar;
             bild = _gDaten.Bild(_gx, _gz, _gy, _gDesign.TrailSeconds, DateTime.UtcNow, jetzt);
+            // AN DER GRENZE (seit 2026-11-01): das Naehere von beidem -- G gegen den Rekord des Autos in
+            // diese Richtung, und Schlupf gegen die Schwelle, ab der es rutscht (dieselbe wie STAB).
+            var ziel = 0f;
+            if (_settings.GMeterLimitWarning)
+            {
+                var schwellen = SpeedoSchwellen.Fuer(_settings, _gDaten.Auto);
+                var schlupf = schwellen.StabRutsch > 0f ? _daten.Messwerte.Stab / schwellen.StabRutsch : 0f;
+                ziel = MathF.Max(schlupf, _gDaten.Grenznaehe(_gx, _gz));
+            }
+            // Kurz geglaettet, sonst flackert die Farbe mit jedem Paket.
+            _gNaehe += (ziel - _gNaehe) * (1f - MathF.Exp(-dt / 0.08f));
+            if (_gNaehe > 0.8f || MathF.Abs(ziel - _gNaehe) > 0.01f) { _gBewegt = true; }
+            bild = bild with { Grenznaehe = _gNaehe };
             if (!_settings.GMeterShowImpacts) { bild = bild with { Aufprall = null }; }
             // Ein Einschlag verblasst ueber vier Sekunden: so lange weiterzeichnen.
             else if (bild.AufprallAlter < 4.2f) { _gBewegt = true; }

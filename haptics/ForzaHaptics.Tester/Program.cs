@@ -2274,6 +2274,9 @@ internal static class Program
                     var vorf = GMeterState.Vorfuehrung(momente[i]);
                     // Im dritten Bild ein Einschlag von vorn links, eben passiert: so sieht man das Zeichen.
                     if (i == 2) { vorf = vorf with { Aufprall = new AufprallEreignis(12.4f, 315f, 143f, DateTime.UtcNow), AufprallAlter = 0.5f }; }
+                    // Im zweiten nahe der Grenze des Autos (gelb), im vierten an ihr (rot).
+                    if (i == 1) { vorf = vorf with { Grenznaehe = 0.92f }; }
+                    if (i == 3) { vorf = vorf with { Grenznaehe = 1.02f }; }
                     maler.Male(g, d, vorf, new System.Drawing.RectangleF(i * w + 10, 10, w - 20, h - 20), einheit);
                 }
                 var datei = new string(d.Name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());

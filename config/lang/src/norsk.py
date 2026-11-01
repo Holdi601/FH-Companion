@@ -603,8 +603,6 @@ _NB = {
         "Lytter på UDP-port {0} på {1}. Sett Data ut på Xboxen/PC-en til en av disse.",
     "Listening on UDP port {0}. Drive in FH6 to produce packets...":
         "Lytter på UDP-port {0}. Kjør i FH6 for å lage pakker...",
-    "Live FH6 telemetry connected.":
-        "FH6-telemetri tilkoblet.",
     "Live grip telemetry":
         "Live-telemetri for grep",
     "Live map":
@@ -825,8 +823,8 @@ _NB = {
         "Eid",
     "Owned cars: the cars you have driven with the app. Tick the others you own.":
         "Egne biler: bilene du har kjørt med appen. Kryss av for de andre du eier.",
-    "Owned cars: your garage, read {0}. Ticks you set count over it.":
-        "Egne biler: garasjen din, lest {0}. Kryssene du setter, går foran den.",
+    "Owned cars: your garage (read {0}), and every car seen in My Cars or driven since. Ticks you set count over it.":
+        "Egne biler: garasjen din (lest {0}) og hver bil som er sett i Bilene mine eller kjørt siden. Kryssene du setter, går foran den.",
     "POP-IN {0}":
         "POP-IN {0}",
     "Packets: --   Rate: --   Race: --":

@@ -196,7 +196,7 @@ internal sealed class CarCollectionTab : UserControl
         Controls.Add(oben);
 
         // Im Spiel unter "My Cars" erkannt: sofort mitzaehlen, wenn der Reiter offen ist.
-        OwnedCars.Geaendert += () => BeiUns(() => { _besitz = OwnedCars.Laden(_besitzPfad); if (_geladen && Visible) { Fuellen(); } });
+        OwnedCars.Geaendert += () => BeiUns(() => { _besitz = OwnedCars.Laden(_besitzPfad); _gefahren = Gefahren(); if (_geladen && Visible) { Fuellen(); } });
         _detailKopf.Text = Loc.T("Select a car to see every way to get it.");
     }
 
@@ -220,7 +220,9 @@ internal sealed class CarCollectionTab : UserControl
     {
         var n = _notizen();
         if (n is null) { return new HashSet<int>(); }
-        return n.All.Where(e => e.Source == "driven" || !e.IsModel).Select(e => e.Ordinal).Where(o => o > 0).ToHashSet();
+        return _besitz.GefahrenSeit(n.All.Where(e => e.Source == "driven" || !e.IsModel)
+            .Select(e => (e.Ordinal, DateTimeOffset.TryParse(e.LastSeen, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal, out var wann) ? wann : (DateTimeOffset?)null)));
     }
 
     private void Fuellen()
@@ -245,7 +247,7 @@ internal sealed class CarCollectionTab : UserControl
             ? string.Format(Loc.T("{0} owned · {1} missing · {2} not sure"), hat, s.Autos.Count - hat - unsicher.Count, unsicher.Count)
             : string.Format(Loc.T("{0} of {1} cars owned -- {2} missing"), hat, s.Autos.Count, s.Autos.Count - hat);
         _quelle.Text = _besitz.GarageGelesen is { } wann
-            ? string.Format(Loc.T("Owned cars: your garage, read {0}. Ticks you set count over it."),
+            ? string.Format(Loc.T("Owned cars: your garage (read {0}), and every car seen in My Cars or driven since. Ticks you set count over it."),
                             wann.LocalDateTime.ToString("g"))
               + (fremd > 0
                   ? "  " + string.Format(Loc.T("{0} cars in your garage are not identified yet -- highlight them in My Cars in the game, or tick them here."), fremd)

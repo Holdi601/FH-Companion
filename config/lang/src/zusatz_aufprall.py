@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Auto-Rekorde und Aufpralle im G-Meter, Klangregeln fuer Aufpralle und das HUD in Bildschirmfreigaben
-(2026-11-01), 25 Sprachen, nicht von Muttersprachlern geprueft. Schluessel aus der Liste der fehlenden
+"""Auto-Rekorde, Aufpralle und Grenzfarben im G-Meter, Klangregeln fuer Aufpralle und das HUD in
+Bildschirmfreigaben (2026-11-01), 25 Sprachen, nicht von Muttersprachlern geprueft. Schluessel aus der Liste der fehlenden
 Saetze uebernommen, nicht abgetippt. Die Richtungsworte stehen allein, in der Auswahl und nach "direction";
 Discord, OBS, Forza, Windows 11, die Dateiformate, km/h und G bleiben stehen."""
 
@@ -44,6 +44,10 @@ K = {
     "rr": "rear right",
     "right": "right",
     "held": "{0}: held {1:0.00} G sideways, {2:0.00} G braking, {3:0.00} G accelerating in {4:0} minutes of driving. Scale now {5:0.##} G.",
+    "at_limit": "At the limit",
+    "colour_limit": "Colour the G-meter near the car's limit",
+    "limit_note": "From 85 % of what this car has held in that direction the G-meter turns amber, at its record or when the tyres start to slide red. Sliding is measured like the STAB lamp of the speedometer, with its sensitivity per car.",
+    "near_limit": "Near the limit",
 }
 
 _UEBERSETZT = {
@@ -87,6 +91,10 @@ _UEBERSETZT = {
   "rr": "hinten rechts",
   "right": "rechts",
   "held": "{0}: hielt {1:0.00} G seitlich, {2:0.00} G beim Bremsen, {3:0.00} G beim Beschleunigen in {4:0} Minuten Fahrt. Skala jetzt {5:0.##} G.",
+  "at_limit": "Am Limit",
+  "colour_limit": "G-Meter nahe am Limit des Autos färben",
+  "limit_note": "Ab 85 % dessen, was dieses Auto in dieser Richtung gehalten hat, wird das G-Meter bernsteinfarben, an seinem Rekord oder wenn die Reifen zu rutschen beginnen rot. Rutschen wird wie bei der STAB-Lampe des Tachos gemessen, mit ihrer Empfindlichkeit je Auto.",
+  "near_limit": "Nahe am Limit",
  },
  "fr": {
   "nofile": "(aucun fichier)",
@@ -128,6 +136,10 @@ _UEBERSETZT = {
   "rr": "arrière droit",
   "right": "droite",
   "held": "{0} : a tenu {1:0.00} G en latéral, {2:0.00} G au freinage, {3:0.00} G à l'accélération en {4:0} minutes de conduite. Échelle maintenant {5:0.##} G.",
+  "at_limit": "À la limite",
+  "colour_limit": "Colorer le G-mètre près de la limite de la voiture",
+  "limit_note": "À partir de 85 % de ce que cette voiture a tenu dans cette direction, le G-mètre passe à l'ambre, puis au rouge à son record ou quand les pneus commencent à glisser. La glisse est mesurée comme pour le témoin STAB du compteur, avec sa sensibilité par voiture.",
+  "near_limit": "Près de la limite",
  },
  "es": {
   "nofile": "(sin archivo)",
@@ -169,6 +181,10 @@ _UEBERSETZT = {
   "rr": "detrás derecha",
   "right": "derecha",
   "held": "{0}: aguantó {1:0.00} G lateral, {2:0.00} G frenando, {3:0.00} G acelerando en {4:0} minutos de conducción. Escala ahora {5:0.##} G.",
+  "at_limit": "En el límite",
+  "colour_limit": "Colorear el medidor G cerca del límite del coche",
+  "limit_note": "A partir del 85 % de lo que este coche ha aguantado en esa dirección, el medidor G se vuelve ámbar, y rojo en su récord o cuando los neumáticos empiezan a deslizar. El deslizamiento se mide como en la luz STAB del velocímetro, con su sensibilidad por coche.",
+  "near_limit": "Cerca del límite",
  },
  "it": {
   "nofile": "(nessun file)",
@@ -210,6 +226,10 @@ _UEBERSETZT = {
   "rr": "posteriore destra",
   "right": "destra",
   "held": "{0}: ha tenuto {1:0.00} G laterali, {2:0.00} G in frenata, {3:0.00} G in accelerazione in {4:0} minuti di guida. Scala ora {5:0.##} G.",
+  "at_limit": "Al limite",
+  "colour_limit": "Colora il G-meter vicino al limite dell'auto",
+  "limit_note": "Da 85 % di quanto quest'auto ha tenuto in quella direzione il G-meter diventa ambra, rosso al suo record o quando le gomme iniziano a scivolare. Lo scivolamento si misura come per la spia STAB del tachimetro, con la sua sensibilità per auto.",
+  "near_limit": "Vicino al limite",
  },
  "pt": {
   "nofile": "(nenhum ficheiro)",
@@ -251,6 +271,10 @@ _UEBERSETZT = {
   "rr": "traseira direita",
   "right": "direita",
   "held": "{0}: aguentou {1:0.00} G de lado, {2:0.00} G a travar, {3:0.00} G a acelerar em {4:0} minutos de condução. Escala agora {5:0.##} G.",
+  "at_limit": "No limite",
+  "colour_limit": "Colorir o medidor G perto do limite do carro",
+  "limit_note": "A partir de 85 % do que este carro aguentou nessa direção, o medidor G fica âmbar, e vermelho no seu recorde ou quando os pneus começam a deslizar. O deslizamento é medido como na luz STAB do velocímetro, com a sua sensibilidade por carro.",
+  "near_limit": "Perto do limite",
  },
  "nl": {
   "nofile": "(geen bestand)",
@@ -292,6 +316,10 @@ _UEBERSETZT = {
   "rr": "rechtsachter",
   "right": "rechts",
   "held": "{0}: hield {1:0.00} G zijwaarts, {2:0.00} G bij remmen, {3:0.00} G bij optrekken in {4:0} minuten rijden. Schaal nu {5:0.##} G.",
+  "at_limit": "Op de limiet",
+  "colour_limit": "G-meter kleuren dicht bij de limiet van de auto",
+  "limit_note": "Vanaf 85 % van wat deze auto in die richting heeft vastgehouden, wordt de G-meter amber, bij zijn record of als de banden beginnen te glijden rood. Glijden wordt gemeten zoals bij het STAB-lampje van de snelheidsmeter, met de gevoeligheid per auto.",
+  "near_limit": "Dicht bij de limiet",
  },
  "pl": {
   "nofile": "(brak pliku)",
@@ -333,6 +361,10 @@ _UEBERSETZT = {
   "rr": "prawy tył",
   "right": "prawo",
   "held": "{0}: utrzymało {1:0.00} G w bok, {2:0.00} G przy hamowaniu, {3:0.00} G przy przyspieszaniu w {4:0} min jazdy. Skala teraz {5:0.##} G.",
+  "at_limit": "Na limicie",
+  "colour_limit": "Koloruj G-metr blisko limitu auta",
+  "limit_note": "Od 85 % tego, co to auto utrzymało w danym kierunku, G-metr robi się bursztynowy, a przy rekordzie lub gdy opony zaczynają się ślizgać — czerwony. Poślizg jest mierzony jak przy lampce STAB prędkościomierza, z jej czułością dla każdego auta.",
+  "near_limit": "Blisko limitu",
  },
  "cs": {
   "nofile": "(žádný soubor)",
@@ -374,6 +406,10 @@ _UEBERSETZT = {
   "rr": "pravá záď",
   "right": "vpravo",
   "held": "{0}: udrželo {1:0.00} G do strany, {2:0.00} G při brzdění, {3:0.00} G při zrychlování za {4:0} minut jízdy. Stupnice teď {5:0.##} G.",
+  "at_limit": "Na limitu",
+  "colour_limit": "Barvit G-metr blízko limitu auta",
+  "limit_note": "Od 85 % toho, co toto auto v daném směru udrželo, se G-metr zbarví jantarově, při jeho rekordu nebo když pneumatiky začnou klouzat červeně. Klouzání se měří jako u kontrolky STAB tachometru, s její citlivostí pro každé auto.",
+  "near_limit": "Blízko limitu",
  },
  "da": {
   "nofile": "(ingen fil)",
@@ -415,6 +451,10 @@ _UEBERSETZT = {
   "rr": "bagfra højre",
   "right": "højre",
   "held": "{0}: holdt {1:0.00} G sidelæns, {2:0.00} G ved bremsning, {3:0.00} G ved acceleration på {4:0} minutters kørsel. Skala nu {5:0.##} G.",
+  "at_limit": "Ved grænsen",
+  "colour_limit": "Farv G-måleren tæt på bilens grænse",
+  "limit_note": "Fra 85 % af det, denne bil har holdt i den retning, bliver G-måleren ravgul, ved dens rekord eller når dækkene begynder at skride rød. Skridning måles som ved speedometerets STAB-lampe, med dens følsomhed pr. bil.",
+  "near_limit": "Tæt på grænsen",
  },
  "sv": {
   "nofile": "(ingen fil)",
@@ -456,6 +496,10 @@ _UEBERSETZT = {
   "rr": "höger bak",
   "right": "höger",
   "held": "{0}: klarade {1:0.00} G i sidled, {2:0.00} G vid inbromsning, {3:0.00} G vid acceleration på {4:0} minuters körning. Skala nu {5:0.##} G.",
+  "at_limit": "Vid gränsen",
+  "colour_limit": "Färga G-mätaren nära bilens gräns",
+  "limit_note": "Från 85 % av vad den här bilen har klarat i den riktningen blir G-mätaren bärnstensgul, vid dess rekord eller när däcken börjar glida röd. Glidning mäts som för hastighetsmätarens STAB-lampa, med dess känslighet per bil.",
+  "near_limit": "Nära gränsen",
  },
  "nb": {
   "nofile": "(ingen fil)",
@@ -497,6 +541,10 @@ _UEBERSETZT = {
   "rr": "høyre bak",
   "right": "høyre",
   "held": "{0}: holdt {1:0.00} G sideveis, {2:0.00} G ved bremsing, {3:0.00} G ved akselerasjon på {4:0} minutters kjøring. Skala nå {5:0.##} G.",
+  "at_limit": "Ved grensen",
+  "colour_limit": "Farg G-måleren nær bilens grense",
+  "limit_note": "Fra 85 % av det denne bilen har holdt i den retningen, blir G-måleren ravgul, ved rekorden eller når dekkene begynner å skli rød. Skliing måles som for speedometerets STAB-lampe, med dens følsomhet per bil.",
+  "near_limit": "Nær grensen",
  },
  "fi": {
   "nofile": "(ei tiedostoa)",
@@ -538,6 +586,10 @@ _UEBERSETZT = {
   "rr": "oikea taka",
   "right": "oikea",
   "held": "{0}: piti {1:0.00} G sivuttain, {2:0.00} G jarruttaessa, {3:0.00} G kiihdyttäessä {4:0} minuutin ajossa. Asteikko nyt {5:0.##} G.",
+  "at_limit": "Rajalla",
+  "colour_limit": "Väritä G-mittari lähellä auton rajaa",
+  "limit_note": "Kun arvo ylittää 85 % siitä, mitä tämä auto on siihen suuntaan pitänyt, G-mittari muuttuu meripihkanväriseksi, ja ennätyksessä tai renkaiden alkaessa luistaa punaiseksi. Luisto mitataan kuten nopeusmittarin STAB-valossa, sen autokohtaisella herkkyydellä.",
+  "near_limit": "Lähellä rajaa",
  },
  "hu": {
   "nofile": "(nincs fájl)",
@@ -579,6 +631,10 @@ _UEBERSETZT = {
   "rr": "hátul jobbra",
   "right": "jobbra",
   "held": "{0}: {4:0} perc vezetés alatt {1:0.00} G-t tartott oldalirányban, {2:0.00} G-t fékezéskor, {3:0.00} G-t gyorsításkor. Skála most {5:0.##} G.",
+  "at_limit": "A határon",
+  "colour_limit": "G-mérő színezése az autó határa közelében",
+  "limit_note": "Annak 85 %-ától, amit ez az autó abban az irányban tartott, a G-mérő borostyánsárga lesz, a rekordjánál vagy amikor a gumik csúszni kezdenek, piros. A csúszást a sebességmérő STAB-jelzőjéhez hasonlóan méri, autónkénti érzékenységgel.",
+  "near_limit": "A határ közelében",
  },
  "ro": {
   "nofile": "(niciun fișier)",
@@ -620,6 +676,10 @@ _UEBERSETZT = {
   "rr": "spate dreapta",
   "right": "dreapta",
   "held": "{0}: a ținut {1:0.00} G lateral, {2:0.00} G la frânare, {3:0.00} G la accelerare în {4:0} minute de condus. Scala acum {5:0.##} G.",
+  "at_limit": "La limită",
+  "colour_limit": "Colorează G-metrul aproape de limita mașinii",
+  "limit_note": "De la 85 % din ce a ținut această mașină în acea direcție, G-metrul devine chihlimbariu, iar la recordul ei sau când pneurile încep să alunece, roșu. Alunecarea se măsoară ca la lampa STAB a vitezometrului, cu sensibilitatea ei per mașină.",
+  "near_limit": "Aproape de limită",
  },
  "el": {
   "nofile": "(κανένα αρχείο)",
@@ -661,6 +721,10 @@ _UEBERSETZT = {
   "rr": "πίσω δεξιά",
   "right": "δεξιά",
   "held": "{0}: άντεξε {1:0.00} G πλάγια, {2:0.00} G στο φρενάρισμα, {3:0.00} G στην επιτάχυνση σε {4:0} λεπτά οδήγησης. Κλίμακα τώρα {5:0.##} G.",
+  "at_limit": "Στο όριο",
+  "colour_limit": "Χρωματισμός του G-μετρητή κοντά στο όριο του αυτοκινήτου",
+  "limit_note": "Από το 85 % όσων άντεξε αυτό το αυτοκίνητο σε εκείνη την κατεύθυνση, ο G-μετρητής γίνεται κεχριμπαρένιος, και κόκκινος στο ρεκόρ του ή όταν τα ελαστικά αρχίζουν να γλιστρούν. Το γλίστρημα μετριέται όπως στη λυχνία STAB του ταχύμετρου, με την ευαισθησία της ανά αυτοκίνητο.",
+  "near_limit": "Κοντά στο όριο",
  },
  "ru": {
   "nofile": "(нет файла)",
@@ -702,6 +766,10 @@ _UEBERSETZT = {
   "rr": "сзади справа",
   "right": "справа",
   "held": "{0}: выдержала {1:0.00} G вбок, {2:0.00} G при торможении, {3:0.00} G при разгоне за {4:0} мин езды. Шкала сейчас {5:0.##} G.",
+  "at_limit": "На пределе",
+  "colour_limit": "Окрашивать G-метр у предела машины",
+  "limit_note": "От 85 % того, что эта машина выдержала в этом направлении, G-метр становится янтарным, а на её рекорде или когда шины начинают скользить — красным. Скольжение измеряется как у индикатора STAB спидометра, с его чувствительностью для каждой машины.",
+  "near_limit": "Близко к пределу",
  },
  "tr": {
   "nofile": "(dosya yok)",
@@ -743,6 +811,10 @@ _UEBERSETZT = {
   "rr": "sağ arka",
   "right": "sağ",
   "held": "{0}: {4:0} dakikalık sürüşte yana {1:0.00} G, frenlemede {2:0.00} G, hızlanmada {3:0.00} G tuttu. Ölçek şimdi {5:0.##} G.",
+  "at_limit": "Sınırda",
+  "colour_limit": "G-metreyi aracın sınırına yakın renklendir",
+  "limit_note": "Bu aracın o yönde tuttuğu değerin 85 %'inden itibaren G-metre kehribar rengine, rekorunda ya da lastikler kaymaya başladığında kırmızıya döner. Kayma, hız göstergesinin STAB lambasındaki gibi, araç başına hassasiyetiyle ölçülür.",
+  "near_limit": "Sınıra yakın",
  },
  "id": {
   "nofile": "(tidak ada file)",
@@ -784,6 +856,10 @@ _UEBERSETZT = {
   "rr": "belakang kanan",
   "right": "kanan",
   "held": "{0}: menahan {1:0.00} G ke samping, {2:0.00} G saat mengerem, {3:0.00} G saat berakselerasi dalam {4:0} menit berkendara. Skala kini {5:0.##} G.",
+  "at_limit": "Di batas",
+  "colour_limit": "Warnai G-meter saat mendekati batas mobil",
+  "limit_note": "Mulai 85 % dari yang pernah ditahan mobil ini ke arah itu, G-meter berubah kuning tua, dan merah pada rekornya atau saat ban mulai tergelincir. Tergelincir diukur seperti lampu STAB pada spidometer, dengan kepekaannya per mobil.",
+  "near_limit": "Mendekati batas",
  },
  "ms": {
   "nofile": "(tiada fail)",
@@ -825,6 +901,10 @@ _UEBERSETZT = {
   "rr": "belakang kanan",
   "right": "kanan",
   "held": "{0}: menahan {1:0.00} G ke sisi, {2:0.00} G semasa membrek, {3:0.00} G semasa memecut dalam {4:0} minit pemanduan. Skala kini {5:0.##} G.",
+  "at_limit": "Pada had",
+  "colour_limit": "Warnakan meter G apabila hampir mencapai had kereta",
+  "limit_note": "Mulai 85 % daripada apa yang pernah ditahan kereta ini ke arah itu, meter G bertukar kuning ambar, dan merah pada rekodnya atau apabila tayar mula tergelincir. Gelinciran diukur seperti lampu STAB pada meter laju, dengan kepekaannya bagi setiap kereta.",
+  "near_limit": "Hampir mencapai had",
  },
  "vi": {
   "nofile": "(không có tệp)",
@@ -866,6 +946,10 @@ _UEBERSETZT = {
   "rr": "sau phải",
   "right": "bên phải",
   "held": "{0}: giữ {1:0.00} G ngang, {2:0.00} G khi phanh, {3:0.00} G khi tăng tốc trong {4:0} phút lái. Thang đo giờ là {5:0.##} G.",
+  "at_limit": "Ở giới hạn",
+  "colour_limit": "Tô màu đồng hồ G khi gần giới hạn của xe",
+  "limit_note": "Từ 85 % mức xe này từng giữ theo hướng đó, đồng hồ G chuyển màu hổ phách, và chuyển đỏ khi chạm kỷ lục hoặc khi lốp bắt đầu trượt. Độ trượt được đo như đèn STAB của đồng hồ tốc độ, với độ nhạy riêng cho từng xe.",
+  "near_limit": "Gần giới hạn",
  },
  "th": {
   "nofile": "(ไม่มีไฟล์)",
@@ -907,6 +991,10 @@ _UEBERSETZT = {
   "rr": "หลังขวา",
   "right": "ด้านขวา",
   "held": "{0}: รับได้ {1:0.00} G ด้านข้าง {2:0.00} G ขณะเบรก {3:0.00} G ขณะเร่ง ในการขับ {4:0} นาที สเกลตอนนี้ {5:0.##} G",
+  "at_limit": "ที่ขีดจำกัด",
+  "colour_limit": "เปลี่ยนสีมาตรวัด G เมื่อใกล้ขีดจำกัดของรถ",
+  "limit_note": "ตั้งแต่ 85 % ของค่าที่รถคันนี้เคยรับได้ในทิศนั้น มาตรวัด G จะเป็นสีอำพัน และเป็นสีแดงเมื่อถึงสถิติหรือเมื่อยางเริ่มลื่น การลื่นวัดแบบเดียวกับไฟ STAB ของมาตรวัดความเร็ว โดยใช้ความไวของรถแต่ละคัน",
+  "near_limit": "ใกล้ขีดจำกัด",
  },
  "ja": {
   "nofile": "（ファイルなし）",
@@ -948,6 +1036,10 @@ _UEBERSETZT = {
   "rr": "右後ろ",
   "right": "右",
   "held": "{0}：{4:0} 分の走行で横 {1:0.00} G、ブレーキ {2:0.00} G、加速 {3:0.00} G を記録。スケールは現在 {5:0.##} G。",
+  "at_limit": "限界",
+  "colour_limit": "車の限界が近いと G メーターに色を付ける",
+  "limit_note": "この車がその方向で出した値の 85 % から G メーターは琥珀色になり、記録に達するかタイヤが滑り始めると赤になります。滑りはスピードメーターの STAB ランプと同じように、車ごとの感度で測ります。",
+  "near_limit": "限界間近",
  },
  "ko": {
   "nofile": "(파일 없음)",
@@ -989,6 +1081,10 @@ _UEBERSETZT = {
   "rr": "우측 후방",
   "right": "우측",
   "held": "{0}: {4:0}분 주행 동안 횡 {1:0.00} G, 제동 {2:0.00} G, 가속 {3:0.00} G를 견딤. 현재 눈금 {5:0.##} G.",
+  "at_limit": "한계",
+  "colour_limit": "차의 한계에 가까우면 G 미터 색 변경",
+  "limit_note": "이 차가 그 방향으로 견딘 값의 85 %부터 G 미터가 호박색이 되고, 기록에 닿거나 타이어가 미끄러지기 시작하면 빨간색이 됩니다. 미끄러짐은 속도계의 STAB 램프처럼 차량별 감도로 측정합니다.",
+  "near_limit": "한계 근접",
  },
  "zh-Hans": {
   "nofile": "（无文件）",
@@ -1030,6 +1126,10 @@ _UEBERSETZT = {
   "rr": "右后",
   "right": "右侧",
   "held": "{0}：在 {4:0} 分钟的驾驶中承受了横向 {1:0.00} G、制动 {2:0.00} G、加速 {3:0.00} G。当前刻度 {5:0.##} G。",
+  "at_limit": "到达极限",
+  "colour_limit": "接近车辆极限时为 G 值表着色",
+  "limit_note": "达到这辆车在该方向承受过的 85 % 时，G 值表变为琥珀色；达到其记录或轮胎开始滑动时变为红色。滑动的测量方式与速度表的 STAB 指示灯相同，并使用每辆车各自的灵敏度。",
+  "near_limit": "接近极限",
  },
  "zh-Hant": {
   "nofile": "（無檔案）",
@@ -1071,6 +1171,10 @@ _UEBERSETZT = {
   "rr": "右後",
   "right": "右側",
   "held": "{0}：在 {4:0} 分鐘的駕駛中承受了橫向 {1:0.00} G、煞車 {2:0.00} G、加速 {3:0.00} G。目前刻度 {5:0.##} G。",
+  "at_limit": "達到極限",
+  "colour_limit": "接近車輛極限時為 G 值錶著色",
+  "limit_note": "達到這輛車在該方向承受過的 85 % 時，G 值錶變為琥珀色；達到其紀錄或輪胎開始滑動時變為紅色。滑動的測量方式與速度表的 STAB 指示燈相同，並使用每輛車各自的靈敏度。",
+  "near_limit": "接近極限",
  },
 }
 

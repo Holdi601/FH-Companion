@@ -26,7 +26,8 @@ internal sealed record GMeterBild(
     double Uhr,
     AufprallEreignis? Aufprall = null,
     float AufprallAlter = 99f,
-    float AufprallRekord = 0f)
+    float AufprallRekord = 0f,
+    float Grenznaehe = 0f)
 {
     public float Gesamt => MathF.Sqrt(X * X + Z * Z);
 
@@ -90,6 +91,21 @@ internal sealed class GMeterState
     public AufprallEreignis? LetzterAufprall => _letzter;
     public AufprallEreignis? AufprallRekord => _aufprallRekord;
     public int Aufpralle => _aufpralle;
+
+    /// <summary>
+    /// Wie nah diese Beschleunigung an dem ist, was das Auto in DIESE Richtung schon gehalten hat (1 = so
+    /// viel wie sein Rekord). 0, solange es keine Minute gefahren ist: vorher ist jede Spitze ein Rekord.
+    /// </summary>
+    public float Grenznaehe(float x, float z)
+    {
+        if (_fahrzeit < 60f) { return 0f; }
+        var betrag = MathF.Sqrt(x * x + z * z);
+        if (betrag < 0.2f) { return 0f; }
+        var s = Sektor(x, z);
+        var n = GMeterBild.Sektoren;
+        var grenze = MathF.Max(_huelle[s], MathF.Max(_huelle[(s + 1) % n], _huelle[(s + n - 1) % n]));
+        return grenze < 0.3f ? 0f : betrag / grenze;
+    }
 
     /// <summary>
     /// Die Skala fuer dieses Auto: etwas ueber dem, was es gehalten hat, auf runde Werte. Bevor es 20

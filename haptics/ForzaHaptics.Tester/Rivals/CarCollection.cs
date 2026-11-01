@@ -264,12 +264,16 @@ internal sealed class OwnedCars
         nichtErkannt > 0 && GarageGelesen is not null && auto.AlleIds.Count == 0 && !Besitz(auto, gefahren).Hat;
 
     /// <summary>Was ohne Haken gilt -- um einen Haken, der nichts aendert, gar nicht erst zu merken.</summary>
+    /// <remarks>
+    /// GARAGE UND GEFAHREN ZUSAMMEN (seit 2026-11-01). Vorher galt nach einem Lesen der Garage NUR sie --
+    /// ein Bild von einem Tag. Der Nutzer las sie am 2026-09-29 einmal; jedes danach gekaufte und gefahrene
+    /// Auto (McLaren F1, Koenigsegg One:1 ...) stand fuer immer als "fehlt" da. <paramref name="gefahren"/>
+    /// sind darum nur die Autos, die NACH dem Lesen gefahren wurden (<see cref="GefahrenSeit"/>): eines,
+    /// das vorher gefahren wurde und trotzdem nicht in der Garage stand, war geliehen. Ein Haken geht vor.
+    /// </remarks>
     public (bool Hat, Grund Warum) Automatisch(CarCollection.Auto auto, IReadOnlySet<int> gefahren)
     {
-        if (GarageGelesen is not null)
-        {
-            return auto.AlleIds.Any(GarageIds.Contains) ? (true, Grund.Garage) : (false, Grund.Keiner);
-        }
+        if (GarageGelesen is not null && auto.AlleIds.Any(GarageIds.Contains)) { return (true, Grund.Garage); }
         return auto.AlleIds.Any(gefahren.Contains) ? (true, Grund.Gefahren) : (false, Grund.Keiner);
     }
 
@@ -290,6 +294,14 @@ internal sealed class OwnedCars
         if (OhneHand(auto, gefahren).Hat == hat) { Markiert.Remove(auto.Schluessel); }
         else { Markiert[auto.Schluessel] = hat; }
     }
+
+    /// <summary>
+    /// Die gefahrenen Autos, die als eigene zaehlen: ohne gelesene Garage alle, sonst nur die nach dem
+    /// Lesen gefahrenen -- vorher gefahren und nicht in der Garage heisst: geliehen.
+    /// </summary>
+    public HashSet<int> GefahrenSeit(IEnumerable<(int Ordinal, DateTimeOffset? Wann)> gefahren) =>
+        gefahren.Where(g => g.Ordinal > 0 && (GarageGelesen is not { } gelesen || g.Wann is { } w && w > gelesen))
+                .Select(g => g.Ordinal).ToHashSet();
 
     public void GarageMerken(IEnumerable<int> ids)
     {

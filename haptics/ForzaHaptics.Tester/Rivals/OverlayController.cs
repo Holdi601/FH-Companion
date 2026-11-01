@@ -1500,7 +1500,7 @@ internal sealed class OverlayController : IDisposable
                         MenueGelesen(rahmen, abdruck, auto, gelesen, neu);
                         if (neu && inListe is not null)
                         {
-                            LogMeineAutos(inListe.Anzeige, meineAutos);
+                            LogMeineAutos(inListe.Anzeige, meineAutos, _letzterKopf);
                             if (meineAutos) { OwnedCars.GesehenMerken(inListe); }
                         }
                         if (seite is { Count: > 0 })
@@ -1588,8 +1588,14 @@ internal sealed class OverlayController : IDisposable
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
             g.DrawImage(klein, new Rectangle(0, 0, kopf.Width, kopf.Height), kopfFlaeche, GraphicsUnit.Pixel);
         }
-        return CarGridReader.IstMeineAutos(_reader.ReadLines(kopf));
+        var zeilen = _reader.ReadLines(kopf);
+        _letzterKopf = string.Join(" / ", zeilen.OrderBy(z => z.Y).Select(z => z.Text));
+        return CarGridReader.IstMeineAutos(zeilen);
     }
+
+    // Was oben im Schirm stand, als zuletzt nach "My Cars" gefragt wurde -- fuer cars.log: so sieht man
+    // beim naechsten Mal, WELCHER Schirm es war, wenn ein Auto nicht als eigenes zaehlte.
+    private volatile string _letzterKopf = string.Empty;
 
     private static void CarsLog(string zeile)
     {
@@ -1684,13 +1690,13 @@ internal sealed class OverlayController : IDisposable
         }
     }
 
-    private static void LogMeineAutos(string name, bool meineAutos)
+    private static void LogMeineAutos(string name, bool meineAutos, string kopf)
     {
         try
         {
             File.AppendAllText(Path.Combine(Path.GetTempPath(), "forza-overlay", "cars.log"),
                 $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} list match {name} -> "
-                + (meineAutos ? "owned (My Cars)" : "not My Cars") + Environment.NewLine);
+                + (meineAutos ? "owned (My Cars)" : $"not My Cars (title \"{kopf}\")") + Environment.NewLine);
         }
         catch (Exception)
         {

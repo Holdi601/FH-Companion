@@ -66,6 +66,9 @@ internal sealed class AufprallDialog : Form
         liste.Controls.Add(Hinweis(Loc.T(
             "After 20 seconds of driving, the full scale sits just above the most this car has held -- each car keeps its own records, its outline and its hardest impact, also after a restart.")));
         Schalter(Loc.T("Show impacts on the G-meter"), settings.GMeterShowImpacts, v => _settings.GMeterShowImpacts = v);
+        Schalter(Loc.T("Colour the G-meter near the car's limit"), settings.GMeterLimitWarning, v => _settings.GMeterLimitWarning = v);
+        liste.Controls.Add(Hinweis(Loc.T(
+            "From 85 % of what this car has held in that direction the G-meter turns amber, at its record or when the tyres start to slide red. Sliding is measured like the STAB lamp of the speedometer, with its sensitivity per car.")));
 
         var schwelle = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 4, 0, 0) };
         schwelle.Controls.Add(new Label { Text = Loc.T("An impact is a jump of at least"), AutoSize = true, ForeColor = Color.Gainsboro, Margin = new Padding(3, 6, 3, 3) });

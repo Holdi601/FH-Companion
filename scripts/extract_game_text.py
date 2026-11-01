@@ -63,6 +63,10 @@ WORTE = {
     "horizon_play": "Horizon Play",
     # My Cars (CarGridReader) und die Tune-Liste (TuneList)
     "my_cars": "My Cars",
+    # Autolisten mit NUR eigenen Autos (seit 2026-11-01): die Wahl vor einem Rennen und in der Lobby.
+    # Autoshow, Car Collection und Buy Car zeigen alle Autos und zaehlen darum nicht.
+    "change_car": "Change Car",
+    "select_car": "Select Car",
     "upgrades_tuning": "Upgrades & Tuning",
     "designs_paints": "Designs & Paints",
     "my_tuning_setups": "My Tuning Setups",

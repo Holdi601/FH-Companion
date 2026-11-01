@@ -91,6 +91,7 @@ internal sealed class GMeterRenderer : IDisposable
     {
         if (ziel.Width < 4f || ziel.Height < 4f) { return; }
         _e = e;
+        _naehe = b.Grenznaehe;
         var w = (float)d.Size;
         var h = d.Size * d.Hochkant;
         var k = Math.Min(ziel.Width / w, ziel.Height / h);
@@ -105,7 +106,9 @@ internal sealed class GMeterRenderer : IDisposable
                 gg.Clear(Color.Transparent);
                 Vorbereiten(gg, true);
                 gg.ScaleTransform(k, k);
+                _gezeichneterRahmen = null;
                 Lage(gg, d, _stil!, b, w, h, Schicht.Grund);
+                _form = _gezeichneterRahmen;
             }
             _schluessel = schluessel;
         }
@@ -122,6 +125,7 @@ internal sealed class GMeterRenderer : IDisposable
             Vorbereiten(g, false);
             g.TranslateTransform(platz.X, platz.Y);
             g.ScaleTransform(k, k);
+            Grenze(g, d, _stil!, w);
             Lage(g, d, _stil!, b, w, h, Schicht.Licht);
             Einschlag(g, d, _stil!, b, w, h);
         }
@@ -200,7 +204,7 @@ internal sealed class GMeterRenderer : IDisposable
             case GMeterLayout.Cartesian3D: Kartesisch3D(g, d, stil, b, w, h, s); break;
             case GMeterLayout.CircleWithHeight:
             {
-                if (s == Schicht.Grund) { SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
+                if (s == Schicht.Grund) { Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
                 var feld = new RectangleF(h * 0.06f, h * 0.06f, h * 0.88f, h * 0.88f);
                 Flaeche(g, d, stil, b, feld, s, GMeterLayout.Circle, rahmen: false);
                 Hoehenbalken(g, d, stil, b, new RectangleF(feld.Right + w * 0.06f, h * 0.1f, w - feld.Right - w * 0.12f, h * 0.8f), s);
@@ -229,8 +233,47 @@ internal sealed class GMeterRenderer : IDisposable
     /// <summary>Vom Auto zur Anzeige: (rechts, oben) in G. "Gespuert": in der Kurve nach aussen, beim Bremsen nach vorn (oben).</summary>
     private static (float Rechts, float Oben) Anzeige(GMeterDesign d, float x, float z) => d.FeltForce ? (-x, -z) : (x, z);
 
-    private static Color Punktfarbe(GMeterDesign d, float betrag) =>
-        d.ColourByG ? Mische(F(d.LowColour, Color.LimeGreen), F(d.HighColour, Color.Red), betrag / Math.Max(0.1f, d.MaxG)) : F(d.DotColour, Color.White);
+    private static Color Punktfarbe(GMeterDesign d, float betrag)
+    {
+        var c = d.ColourByG ? Mische(F(d.LowColour, Color.LimeGreen), F(d.HighColour, Color.Red), betrag / Math.Max(0.1f, d.MaxG)) : F(d.DotColour, Color.White);
+        // Nahe der Grenze des Autos nimmt alles, was den Wert zeigt, die Farbe der Grenze an.
+        return _naehe < 0.85f ? c : Mische(c, Grenzfarbe(d, _naehe), Math.Clamp((_naehe - 0.85f) / 0.1f, 0f, 1f));
+    }
+
+    /// <summary>Gelb ab 85 %, rot ab 100 % (oder rutschend), dazwischen gemischt.</summary>
+    private static Color Grenzfarbe(GMeterDesign d, float naehe) =>
+        Mische(F(d.WarnColour, Color.Orange), F(d.LimitColour, Color.Red), Math.Clamp((naehe - 0.95f) / 0.05f, 0f, 1f));
+
+    /// <summary>Wie nah an der Grenze das Bild ist, das gerade gezeichnet wird (je Faden).</summary>
+    [ThreadStatic] private static float _naehe;
+
+    // Der Rahmen, den die Form zuletzt in den Grund gezeichnet hat -- dort leuchtet die Grenze.
+    [ThreadStatic] private static (RectangleF Feld, bool Kreis)? _gezeichneterRahmen;
+    private (RectangleF Feld, bool Kreis)? _form;
+
+    private static void Rahmen(Graphics g, SpeedoDesign stil, RectangleF feld, bool kreis)
+    {
+        _gezeichneterRahmen = (feld, kreis);
+        SpeedoRenderer.Rahmen(g, stil, feld, kreis: kreis);
+    }
+
+    /// <summary>
+    /// AN DER GRENZE (seit 2026-11-01): der Rahmen der Form leuchtet in der Farbe der Grenze, die Flaeche
+    /// darin wird leicht getoent. Ohne Platte und Rahmen bleibt es bei Punkt und Balken.
+    /// </summary>
+    private void Grenze(Graphics g, GMeterDesign d, SpeedoDesign stil, float w)
+    {
+        if (_naehe < 0.85f || _form is not { } form || (!d.ShowPlate && d.Frame == SpeedoFrame.None)) { return; }
+        var stark = Math.Clamp((_naehe - 0.85f) / 0.15f, 0f, 1f);
+        var farbe = Grenzfarbe(d, _naehe);
+        using var pfad = SpeedoRenderer.Platte(stil, form.Feld, form.Kreis);
+        using (var toenung = new SolidBrush(Color.FromArgb((int)(55 * stark), farbe)))
+        {
+            g.FillPath(toenung, pfad);
+        }
+        using var stift = new Pen(Color.FromArgb((int)(235 * stark), farbe), Math.Max(2.5f, w * 0.022f));
+        g.DrawPath(stift, pfad);
+    }
 
     private static void Punkt(Graphics g, GMeterDesign d, PointF p, float r, Color c)
     {
@@ -282,7 +325,7 @@ internal sealed class GMeterRenderer : IDisposable
 
         if (s == Schicht.Grund)
         {
-            if (rahmen) { SpeedoRenderer.Rahmen(g, stil, RectangleF.Inflate(feld, -2f, -2f), kreis: rund); }
+            if (rahmen) { Rahmen(g, stil, RectangleF.Inflate(feld, -2f, -2f), kreis: rund); }
             using var stift = new Pen(gitter, Math.Max(1f, feld.Width * 0.004f));
             using var fein = new Pen(Alpha(gitter, 0.6f), Math.Max(1f, feld.Width * 0.003f)) { DashStyle = DashStyle.Dot };
             for (var i = 1; i <= d.Rings; i++)
@@ -540,7 +583,7 @@ internal sealed class GMeterRenderer : IDisposable
         }
         if (s == Schicht.Grund)
         {
-            SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false);
+            Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false);
             using var spur = new SolidBrush(F(d.GridColour, Color.FromArgb(50, 255, 255, 255)));
             g.FillRectangle(spur, bahn);
             using var strich = new Pen(leise, 1.5f);
@@ -598,7 +641,7 @@ internal sealed class GMeterRenderer : IDisposable
         var leise = F(d.DimColour, Color.Gray);
         if (s == Schicht.Grund)
         {
-            if (d.Frame != SpeedoFrame.None) { SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
+            if (d.Frame != SpeedoFrame.None) { Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
             using var spur = new Pen(F(d.GridColour, Color.FromArgb(50, 255, 255, 255)), dicke);
             g.DrawArc(spur, rect, 180f, 180f);
             if (d.ScaleNumbers)
@@ -657,7 +700,7 @@ internal sealed class GMeterRenderer : IDisposable
         var leise = F(d.DimColour, Color.Gray);
         if (s == Schicht.Grund)
         {
-            SpeedoRenderer.Rahmen(g, stil, new RectangleF(4f, 4f, w - 8f, h - 8f), kreis: true);
+            Rahmen(g, stil, new RectangleF(4f, 4f, w - 8f, h - 8f), kreis: true);
             using var gross = new Pen(F(d.TextColour, Color.White), Math.Max(1.5f, r * 0.02f));
             using var klein = new Pen(leise, Math.Max(1f, r * 0.01f));
             var teile = d.Rings * (mitVorzeichen ? 2 : 1) * 2;
@@ -721,7 +764,7 @@ internal sealed class GMeterRenderer : IDisposable
         var leise = F(d.DimColour, Color.Gray);
         if (s == Schicht.Grund)
         {
-            if (d.Frame != SpeedoFrame.None) { SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
+            if (d.Frame != SpeedoFrame.None) { Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
             using var flaeche = new SolidBrush(Alpha(gitter, 0.25f));
             g.FillEllipse(flaeche, c.X - rx, c.Y - ry, rx * 2f, ry * 2f);
             using var stift = new Pen(gitter, 1.2f);
@@ -865,7 +908,7 @@ internal sealed class GMeterRenderer : IDisposable
         var px = Math.Max(7f, w * 0.04f);
         if (s == Schicht.Grund)
         {
-            SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false);
+            Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false);
             using var fein = new Pen(Alpha(gitter, 0.55f), 1f);
             using var achse = new Pen(Alpha(gitter, 1.6f), Math.Max(1.5f, w * 0.006f)) { EndCap = LineCap.ArrowAnchor };
             for (var i = -d.Rings; i <= d.Rings; i++)
@@ -946,7 +989,7 @@ internal sealed class GMeterRenderer : IDisposable
         var px = Math.Max(7f, w * 0.036f);
         if (s == Schicht.Grund)
         {
-            if (d.Frame != SpeedoFrame.None) { SpeedoRenderer.Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
+            if (d.Frame != SpeedoFrame.None) { Rahmen(g, stil, new RectangleF(1f, 1f, w - 2f, h - 2f), kreis: false); }
             // Die Ebene: ein Gitter fuer seitwaerts und laengs.
             using (var ebene = new SolidBrush(Alpha(gitter, 0.25f)))
             {

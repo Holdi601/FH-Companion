@@ -61,6 +61,9 @@ internal sealed class GMeterDesign
     [JsonPropertyName("highColour")] public string HighColour { get; set; } = "#FFEF4444";
     [JsonPropertyName("trailColour")] public string TrailColour { get; set; } = "#FF38BDF8";
     [JsonPropertyName("envelopeColour")] public string EnvelopeColour { get; set; } = "#66F59E0B";
+    /// <summary>Nahe an der Grenze des Autos (ab 85 %), und an ihr oder rutschend -- seit 2026-11-01.</summary>
+    [JsonPropertyName("warnColour")] public string WarnColour { get; set; } = "#FFFFB020";
+    [JsonPropertyName("limitColour")] public string LimitColour { get; set; } = "#FFFF3B30";
     [JsonPropertyName("textColour")] public string TextColour { get; set; } = "#FFF5F7FA";
     [JsonPropertyName("dimColour")] public string DimColour { get; set; } = "#FF8B95A3";
 

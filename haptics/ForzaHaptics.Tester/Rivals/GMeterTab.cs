@@ -464,6 +464,8 @@ internal sealed class GMeterTab : UserControl
         Farbe(Loc.T("High"), d.HighColour, v => Aendern(x => x.HighColour = v));
         Farbe(Loc.T("Trail"), d.TrailColour, v => Aendern(x => x.TrailColour = v));
         Farbe(Loc.T("Outline and peaks"), d.EnvelopeColour, v => Aendern(x => x.EnvelopeColour = v));
+        Farbe(Loc.T("Near the limit"), d.WarnColour, v => Aendern(x => x.WarnColour = v));
+        Farbe(Loc.T("At the limit"), d.LimitColour, v => Aendern(x => x.LimitColour = v));
         Farbe(Loc.T("Numbers"), d.TextColour, v => Aendern(x => x.TextColour = v));
         Farbe(Loc.T("Small text"), d.DimColour, v => Aendern(x => x.DimColour = v));
 

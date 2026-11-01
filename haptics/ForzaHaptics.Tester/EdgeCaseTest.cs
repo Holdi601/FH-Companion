@@ -273,8 +273,15 @@ internal static class EdgeCaseTest
         Soll(besitz.Besitz(a1, gefahren) == (true, Rivals.OwnedCars.Grund.Gefahren)
              && !besitz.Besitz(a2, gefahren).Hat, "ohne Garage zaehlt das gefahrene Auto nicht als eigenes");
         besitz.GarageMerken(new[] { 2 });
-        Soll(!besitz.Besitz(a1, gefahren).Hat && besitz.Besitz(a2, gefahren) == (true, Rivals.OwnedCars.Grund.Garage),
-             "eine gelesene Garage entscheidet nicht allein (ein gefahrenes Leihauto gilt als gekauft)");
+        // Seit 2026-11-01: gefahren zaehlt neben der Garage -- aber nur, was NACH ihrem Lesen gefahren wurde.
+        var vorher = besitz.GefahrenSeit(new[] { (1, (DateTimeOffset?)besitz.GarageGelesen!.Value.AddDays(-1)) });
+        var nachher = besitz.GefahrenSeit(new[] { (1, (DateTimeOffset?)besitz.GarageGelesen!.Value.AddDays(1)) });
+        Soll(!besitz.Besitz(a1, vorher).Hat && besitz.Besitz(a2, vorher) == (true, Rivals.OwnedCars.Grund.Garage),
+             "vor dem Lesen der Garage gefahren und nicht in ihr: ein Leihauto gilt als gekauft");
+        Soll(besitz.Besitz(a1, nachher) == (true, Rivals.OwnedCars.Grund.Gefahren),
+             "nach dem Lesen der Garage gekauft und gefahren: zaehlt nicht (die Garage war ein Bild von einem Tag)");
+        Soll(new Rivals.OwnedCars().GefahrenSeit(new[] { (1, (DateTimeOffset?)null) }).Contains(1), "ohne Garage zaehlt ein gefahrenes Auto ohne Zeit nicht");
+        gefahren = vorher;
         besitz.Setze(a1, true, gefahren);
         Soll(besitz.Besitz(a1, gefahren) == (true, Rivals.OwnedCars.Grund.VonHand), "ein Haken von Hand zaehlt nicht");
         besitz.Setze(a2, true, gefahren);
@@ -397,6 +404,10 @@ internal static class EdgeCaseTest
             Soll(Rivals.CarGridReader.IstMeineAutos(Kachel("My Cars")) && Rivals.CarGridReader.IstMeineAutos(Kachel("MY CARS", "ACURA"))
                  && !Rivals.CarGridReader.IstMeineAutos(Kachel("Autoshow")) && !Rivals.CarGridReader.IstMeineAutos(Kachel()),
                  "der Titel 'My Cars' wird falsch erkannt");
+            // Seit 2026-11-01 auch die Wahl vor dem Rennen und in der Lobby -- nur eigene Autos; Car Collection nicht.
+            Soll(Rivals.CarGridReader.IstMeineAutos(Kachel("CHANGE CAR")) && Rivals.CarGridReader.IstMeineAutos(Kachel("Auto wechseln"))
+                 && Rivals.CarGridReader.IstMeineAutos(Kachel("SELECT CAR")) && !Rivals.CarGridReader.IstMeineAutos(Kachel("Car Collection"))
+                 && !Rivals.CarGridReader.IstMeineAutos(Kachel("Buy Car")), "Eigene Autos: Change Car, Select Car oder Car Collection falsch eingeordnet");
         }
 
         // Gesehen in My Cars: zaehlt als besessen, auch ohne car_id; ein Haken schlaegt es.
@@ -2870,6 +2881,15 @@ internal static class EdgeCaseTest
         {
             try { File.Delete(datei); } catch (Exception) { }
         }
+        // AN DER GRENZE: gegen den Rekord in DIESE Richtung, erst nach einer Minute Fahrt.
+        var grenz = new Rivals.GMeterState();
+        Fahre(9.81f, 0f, 0f, 30000, auto: 333, wer: grenz);
+        Soll(grenz.Grenznaehe(0.95f, 0f) == 0f, "Grenze: schon vor einer Minute Fahrt gewarnt (jede Spitze ist dann ein Rekord)");
+        Fahre(9.81f, 0f, 0f, 31000, auto: 333, wer: grenz);
+        Soll(Math.Abs(grenz.Grenznaehe(0.95f, 0f) - 0.95f) < 0.02f && Math.Abs(grenz.Grenznaehe(0.5f, 0f) - 0.5f) < 0.02f,
+             $"Grenze: Naehe seitwaerts falsch ({grenz.Grenznaehe(0.95f, 0f):0.00})");
+        Soll(grenz.Grenznaehe(0f, -0.9f) == 0f, "Grenze: in eine Richtung ohne Rekord gewarnt");
+        Soll(new Rivals.OverlaySettings().GMeterLimitWarning && new Rivals.GMeterDesign().LimitColour.Length == 9, "Grenze: ab Werk aus, oder ohne Farbe");
         Soll(Rivals.GMeterState.Runde(1.507f) == 1.75f && Rivals.GMeterState.Runde(2.2f) == 2.5f && Rivals.GMeterState.Runde(4.6f) == 5f
              && Rivals.GMeterState.Runde(0.2f) == 0.5f && Rivals.GMeterState.Runde(9f) == 6f, "Skala des Autos: falsch gerundet");
         var werk = new Rivals.OverlaySettings();

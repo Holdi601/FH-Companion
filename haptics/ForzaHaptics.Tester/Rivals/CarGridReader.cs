@@ -297,8 +297,20 @@ internal static class CarGridReader
     /// In jeder Spielsprache, wie das Spiel den Titel schreibt (GameText, seit 2026-09-29).
     /// Vorher eine Handvoll selbst geratener Uebersetzungen.
     /// </remarks>
+    /// <summary>
+    /// Zeigt dieser Schirm nur EIGENE Autos? "My Cars", und seit 2026-11-01 auch die Wahl vor einem Rennen
+    /// und in der Lobby ("Change Car", "Select Car"). Die Autoshow, die Car Collection und "Buy Car" zeigen
+    /// alle Autos -- dort heisst eine Kachel nicht, dass man das Auto hat.
+    /// </summary>
+    /// <remarks>
+    /// Gefunden am 2026-11-01: der Nutzer sammelte am Abend viele Autos; die Leser erkannten Lamborghini
+    /// Centenario, McLaren Speedtail, Ferrari Monza SP2 und Sián -- und verwarfen alle mit "not My Cars".
+    /// Die Hälfte aller Lesungen der beiden Tage (372 von 738) war auf einem anderen Schirm.
+    /// </remarks>
     internal static bool IstMeineAutos(IEnumerable<OcrLine> kopf) =>
-        kopf.Any(z => GameText.Enthaelt(z.Text, "my_cars", "My Cars"));
+        kopf.Any(z => GameText.Enthaelt(z.Text, "my_cars", "My Cars")
+                      || GameText.Enthaelt(z.Text, "change_car", "Change Car")
+                      || GameText.Enthaelt(z.Text, "select_car", "Select Car"));
 
     /// <summary>Der obere Streifen, in dem der Schirmtitel steht (im verkleinerten Bild).</summary>
     internal static Rectangle KopfIn(Size bild) => new(0, 0, Math.Max(1, (int)(bild.Width * 0.45)), Math.Max(1, (int)(bild.Height * 0.2)));

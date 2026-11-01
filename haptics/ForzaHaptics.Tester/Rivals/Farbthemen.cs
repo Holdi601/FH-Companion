@@ -73,6 +73,7 @@ internal static class Farbthemen
         d.DotColour = t.Text;
         d.TrailColour = t.Akzent;
         d.EnvelopeColour = "#66" + t.Akzent[3..];
+        d.LimitColour = t.Rot;
         d.TextColour = t.Text;
         d.DimColour = t.Leise;
         d.Glow = t.Leuchten;
