@@ -2212,6 +2212,21 @@ internal static class Program
             return;
         }
 
+        if (args.Length >= 2 && string.Equals(args[0], "--ocr-frames", StringComparison.OrdinalIgnoreCase))
+        {
+            // Texterkennung ueber einen Ordner voller Bilder: je Bild eine Zeile JSON mit Text und Lage.
+            // Fuer Videos -- um Namen anderer Spieler zu finden und zu pruefen, dass keiner stehen blieb.
+            var ocrEngine = new WindowsOcr();
+            using var ausgabe = new StreamWriter(Path.Combine(args[1], "ocr.jsonl"));
+            foreach (var pfad in Directory.GetFiles(args[1], "*.jpg").OrderBy(p => p, StringComparer.Ordinal))
+            {
+                using var bild = new System.Drawing.Bitmap(pfad);
+                var zeilen = ocrEngine.Read(bild).Select(z => new { t = z.Text, x = z.X, y = z.Y, w = z.W, h = z.H });
+                ausgabe.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { datei = Path.GetFileName(pfad), zeilen }));
+            }
+            return;
+        }
+
         if (args.Length >= 2 && string.Equals(args[0], "--play-sound", StringComparison.OrdinalIgnoreCase))
         {
             // Spielt eine Datei so ab wie ein Einschlag es tut, und sagt, ob sie zu Ende lief.
