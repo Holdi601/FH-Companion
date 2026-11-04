@@ -6,6 +6,10 @@ namespace ForzaHaptics.Tester.Rivals;
 /// <summary>Was ein Auto im G-Meter gehalten hat (seit 2026-11-01): Spitzen, Huelle, Fahrzeit, Einschlaege.</summary>
 internal sealed class GMeterRekord
 {
+    /// <summary>Fassung 2: Spitzen aus dem, was das Auto 250 ms gehalten hat. Aeltere Spitzen werden neu gelernt.</summary>
+    public const int AktuelleFassung = 2;
+
+    [JsonPropertyName("v")] public int Fassung { get; set; }
     [JsonPropertyName("outline")] public float[] Huelle { get; set; } = new float[GMeterBild.Sektoren];
     [JsonPropertyName("right")] public float Rechts { get; set; }
     [JsonPropertyName("left")] public float Links { get; set; }

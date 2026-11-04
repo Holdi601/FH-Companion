@@ -406,7 +406,8 @@ internal static class EdgeCaseTest
                  "der Titel 'My Cars' wird falsch erkannt");
             // Seit 2026-11-01 auch die Wahl vor dem Rennen und in der Lobby -- nur eigene Autos; Car Collection nicht.
             Soll(Rivals.CarGridReader.IstMeineAutos(Kachel("CHANGE CAR")) && Rivals.CarGridReader.IstMeineAutos(Kachel("Auto wechseln"))
-                 && Rivals.CarGridReader.IstMeineAutos(Kachel("SELECT CAR")) && !Rivals.CarGridReader.IstMeineAutos(Kachel("Car Collection"))
+                 && Rivals.CarGridReader.IstMeineAutos(Kachel("SELECT CAR")) && Rivals.CarGridReader.IstMeineAutos(Kachel("Car Select"))
+                 && !Rivals.CarGridReader.IstMeineAutos(Kachel("Car Collection"))
                  && !Rivals.CarGridReader.IstMeineAutos(Kachel("Buy Car")), "Eigene Autos: Change Car, Select Car oder Car Collection falsch eingeordnet");
         }
 
@@ -2773,8 +2774,8 @@ internal static class EdgeCaseTest
         ohnePlatte.ShowPlate = false;
         Soll(Rivals.GMeterDesign.FromJson(ohnePlatte.ToJson()) is { ShowPlate: false }, "G-Meter: die unsichtbare Platte uebersteht JSON nicht");
 
-        // Rechtskurve mit 1,5 G und Bremsen mit 1 G (Forza: X rechts, Z vorwaerts, m/s²) -- je 150 ms
-        // lang, denn die Spitzen kommen seit 2026-11-01 aus dem Mittel von 100 ms.
+        // Rechtskurve mit 1,5 G und Bremsen mit 1 G (Forza: X rechts, Z vorwaerts, m/s²) -- je 500 ms
+        // lang, denn eine Spitze zaehlt seit 2026-11-04 erst, wenn das Auto sie 250 ms haelt.
         var z = new Rivals.GMeterState();
         var t = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);
         var uhr = 0;
@@ -2793,8 +2794,8 @@ internal static class EdgeCaseTest
             }
             return erst;
         }
-        Fahre(14.71f, 0f, 0f, 150);
-        Fahre(0f, -9.81f, 2f, 150);
+        Fahre(14.71f, 0f, 0f, 500);
+        Fahre(0f, -9.81f, 2f, 500);
         Fahre(100f, 0f, 0f, 9);   // ein Aufprall: 10 G -- kein Fahren
         var gb = z.Bild(z.X, z.Z, z.Y, 2f, t.AddMilliseconds(uhr), 0);
         Soll(Math.Abs(gb.Rechts - 1.5f) < 0.01f && Math.Abs(gb.Brems - 1f) < 0.01f && gb.Links < 0.001f && gb.Vor < 0.001f && Math.Abs(gb.Hoch - 0.204f) < 0.01f,
@@ -2807,6 +2808,18 @@ internal static class EdgeCaseTest
         Fahre(29.4f, 0f, 0f, 9, wer: bord);
         Fahre(0f, 0f, 0f, 300, wer: bord);
         Soll(bord.Grenze < 1.0f, $"G-Meter: ein einzelner Ausschlag zaehlt als Grenze des Autos ({bord.Grenze:0.00} G)");
+        // EIN KONTAKT: kurz 6 G, wie in den gemessenen Runden -- auch das ist keine Grenze.
+        var kontakt = new Rivals.GMeterState();
+        Fahre(14.71f, 0f, 0f, 500, wer: kontakt);
+        for (var stufe = 1; stufe <= 5; stufe++) { Fahre(14.71f + (44f * stufe / 5f), 0f, 0f, 9, wer: kontakt); }
+        Fahre(58.8f, 0f, 0f, 60, wer: kontakt);
+        for (var stufe = 5; stufe >= 0; stufe--) { Fahre(14.71f + (44f * stufe / 5f), 0f, 0f, 9, wer: kontakt); }
+        Fahre(14.71f, 0f, 0f, 300, wer: kontakt);
+        Soll(kontakt.Grenze < 4.5f, $"G-Meter: ein kurzer Kontakt von 6 G zaehlt voll als Grenze ({kontakt.Grenze:0.00} G)");
+        // ABTRIEB: sechs G, gehalten, sind eine echte Grenze -- und ein alter Rekord ohne Fassung wird neu gelernt.
+        var abtrieb = new Rivals.GMeterState();
+        Fahre(0f, -58.8f, 0f, 800, wer: abtrieb);
+        Soll(abtrieb.Grenze > 5.8f, $"G-Meter: gehaltene 6 G zaehlen nicht ({abtrieb.Grenze:0.00} G)");
 
         // EINSCHLAEGE (2026-11-01): am Sprung, mit Richtung; hartes Bremsen ist keiner.
         var melder = new Rivals.AufprallMelder();
@@ -2866,6 +2879,12 @@ internal static class EdgeCaseTest
             Fahre(0f, 0f, 0f, 300, auto: 111, wer: a);
             Soll(a.AufprallRekord is { G: > 10f } && a.Aufpralle == 1, $"Einschlag: Rekord des Autos fehlt ({a.AufprallRekord}, {a.Aufpralle})");
             Soll(Math.Abs(a.AutoSkala(4f) - 2.5f) < 0.001f, $"Skala des Autos: {a.AutoSkala(4f)} statt 2.5 (2 G gehalten, mal 1,1, auf halbe G)");
+            var alt = new Rivals.GMeterRekorde(Path.Combine(Path.GetTempPath(), "fhc-gmeter-" + Guid.NewGuid().ToString("N") + ".json"));
+            alt.Setze(555, new Rivals.GMeterRekord { Brems = 6.7f, Fahrzeit = 100f, AufprallG = 9f, Huelle = Enumerable.Repeat(6.7f, Rivals.GMeterBild.Sektoren).ToArray() });
+            var neuGelernt = new Rivals.GMeterState(alt);
+            Fahre(0f, 0f, 0f, 50, auto: 555, wer: neuGelernt);
+            Soll(neuGelernt.Grenze == 0f && neuGelernt.Fahrzeit < 1f && neuGelernt.AufprallRekord is { G: 9f },
+                 "Je Auto: alte Spitzen (vor dem Halten) gelten weiter, oder der Einschlag ging mit verloren");
             Fahre(9.81f, 0f, 0f, 1000, auto: 222, wer: a);          // anderes Auto
             Soll(a.Auto == 222 && a.Grenze < 1.1f && a.AutoSkala(4f) == 4f, "Je Auto: das neue Auto erbt die Werte des alten");
             Fahre(0f, 0f, 0f, 100, auto: 111, wer: a);
@@ -2891,7 +2910,7 @@ internal static class EdgeCaseTest
         Soll(grenz.Grenznaehe(0f, -0.9f) == 0f, "Grenze: in eine Richtung ohne Rekord gewarnt");
         Soll(new Rivals.OverlaySettings().GMeterLimitWarning && new Rivals.GMeterDesign().LimitColour.Length == 9, "Grenze: ab Werk aus, oder ohne Farbe");
         Soll(Rivals.GMeterState.Runde(1.507f) == 1.75f && Rivals.GMeterState.Runde(2.2f) == 2.5f && Rivals.GMeterState.Runde(4.6f) == 5f
-             && Rivals.GMeterState.Runde(0.2f) == 0.5f && Rivals.GMeterState.Runde(9f) == 6f, "Skala des Autos: falsch gerundet");
+             && Rivals.GMeterState.Runde(0.2f) == 0.5f && Rivals.GMeterState.Runde(9f) == 8f, "Skala des Autos: falsch gerundet");
         var werk = new Rivals.OverlaySettings();
         Soll(werk.HudInCaptures && werk.GMeterAutoScale && werk.GMeterShowImpacts && Math.Abs(werk.ImpactThreshold - 3.5) < 0.001 && werk.ImpactSounds.Count == 0,
              "Ab Werk: HUD in Aufnahmen, Skala je Auto, Einschlaege oder Schwelle falsch");

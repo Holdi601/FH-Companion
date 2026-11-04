@@ -310,7 +310,8 @@ internal static class CarGridReader
     internal static bool IstMeineAutos(IEnumerable<OcrLine> kopf) =>
         kopf.Any(z => GameText.Enthaelt(z.Text, "my_cars", "My Cars")
                       || GameText.Enthaelt(z.Text, "change_car", "Change Car")
-                      || GameText.Enthaelt(z.Text, "select_car", "Select Car"));
+                      || GameText.Enthaelt(z.Text, "select_car", "Select Car")
+                      || GameText.Enthaelt(z.Text, "car_select", "Car Select"));
 
     /// <summary>Der obere Streifen, in dem der Schirmtitel steht (im verkleinerten Bild).</summary>
     internal static Rectangle KopfIn(Size bild) => new(0, 0, Math.Max(1, (int)(bild.Width * 0.45)), Math.Max(1, (int)(bild.Height * 0.2)));

@@ -1100,6 +1100,20 @@ internal static class Program
             Environment.ExitCode = TrailerHud.Notiz(args);
             return;
         }
+        if (args.Contains("--trailer-gauge", StringComparer.OrdinalIgnoreCase))
+        {
+            // Tacho oder G-Meter einer aufgezeichneten Runde, jede Vorlage (Rivals/TrailerAnzeige.cs).
+            Environment.ExitCode = TrailerHud.Anzeige(args);
+            return;
+        }
+
+        if (args.Contains("--trailer-wall", StringComparer.OrdinalIgnoreCase))
+        {
+            // Alle Vorlagen auf einmal, dieselbe Runde.
+            Environment.ExitCode = TrailerHud.Wand(args);
+            return;
+        }
+
         if (args.Contains("--trailer-hud", StringComparer.OrdinalIgnoreCase))
         {
             // Die Overlays einer aufgezeichneten Runde als Einzelbilder -- fuer Videos
@@ -1648,7 +1662,20 @@ internal static class Program
                     foreach (Control k in c.Controls) { alle.Push(k); }
                 }
             }
-            for (var i = 0; i < 15; i++) { Application.DoEvents(); Thread.Sleep(100); }
+            // "radio=<Text>": diese Wahl treffen (etwa die Liste "Most needed" des Scanners),
+            // "warte=<s>": so lange warten, wenn sie erst vom Server kommt.
+            if (Wert("radio") is { } wahlText)
+            {
+                var alle = new Stack<Control>(new Control[] { fenster });
+                while (alle.Count > 0)
+                {
+                    var c = alle.Pop();
+                    if (c is RadioButton knopf && knopf.Text.Contains(wahlText, StringComparison.OrdinalIgnoreCase) && knopf.Visible) { knopf.Checked = true; }
+                    foreach (Control k in c.Controls) { alle.Push(k); }
+                }
+            }
+            var warten = int.TryParse(Wert("warte"), out var ws) ? Math.Clamp(ws, 1, 60) : 0;
+            for (var i = 0; i < 15 + (warten * 10); i++) { Application.DoEvents(); Thread.Sleep(100); }
             using var bild = new Bitmap(fenster.Width, fenster.Height);
             fenster.DrawToBitmap(bild, new Rectangle(0, 0, bild.Width, bild.Height));
             bild.Save(ziel, System.Drawing.Imaging.ImageFormat.Png);

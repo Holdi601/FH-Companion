@@ -67,6 +67,8 @@ WORTE = {
     # Autoshow, Car Collection und Buy Car zeigen alle Autos und zaehlen darum nicht.
     "change_car": "Change Car",
     "select_car": "Select Car",
+    # So heisst der Schirm vor dem Rennen wirklich (live 2026-11-04: 43 Lesungen deshalb verworfen).
+    "car_select": "Car Select",
     "upgrades_tuning": "Upgrades & Tuning",
     "designs_paints": "Designs & Paints",
     "my_tuning_setups": "My Tuning Setups",

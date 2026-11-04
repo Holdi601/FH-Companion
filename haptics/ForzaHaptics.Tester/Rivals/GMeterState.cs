@@ -62,6 +62,11 @@ internal sealed class GMeterState
     // das ist keine Grenze des Autos (gemessen 2026-11-01, roh in 1 % der Pakete ueber 4 G).
     private readonly Queue<(DateTime Zeit, float X, float Z, float Y)> _glatt = new();
     private float _gsx, _gsz, _gsy;
+    // GEHALTEN, NICHT GESTREIFT (seit 2026-11-04): ein Rekord zaehlt erst, wenn das Auto ihn 250 ms haelt.
+    // Gemessen an 18 Runden: ein Kontakt trieb den Supra (echte Grenze 2 G) im 100-ms-Mittel auf 6,7 G, und
+    // ein Rempler verdarb Skala und Warnfarbe des Autos fuer immer. Gehalten liegt er in jeder Runde bei
+    // 1,83-1,97 G; Autos mit Abtrieb behalten ihre 5,5-6,6 G.
+    private readonly Queue<(DateTime Zeit, float X, float Z, float Y)> _gehalten = new();
 
     public GMeterState(GMeterRekorde? rekorde = null)
     {
@@ -81,7 +86,15 @@ internal sealed class GMeterState
     public float Fahrzeit => _fahrzeit;
 
     /// <summary>Was dieses Auto gehalten hat: die groesste Spitze seitwaerts, beim Bremsen oder Beschleunigen.</summary>
-    public float Grenze => MathF.Max(MathF.Max(_rechts, _links), MathF.Max(_vor, _brems));
+    public float Grenze
+    {
+        get
+        {
+            var groesste = 0f;
+            foreach (var h in _huelle) { groesste = MathF.Max(groesste, h); }
+            return groesste;
+        }
+    }
 
     public float Rechts => _rechts;
     public float Links => _links;
@@ -116,7 +129,8 @@ internal sealed class GMeterState
     internal static float Runde(float g)
     {
         var schritt = g <= 2f ? 0.25f : g <= 4f ? 0.5f : 1f;
-        return Math.Clamp(MathF.Ceiling(g / schritt - 0.001f) * schritt, 0.5f, 6f);
+        // Bis 8 G: darueber nennt auch die Anzeige es einen Unfall, und Abtrieb haelt bis 6,6 G.
+        return Math.Clamp(MathF.Ceiling(g / schritt - 0.001f) * schritt, 0.5f, 8f);
     }
 
     /// <summary>Spitzen, Huelle, Waermekarte und Einschlaege DIESES Autos auf null -- Knopf im Reiter.</summary>
@@ -130,6 +144,7 @@ internal sealed class GMeterState
         _letzter = null;
         _aufpralle = 0;
         _spur.Clear();
+        _gehalten.Clear();
         if (_auto != 0 && _rekorde is not null)
         {
             _rekorde.Vergessen(_auto);
@@ -144,7 +159,7 @@ internal sealed class GMeterState
         _rekorde.Setze(_auto, new GMeterRekord
         {
             Huelle = (float[])_huelle.Clone(), Rechts = _rechts, Links = _links, Vor = _vor, Brems = _brems,
-            Hoch = _hoch, Runter = _runter, Fahrzeit = _fahrzeit, Aufpralle = _aufpralle,
+            Hoch = _hoch, Runter = _runter, Fahrzeit = _fahrzeit, Aufpralle = _aufpralle, Fassung = GMeterRekord.AktuelleFassung,
             AufprallG = _aufprallRekord?.G ?? 0f, AufprallWinkel = _aufprallRekord?.Winkel ?? 0f,
             AufprallKmh = _aufprallRekord?.Kmh ?? 0f, AufprallAm = _aufprallRekord?.Zeit,
         });
@@ -158,20 +173,23 @@ internal sealed class GMeterState
         Array.Clear(_waerme);
         _spur.Clear();
         _glatt.Clear();
+        _gehalten.Clear();
         _gsx = _gsz = _gsy = 0f;
         Melder.Vergessen();
         _letzter = null;
         _auto = auto;
         var r = _rekorde?.Fuer(auto);
         Array.Clear(_huelle);
-        if (r?.Huelle is { Length: GMeterBild.Sektoren } h) { Array.Copy(h, _huelle, h.Length); }
-        _rechts = r?.Rechts ?? 0f;
-        _links = r?.Links ?? 0f;
-        _vor = r?.Vor ?? 0f;
-        _brems = r?.Brems ?? 0f;
-        _hoch = r?.Hoch ?? 0f;
-        _runter = r?.Runter ?? 0f;
-        _fahrzeit = r?.Fahrzeit ?? 0f;
+        // Alte Rekorde (vor dem Halten) koennen von einem Rempler stammen: Spitzen neu lernen, Einschlaege bleiben.
+        var taugt = r is { Fassung: >= GMeterRekord.AktuelleFassung };
+        if (taugt && r?.Huelle is { Length: GMeterBild.Sektoren } h) { Array.Copy(h, _huelle, h.Length); }
+        _rechts = taugt ? r!.Rechts : 0f;
+        _links = taugt ? r!.Links : 0f;
+        _vor = taugt ? r!.Vor : 0f;
+        _brems = taugt ? r!.Brems : 0f;
+        _hoch = taugt ? r!.Hoch : 0f;
+        _runter = taugt ? r!.Runter : 0f;
+        _fahrzeit = taugt ? r!.Fahrzeit : 0f;
         _aufpralle = r?.Aufpralle ?? 0;
         _aufprallRekord = r is { AufprallG: > 0f }
             ? new AufprallEreignis(r.AufprallG, r.AufprallWinkel, r.AufprallKmh, r.AufprallAm ?? DateTime.MinValue)
@@ -218,22 +236,43 @@ internal sealed class GMeterState
             _gsy -= alt.Y;
         }
         // Waehrend und kurz nach einem Einschlag zaehlt nichts als Grenze des Autos.
-        if (!Melder.Unruhig(jetzt) && _glatt.Count >= 3)
+        if (Melder.Unruhig(jetzt))
+        {
+            _gehalten.Clear();
+        }
+        else if (_glatt.Count >= 3)
         {
             var gx = _gsx / _glatt.Count;
             var gz = _gsz / _glatt.Count;
             var gy = _gsy / _glatt.Count;
-            _rechts = MathF.Max(_rechts, gx);
-            _links = MathF.Max(_links, -gx);
-            _vor = MathF.Max(_vor, gz);
-            _brems = MathF.Max(_brems, -gz);
-            _hoch = MathF.Max(_hoch, gy);
-            _runter = MathF.Max(_runter, -gy);
-            var betrag = MathF.Sqrt(gx * gx + gz * gz);
-            if (betrag > 0.05f)
+            _gehalten.Enqueue((jetzt, gx, gz, gy));
+            while ((jetzt - _gehalten.Peek().Zeit).TotalSeconds > 0.25) { _gehalten.Dequeue(); }
+            // Erst wenn das Fenster voll ist -- und dann das Kleinste darin: das hat das Auto wirklich gehalten.
+            if ((jetzt - _gehalten.Peek().Zeit).TotalSeconds >= 0.2)
             {
-                var sektor = Sektor(gx, gz);
-                _huelle[sektor] = MathF.Max(_huelle[sektor], betrag);
+                float rechts = float.MaxValue, links = float.MaxValue, vor = float.MaxValue, brems = float.MaxValue;
+                float hoch = float.MaxValue, runter = float.MaxValue, betrag = float.MaxValue;
+                foreach (var w in _gehalten)
+                {
+                    rechts = MathF.Min(rechts, w.X);
+                    links = MathF.Min(links, -w.X);
+                    vor = MathF.Min(vor, w.Z);
+                    brems = MathF.Min(brems, -w.Z);
+                    hoch = MathF.Min(hoch, w.Y);
+                    runter = MathF.Min(runter, -w.Y);
+                    betrag = MathF.Min(betrag, MathF.Sqrt(w.X * w.X + w.Z * w.Z));
+                }
+                _rechts = MathF.Max(_rechts, rechts);
+                _links = MathF.Max(_links, links);
+                _vor = MathF.Max(_vor, vor);
+                _brems = MathF.Max(_brems, brems);
+                _hoch = MathF.Max(_hoch, hoch);
+                _runter = MathF.Max(_runter, runter);
+                if (betrag > 0.05f)
+                {
+                    var sektor = Sektor(gx, gz);
+                    _huelle[sektor] = MathF.Max(_huelle[sektor], betrag);
+                }
             }
         }
         // Wo das Auto wie lange war -- langsam verblassend (Halbwertszeit rund eine Minute).

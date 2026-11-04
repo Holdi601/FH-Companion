@@ -33,7 +33,7 @@ namespace ForzaHaptics.Tester.Rivals;
 /// durchsichtig bis auf die Overlays) und timing.json (Rundenzeit -> TimestampMS),
 /// mit dem sich das Video anlegen laesst.
 /// </remarks>
-internal static class TrailerHud
+internal static partial class TrailerHud
 {
     public static int Run(string[] args)
     {
