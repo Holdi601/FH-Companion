@@ -207,10 +207,11 @@ def main() -> int:
             pruefe(all(s["when"][:10] >= seit for s in sicht["meta"]["scans"]),
                    "%s: meta.scans nur ab dem Stichtag (%d)" % (seit, len(sicht["meta"]["scans"])))
 
-        # Die Sicht ab dem Stichtag gegen die Laeufe selbst: nur Board 1 (Lauf 3) und Board 3.
+        # Die Sicht ab dem Stichtag gegen die Laeufe selbst.
         ab = stichtag.zuschneiden(d, "2026-11-03")
         namen = sorted("%s %s" % (d["tracks"][b["t"]], d["classes"][b["k"]]) for b in ab["boards"])
-        pruefe(namen == ["Andere Strecke A", "Testkurs A"], "ab 2026-11-03: nur die Boards mit neuen Scans (%s)" % namen)
+        # Kollision C wurde am 2026-11-07 noch einmal gescannt (der Fall "gleicher Rang und Zeit").
+        pruefe(namen == ["Andere Strecke A", "Kollision C", "Testkurs A"], "ab 2026-11-03: nur die Boards mit neuen Scans (%s)" % namen)
         a_ab = brett(ab, "Testkurs", "A")
         neu_gueltig = [z for z in neu + neu2 if z["is_clean"]]
         doppelt = len(neu_gueltig) - len({(z["rank"], z["lap_time_seconds"]) for z in neu_gueltig})
@@ -263,7 +264,7 @@ process.stdout.write(JSON.stringify(out));
         import leaderboard_check as lbc
         import race_submissions as rennen
 
-        liste = scan_needs.liste(laps_json, [], {}, now=time.time(), seit="2026-11-03")
+        liste = scan_needs.liste(laps_json, [], {}, now=time.time(), wie_viele=100000, seit="2026-11-03")
         je = {(e["track"], e["class"]): e for e in liste}
         b_alt, a_neu = je.get(("Testkurs", "B")), je.get(("Testkurs", "A"))
         pruefe(b_alt is not None and b_alt["lastScan"] is None and b_alt["scans"] == 0 and b_alt["depth"] == 0,
@@ -271,13 +272,13 @@ process.stdout.write(JSON.stringify(out));
         pruefe(a_neu is not None and a_neu["lastScan"] and a_neu["scans"] == 2
                and liste.index(b_alt) < liste.index(a_neu),
                "most needed: ein Board mit neuem Scan zaehlt nur diesen und steht hinter dem alten")
-        liste_alle = scan_needs.liste(laps_json, [], {}, now=time.time(), seit=None)
+        liste_alle = scan_needs.liste(laps_json, [], {}, now=time.time(), wie_viele=100000, seit=None)
         pruefe(next(e for e in liste_alle if (e["track"], e["class"]) == ("Testkurs", "B"))["lastScan"],
                "most needed: mit allen Daten hat das alte Board seinen Scan")
         frisch = [{"track": "Testkurs", "class": "B", "received": time.time()}]
-        nach = {(e["track"], e["class"]): e for e in scan_needs.liste(laps_json, frisch, {}, now=time.time(), seit="2026-11-03")}
+        nach = {(e["track"], e["class"]): e for e in scan_needs.liste(laps_json, frisch, {}, now=time.time(), wie_viele=100000, seit="2026-11-03")}
         alt_eingang = [{"track": "Testkurs", "class": "B", "received": 1761900000}]  # 2025-10-31
-        vor = {(e["track"], e["class"]): e for e in scan_needs.liste(laps_json, alt_eingang, {}, now=time.time(), seit="2026-11-03")}
+        vor = {(e["track"], e["class"]): e for e in scan_needs.liste(laps_json, alt_eingang, {}, now=time.time(), wie_viele=100000, seit="2026-11-03")}
         pruefe(nach[("Testkurs", "B")]["lastScan"] and vor[("Testkurs", "B")]["lastScan"] is None,
                "most needed: ein angenommener Scan zaehlt nur ab dem Stichtag")
 
