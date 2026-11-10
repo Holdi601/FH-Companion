@@ -48,7 +48,7 @@ const ids = ["tiles", "f-cat", "f-cls", "f-trk", "f-clean", "f-gear", "f-assists
              "f-tune", "f-make", "f-country", "f-cartype",
              "f-car", "f-reset", "tabs", "context", "rulenote", "content",
              "year-from", "year-to", "year-fill", "year-readout", "year-reset",
-             "quality", "caveat"];
+             "quality", "caveat", "f-since", "f-since-date", "f-source", "submitted-note"];
 const store = new Map();
 ids.forEach(id => store.set(id, new Node("div")));
 store.get("f-car").value = "";
@@ -73,8 +73,11 @@ if (!match) { console.error("no script block found in " + file); process.exit(2)
 
 // The page's top-level `const`/`let` stay in this eval scope; expose what the test
 // needs by evaluating in a wrapper that hands them back.
-const api = eval(match[1] + "\n;({ D, F, ASSISTS, CLASS_ORDER, masks, pickCars, classTable, classesInScope, render, setTab: t => { TAB = t; }, getTab: () => TAB, setFocus: c => { FOCUS_CAR = c; }, parseLap, fasterShare, yearStops, yearIndex, yearBounds, renderYearRange });");
+// D is rebuilt whenever the cutoff date changes (setSince), so it is handed back as a getter.
+// The checks run over all data: the page opens on the cutoff, and older data is empty there.
+const api = eval(match[1] + "\n;({ get D() { return D; }, setSince, F, ASSISTS, CLASS_ORDER, masks, pickCars, classTable, classesInScope, render, setTab: t => { TAB = t; }, getTab: () => TAB, setFocus: c => { FOCUS_CAR = c; }, parseLap, fasterShare, yearStops, yearIndex, yearBounds, renderYearRange });");
 
+api.setSince(null);
 let failures = 0;
 let skipped = 0;
 // Thrown by a check whose rule needs a shape of board the live data does not

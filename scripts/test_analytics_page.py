@@ -61,6 +61,22 @@ CLICKS = """
 const tabs = __IDS["tabs"];
 if (!tabs || !tabs.children.length) { console.log("FAIL: kein Reiter gerendert"); process.exit(1); }
 let bad = 0;
+// DER STICHTAG (seit 2026-11-10): die Seite oeffnet ab dem Stichtag. Ein Bestand von davor
+// ist dann leer -- erst jeden Reiter so zeichnen (der leere Zustand ist ein eigener Pfad),
+// dann "All data" waehlen und alles Weitere mit dem ganzen Bestand pruefen.
+function knoepfe(node, out) {
+  if (!node || typeof node !== "object") return out;
+  if (node.tagName === "button") out.push(node);
+  (node.children || []).forEach(k => knoepfe(k, out));
+  return out;
+}
+tabs.children.forEach(b => {
+  try { b.onclick(); }
+  catch (err) { bad += 1; console.log("  FAIL  Reiter " + b._text + " ab dem Stichtag: " + err.message); }
+});
+const alle = knoepfe(__IDS["f-since"], []).find(b => b._text === "All data");
+if (!alle) { bad += 1; console.log("  FAIL  kein Knopf “All data” beim Stichtag"); }
+else { alle.onclick(); console.log("  ok    Stichtag: All data gewaehlt, " + D.boards.length + " Boards"); }
 tabs.children.forEach(b => {
   try { b.onclick(); console.log("  ok    Reiter " + b._text); }
   catch (err) { bad += 1; console.log("  FAIL  Reiter " + b._text + ": " + err.message); }
@@ -115,7 +131,9 @@ FALLBACK = {
                 "lgrp": [0], "lms": [70000], "lrank": [1],
                 # PI je Runde; aeltere Datensaetze haben das Feld nicht, und der echte
                 # Bestand prueft genau diesen Fall mit.
-                "lpi": [692]}],
+                "lpi": [692],
+                # Der Tag des Scans (Format seit 2026-11-10, server/stichtag.py).
+                "days": ["2026-11-05"]}],
     "meta": {"cars": 1, "named_cars": 1, "raw_rows": 4, "kept_laps": 4,
              "invalid_rows": 0, "laps_per_group": 5, "scans": []},
 }
@@ -132,7 +150,8 @@ def page_script() -> str:
     # Datei und werden unveraendert eingesetzt. Ohne das scheiterte dieser Test seit
     # 2026-09-24 an "__SUBMITTED_JS__ is not defined".
     eingereicht = (BUILDER.parent / "submitted_laps.js").read_text(encoding="utf-8")
-    return found.group(1).replace("__SUBMITTED_JS__", eingereicht)
+    stichtag = (BUILDER.parent / "dataset_cutoff.js").read_text(encoding="utf-8")
+    return found.group(1).replace("__SUBMITTED_JS__", eingereicht).replace("__CUTOFF_JS__", stichtag)
 
 
 def main() -> int:

@@ -38,6 +38,8 @@ import re
 import time
 from pathlib import Path
 
+import stichtag
+
 import lap_submissions as laps
 
 WORKSPACE = Path(__file__).resolve().parent.parent
@@ -243,11 +245,17 @@ def zeit_an_grenze(zeiten: list) -> tuple[int, bool]:
     return z[stelle], True
 
 
-def hp_bretter(root: Path | None = None) -> list:
-    """Die Horizon-Play-Zeiten je Strecke, Klasse, Auto und Art (Runde/Rennen)."""
+def hp_bretter(root: Path | None = None, seit: str | None = None) -> list:
+    """Die Horizon-Play-Zeiten je Strecke, Klasse, Auto und Art (Runde/Rennen).
+
+    `seit` (JJJJ-MM-TT, seit 2026-11-10): nur Rennen, die ab diesem Tag (UTC) eingereicht
+    wurden -- die Seite und die App fragen mit ihrem Stichtag (server/stichtag.py).
+    """
     gruppen: dict[tuple, list] = {}
     for d in list_races(root):
         if d.get("mode") != "horizon-play":
+            continue
+        if seit and not stichtag.gilt(stichtag.tag_von_zeitpunkt(d.get("received") or 0), seit):
             continue
         versteckt = set(d.get("hiddenPlaces", []))
         rundkurs = any("bestLapMs" in z for z in d.get("field", []))

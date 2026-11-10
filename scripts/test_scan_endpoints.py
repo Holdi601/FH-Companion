@@ -146,15 +146,19 @@ def datensatz(pfad: Path) -> None:
     """
     sauber, aktuell = 1, 2
     pfad.write_text(json.dumps({
-        "categories": ["Road Racing", "Street Racing"], "tracks": ["Festival Chase"],
+        "categories": ["Road Racing", "Street Racing"], "tracks": ["Festival Chase", "Alter Kurs"],
         "classes": ["A", "B"], "carIds": [1234], "carNames": ["Honda Beat '91"],
         "flags": ["clean", "current"],
         "boards": [
             {"c": 0, "t": 0, "k": 0, "gcar": [0, 0, 0], "gsig": [sauber | aktuell, sauber, aktuell],
              "lgrp": [0] * 20 + [1, 2], "lms": [60000 + 50 * i for i in range(20)] + [59000, 58000],
-             "lrank": list(range(1, 23))},
+             "lrank": list(range(1, 23)), "days": ["2026-11-05"]},
             {"c": 1, "t": 0, "k": 1, "gcar": [0], "gsig": [sauber | aktuell], "lgrp": [0],
-             "lms": [90000], "lrank": [1]},
+             "lms": [90000], "lrank": [1], "days": ["2026-11-05"]},
+            # Ein Board, das nur VOR dem Stichtag gescannt wurde (server/stichtag.py): fuer das Tor
+            # gibt es es nicht -- ein Scan davon ist ein neues Board.
+            {"c": 0, "t": 1, "k": 0, "gcar": [0], "gsig": [sauber | aktuell], "lgrp": [0],
+             "lms": [70000], "lrank": [1], "maxRank": 9000, "days": ["2026-10-01"]},
         ]}), encoding="utf-8")
 
 
@@ -412,6 +416,17 @@ with tempfile.TemporaryDirectory() as tmp:
         tor("ocr_gate_mode_1", "only 600 ranks", "ein neues Board (andere Kategorie) mit 600 Raengen",
             {"modus": "Cross-Country"})
         tor("ocr_gate_class_1", "PI outside", "eine neue Klasse mit dem PI der alten", {"klasse": "S1"})
+        # DER STICHTAG (seit 2026-11-10): "Alter Kurs" A kennt der Datensatz nur von VOR dem
+        # Stichtag (70 s, 9.000 Raenge tief). Ein Scan danach ist ein neues Board -- nicht an
+        # den alten Zeiten und nicht an der alten Tiefe gemessen.
+        tor("ocr_gate_cutoff_1", None, "ein Board nur von vor dem Stichtag gilt als neu",
+            {"strecke": "Alter Kurs", "n": 1200, "basis": 80.0})
+        alle_b = scans.lade_bretter(api.DATASET_FILE, None)
+        z_alt, r_alt = ein_lauf("ocr_gate_cutoff_x", strecke="Alter Kurs", n=1200, basis=80.0)
+        zustand_alt, zeilen_alt, _ = scans.pruefe_lauf(z_alt, r_alt, alle_b)
+        grund_alt = scans.freigabe(zustand_alt, zeilen_alt, alle_b)
+        pruefe("times do not match" in grund_alt and "9000 ranks deep" in grund_alt,
+               "mit allen Daten haette derselbe Scan die alten Zeiten und die alte Tiefe getroffen (%s)" % grund_alt)
 
         # Die Haelfte: 10 der 20 Spitzenzeiten getroffen reicht, 9 nicht. Davor je zwei Zeilen
         # mit Zeiten, die der Datensatz nicht kennt.
@@ -513,7 +528,8 @@ with tempfile.TemporaryDirectory() as tmp:
         for nr, (name, inhalt) in enumerate(formen):
             f = ordner / ("ds_%d.json" % nr)
             f.write_text(json.dumps(inhalt), encoding="utf-8")
-            b = scans.lade_bretter(f)
+            # Mit allen Daten (Stichtag aus): diese Formen tragen keine Tage, es geht um den Muell.
+            b = scans.lade_bretter(f, None)
             pruefe(b is None or isinstance(b, dict), "%s: lade_bretter wirft nicht (%s)" % (name, type(b).__name__))
         gefunden_b = scans.brett_von(b, {"track": " festival  CHASE ", "performance_class": "a",
                                          "rivals_mode": "Touge"}) if b is not None else None

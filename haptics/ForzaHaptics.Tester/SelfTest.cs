@@ -2051,7 +2051,7 @@ internal static class SelfTest
         var einst = new Rivals.OverlaySettings();
         var datensatz = Rivals.RivalsDataset.FindDefaultPath();
         if (datensatz is null) { return; }
-        var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz));
+        var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz, null));
         var leser = new Rivals.RivalsScreenReader(rat, einst);
 
         // Name, dann Entfernung, dann Wetter -- wie auf dem Schirm, mit den
@@ -2116,7 +2116,7 @@ internal static class SelfTest
         }
         var pfad = Rivals.RivalsDataset.FindDefaultPath();
         if (pfad is null) { return; }
-        var datensatz = Rivals.RivalsDataset.Load(pfad);
+        var datensatz = Rivals.RivalsDataset.Load(pfad, null);
         var rat = new Rivals.RivalsAdvisor(datensatz);
         var falsch = new List<string>();
         var geprueft = 0;

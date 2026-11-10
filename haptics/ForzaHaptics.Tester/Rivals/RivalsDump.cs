@@ -14,6 +14,11 @@ namespace ForzaHaptics.Tester.Rivals;
 /// A WinExe has no console to write to, so the result goes to a file the caller names.
 ///
 ///   "FH Companion.exe" --dump-class-table out.json --class A --tracks "a,b"
+///
+/// DER STICHTAG (seit 2026-11-10): ohne "--since" rechnet der Auszug mit ALLEN Daten --
+/// so wie scripts/dump_site_class_table.js den rohen Datensatz nimmt, und so prueft
+/// build_haptics_package.py ein Paket, auch wenn ab dem Stichtag noch wenig gescannt ist.
+/// "--since 2026-11-03" rechnet ab diesem Tag, "--since setting" mit der Einstellung der App.
 /// </remarks>
 internal static class RivalsDump
 {
@@ -28,6 +33,15 @@ internal static class RivalsDump
     /// same PNGs through this flag.
     /// </remarks>
     public const string ReadFlag = "--read-image";
+
+    /// <summary>"--since": ein Tag, "setting" fuer die Einstellung der App, sonst alle Daten.</summary>
+    private static string? Seit(string[] args)
+    {
+        var wert = Option(args, "--since");
+        if (wert is null) { return null; }
+        return string.Equals(wert, "setting", StringComparison.OrdinalIgnoreCase)
+            ? Stichtag.Aktuell : Stichtag.Lesen(wert);
+    }
 
     public static int Run(string[] args)
     {
@@ -45,7 +59,7 @@ internal static class RivalsDump
             return 2;
         }
 
-        var advisor = new RivalsAdvisor(RivalsDataset.Load(datasetPath));
+        var advisor = new RivalsAdvisor(RivalsDataset.Load(datasetPath, Seit(args)));
         var tracks = tracksArg
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
@@ -114,7 +128,7 @@ internal static class RivalsDump
             return 2;
         }
 
-        var advisor = new RivalsAdvisor(RivalsDataset.Load(datasetPath));
+        var advisor = new RivalsAdvisor(RivalsDataset.Load(datasetPath, Seit(args)));
         var settings = OverlaySettings.Load(configPath);
         var reader = new RivalsScreenReader(advisor, settings);
         using var bitmap = new System.Drawing.Bitmap(imagePath);
@@ -171,7 +185,9 @@ internal static class RivalsDump
         {
             try
             {
-                boards = RivalsDataset.Load(local.Path).Boards.Count;
+                // Die Datei als Ganzes (ohne Stichtag): ob sie brauchbar ist, nicht wie viel ab
+                // dem Stichtag darin steht -- direkt nach der Loeschung ist das nichts.
+                boards = RivalsDataset.Load(local.Path, null).Boards.Count;
             }
             catch (Exception exception)
             {

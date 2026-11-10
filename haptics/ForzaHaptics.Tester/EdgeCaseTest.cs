@@ -70,6 +70,7 @@ internal static class EdgeCaseTest
         CarFoldersCarryTheName();
         RouteTilesByNameNotLength();
         FastestTimePerCarWins();
+        RivalsCutoffDate();
         ScanScreensAreRecognised();
         ScanScreensInEveryGameLanguage();
         BoardRowsAreMerged();
@@ -2057,6 +2058,97 @@ internal static class EdgeCaseTest
         Soll(mit.TryGetValue(2, out var neu) && neu.Ms == 98_000 && neu.Source == "horizon-play" && neu.Thin,
              "Fremdzeiten: ein Auto ohne Rivals-Zeit kam nicht ueber Horizon Play dazu");
         Soll(rat.Advise(new[] { "Soni Circuit" }, "B").ByTime.First().Car == 2, "Fremdzeiten: die Reihung nimmt die Fremdzeiten nicht");
+    }
+
+    /// <summary>
+    /// DER STICHTAG (2026-11-10): nur Runden, die ab dem eingestellten Tag gescannt oder eingereicht
+    /// wurden -- dieselbe Rechnung wie server/stichtag.py und scripts/dataset_cutoff.js.
+    /// </summary>
+    private static void RivalsCutoffDate()
+    {
+        Soll(Rivals.Stichtag.Lesen("all") is null && Rivals.Stichtag.Lesen("") is null && Rivals.Stichtag.Lesen(null) is null,
+             "Stichtag: \"all\" oder leer heisst nicht alle Daten");
+        Soll(Rivals.Stichtag.Lesen(" 2026-11-03 ") == "2026-11-03", "Stichtag: ein gueltiger Tag wird nicht uebernommen");
+        Soll(Rivals.Stichtag.Lesen("Montag") == Rivals.Stichtag.Vorgabe && Rivals.Stichtag.Lesen("2026-02-30") == Rivals.Stichtag.Vorgabe,
+             "Stichtag: Unlesbares faellt nicht auf die Vorgabe");
+        Soll(Rivals.Stichtag.Gilt("2026-11-03T00:10:00+00:00", "2026-11-03") && !Rivals.Stichtag.Gilt("2026-11-02T23:59:00", "2026-11-03")
+             && !Rivals.Stichtag.Gilt(null, "2026-11-03") && Rivals.Stichtag.Gilt(null, null),
+             "Stichtag: der Vergleich der Tage stimmt nicht");
+
+        // Ein Board ueber zwei Tage: Auto 0 alt und neu, Auto 1 nur alt, Auto 2 nur neu.
+        var brett = new Rivals.RivalsDataset.Board
+        {
+            Category = 0, Track = 0, Klass = 0, Rows = 8, Valid = 8, MaxRank = 8,
+            GroupCar = new[] { 0, 1, 2 }, GroupSignature = new[] { 1, 1, 1 }, GroupCount = new[] { 5, 2, 1 },
+            LapGroup = new[] { 0, 0, 0, 0, 0, 1, 1, 2 },
+            LapMs = new[] { 100_000, 100_500, 101_000, 102_000, 103_000, 99_000, 99_500, 104_000 },
+            LapRank = new[] { 2, 3, 4, 6, 7, 1, 5, 8 },
+            Days = new[] { "2026-10-01", "2026-11-05" },
+            LapDay = new[] { 0, 0, 0, 1, 1, 0, 0, 1 },
+            GroupDayCount = new[] { 3, 2, 2, 0, 0, 1 },
+            DayStats = new[] { 5, 5, 0, 5, 3, 3, 0, 8 },
+        };
+        var data = new Rivals.RivalsDataset
+        {
+            Categories = new List<string> { "Road Racing" }, Tracks = new List<string> { "Soni Circuit" },
+            Classes = new List<string> { "B" }, CarIds = new List<int> { 1234, 5678, 9999 },
+            CarNames = new List<string> { "Car A", "Car B", "Car C" },
+            Flags = new List<string> { "clean" },
+            Boards = new List<Rivals.RivalsDataset.Board>
+            {
+                brett,
+                // Aus einem Datensatz vor dem Format: ohne "days" -- also von vor jedem Stichtag.
+                new() { Category = 0, Track = 0, Klass = 0, Rows = 1, Valid = 1, GroupCar = new[] { 0 },
+                        GroupSignature = new[] { 1 }, GroupCount = new[] { 1 }, LapGroup = new[] { 0 },
+                        LapMs = new[] { 90_000 }, LapRank = new[] { 1 } },
+            },
+        };
+        Soll(ReferenceEquals(data.Ab(null), data), "Stichtag: \"alle Daten\" ist nicht der Datensatz selbst");
+        var ab = data.Ab("2026-11-03");
+        Soll(ab.Boards.Count == 1 && ab.Seit == "2026-11-03" && ab.CarIds == data.CarIds,
+             $"Stichtag: ein Board ohne Tage blieb stehen, oder die Autoliste ist eine andere ({ab.Boards.Count})");
+        var neu = ab.Boards[0];
+        Soll(neu.GroupCar.SequenceEqual(new[] { 0, 2 }) && neu.GroupCount.SequenceEqual(new[] { 2, 1 })
+             && neu.LapGroup.SequenceEqual(new[] { 0, 0, 1 }) && neu.LapMs.SequenceEqual(new[] { 102_000, 103_000, 104_000 })
+             && neu.LapRank.SequenceEqual(new[] { 6, 7, 8 }),
+             $"Stichtag: die Runden ab dem Tag stimmen nicht ({string.Join(",", neu.LapMs)})");
+        Soll(neu.Rows == 3 && neu.Valid == 3 && neu.Invalid == 0 && neu.MaxRank == 8 && neu.Days!.SequenceEqual(new[] { "2026-11-05" }),
+             $"Stichtag: die Zaehlung ab dem Tag stimmt nicht ({neu.Rows}/{neu.Valid}/{neu.MaxRank})");
+        Soll(brett.Ab("2026-09-01") is { } frueh && frueh.LapMs.Length == 8 && frueh.GroupCount.SequenceEqual(new[] { 5, 2, 1 }),
+             "Stichtag: vor dem ersten Tag fehlt etwas");
+        Soll(brett.Ab("2026-12-01") is null, "Stichtag: ein Board ohne Zeile ab dem Tag ist noch da");
+        // Sechs schnellere alte Runden: die fuenf schnellsten ueber alles sind alt, die beiden neuen
+        // stehen nur in x... -- und genau sie bilden die Sicht ab dem Stichtag.
+        var tief = new Rivals.RivalsDataset.Board
+        {
+            Rows = 8, Valid = 8, MaxRank = 8, GroupCar = new[] { 0 }, GroupSignature = new[] { 1 }, GroupCount = new[] { 8 },
+            LapGroup = new[] { 0, 0, 0, 0, 0 }, LapMs = new[] { 1, 2, 3, 4, 5 }, LapRank = new[] { 1, 2, 3, 4, 5 },
+            Days = new[] { "2026-10-01", "2026-11-05" }, LapDay = new[] { 0, 0, 0, 0, 0 },
+            GroupDayCount = new[] { 6, 2 }, DayStats = new[] { 6, 6, 0, 6, 2, 2, 0, 4 },
+            ExtraGroup = new[] { 0, 0 }, ExtraMs = new[] { 9, 8 }, ExtraRank = new[] { 4, 3 }, ExtraDay = new[] { 1, 1 },
+        };
+        Soll(tief.Ab("2026-11-03") is { } x && x.LapMs.SequenceEqual(new[] { 8, 9 }) && x.LapRank.SequenceEqual(new[] { 3, 4 })
+             && tief.Ab("2026-11-03", 1) is { } x1 && x1.LapMs.SequenceEqual(new[] { 8 }),
+             "Stichtag: die Runden nur fuer Sichten ab einem Tag (x...) fehlen, oder je Gruppe sind es zu viele");
+        var picks = new Rivals.RivalsAdvisor(ab).PickCars(neu, 1, 0);
+        Soll(picks.ContainsKey(0) && picks.ContainsKey(2) && !picks.ContainsKey(1) && picks[0].Ms >= 102_000,
+             "Stichtag: die Auswahl nimmt ein Auto oder eine Zeit von vor dem Stichtag");
+
+        // Eingereicht vor und nach dem Stichtag; Horizon Play nur fuer den passenden Stichtag.
+        var z = new Rivals.Zusatzzeiten();
+        z.LiesEingereicht("{\"laps\":[{\"id\":\"a\",\"received\":\"2026-11-01T10:00:00+00:00\",\"lap\":{\"track\":\"Soni Circuit\",\"carClass\":2,\"carOrdinal\":5678,\"mode\":\"rivals\",\"lapSeconds\":95.0}},"
+                          + "{\"id\":\"b\",\"received\":\"2026-11-05T10:00:00+00:00\",\"lap\":{\"track\":\"Soni Circuit\",\"carClass\":2,\"carOrdinal\":1234,\"mode\":\"rivals\",\"lapSeconds\":96.0}}]}",
+                          "2026-11-03");
+        var fuer = z.Fuer("Soni Circuit", "B");
+        Soll(fuer is not null && fuer.ContainsKey(1234) && !fuer.ContainsKey(5678),
+             "Stichtag: eine vor dem Stichtag eingereichte Runde zaehlt, oder eine danach nicht");
+        var hp = "{\"since\":\"2026-11-03\",\"boards\":[{\"track\":\"Soni Circuit\",\"class\":\"B\",\"car\":9999,\"kind\":\"lap\",\"ms\":98000}]}";
+        var passt = new Rivals.Zusatzzeiten();
+        passt.LiesHp(hp, stichtagPruefen: true, "2026-11-03");
+        var anders = new Rivals.Zusatzzeiten();
+        anders.LiesHp(hp, stichtagPruefen: true, null);
+        Soll(passt.Count == 1 && anders.Count == 0,
+             $"Stichtag: Horizon-Play-Zeiten fuer einen anderen Stichtag werden genommen ({passt.Count}/{anders.Count})");
     }
 
     private static void FullTelemetryTravelsWithTheLap()
@@ -4052,7 +4144,7 @@ internal static class EdgeCaseTest
              "Meta: der Platz wird nicht oder ohne Liste trotzdem gespeichert");
         if (Rivals.RivalsDataset.FindDefaultPath() is { } metaPfad)
         {
-            var daten = Rivals.RivalsDataset.Load(metaPfad);
+            var daten = Rivals.RivalsDataset.Load(metaPfad, null);
             var rat = new Rivals.RivalsAdvisor(daten);
             // Eine echte Strecke mit einer tiefen Liste: die erste mit mindestens 30 Autos.
             var gefunden = false;
@@ -4703,7 +4795,7 @@ internal static class EdgeCaseTest
         // ---- der ganze Weg an einer gezeichneten Kachel, wenn Datensatz und OCR da sind
         var pfad = Rivals.RivalsDataset.FindDefaultPath();
         if (pfad is null) { return; }
-        var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad));
+        var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad, null));
         Soll(Rivals.CarGridReader.Erkenne(zeilen, rat) is { Ordinal: 2017 },
              "Automenue: \"595 ESSEESSE / 1968 ABARTH\" ergibt nicht den Abarth 595 esseesse '68");
         Soll(Rivals.CarGridReader.Erkenne(new List<Rivals.OcrLine> { new("595 ESSEESSE", 0, 10), new("1971 ABARTH", 0, 40) }, rat) is null,
@@ -5324,7 +5416,7 @@ internal static class EdgeCaseTest
         var pfad = Rivals.RivalsDataset.FindDefaultPath();
         if (pfad is null) { return; }
         var reader = new Rivals.RivalsScreenReader(
-            new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad)), new Rivals.OverlaySettings());
+            new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(pfad, null)), new Rivals.OverlaySettings());
         if (!reader.OcrAvailable) { return; }
         foreach (var groesse in new[] { new Size(1280, 720), new Size(3840, 2160), new Size(64, 36), new Size(2, 2) })
         {

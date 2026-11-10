@@ -151,7 +151,9 @@ with tempfile.TemporaryDirectory() as tmp:
     api.DATASET_FILE = ordner / "laps.json"
     api.DATASET_FILE.write_text(json.dumps({
         "flags": [], "tracks": ["Test Circuit"], "classes": ["S1"], "carIds": ["1234"],
-        "boards": [{"t": 0, "k": 0, "gcar": [0], "lgrp": [0], "lms": [110000]}]}), encoding="utf-8")
+        "boards": [{"t": 0, "k": 0, "gcar": [0], "lgrp": [0], "lms": [110000],
+                    # Gescannt nach dem Stichtag (server/stichtag.py) -- sonst gaebe es das Board nicht.
+                    "days": ["2026-11-05"]}]}), encoding="utf-8")
     # Der Spiegelbetrieb verhindert, dass der Server waehrend des Tests die
     # Auswertungsseite baut -- das dauert eine Minute und hat hier nichts zu suchen.
     srv.NUR_AUSLIEFERN = True

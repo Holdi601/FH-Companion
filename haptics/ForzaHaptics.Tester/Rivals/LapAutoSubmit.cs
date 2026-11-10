@@ -40,6 +40,11 @@ namespace ForzaHaptics.Tester.Rivals;
 /// <see cref="LedgerPath"/> remembers, per route/class/car, the fastest time already
 /// sent -- or refused by the server as not faster. The next lap has to beat that, so
 /// a refused lap is never sent twice.
+///
+/// SEIT 2026-11-10 MIT DEM TAG DES EINTRAGS (<see cref="LedgerDaysPath"/>): das Buch zaehlt
+/// nur ab dem Stichtag (<see cref="Stichtag"/>), wie die Bestenliste und wie der Server.
+/// Eine vor der Loeschung der Bestenlisten gesendete Zeit (2026-11-03, Autos abgeschwaecht)
+/// haelt sonst jede neue Runde desselben Autos auf. Eintraege ohne Tag sind von davor.
 /// </remarks>
 internal sealed class LapAutoSubmit
 {
@@ -280,7 +285,39 @@ internal sealed class LapAutoSubmit
                           bestenliste, frueher > 0 ? frueher : null, schluessel);
     }
 
+    /// <summary>Je Eintrag des Buchs der Tag (JJJJ-MM-TT), an dem er geschrieben wurde.</summary>
+    public static string LedgerDaysPath => Path.Combine(LapSubmit.SubmitHome, "submitted_laps_days.json");
+
+    /// <summary>Das Buch ab dem Stichtag (<see cref="Stichtag.Aktuell"/>) -- was dagegen zaehlt.</summary>
     internal static Dictionary<string, int> LedgerLaden()
+    {
+        var alles = LedgerRoh();
+        var seit = Stichtag.Aktuell;
+        if (seit is null || alles.Count == 0) { return alles; }
+        var tage = LedgerTage();
+        return alles.Where(e => tage.TryGetValue(e.Key, out var tag) && Stichtag.Gilt(tag, seit))
+                    .ToDictionary(e => e.Key, e => e.Value);
+    }
+
+    private static Dictionary<string, string> LedgerTage()
+    {
+        try
+        {
+            if (File.Exists(LedgerDaysPath))
+            {
+                return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(LedgerDaysPath))
+                       ?? new Dictionary<string, string>();
+            }
+        }
+        catch (Exception)
+        {
+            // Ohne Tage zaehlt das Buch als alt -- schlimmstenfalls fragt eine Runde einmal zu viel.
+        }
+        return new Dictionary<string, string>();
+    }
+
+    /// <summary>Das ganze Buch, ohne Stichtag -- so wird es geschrieben.</summary>
+    private static Dictionary<string, int> LedgerRoh()
     {
         try
         {
@@ -546,7 +583,20 @@ internal sealed class LapAutoSubmit
     private static void InsBuch(Dictionary<string, int> buch, string schluessel, int ms)
     {
         buch[schluessel] = ms;
-        try { LedgerSichern(buch); } catch (Exception) { }
+        // In das GANZE Buch, nicht in die Sicht ab dem Stichtag: sonst fielen beim Speichern die
+        // aelteren Eintraege weg, und "alle Daten" saehe sie nie wieder.
+        try
+        {
+            var alles = LedgerRoh();
+            alles[schluessel] = ms;
+            LedgerSichern(alles);
+            var tage = LedgerTage();
+            tage[schluessel] = DateTime.UtcNow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var tmp = LedgerDaysPath + ".tmp";
+            File.WriteAllText(tmp, JsonSerializer.Serialize(tage));
+            File.Move(tmp, LedgerDaysPath, overwrite: true);
+        }
+        catch (Exception) { }
     }
 
     /// <summary>Pause between two waiting laps, so a long queue is not one burst.</summary>

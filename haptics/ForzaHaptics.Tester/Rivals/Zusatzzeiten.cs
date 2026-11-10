@@ -17,6 +17,11 @@ namespace ForzaHaptics.Tester.Rivals;
 ///
 /// Geholt beim Abgleich des Datensatzes, abgelegt neben ihm (submitted.json, hp.json),
 /// gelesen beim Laden des Datensatzes. Ohne Server bleibt der letzte Stand.
+///
+/// DER STICHTAG (seit 2026-11-10, <see cref="Stichtag"/>) gilt auch hier: eingereichte
+/// Runden zaehlen nur, wenn sie ab ihm eingereicht wurden ("received"); die
+/// Horizon-Play-Zeiten fragt die App mit ihrem Stichtag ab (der Server rechnet die
+/// 1-%-Grenze), und eine Liste fuer einen anderen Stichtag bleibt liegen, bis die neue da ist.
 /// </remarks>
 internal sealed class Zusatzzeiten
 {
@@ -46,24 +51,32 @@ internal sealed class Zusatzzeiten
         if (!k.TryGetValue(carId, out var da) || ms < da.Ms) { k[carId] = new Zeit(ms, source); }
     }
 
-    /// <summary>Aus den abgelegten Dateien; fehlt eine, zaehlt die andere.</summary>
+    /// <summary>Aus den abgelegten Dateien, ab dem Stichtag; fehlt eine, zaehlt die andere.</summary>
     public static Zusatzzeiten Laden(string? submitted = null, string? hp = null)
     {
         var z = new Zusatzzeiten();
-        try { if (File.Exists(submitted ?? SubmittedPath)) { z.LiesEingereicht(File.ReadAllText(submitted ?? SubmittedPath)); } }
+        var seit = Stichtag.Aktuell;
+        try { if (File.Exists(submitted ?? SubmittedPath)) { z.LiesEingereicht(File.ReadAllText(submitted ?? SubmittedPath), seit); } }
         catch (Exception) { }
-        try { if (File.Exists(hp ?? HpPath)) { z.LiesHp(File.ReadAllText(hp ?? HpPath)); } }
+        try { if (File.Exists(hp ?? HpPath)) { z.LiesHp(File.ReadAllText(hp ?? HpPath), stichtagPruefen: true, seit); } }
         catch (Exception) { }
         return z;
     }
 
-    internal void LiesEingereicht(string json)
+    /// <summary>Die eingereichten Runden -- mit <paramref name="seit"/> nur die ab diesem Tag eingereichten.</summary>
+    internal void LiesEingereicht(string json, string? seit = null)
     {
         using var dok = JsonDocument.Parse(json);
         if (!dok.RootElement.TryGetProperty("laps", out var laps) || laps.ValueKind != JsonValueKind.Array) { return; }
         foreach (var e in laps.EnumerateArray())
         {
             if (e.TryGetProperty("hidden", out var h) && h.ValueKind == JsonValueKind.True) { continue; }
+            if (seit is not null)
+            {
+                var eingang = e.TryGetProperty("received", out var rec) && rec.ValueKind == JsonValueKind.String
+                    ? rec.GetString() : null;
+                if (!Stichtag.Gilt(eingang, seit)) { continue; }
+            }
             if (!e.TryGetProperty("lap", out var lap) || lap.ValueKind != JsonValueKind.Object) { continue; }
             var mode = lap.TryGetProperty("mode", out var m) && m.ValueKind == JsonValueKind.String ? m.GetString() : null;
             if (!SaubereModi.Contains(mode ?? string.Empty)) { continue; }
@@ -76,9 +89,20 @@ internal sealed class Zusatzzeiten
         }
     }
 
-    internal void LiesHp(string json)
+    /// <summary>
+    /// Die Horizon-Play-Zeiten. Mit <paramref name="stichtagPruefen"/> nur, wenn die Liste fuer
+    /// genau den Stichtag <paramref name="seit"/> geholt wurde ("since" der Antwort; fehlt es,
+    /// hat der Server nach allen Daten gerechnet).
+    /// </summary>
+    internal void LiesHp(string json, bool stichtagPruefen = false, string? seit = null)
     {
         using var dok = JsonDocument.Parse(json);
+        if (stichtagPruefen)
+        {
+            var fuer = dok.RootElement.TryGetProperty("since", out var s) && s.ValueKind == JsonValueKind.String
+                ? s.GetString() ?? string.Empty : string.Empty;
+            if (fuer != (seit ?? string.Empty)) { return; }
+        }
         if (!dok.RootElement.TryGetProperty("boards", out var boards) || boards.ValueKind != JsonValueKind.Array) { return; }
         foreach (var b in boards.EnumerateArray())
         {
@@ -96,7 +120,10 @@ internal sealed class Zusatzzeiten
         baseUrl = (baseUrl ?? string.Empty).Trim().TrimEnd('/');
         if (baseUrl.Length == 0) { return; }
         using var client = ServerHttp.Client(timeout);
-        foreach (var (pfad, ziel, wurzel) in new[] { ("/api/lap/list", SubmittedPath, "laps"), ("/api/race/hp", HpPath, "boards") })
+        // Die Horizon-Play-Zeiten fuer den geltenden Stichtag: die 1-%-Grenze rechnet der Server.
+        var seit = Stichtag.Aktuell;
+        var hp = "/api/race/hp" + (seit is null ? string.Empty : "?since=" + Uri.EscapeDataString(seit));
+        foreach (var (pfad, ziel, wurzel) in new[] { ("/api/lap/list", SubmittedPath, "laps"), (hp, HpPath, "boards") })
         {
             try
             {

@@ -90,7 +90,7 @@ def runde_fuer(sekunden: float, strecke: str, klasse: str, ordinal: int,
 def seitenlogik(seite: str) -> Path:
     """Aus der ausgelieferten Seite genau die Funktionen, die rechnen."""
     js = re.search(r"<script>(.*?)</script>", seite, re.S).group(1)
-    kopf = js[:js.index("const D = ")]
+    kopf = js[:js.index("const D_ALL = ")]
     m1 = re.search(r"function pickCarsRivals\(board, need, forbid\) \{.*?\n\}\n", js, re.S)
     m2 = re.search(r"let SUBMITTED = null;\nfunction pickCars\(board, need, forbid\) \{.*?\n\}\n",
                    js, re.S)
@@ -116,11 +116,11 @@ def main() -> int:
     seite = hole("/rivals_auto_wertung.html").decode("utf-8").replace("\r\n", "\n")
     logik = seitenlogik(seite)
     # DER DATENSATZ KOMMT AUS DER SEITE, nicht von der Platte hier. Die Seite traegt
-    # ihn eingebettet als "const D = {...};" -- genau das bekommt ein Besucher.
+    # ihn eingebettet als "const D_ALL = {...};" -- genau das bekommt ein Besucher.
     # Die eigene laps.json zu nehmen hiesse, gegen etwas zu pruefen, das der
     # Besucher vielleicht gar nicht hat.
     js = re.search(r"<script>(.*?)</script>", seite, re.S).group(1)
-    zeile = js[js.index("const D = ") + len("const D = "):].split("\n", 1)[0]
+    zeile = js[js.index("const D_ALL = ") + len("const D_ALL = "):].split("\n", 1)[0]
     D = json.loads(zeile.rstrip().rstrip(";"))
     live_d = TEMP / "live_D.json"
     live_d.write_text(json.dumps(D), encoding="utf-8")

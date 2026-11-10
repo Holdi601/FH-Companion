@@ -183,6 +183,18 @@ with tempfile.TemporaryDirectory() as tmp:
         stelle = max(1, math.ceil(0.01 * len(alle)))
         pruefe(b["ms"] == alle[stelle] and b["ms"] != 30_000 and b["confirmed"],
                "die Zeit an der 1-%%-Grenze (%d ms, Stelle %d), nicht die des Betruegers" % (b["ms"], stelle))
+        # Der Stichtag (seit 2026-11-10): "?since=" zaehlt nur Rennen ab diesem Tag und nennt ihn.
+        status, frueh = ruf(port, "GET", "/api/race/hp?since=2000-01-01")
+        status2, spaet = ruf(port, "GET", "/api/race/hp?since=2999-01-01")
+        status3, unsinn = ruf(port, "GET", "/api/race/hp?since=gestern")
+        pruefe(status == 200 and frueh.get("since") == "2000-01-01"
+               and [x["n"] for x in frueh.get("boards", [])] == [x["n"] for x in antwort.get("boards", [])]
+               and antwort.get("since") == "",
+               "?since vor allen Rennen: dieselben Zeiten, und die Antwort nennt den Stichtag")
+        pruefe(status2 == 200 and spaet.get("boards") == [] and spaet.get("since") == "2999-01-01",
+               "?since nach allen Rennen: keine Zeiten")
+        pruefe(status3 == 200 and unsinn.get("since") == "" and len(unsinn.get("boards", [])) == len(antwort.get("boards", [])),
+               "?since mit Unsinn: alle Rennen, wie ohne")
 
         print("\nAusblenden: die naechste rueckt nach")
         status, liste = ruf(port, "GET", "/api/admin/race/list", None,

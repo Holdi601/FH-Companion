@@ -314,6 +314,8 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
 
   <section class="panel">
     <div class="filters">
+      <div class="frow"><span class="label">Scanned since</span><div class="frow" id="f-since"></div>
+        <input type="date" id="f-since-date" aria-label="Only laps scanned on or after this date"></div>
       <div class="frow"><span class="label">Race category</span><div class="frow" id="f-cat"></div></div>
       <div class="frow"><span class="label">Performance class</span><div class="frow" id="f-cls"></div></div>
       <div class="frow"><span class="label">Tracks</span><div class="frow" id="f-trk"></div></div>
@@ -500,7 +502,11 @@ h3 { font-size: 15px; margin: 22px 0 8px; color: var(--ink); }
 
 <script>
 __SUBMITTED_JS__
-const D = __PAYLOAD__;
+__CUTOFF_JS__
+/* D_ALL ist der ganze Datensatz, D die Sicht ab dem Stichtag (F.since, seit 2026-11-10):
+   jede Ansicht liest D, und D wird neu gebildet, sobald sich der Stichtag aendert. */
+const D_ALL = __PAYLOAD__;
+let D = D_ALL;
 
 // Signature bit order comes from the dataset, so adding a flag upstream cannot
 // silently shift what a filter means here.
@@ -566,7 +572,11 @@ const F = {
   gear: "any",            // any | auto | manual | clutch
   assist: {},             // name -> any | with | without
   car: "",
+  since: null,            // "JJJJ-MM-TT" -- nur Runden, die ab diesem Tag gescannt wurden; null = alle
 };
+/* Die Vorgabe des Stichtags: am 2026-11-03 hat das Spiel Fahrzeuge abgeschwaecht und seine
+   Rivals-Bestenlisten geloescht. Was davor gescannt wurde, zeigt die Seite nur auf Wunsch. */
+const SINCE_DEFAULT = defaultSince(D_ALL);
 ASSISTS.forEach(([key]) => { F.assist[key] = "any"; });
 
 let TAB = "points";
@@ -724,6 +734,52 @@ function zeigeAndereModi(liste) {
    und die Seite ist genau die alte. */
 let SUBMITTED = null;
 let HP = null;
+/* Die eingereichten Runden, wie /api/lap/list sie lieferte -- SUBMITTED wird daraus fuer
+   den jeweiligen Stichtag gebildet (nur Runden, die ab ihm eingereicht wurden). */
+let SUBMITTED_RAW = null;
+
+/* Den Stichtag setzen: die Sicht D neu bilden, die eingereichten Runden neu einordnen und
+   die Horizon-Play-Zeiten fuer diesen Stichtag neu holen (der Server rechnet die 1-%-Grenze). */
+function setSince(value) {
+  F.since = value || null;
+  D = datasetSince(D_ALL, F.since);
+  if (SUBMITTED_RAW) applySubmittedRaw();
+  HP = null;
+  loadHp();
+}
+
+function applySubmittedRaw() {
+  SUBMITTED = buildSubmitted(D, lapsSince(SUBMITTED_RAW, F.since));
+  const hinweis = document.getElementById("submitted-note");
+  if (!hinweis) return;
+  hinweis.hidden = !(SUBMITTED.placed || SUBMITTED.unplaced.length || SUBMITTED.others.length);
+  hinweis.textContent = SUBMITTED.placed + " submitted lap time(s) from Rivals and Horizon Play included"
+    + (SUBMITTED.newCars ? ", " + SUBMITTED.newCars + " car(s) not yet on any leaderboard" : "")
+    + (SUBMITTED.unplaced.length
+       ? ". " + SUBMITTED.unplaced.length + " could not be placed ("
+         + SUBMITTED.unplaced.slice(0, 3).map(u => u.reason).join("; ") + ")"
+       : "")
+    + (SUBMITTED.others.length
+       ? ". " + SUBMITTED.others.length + " from other modes are listed separately"
+       : "")
+    + (F.since ? ". Only laps submitted since " + F.since : "")
+    + ". Marked submitted; not verified by the game.";
+  zeigeAndereModi(SUBMITTED.others);
+}
+
+/* Die Horizon-Play-Zeiten aus Rennergebnissen (seit 2026-10-03), ab dem Stichtag. Eine
+   Antwort fuer einen inzwischen anderen Stichtag wird verworfen. */
+function loadHp() {
+  const fuer = F.since;
+  return fetch("/api/race/hp" + (fuer ? "?since=" + encodeURIComponent(fuer) : ""), { cache: "no-store" })
+    .then(r => r.json().then(d => (r.ok ? d : { boards: [] }), () => ({ boards: [] })))
+    .then(d => {
+      if (fuer !== F.since) return;
+      HP = buildHp(D, d.boards || []);
+      if (HP.placed) render();
+    })
+    .catch(() => { /* ohne Server: nichts zu tun */ });
+}
 /* Die zuletzt aus der App gesendeten Scans, live von /api/scan/recent (seit 2026-10-18).
    null = noch nicht geladen, [] = keine. */
 let RECENT = null;
@@ -1978,11 +2034,16 @@ function renderRescan(host) {
     if (!last[key] || String(scan.when) > last[key]) last[key] = String(scan.when || "");
   });
   const rows = new Map();
+  // Jedes Board des GANZEN Datensatzes steht in der Liste -- eines ohne Scan ab dem Stichtag
+  // als nie gescannt (wie /api/scan/needs); Tiefe und letzter Scan kommen aus der Sicht D.
   D.boards.forEach(b => {
-    const track = D.tracks[b.t], cls = D.classes[b.k];
-    const key = track + "|" + cls;
+    const key = D.tracks[b.t] + "|" + D.classes[b.k];
     depth[key] = Math.max(depth[key] || 0, b.maxRank || 0);
-    rows.set(key, { track, cls, cat: D.categories[b.c], key });
+  });
+  D_ALL.boards.forEach(b => {
+    const track = D_ALL.tracks[b.t], cls = D_ALL.classes[b.k];
+    const key = track + "|" + cls;
+    rows.set(key, { track, cls, cat: D_ALL.categories[b.c], key });
   });
   Object.keys(known).forEach(cat => {
     (known[cat] || []).forEach(name => {
@@ -2035,7 +2096,8 @@ function renderRescan(host) {
   const link = el("a", null, "FH Companion");
   link.href = "/app";
   intro.appendChild(link);
-  intro.appendChild(document.createTextNode(". All classes; the category and track filters above narrow the list."));
+  intro.appendChild(document.createTextNode(". All classes; the category and track filters above narrow the list."
+    + (F.since ? " Scans from before " + F.since + " do not count: a board scanned only before then is listed as never scanned." : "")));
   host.appendChild(intro);
 
   const wrap = el("div", "tablewrap");
@@ -2136,7 +2198,8 @@ function renderContext() {
   const boards = boardsInScope().filter(b => !F.cls.size || F.cls.has(D.classes[b.k]));
   const scanned = boards.reduce((sum, b) => sum + (b.valid || b.rows), 0);
   const deepest = boards.reduce((max, b) => Math.max(max, b.maxRank), 0);
-  [["Entries read", num(scanned)],
+  [["Scanned since", F.since || "all data"],
+   ["Entries read", num(scanned)],
    ["Deepest rank", num(deepest)],
    ["Tracks", String(new Set(boards.map(b => D.tracks[b.t])).size)]].forEach(([k, v]) => {
     const span = el("span", null, k + ": ");
@@ -2165,6 +2228,7 @@ function renderRuleNote() {
   host.textContent = "";
   const klass = classLabel(selectedClasses());
   const bits = [];
+  if (F.since) bits.push("scanned since " + F.since);
   if (F.source === "rivals") bits.push("Rivals leaderboards only");
   if (F.source === "hp") bits.push("Horizon Play times only");
   if (F.clean === "valid") bits.push("valid laps only");
@@ -2202,6 +2266,17 @@ function renderRuleNote() {
 }
 
 function render() {
+  const sinceHost = document.getElementById("f-since");
+  sinceHost.textContent = "";
+  const sinceOptions = [];
+  if (SINCE_DEFAULT) sinceOptions.push([SINCE_DEFAULT, "Since " + SINCE_DEFAULT + " (leaderboard reset)"]);
+  sinceOptions.push(["", "All data"]);
+  triGroup(sinceHost, null, sinceOptions, () => F.since || "", v => setSince(v));
+  const sinceDate = document.getElementById("f-since-date");
+  sinceDate.value = F.since || "";
+  sinceDate.title = "Only laps scanned on or after this day. On " + (SINCE_DEFAULT || CUTOFF_DEFAULT)
+    + " the game nerfed cars and deleted its Rivals leaderboards; older scans describe cars that no longer drive like that.";
+
   multiChips(document.getElementById("f-cat"), D.categories.slice().sort(), F.cat);
   multiChips(document.getElementById("f-cls"), classesInScope(), F.cls, null, "chip k");
   multiChips(document.getElementById("f-trk"), D.tracks.slice().sort(), F.tracks);
@@ -2243,6 +2318,14 @@ function render() {
 
   const content = document.getElementById("content");
   content.textContent = "";
+  // NOCH KEIN BOARD AB DEM STICHTAG: sagen, warum die Tabellen leer sind, statt "no lap
+  // survives these filters". Die beiden Scan-Reiter zeigen trotzdem, was offen ist.
+  if (!D.boards.length && F.since && TAB !== "scans" && TAB !== "rescan") {
+    content.appendChild(emptyBox("No leaderboard has been scanned since " + F.since + " yet.",
+      " On " + (SINCE_DEFAULT || CUTOFF_DEFAULT) + " the game reset its Rivals leaderboards. Choose “All data” to see the older scans,"
+      + " or see “Needs a rescan” for the boards that are waiting."));
+    return;
+  }
   if (TAB === "points") renderScoreboard(content, "points");
   else if (TAB === "time") renderScoreboard(content, "time");
   else if (TAB === "boards") renderBoards(content);
@@ -2302,7 +2385,14 @@ function render() {
     F.yearTo = null;
     render();
   });
+  // DER STICHTAG: ein Tag aus dem Kalender; leer heisst alle Daten.
+  document.getElementById("f-since-date").addEventListener("change", event => {
+    const wert = String(event.target.value || "");
+    setSince(/^\d{4}-\d{2}-\d{2}$/.test(wert) ? wert : null);
+    render();
+  });
   document.getElementById("f-reset").addEventListener("click", () => {
+    if (F.since !== SINCE_DEFAULT) setSince(SINCE_DEFAULT);
     F.cat.clear(); F.cls.clear(); F.tracks.clear(); F.clean = "any"; F.gear = "any"; F.source = "all";
     F.make.clear(); F.country.clear(); F.carType.clear(); F.tune.clear();
     F.yearFrom = null; F.yearTo = null;
@@ -2312,6 +2402,8 @@ function render() {
     selectDefaultClass();
     render();
   });
+  F.since = SINCE_DEFAULT;
+  D = datasetSince(D_ALL, F.since);
   selectDefaultClass();
   render();
 
@@ -2324,30 +2416,14 @@ function render() {
   fetch("/api/lap/list", { cache: "no-store" })
     .then(r => r.json().then(d => (r.ok ? d : { laps: [] }), () => ({ laps: [] })))
     .then(d => {
-      SUBMITTED = buildSubmitted(D, d.laps || []);
-      const hinweis = document.getElementById("submitted-note");
-      if (hinweis && (SUBMITTED.placed || SUBMITTED.unplaced.length || SUBMITTED.others.length)) {
-        hinweis.hidden = false;
-        hinweis.textContent = SUBMITTED.placed + " submitted lap time(s) from Rivals and Horizon Play included"
-          + (SUBMITTED.newCars ? ", " + SUBMITTED.newCars + " car(s) not yet on any leaderboard" : "")
-          + (SUBMITTED.unplaced.length
-             ? ". " + SUBMITTED.unplaced.length + " could not be placed ("
-               + SUBMITTED.unplaced.slice(0, 3).map(u => u.reason).join("; ") + ")"
-             : "")
-          + (SUBMITTED.others.length
-             ? ". " + SUBMITTED.others.length + " from other modes are listed separately"
-             : "")
-          + ". Marked submitted; not verified by the game.";
-      }
-      zeigeAndereModi(SUBMITTED.others);
+      SUBMITTED_RAW = d.laps || [];
+      applySubmittedRaw();
       render();
     })
     .catch(() => { /* ohne Server: nichts zu tun */ });
-  // Die Horizon-Play-Zeiten aus Rennergebnissen (seit 2026-10-03), ebenso nachgeladen.
-  fetch("/api/race/hp", { cache: "no-store" })
-    .then(r => r.json().then(d => (r.ok ? d : { boards: [] }), () => ({ boards: [] })))
-    .then(d => { HP = buildHp(D, d.boards || []); if (HP.placed) render(); })
-    .catch(() => { /* ohne Server: nichts zu tun */ });
+  // Die Horizon-Play-Zeiten aus Rennergebnissen (seit 2026-10-03), ebenso nachgeladen --
+  // ab dem Stichtag.
+  loadHp();
   // Die gesendeten Scans: einmal, dann jede Minute, solange der Reiter offen und sichtbar ist --
   // so sieht man einen laufenden Stapel wachsen.
   loadRecent();
@@ -2418,6 +2494,9 @@ def main(argv: list[str] | None = None) -> int:
     eingereicht = (Path(__file__).resolve().parent / "submitted_laps.js").read_text(
         encoding="utf-8")
     seite = PAGE.replace("__SUBMITTED_JS__", eingereicht)
+    # Ebenso der Stichtag (scripts/dataset_cutoff.js, seit 2026-11-10).
+    seite = seite.replace("__CUTOFF_JS__", (Path(__file__).resolve().parent / "dataset_cutoff.js")
+                          .read_text(encoding="utf-8"))
     # DIE SCHRIFTEN EINGEBETTET, nicht von fonts.googleapis.com: dort schickte jeder
     # Besucher seine IP-Adresse an Google (DSGVO). Als data:-Adressen bleibt die
     # Seite eine einzige Datei, die auch ohne Server lesbar ist.
