@@ -1100,6 +1100,42 @@ internal static class Program
             Environment.ExitCode = TrailerHud.Notiz(args);
             return;
         }
+        if (args.Contains("--trailer-rivals", StringComparer.OrdinalIgnoreCase))
+        {
+            // --trailer-rivals <ordner> <klasse> <ordinal> <pi> <punkte|zeit> "Strecke:km[:runden]" ...
+            // Beide Rivals-Panels fuer eine Strecken-Auswahl, gezeichnet vom echten Overlay.
+            var ia = Array.FindIndex(args, a => string.Equals(a, "--trailer-rivals", StringComparison.OrdinalIgnoreCase));
+            var panelEinst = Rivals.OverlaySettings.Load();
+            panelEinst.ScoreMode = args[ia + 5] == "zeit" ? "time" : "points";
+            var datensatz = Rivals.RivalsDataset.FindDefaultPath();
+            if (datensatz is null) { Console.WriteLine("kein Datensatz"); Environment.ExitCode = 2; return; }
+            var zustand = new Rivals.ScreenState { Klass = args[ia + 2] };
+            foreach (var teil in args.Skip(ia + 6))
+            {
+                var stueck = teil.Split(':');
+                zustand.Tracks.Add(stueck[0]);
+                zustand.TrackLengths[stueck[0]] = new Rivals.TrackLength(
+                    double.Parse(stueck[1], System.Globalization.CultureInfo.InvariantCulture),
+                    stueck.Length > 2 ? int.Parse(stueck[2]) : 1);
+            }
+            // Mit laufender Nachrichtenschleife: der Regler schickt manches ueber sein Fenster zurueck.
+            using var traeger = new Form { ShowInTaskbar = false, Opacity = 0, FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000), Size = new Size(1, 1) };
+            traeger.Shown += (_, _) =>
+            {
+                Console.WriteLine("Daten laden");
+                var rat = new Rivals.RivalsAdvisor(Rivals.RivalsDataset.Load(datensatz));
+                Console.WriteLine("Regler");
+                var regler = new Rivals.OverlayController(traeger, rat, panelEinst);
+                Directory.CreateDirectory(args[ia + 1]);
+                Console.WriteLine("Panels");
+                regler.PanelsAlsBild(zustand, int.Parse(args[ia + 3]), int.Parse(args[ia + 4]), args[ia + 1]);
+                Console.WriteLine("fertig");
+                Environment.Exit(0);
+            };
+            Application.Run(traeger);
+            return;
+        }
+
         if (args.Contains("--trailer-gauge", StringComparer.OrdinalIgnoreCase))
         {
             // Tacho oder G-Meter einer aufgezeichneten Runde, jede Vorlage (Rivals/TrailerAnzeige.cs).

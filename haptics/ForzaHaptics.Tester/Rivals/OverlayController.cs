@@ -3598,6 +3598,31 @@ internal sealed class OverlayController : IDisposable
     internal static int ErwarteteStrecke(int anzahl, int ab, IReadOnlySet<int> erledigt) =>
         Enumerable.Range(0, anzahl).FirstOrDefault(i => i >= ab && !erledigt.Contains(i), -1);
 
+    /// <summary>
+    /// Beide Panels als Bild, fuer Videos (seit 2026-11-04): dieselben Zeilen wie im Spiel, aus denselben
+    /// Daten, nur ohne laufendes Spiel. Eine eigene Rangliste in der Vorschau waere eine Behauptung.
+    /// </summary>
+    internal void PanelsAlsBild(ScreenState state, int ordinal, int pi, string ordner)
+    {
+        _ordinal = ordinal;
+        _pi = pi;
+        _telemetryAt = DateTime.UtcNow;
+        _lastCarKey = null;
+        RenderAdvice(state);
+        RenderCar();
+        foreach (var (panel, name) in new[] { (_right, "rechts"), (_left, "links") })
+        {
+            panel.Location = new Point(-32000, -32000);
+            panel.Show();
+            panel.Location = new Point(-32000, -32000);
+            Application.DoEvents();
+            using var bild = new Bitmap(panel.Width, panel.Height);
+            panel.DrawToBitmap(bild, new Rectangle(0, 0, panel.Width, panel.Height));
+            bild.Save(Path.Combine(ordner, name + ".png"), System.Drawing.Imaging.ImageFormat.Png);
+            panel.Hide();
+        }
+    }
+
     public void RenderAdvice(ScreenState state)
     {
         var klass = state.Klass ?? string.Empty;
