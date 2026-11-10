@@ -65,7 +65,7 @@ internal sealed class ServerFehlerHinweis : Form
         var knoepfe = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 44, FlowDirection = FlowDirection.RightToLeft };
         var stopp = Knopf(Loc.T("Stop the scan"));
         stopp.Click += (_, _) => { Entschieden?.Invoke(false); Close(); };
-        var weiter = Knopf(Loc.T("Keep trying"));
+        var weiter = Knopf(Loc.T("Try now"));
         weiter.Click += (_, _) => { Entschieden?.Invoke(true); Close(); };
         knoepfe.Controls.Add(stopp);
         knoepfe.Controls.Add(weiter);
@@ -105,11 +105,11 @@ internal sealed class ServerFehlerHinweis : Form
     }
 
     /// <summary>Was zu sagen ist und wann der naechste Versuch kommt; mittig auf den Hauptschirm.</summary>
-    public void Melde(int fehler, int hoechstens, DateTime naechster)
+    public void Melde(int fehler, DateTime naechster)
     {
         _naechster = naechster;
-        _kopf = string.Format(Loc.T("The game cannot reach its leaderboards (Server Error {0} in a row). The scanner waits and then tries this board again -- {1} times while you are at the PC; without input at the mouse or keyboard it keeps trying, so a scan at night does not stop."),
-                              fehler, hoechstens);
+        _kopf = string.Format(Loc.T("The game cannot reach its leaderboards (Server Error {0} in a row). The scanner waits and then tries this board again, as often as it takes. It stops only on the Pause or Delete key, Ctrl+C, or when the game is closed."),
+                              fehler);
         var schirm = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
         Location = new Point(schirm.X + (schirm.Width - Width) / 2, schirm.Y + (schirm.Height - Height) / 2);
         Zeigen();

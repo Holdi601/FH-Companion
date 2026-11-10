@@ -1401,10 +1401,38 @@ internal static class EdgeCaseTest
 
         var serverEinst = new Rivals.OverlaySettings();
         Soll(Scan.ScanTab.ServerPause(serverEinst) == TimeSpan.FromMinutes(5), "nach einem Server-Fehler fuenf Minuten Pause");
-        Soll(Scan.ScanTab.NochEinmal(1, serverEinst) && Scan.ScanTab.NochEinmal(6, serverEinst) && !Scan.ScanTab.NochEinmal(7, serverEinst),
-             "nach einem Server-Fehler sechsmal neu versuchen, beim siebten Fehler stoppen");
-        serverEinst.ScanServerRetries = 0;
-        Soll(!Scan.ScanTab.NochEinmal(1, serverEinst), "mit 0 Versuchen stoppt schon der erste Server-Fehler nicht");
+        // SO OFT ES BRAUCHT (2026-11-10): keine Hoechstzahl mehr nach einem Server-Fehler; ein Board, das
+        // auf dem Weg scheitert, wird dreimal versucht und dann uebersprungen, statt die Schlange anzuhalten.
+        Soll(Scan.ScanTab.VersucheJeBoard == 3 && Scan.ScanTab.PauseVorNeuemVersuch == TimeSpan.FromSeconds(30),
+             "Scan: ein gescheitertes Board wird nicht dreimal versucht");
+        // Anhalten nur auf ausdruecklichen Wunsch -- und jedes Anhalten zaehlt als vom Nutzer, damit die
+        // Schlange dann wirklich steht und nicht das naechste Board nimmt.
+        using (var abgebrochen = new CancellationTokenSource())
+        {
+            abgebrochen.Cancel();
+            try
+            {
+                Scan.ScanWache.Halt(abgebrochen.Token);
+                Soll(false, "Scan: Stop in der App haelt nicht an");
+            }
+            catch (Scan.ScanNavigator.Abbruch a)
+            {
+                Soll(a.VomNutzer && a.Message == "stopped in the app", "Scan: Stop in der App zaehlt nicht als vom Nutzer");
+            }
+        }
+        if (!Scan.ScanWache.SpielLaeuft())
+        {
+            try
+            {
+                Scan.ScanWache.Halt(CancellationToken.None);
+                Soll(false, "Scan: ein geschlossenes Spiel haelt den Scan nicht an");
+            }
+            catch (Scan.ScanNavigator.Abbruch a)
+            {
+                Soll(a.VomNutzer && a.Message.Contains("closed"), "Scan: ein geschlossenes Spiel zaehlt nicht als vom Nutzer");
+            }
+        }
+        Soll(Scan.ScanWache.Taste is null, "Scan: eine Stopptaste gilt, bevor die Wache laeuft");
         // Der Reiter baut sich ohne Spiel und ohne Fenster auf (nur erzeugt, nie gezeigt).
         using var reiter = new Scan.ScanTab(new Rivals.OverlaySettings(), () => false);
         Soll(reiter.Controls.Count == 3, "der Scan-Reiter baut sich nicht auf");

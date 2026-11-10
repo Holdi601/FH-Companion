@@ -117,6 +117,12 @@ tr.hidden-row td { opacity: .45; text-decoration: line-through; }
 .state.waiting, .state.hidden { color: var(--muted); }
 .state.held, .state.skipped { color: var(--bad); }
 .state.review { color: #c47a00; }
+/* Was zu tun ist (seit 2026-11-10): oben, mit den Knoepfen gleich dabei. */
+.todo ul { margin: 0; padding-left: 18px; }
+.todo li { margin: 6px 0; }
+.todo table { margin-top: 6px; }
+.todo .nothing { color: var(--good); }
+.sep { margin-top: 42px; border-top: 1px solid var(--border); }
 .state-why { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; max-width: 46ch; }
 tr.dim-row td { opacity: .55; }
 .err { color: var(--bad); }
@@ -201,6 +207,61 @@ details.lapcls { margin-left: 18px; }
   </div>
 
   <div id="body" hidden>
+    <h2 id="h-todo">Needs your action</h2>
+    <div class="panel todo" id="todo"><span class="note">loading ...</span></div>
+
+    <h2 id="h-scans">Leaderboard scans from the app</h2>
+    <div class="panel">
+      <div class="filters"><button id="scans-refresh">Reload</button>
+        <span class="note">Boards read in FH Companion's scan tab, stored like a friend's contribution
+        (contrib/app-&hellip;). No gamertags. A scan that passes every automatic check goes live with
+        the next dataset build; one that fails is <b>held</b> (hidden on arrival) with the reason.
+        Hide removes any scan from the site, Show releases a held one. Flags are only marks.</span></div>
+      <div id="scans" class="note">not loaded</div>
+    </div>
+
+    <h2 id="h-build">Dataset build</h2>
+    <div class="panel">
+      <div class="filters"><button id="build-refresh">Reload</button>
+        <button id="build-now">Rebuild now</button>
+        <span class="note">This server rebuilds the dataset and the site on its own, at low priority,
+        within a minute after an accepted scan arrives or the visibility list changes. Submitted laps
+        need no rebuild -- the site loads them live. "Rebuild now" starts a build at once.</span></div>
+      <div id="build" class="note">not loaded</div>
+    </div>
+
+    <h2 id="h-laps">Submitted lap times</h2>
+    <div class="panel">
+      <div class="filters">
+        <input id="f-player" placeholder="player" />
+        <input id="f-car" placeholder="car ordinal" />
+        <input id="f-max" placeholder="max seconds" />
+        <label><input type="checkbox" id="f-hidden" /> show hidden too</label>
+        <button id="laps-refresh">Reload</button>
+      </div>
+      <div id="laps" class="note">not loaded</div>
+    </div>
+
+    <h2 id="h-races">Race results (Horizon Play)</h2>
+    <div class="panel">
+      <div class="filters"><button id="races-refresh">Reload</button>
+        <span class="note">A car's time is the one at the 1 % mark of all human times, never the single
+        fastest. Hide a time you know is cheated and the next one counts; hide that too if needed.
+        The proof picture shows other players' gamertags -- it stays on this page.</span></div>
+      <div id="hp-boards" class="note">not loaded</div>
+      <div id="races" class="note"></div>
+    </div>
+
+    <h2 id="h-bans">Bans</h2>
+    <div class="panel">
+      <div class="filters"><button id="bans-refresh">Reload</button>
+        <span id="bans-rules" class="note"></span></div>
+      <h3>Players</h3>
+      <div id="bans-installs" class="note">not loaded</div>
+      <h3>Addresses (failed logins)</h3>
+      <div id="bans-ips" class="note">not loaded</div>
+    </div>
+    <div class="sep" id="h-stats"></div>
     <h2>Downloads</h2>
     <div class="cards" id="dl"></div>
 
@@ -268,57 +329,6 @@ details.lapcls { margin-left: 18px; }
     <h2>Scan runs</h2>
     <div class="panel"><div id="runs" class="note">not loaded</div></div>
 
-    <h2>Submitted lap times</h2>
-    <div class="panel">
-      <div class="filters">
-        <input id="f-player" placeholder="player" />
-        <input id="f-car" placeholder="car ordinal" />
-        <input id="f-max" placeholder="max seconds" />
-        <label><input type="checkbox" id="f-hidden" /> show hidden too</label>
-        <button id="laps-refresh">Reload</button>
-      </div>
-      <div id="laps" class="note">not loaded</div>
-    </div>
-
-    <h2>Race results (Horizon Play)</h2>
-    <div class="panel">
-      <div class="filters"><button id="races-refresh">Reload</button>
-        <span class="note">A car's time is the one at the 1 % mark of all human times, never the single
-        fastest. Hide a time you know is cheated and the next one counts; hide that too if needed.
-        The proof picture shows other players' gamertags -- it stays on this page.</span></div>
-      <div id="hp-boards" class="note">not loaded</div>
-      <div id="races" class="note"></div>
-    </div>
-
-    <h2>Dataset build</h2>
-    <div class="panel">
-      <div class="filters"><button id="build-refresh">Reload</button>
-        <button id="build-now">Rebuild now</button>
-        <span class="note">This server rebuilds the dataset and the site on its own, at low priority,
-        within a minute after an accepted scan arrives or the visibility list changes. Submitted laps
-        need no rebuild -- the site loads them live. "Rebuild now" starts a build at once.</span></div>
-      <div id="build" class="note">not loaded</div>
-    </div>
-
-    <h2>Leaderboard scans from the app</h2>
-    <div class="panel">
-      <div class="filters"><button id="scans-refresh">Reload</button>
-        <span class="note">Boards read in FH Companion's scan tab, stored like a friend's contribution
-        (contrib/app-&hellip;). No gamertags. A scan that passes every automatic check goes live with
-        the next dataset build; one that fails is <b>held</b> (hidden on arrival) with the reason.
-        Hide removes any scan from the site, Show releases a held one. Flags are only marks.</span></div>
-      <div id="scans" class="note">not loaded</div>
-    </div>
-
-    <h2>Bans</h2>
-    <div class="panel">
-      <div class="filters"><button id="bans-refresh">Reload</button>
-        <span id="bans-rules" class="note"></span></div>
-      <h3>Players</h3>
-      <div id="bans-installs" class="note">not loaded</div>
-      <h3>Addresses (failed logins)</h3>
-      <div id="bans-ips" class="note">not loaded</div>
-    </div>
   </div>
 
   <footer><a href="/">Back to the car ratings</a></footer>
@@ -725,6 +735,8 @@ function rennenLaden() {
   ziel.textContent = "loading ...";
   return hole("/api/admin/race/list").then(function (d) {
     alleRennen = d.races || [];
+    TODO.races = alleRennen;
+    todoZeichnen();
     rennenZeichnen(d.boards || []);
   }).catch(function (e) {
     ziel.textContent = "not available: " + e.message;
@@ -797,10 +809,95 @@ function rennenZeichnen(bretter) {
 function zeit(sekunden) {
   return sekunden ? new Date(sekunden * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC" : "--";
 }
+// WAS ZU TUN IST (seit 2026-11-10). Der Nutzer: "things i need to action on should be near the top
+// not the bottom". Jede Liste traegt hier ein, was sie geladen hat; gezeichnet wird, sobald etwas da ist.
+var TODO = { scans: null, build: null, laps: null, races: null };
+var SCAN_RANG = { review: 0, held: 1, waiting: 2 };
+
+function todoZeichnen() {
+  var ziel = document.getElementById("todo");
+  if (!ziel) { return; }
+  var punkte = [];
+  var offen = (TODO.scans || []).filter(function (x) { return x.state === "held" || x.state === "review"; });
+  if (offen.length) {
+    punkte.push("<li><b>" + offen.length + " leaderboard scan(s) wait for your decision</b>"
+      + "<table><tr><th>Received</th><th>From</th><th>Route</th><th>Class</th><th>Rows</th><th>State</th><th></th></tr>"
+      + offen.map(function (x) {
+          var wann = x.received ? new Date(x.received * 1000).toISOString().slice(0, 16).replace("T", " ") : "";
+          var warum = x.stateReason || x.reason || "";
+          return '<tr title="' + esc(x.run_id) + '"><td>' + esc(wann) + "</td><td>" + esc(x.who) + "</td><td>"
+            + esc(x.track) + "</td><td>" + esc(x["class"]) + "</td><td>" + esc(x.rows) + "</td><td>"
+            + '<span class="state ' + esc(x.state) + '">' + (x.state === "review" ? "Resubmitted - review" : "Held by the checks")
+            + "</span>" + (warum ? '<div class="state-why">' + esc(warum) + "</div>" : "") + "</td><td>"
+            + '<button data-scan="' + esc(x.run_id) + '" data-hide="0">' + (x.state === "review" ? "Approve" : "Allow anyway") + "</button> "
+            + '<button class="ghost" data-scan="' + esc(x.run_id) + '" data-hide="1" data-keep="1">Keep hidden</button></td></tr>';
+        }).join("") + "</table></li>");
+  }
+  var b = TODO.build;
+  if (b) {
+    var w = b.pending_scans || [];
+    if (w.length || b.visibility_changed) {
+      punkte.push("<li>" + (w.length ? "<b>" + w.length + " accepted scan(s) wait for the next dataset build.</b> " : "")
+        + (b.visibility_changed ? "<b>The visibility list changed since the build.</b> " : "")
+        + (b.request ? '<span class="note">A rebuild is already requested.</span>'
+                     : '<button id="todo-build">Rebuild now</button>') + "</li>");
+    }
+    if (b.last_run && !b.last_run.ok) {
+      punkte.push('<li><b class="err">The last dataset build failed</b> (' + esc(zeit(b.last_run.finished)) + ")"
+        + (b.last_run.message ? ': <span class="note">' + esc(b.last_run.message) + "</span>" : "")
+        + ' <a href="#h-build">Dataset build</a></li>');
+    }
+  }
+  var markiert = (TODO.laps || []).filter(function (r) { return !r.hidden && r.flags && r.flags.length; });
+  if (markiert.length) {
+    punkte.push("<li><b>" + markiert.length + " submitted lap(s) carry flags.</b> "
+      + '<a href="#h-laps">Submitted lap times</a></li>');
+  }
+  var rennen = (TODO.races || []).filter(function (r) { return r.flags && r.flags.length; });
+  if (rennen.length) {
+    punkte.push("<li><b>" + rennen.length + " race result(s) carry flags.</b> "
+      + '<a href="#h-races">Race results</a></li>');
+  }
+  var geladen = TODO.scans !== null && TODO.build !== null;
+  ziel.innerHTML = punkte.length ? "<ul>" + punkte.join("") + "</ul>"
+    : (geladen ? '<span class="nothing">Nothing waits for you.</span>' : '<span class="note">loading ...</span>');
+  scanKnoepfe(ziel);
+  var neu = document.getElementById("todo-build");
+  if (neu) {
+    neu.addEventListener("click", function () {
+      var knopf = document.getElementById("build-now");
+      if (knopf) { knopf.click(); }
+    });
+  }
+}
+
+// Die Knoepfe eines Scans -- in der Liste wie oben unter "Needs your action".
+function scanKnoepfe(wurzel) {
+  Array.prototype.forEach.call(wurzel.querySelectorAll("button[data-scan]"), function (b) {
+    b.addEventListener("click", function () {
+      var hide = b.getAttribute("data-hide") === "1";
+      var grund = "";
+      if (hide) {
+        grund = prompt(b.getAttribute("data-keep") ? "Why keep this scan off the site?" : "Why hide this scan?", "wrong data");
+        if (grund === null) { return; }
+      } else if (!confirm("Put this scan into the dataset? The next build takes it onto the site.")) {
+        return;
+      }
+      b.disabled = true;
+      schicke("/api/admin/visibility", { run_id: b.getAttribute("data-scan"), hidden: hide, reason: grund })
+        .then(scansLaden)
+        .then(bauLaden)
+        .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
+    });
+  });
+}
+
 function bauLaden() {
   var ziel = document.getElementById("build");
   ziel.textContent = "loading ...";
   return hole("/api/admin/build").then(function (d) {
+    TODO.build = d;
+    todoZeichnen();
     var teile = [];
     teile.push("<p>Dataset built: <b>" + esc(zeit(d.built_at)) + "</b></p>");
     var w = d.pending_scans || [];
@@ -829,7 +926,14 @@ function scansLaden() {
   var ziel = document.getElementById("scans");
   ziel.textContent = "loading ...";
   return hole("/api/admin/scan/list").then(function (d) {
-    var liste = d.scans || [];
+    // Was eine Entscheidung braucht, zuerst; danach das Neueste.
+    var liste = (d.scans || []).slice().sort(function (a, b) {
+      var ra = a.state in SCAN_RANG ? SCAN_RANG[a.state] : 9;
+      var rb = b.state in SCAN_RANG ? SCAN_RANG[b.state] : 9;
+      return ra - rb || (b.received || 0) - (a.received || 0);
+    });
+    TODO.scans = liste;
+    todoZeichnen();
     // WO JEDER SCAN STEHT (seit 2026-10-18). Bis dahin stand hier nur "eingereicht", und der
     // Grund eines angehaltenen Scans war grau und durchgestrichen -- der Nutzer sah einen
     // Cross-Country-Scan in der Verwaltung, aber nicht auf der Seite, und nicht warum.
@@ -871,22 +975,7 @@ function scansLaden() {
               + "</td><td>" + knopf + "</td></tr>";
           }).join("") + "</table>"
       : "no scans sent yet";
-    Array.prototype.forEach.call(ziel.querySelectorAll("button[data-scan]"), function (b) {
-      b.addEventListener("click", function () {
-        var hide = b.getAttribute("data-hide") === "1";
-        var grund = "";
-        if (hide) {
-          grund = prompt("Why hide this scan?", "wrong data");
-          if (grund === null) { return; }
-        } else if (!confirm("Put this scan into the dataset? The next build takes it onto the site.")) {
-          return;
-        }
-        b.disabled = true;
-        schicke("/api/admin/visibility", { run_id: b.getAttribute("data-scan"), hidden: hide, reason: grund })
-          .then(scansLaden)
-          .catch(function (e) { b.disabled = false; alert("Failed: " + e.message); });
-      });
-    });
+    scanKnoepfe(ziel);
   }).catch(function (e) {
     ziel.textContent = "not available: " + e.message;
   });
@@ -1040,6 +1129,8 @@ function rundenLaden() {
     ? hole(pfad) : fetch(pfad).then(function (r) { return r.json(); });
   return holen.then(function (d) {
     alleRunden = d.laps || [];
+    TODO.laps = alleRunden;
+    todoZeichnen();
     rundenZeichnen();
   }).catch(function (e) {
     ziel.textContent = "not available: " + e.message;

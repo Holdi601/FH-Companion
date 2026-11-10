@@ -38,7 +38,7 @@ internal sealed class AuctionBidder
     {
         _wache = wache;
         _melden = melden;
-        _eingabe = new ScanEingabe(stop) { Halten = 30 };
+        _eingabe = new ScanEingabe(stop) { Halten = 30, Wachsam = false };
     }
 
     // ------------------------------------------------------------------ //

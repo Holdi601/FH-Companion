@@ -104,15 +104,7 @@ internal sealed class ScanNavigator
     internal static readonly Regex HorizonRivalsKachel = ScanScreen.Zeile(@"Horizon(?:\s+Rivals)?|Horizon\s*-", RegexOptions.IgnoreCase,
                                                                           ("horizon_rivals", "Horizon Rivals"));
 
-    private void PruefeWeiter()
-    {
-        if (_stop.IsCancellationRequested) { throw new Abbruch("stopped in the app"); }
-        if ((GetAsyncKeyState(PauseTaste) & 0x8000) != 0) { throw new Abbruch("stopped with the Pause key"); }
-        if (GameWatch.ForegroundProcessName() != GameWatch.DefaultProcessName)
-        {
-            throw new Abbruch("the game is no longer in front");
-        }
-    }
+    private void PruefeWeiter() => ScanWache.Pruefe(_stop);
 
     private static string Name(byte vk) => vk switch
     {

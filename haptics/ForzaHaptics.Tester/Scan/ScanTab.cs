@@ -39,10 +39,13 @@ internal sealed class ScanTab : UserControl
     internal static TimeSpan ServerPause(OverlaySettings s) => TimeSpan.FromMinutes(Math.Clamp(s.ScanServerWaitMinutes, 1, 60));
 
     /// <summary>
-    /// Noch einmal versuchen? Nach <paramref name="fehlerInFolge"/> Server-Fehlern hintereinander --
-    /// solange es nicht mehr sind als eingestellt (0 = nie neu versuchen).
+    /// So oft wird ein Board versucht, das NICHT am Server scheitert (der Weg dorthin, ein Absturz des
+    /// Lesens), bevor die Warteschlange es ueberspringt -- statt wie bis 2026-11-10 ganz aufzuhoeren.
     /// </summary>
-    internal static bool NochEinmal(int fehlerInFolge, OverlaySettings s) => fehlerInFolge <= Math.Clamp(s.ScanServerRetries, 0, 50);
+    internal const int VersucheJeBoard = 3;
+
+    /// <summary>Die Pause vor dem naechsten Versuch eines solchen Boards.</summary>
+    internal static readonly TimeSpan PauseVorNeuemVersuch = TimeSpan.FromSeconds(30);
 
     private static readonly Color Grund = Color.FromArgb(24, 26, 31);
     private static readonly Color Feld = Color.FromArgb(18, 20, 24);
@@ -246,20 +249,15 @@ internal sealed class ScanTab : UserControl
         optionen.Controls.Add(_hochladen);
         _oben.Controls.Add(optionen);
 
-        // "SERVER ERROR": warten und neu versuchen, wie oft und wie lange (seit 2026-10-24, der Nutzer:
-        // "should not cancel after 1 or 2 server errors ... wait 5 minutes and then retry ... 5-10 times").
+        // "SERVER ERROR": warten und neu versuchen, so oft es eben braucht (seit 2026-11-10; davor eine
+        // Hoechstzahl, sobald jemand am Rechner war -- und das las der Scanner aus seinen eigenen Tasten).
         var server = Zeile();
-        server.Controls.Add(Beschriftung(Loc.T("On \"Server Error\": retry")));
-        var versuche = new NumericUpDown { Minimum = 0, Maximum = 50, Width = 55, BackColor = Feld, ForeColor = Color.WhiteSmoke,
-                                           Value = Math.Clamp(_einstellungen.ScanServerRetries, 0, 50) };
-        versuche.ValueChanged += (_, _) => { _einstellungen.ScanServerRetries = (int)versuche.Value; _einstellungen.Save(); };
-        server.Controls.Add(versuche);
-        server.Controls.Add(Beschriftung(Loc.T("times, waiting")));
+        server.Controls.Add(Beschriftung(Loc.T("On \"Server Error\": wait")));
         var minuten = new NumericUpDown { Minimum = 1, Maximum = 60, Width = 55, BackColor = Feld, ForeColor = Color.WhiteSmoke,
                                           Value = Math.Clamp(_einstellungen.ScanServerWaitMinutes, 1, 60) };
         minuten.ValueChanged += (_, _) => { _einstellungen.ScanServerWaitMinutes = (int)minuten.Value; _einstellungen.Save(); };
         server.Controls.Add(minuten);
-        server.Controls.Add(Beschriftung(Loc.T("minutes each time")));
+        server.Controls.Add(Beschriftung(Loc.T("minutes, then try the board again -- as often as it takes")));
         _oben.Controls.Add(server);
 
         // WAS DER SERVER VERLANGT (seit 2026-10-11) -- vor dem Scan zu lesen, nicht erst danach.
@@ -269,7 +267,7 @@ internal sealed class ScanTab : UserControl
         _anforderungen.Margin = new Padding(8, 2, 3, 2);
         _oben.Controls.Add(_anforderungen);
 
-        _warnung.Text = Loc.T("While the scan runs, this PC belongs to the scanner: it sends keys to the game and reads the screen. Do not touch the mouse or keyboard. Switching to another window or pressing the Pause key stops it. Start it from a menu in the game, never while you drive.");
+        _warnung.Text = Loc.T("While the scan runs, this PC belongs to the scanner: it sends keys to the game and reads the screen. Do not touch the mouse or keyboard. It stops only on the Pause or Delete key, Ctrl+C, Stop, or when the game is closed; if another window comes to the front, it brings the game back. Start it from a menu in the game, never while you drive.");
         _warnung.AutoSize = true;
         _warnung.ForeColor = Warnfarbe;
         _warnung.Margin = new Padding(8, 6, 3, 6);
@@ -627,21 +625,25 @@ internal sealed class ScanTab : UserControl
                 return;
             }
             Directory.CreateDirectory(Wurzel);
+            ScanWache.Melden = Log;
+            ScanWache.Start();
             Log($"queue of {ziele.Count} board(s), first {obergrenze} ranks (0 = all), upload {(hochladen ? "on" : "off")}");
             if (!WarteAufSpiel(stop))
             {
-                schluss = Loc.T("The game did not come to the front. Nothing was pressed.");
-                return;
+                // Nicht gleich aufgeben: die Wache holt es bis zu fuenf Minuten lang zurueck.
+                ScanWache.Pruefe(stop);
             }
             // Das erste Board von irgendwo im Spiel; danach steht es auf der vorigen Bestenliste.
             var vomBoard = false;
             var fehlerInFolge = 0;
-            // War waehrend der letzten Wartezeit jemand an Maus oder Tastatur? Nur dann gilt die
-            // eingestellte Hoechstzahl -- ohne Eingabe wird immer weiter versucht (Nachtscan).
-            var jemandDa = false;
+            var versuchDiesesBoards = 0;
+            var uebersprungen = 0;
+            var letztes = -1;
             for (var i = 0; i < ziele.Count; i++)
             {
                 stop.ThrowIfCancellationRequested();
+                ScanWache.Halt(stop);
+                if (i != letztes) { versuchDiesesBoards = 0; letztes = i; }
                 var ziel = ziele[i];
                 var name = BoardName(ziel);
                 var nr = i + 1;
@@ -660,6 +662,7 @@ internal sealed class ScanTab : UserControl
                 var uhr = Stopwatch.StartNew();
                 BoardScanner.Ergebnis? e = null;
                 string? abbruch = null;
+                var vomNutzer = false;
                 try
                 {
                     var scanner = new BoardScanner(_routen!, Melden, stop) { Obergrenze = obergrenze };
@@ -668,6 +671,7 @@ internal sealed class ScanTab : UserControl
                 catch (ScanNavigator.Abbruch a)
                 {
                     abbruch = a.Message;
+                    vomNutzer = a.VomNutzer;
                     // Stand der Scanner schon auf der Liste, hat er das Gelesene abgelegt.
                     e = a.Lauf;
                 }
@@ -686,26 +690,17 @@ internal sealed class ScanTab : UserControl
                     Log($"server error on {name}" + (abbruch is null ? string.Empty : ": " + abbruch));
                     Setze(zeile, Loc.T("server error"), zeilen, dauer, "–");
                     fehlerInFolge++;
-                    var hoechstens = Math.Clamp(_einstellungen.ScanServerRetries, 0, 50);
-                    if (jemandDa && !NochEinmal(fehlerInFolge, _einstellungen))
-                    {
-                        schluss = string.Format(Loc.T("Server error {0} times in a row: the queue stops. Try again later."), fehlerInFolge);
-                        return;
-                    }
                     var pause = ServerPause(_einstellungen);
                     var bis = DateTime.Now + pause;
-                    var text = string.Format(Loc.T("Server error ({0} of {1}): the game cannot reach the leaderboards. Waiting until {2}, then this board once more."),
-                                             fehlerInFolge, hoechstens, bis.ToString("HH:mm"));
+                    var text = string.Format(Loc.T("Server error ({0} in a row): the game cannot reach the leaderboards. Waiting until {1}, then this board once more."),
+                                             fehlerInFolge, bis.ToString("HH:mm"));
                     Zurueck(() => Status(text));
-                    Log($"waiting {pause.TotalMinutes:0} min after server error {fehlerInFolge}{(jemandDa ? string.Empty : " (nobody at the PC: no limit)")}");
-                    var ergebnis = ServerPauseAbwarten(pause, bis, fehlerInFolge, hoechstens, stop);
-                    jemandDa = ergebnis.JemandDa;
-                    if (ergebnis.Beenden)
+                    Log($"waiting {pause.TotalMinutes:0} min after server error {fehlerInFolge} (no limit; stop keys end it)");
+                    if (ServerPauseAbwarten(pause, bis, fehlerInFolge, stop))
                     {
                         schluss = Loc.T("Stopped after the Server Error.");
                         return;
                     }
-                    if (ergebnis.Weiter) { fehlerInFolge = 0; }
                     DialogWegdruecken(stop);
                     i--;
                     continue;
@@ -717,7 +712,7 @@ internal sealed class ScanTab : UserControl
                     schluss = string.Format(Loc.T("Queue stopped: {0}"), Loc.T("game crashed"));
                     return;
                 }
-                if (abbruch is not null)
+                if (abbruch is not null && (vomNutzer || stop.IsCancellationRequested))
                 {
                     Log($"stopped on {name}: {abbruch}");
                     if (e is not null)
@@ -731,6 +726,27 @@ internal sealed class ScanTab : UserControl
                     schluss = stop.IsCancellationRequested ? Loc.T("Stopped.") : string.Format(Loc.T("Queue stopped: {0}"), abbruch);
                     return;
                 }
+                if (abbruch is not null)
+                {
+                    // KEIN GRUND, DIE GANZE WARTESCHLANGE AUFZUGEBEN (seit 2026-11-10): der Weg zum Board
+                    // ging schief ("could not reach the ONLINE tab" um 01:35). Was gelesen war, bleibt;
+                    // dann neu vom Spiel aus, zweimal -- danach das naechste Board.
+                    if (e is not null) { Abgelegt(e, zeile, name, zeilen, dauer, hochladen); }
+                    versuchDiesesBoards++;
+                    vomBoard = false;
+                    if (versuchDiesesBoards < VersucheJeBoard)
+                    {
+                        Log($"{name}: {abbruch} -- try {versuchDiesesBoards + 1} of {VersucheJeBoard} in {PauseVorNeuemVersuch.TotalSeconds:0} s");
+                        if (e is null) { Setze(zeile, Loc.T("failed, trying again"), zeilen, dauer, "–"); }
+                        ScanWache.Warte(PauseVorNeuemVersuch, stop);
+                        i--;
+                        continue;
+                    }
+                    Log($"{name}: {abbruch} -- skipped after {VersucheJeBoard} tries");
+                    if (e is null) { Setze(zeile, Loc.T("skipped"), zeilen, dauer, "–"); }
+                    uebersprungen++;
+                    continue;
+                }
 
                 fertig++;
                 fehlerInFolge = 0;
@@ -738,7 +754,10 @@ internal sealed class ScanTab : UserControl
                 // Ohne Versand weiss der Server nicht, dass es fertig ist: die Anmeldung loesen.
                 if (!hochladen) { nachher?.Invoke(ziel); }
             }
-            schluss = string.Format(Loc.T("Queue finished: {0} of {1} board(s) scanned."), fertig, ziele.Count);
+            schluss = uebersprungen == 0
+                ? string.Format(Loc.T("Queue finished: {0} of {1} board(s) scanned."), fertig, ziele.Count)
+                : string.Format(Loc.T("Queue finished: {0} of {1} board(s) scanned, {2} skipped after three failed tries."),
+                                fertig, ziele.Count, uebersprungen);
         }
         catch (OperationCanceledException)
         {
@@ -755,6 +774,8 @@ internal sealed class ScanTab : UserControl
         }
         finally
         {
+            ScanWache.Ende();
+            ScanWache.Melden = null;
             griff?.Dispose();
             if (offen is not null) { Setze(offen, Loc.T("stopped"), string.Empty, string.Empty, "–"); }
             Log("end: " + schluss);
@@ -792,56 +813,46 @@ internal sealed class ScanTab : UserControl
     }
 
     /// <summary>
-    /// Die Wartezeit nach einem "Server Error" -- und wer in der Zeit an Maus oder Tastatur war.
+    /// Die Wartezeit nach einem "Server Error". true = der Nutzer hat beendet.
     /// </summary>
     /// <remarks>
-    /// Waehrend der Pause drueckt der Scanner nichts; aendert sich die letzte Eingabe des Systems,
-    /// war es also ein Mensch. Dann kommt der Hinweis mitten auf den Schirm, mit "Keep trying"
-    /// (frische Versuche) und "Stop the scan". Vor dem naechsten Versuch geht er wieder zu, und das
-    /// Spiel kommt nach vorn (der Klick auf den Hinweis hat ihm den Fokus genommen).
+    /// SO OFT ES BRAUCHT (seit 2026-11-10). Bis dahin zaehlte eine Hoechstzahl, sobald waehrend der
+    /// Pause "jemand an Maus oder Tastatur" war -- gemessen an der letzten Eingabe des Systems. Die
+    /// setzte am 2026-11-10 um 09:34 der Scanner selbst (seine Tasten sind Eingaben wie jede andere):
+    /// der Hinweis kam sofort, und fuenf Minuten spaeter stand die Warteschlange. Jetzt steht der
+    /// Hinweis die ganze Pause ueber da, nimmt dem Spiel nicht den Fokus, und nur "Stop the scan",
+    /// eine Stopptaste oder ein geschlossenes Spiel beenden. "Try now" kuerzt die Pause ab.
     /// </remarks>
-    private (bool JemandDa, bool Weiter, bool Beenden) ServerPauseAbwarten(TimeSpan pause, DateTime bis, int fehler,
-                                                                          int hoechstens, CancellationToken stop)
+    private bool ServerPauseAbwarten(TimeSpan pause, DateTime bis, int fehler, CancellationToken stop)
     {
-        var anfang = ServerFehlerHinweis.LetzteEingabe();
-        var jemandDa = false;
         ServerFehlerHinweis? hinweis = null;
-        var entscheidung = 0; // 1 weiter, 2 beenden
+        var entscheidung = 0; // 1 jetzt versuchen, 2 beenden
         var ende = DateTime.UtcNow + pause;
+        Zurueck(() =>
+        {
+            hinweis = new ServerFehlerHinweis();
+            hinweis.Entschieden += weiter => Interlocked.Exchange(ref entscheidung, weiter ? 1 : 2);
+            hinweis.Melde(fehler, bis);
+            hinweis.Show();
+        });
         try
         {
-            while (DateTime.UtcNow < ende && entscheidung != 2)
+            while (DateTime.UtcNow < ende && Volatile.Read(ref entscheidung) == 0)
             {
-                if (stop.WaitHandle.WaitOne(500)) { throw new OperationCanceledException(stop); }
-                if (!jemandDa && ServerFehlerHinweis.LetzteEingabe() != anfang)
-                {
-                    jemandDa = true;
-                    Log("input during the Server Error wait -- showing the notice");
-                    Zurueck(() =>
-                    {
-                        hinweis = new ServerFehlerHinweis();
-                        hinweis.Entschieden += weiter => Interlocked.Exchange(ref entscheidung, weiter ? 1 : 2);
-                        hinweis.Melde(fehler, hoechstens, bis);
-                        hinweis.Show();
-                    });
-                }
+                ScanWache.Halt(stop);
+                stop.WaitHandle.WaitOne(500);
             }
+            ScanWache.Halt(stop);
         }
         finally
         {
             Zurueck(() =>
             {
                 try { hinweis?.Close(); hinweis?.Dispose(); } catch (Exception) { }
-                // Wer auf den Hinweis geklickt hat, hat dem Spiel den Fokus genommen.
-                if (entscheidung == 1) { ScanEingabe.SpielNachVorn(); }
             });
         }
-        if (entscheidung == 1)
-        {
-            // Dem Spiel einen Moment geben, nach vorn zu kommen.
-            stop.WaitHandle.WaitOne(1500);
-        }
-        return (jemandDa, entscheidung == 1, entscheidung == 2);
+        if (entscheidung == 2) { Log("stopped with \"Stop the scan\" on the Server Error notice"); }
+        return entscheidung == 2;
     }
 
     /// <summary>Wie --scan-board: das Spiel dreimal nacheinander vorn, sonst wird nichts gedrueckt.</summary>

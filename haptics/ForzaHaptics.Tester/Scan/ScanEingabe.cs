@@ -31,8 +31,19 @@ internal sealed class ScanEingabe
         timeBeginPeriod(1);
     }
 
+    /// <summary>
+    /// Der Bestenlisten-Scan (true): Stopptasten und Zurueckholen wie in <see cref="ScanWache"/>. Der
+    /// Auktionsblick (false) bleibt beim Alten -- ein anderes Fenster vorn haelt ihn an.
+    /// </summary>
+    public bool Wachsam { get; init; } = true;
+
     public void PruefeWeiter()
     {
+        if (Wachsam)
+        {
+            ScanWache.Pruefe(_stop);
+            return;
+        }
         if (_stop.IsCancellationRequested) { throw new ScanNavigator.Abbruch("stopped in the app") { VomNutzer = true }; }
         if ((GetAsyncKeyState(PauseTaste) & 0x8000) != 0) { throw new ScanNavigator.Abbruch("stopped with the Pause key") { VomNutzer = true }; }
         if (GameWatch.ForegroundProcessName() != GameWatch.DefaultProcessName)
