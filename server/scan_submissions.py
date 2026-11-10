@@ -77,6 +77,7 @@ import contrib_format as fmt
 import import_contrib
 import lap_submissions as laps
 import run_seal
+import stichtag
 
 WORKSPACE = Path(__file__).resolve().parent.parent
 CONTRIB_ROOT = import_contrib.CONTRIB_ROOT
@@ -328,6 +329,12 @@ def pruefe_lauf(state, rows_text, bekannte_bretter: set | dict | None = None,
 #     Bevorzugt die Zeiten, die beim letzten Scan auf der Liste standen ("current"):
 #     der Datensatz behaelt auch verdraengte Zeiten, und die stehen auf keinem
 #     neuen Scan mehr.
+#   * NUR AB DEM STICHTAG (seit 2026-11-10, server/stichtag.py): am 2026-11-03 hat das
+#     Spiel Fahrzeuge abgeschwaecht und seine Bestenlisten geloescht. Ein Scan danach
+#     sieht anders aus als jedes Board davor -- gegen die alten Spitzenzeiten verglichen,
+#     wuerde jeder neue Scan zurueckgehalten. Das Tor kennt darum nur Zeilen ab dem
+#     Stichtag; ein Board ohne eine davon ist ein NEUES Board (Nachbarklassen, Mindestzahl
+#     der Raenge fuer ein neues Board), und seine Nachbarn zaehlen ebenso nur ab dem Stichtag.
 #   * DAS ENDE IST BEWIESEN -- wie beim alten Werkzeug (ocr_board_sweep.py): ein
 #     Board mit unbewiesenem Ende und weniger als 500 Zeilen oder weniger als 80 %
 #     der geschaetzten Laenge ist ein Abbruch, kein Board. Ein Dienstausfall
@@ -399,19 +406,26 @@ def _falte(name) -> str:
     return " ".join(str(name or "").strip().lower().split())
 
 
-def bretter_zeiten(dataset_file: Path) -> dict:
+def bretter_zeiten(dataset_file: Path, seit: str | None | bool = True) -> dict:
     """(Kategorie, Strecke, Klasse) gefaltet -> die schnellsten gueltigen ms, aufsteigend.
 
     Hoechstens PRUEF_SPITZE je Board; die "current" statt aller, wenn das Board welche
     hat. Ein Board ohne Kategorie (aeltere Datensaetze) steht unter Kategorie "".
+    Nur Zeilen ab dem Stichtag `seit` (True: der des Servers, None: alles) -- ein Board
+    ohne eine davon fehlt, ist also neu.
     Wirft, wenn die Datei fehlt oder nicht die erwartete Form hat. Gemerkt je Stand.
     """
+    if seit is True:
+        seit = stichtag.stichtag()
     st = dataset_file.stat()
-    schluessel = (str(dataset_file), st.st_size, st.st_mtime_ns)
+    schluessel = (str(dataset_file), st.st_size, st.st_mtime_ns, seit)
     with _ZEITEN_SCHLOSS:
         if _ZEITEN["schluessel"] == schluessel:
             return _ZEITEN["bretter"]
         d = json.loads(dataset_file.read_text(encoding="utf-8"))
+        if not isinstance(d.get("boards"), list):
+            raise KeyError("boards")  # wie bisher: ein Datensatz ohne Boards ist nicht lesbar
+        d = stichtag.zuschneiden(d, seit)
         flags = d.get("flags") or []
         sauber = 1 << flags.index("clean") if "clean" in flags else 0
         aktuell = 1 << flags.index("current") if "current" in flags else 0
@@ -453,10 +467,10 @@ def bretter_zeiten(dataset_file: Path) -> dict:
         return bretter
 
 
-def lade_bretter(dataset_file: Path) -> dict | None:
-    """bretter_zeiten -- oder None, wenn der Datensatz nicht lesbar ist. Wirft nie."""
+def lade_bretter(dataset_file: Path, seit: str | None | bool = True) -> dict | None:
+    """bretter_zeiten (ab dem Stichtag) -- oder None, wenn der Datensatz nicht lesbar ist. Wirft nie."""
     try:
-        return bretter_zeiten(dataset_file)
+        return bretter_zeiten(dataset_file, seit)
     except Exception:
         return None
 

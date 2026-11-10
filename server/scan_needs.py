@@ -8,6 +8,11 @@ schiebt das Board nur ans Ende der Liste; kommt in der Zeit kein Scan, verfaellt
 Die Liste rechnet wie der Reiter "Needs a rescan" der Seite (build_analytics_site.renderRescan):
 jedes Board des Datensatzes und jede bekannte Strecke in jeder Klasse; je Board der juengste Scan
 aus dem Datensatz -- und aus den seitdem angenommenen Scans, die der naechste Bau erst aufnimmt.
+
+DER STICHTAG (seit 2026-11-10, server/stichtag.py): am 2026-11-03 hat das Spiel seine
+Bestenlisten geloescht. Ein Scan von davor zaehlt hier nicht -- ein Board, dessen juengster
+Scan aelter ist, gilt als nie gescannt und steht oben. Tiefe und Zahl der Scans ebenso nur ab
+dem Stichtag.
 """
 
 from __future__ import annotations
@@ -18,6 +23,8 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+
+import stichtag
 
 WORKSPACE = Path(__file__).resolve().parent.parent
 ANMELDUNGEN = WORKSPACE / "data" / "runtime" / "scan_claims.json"
@@ -50,10 +57,14 @@ def _zeit(text) -> float | None:
         return None
 
 
-def bretter(dataset_file: Path) -> list[dict]:
-    """Alle Boards mit Kategorie, juengstem Scan (Zeitpunkt), Tiefe und Zahl der Scans. Gemerkt je Stand."""
+def bretter(dataset_file: Path, seit: str | None = None) -> list[dict]:
+    """Alle Boards mit Kategorie, juengstem Scan (Zeitpunkt), Tiefe und Zahl der Scans. Gemerkt je Stand.
+
+    Juengster Scan, Tiefe und Zahl der Scans nur ab dem Stichtag `seit` (None = alles); ein
+    Board ohne Scan ab dem Stichtag steht trotzdem in der Liste -- mit last None, als nie gescannt.
+    """
     st = dataset_file.stat()
-    schluessel = (str(dataset_file), st.st_size, st.st_mtime_ns)
+    schluessel = (str(dataset_file), st.st_size, st.st_mtime_ns, seit)
     with _SCHLOSS:
         if _DATEN["schluessel"] == schluessel:
             return _DATEN["bretter"]
@@ -64,6 +75,8 @@ def bretter(dataset_file: Path) -> list[dict]:
         zuletzt: dict[str, float] = {}
         anzahl: dict[str, int] = {}
         for s in meta.get("scans") or []:
+            if not isinstance(s, dict) or not stichtag.gilt(s.get("when"), seit):
+                continue
             k = board_schluessel(s.get("t"), s.get("k"))
             anzahl[k] = anzahl.get(k, 0) + 1
             t = _zeit(s.get("when"))
@@ -80,7 +93,9 @@ def bretter(dataset_file: Path) -> list[dict]:
                 continue
             k = board_schluessel(strecke, klasse)
             alt = reihe.get(k)
-            tiefe = b.get("maxRank") if isinstance(b.get("maxRank"), int) else 0
+            # Die Tiefe des Boards ab dem Stichtag; ohne Zeile ab ihm ist es noch keins.
+            ab = stichtag.board_ab(b, seit)
+            tiefe = ab.get("maxRank") if ab is not None and isinstance(ab.get("maxRank"), int) else 0
             if alt is None or tiefe > alt["depth"]:
                 reihe[k] = {"category": kategorie, "track": strecke, "class": klasse, "depth": tiefe}
         for kategorie, namen in (meta.get("known_routes") or {}).items():
@@ -158,22 +173,27 @@ def freigeben(strecke, klasse, install_id: str | None = None, pfad: Path | None 
 # ---------------------------------------------------------------------- die Liste
 
 def liste(dataset_file: Path, angenommen: list, anmeldung: dict, now: float | None = None,
-          wie_viele: int = 300) -> list[dict]:
+          wie_viele: int = 300, seit: str | None | bool = True) -> list[dict]:
     """Die Boards, die einen Scan am noetigsten haben: nie gescannte zuerst, dann die aeltesten.
 
     `angenommen`: die seit dem Bau angenommenen Scans (Eintraege aus scan_submissions, nicht
     ausgeblendet) -- ein Scan von heute Morgen zaehlt, auch wenn der Bau noch aussteht.
     Angemeldete Boards stehen hinten, mit "being_scanned_until"; die Anmeldung sperrt nichts.
+    `seit`: der Stichtag -- True heisst der des Servers (stichtag.stichtag()), None alles.
     """
+    if seit is True:
+        seit = stichtag.stichtag()
     jetzt = now or time.time()
     frisch: dict[str, float] = {}
     for d in angenommen:
+        if not stichtag.gilt(stichtag.tag_von_zeitpunkt(d.get("received") or 0), seit):
+            continue
         k = board_schluessel(d.get("track"), d.get("class"))
         t = d.get("received") or 0
         if t > frisch.get(k, 0.0):
             frisch[k] = t
     raus = []
-    for b in bretter(dataset_file):
+    for b in bretter(dataset_file, seit):
         zuletzt = max(b.get("last") or 0.0, frisch.get(b["key"], 0.0)) or None
         an = anmeldung.get(b["key"])
         raus.append({

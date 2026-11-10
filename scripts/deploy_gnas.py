@@ -96,6 +96,9 @@ CODE = [
     # Bestenlisten-Scans aus der App (2026-10-04) -- ebenso von analytics_api importiert.
     "server/scan_submissions.py",
     "server/scan_needs.py",
+    # Der Stichtag der Rivals-Daten (seit 2026-11-10): scan_needs, scan_submissions,
+    # leaderboard_check, race_submissions und der Bau importieren ihn.
+    "server/stichtag.py",
     # Das Siegel der App-Laeufe (seit 2026-10-11): der Server siegelt, der Bau hier prueft.
     "server/run_seal.py",
     # Was auf den naechsten Bau des Datensatzes wartet, und "Rebuild now" (seit 2026-10-12).
@@ -145,6 +148,7 @@ CODE = [
     "scripts/build_analytics_dataset.py",
     "scripts/build_car_roster.py",
     "scripts/submitted_laps.js",
+    "scripts/dataset_cutoff.js",
     "config/fh6_board_catalogue.json",
     "config/fh6_car_roster.json",
     "config/fh6_screen_name_aliases.tsv",

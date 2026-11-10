@@ -1125,6 +1125,16 @@ internal sealed class OverlaySettings
     /// </remarks>
     [JsonPropertyName("dataset_watch_local")] public bool DatasetWatchLocal { get; set; } = true;
 
+    /// <summary>
+    /// Nur Rivals-Runden, die seit diesem Tag gescannt wurden (JJJJ-MM-TT) -- "all" fuer alle.
+    /// </summary>
+    /// <remarks>
+    /// Seit 2026-11-10, siehe <see cref="Stichtag"/>: am 2026-11-03 hat das Spiel Fahrzeuge
+    /// abgeschwaecht und seine Bestenlisten geloescht. Gilt fuer alles, was die App aus dem
+    /// Datensatz rechnet -- die beiden Panels, die Bestzeit der Seite je Auto, das Einreichen.
+    /// </remarks>
+    [JsonPropertyName("rivals_since")] public string RivalsSince { get; set; } = Stichtag.Vorgabe;
+
     /// <summary>Die Sprache der Oberflaeche. "auto" heisst: die von Windows.</summary>
     /// <remarks>
     /// Siehe <see cref="Loc"/>. Vorgabe ist "auto": wer Windows auf Deutsch

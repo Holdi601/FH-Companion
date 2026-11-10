@@ -81,6 +81,8 @@ internal sealed class RivalsTab : UserControl
         // the shipped dataset ends up visible on one path and invisible on the other.
         var start = DatasetSync.LocalBest();
         _datasetPath = start.Path;
+        // Der Stichtag aus DIESER Einstellung -- vor dem ersten Laden (siehe Stichtag).
+        Stichtag.Setzen(_settings.RivalsSince);
         LoadDataset(_datasetPath, start.Detail);
 
         var layout = new FlowLayoutPanel
@@ -112,6 +114,50 @@ internal sealed class RivalsTab : UserControl
         update.Click += (_, _) => CheckForUpdate(announce: true);
         layout.Controls.Add(Row(refresh, _dataSource));
         layout.Controls.Add(Row(update, _updateState));
+
+        // DER STICHTAG (seit 2026-11-10, siehe Stichtag): am 2026-11-03 hat das Spiel Autos
+        // abgeschwaecht und seine Rivals-Bestenlisten geloescht. Vorgabe: nur, was seitdem
+        // gescannt wurde; "alle Daten" holt die alten Scans zurueck.
+        var eingestellt = Stichtag.Lesen(_settings.RivalsSince);
+        var seitWahl = new DateTimePicker
+        {
+            Format = DateTimePickerFormat.Custom,
+            CustomFormat = "yyyy-MM-dd",
+            Width = 130,
+            Margin = new Padding(0, 4, 12, 4),
+            Value = DateTime.ParseExact(eingestellt ?? Stichtag.Vorgabe, "yyyy-MM-dd",
+                                        System.Globalization.CultureInfo.InvariantCulture),
+            Enabled = eingestellt is not null,
+        };
+        var alleDaten = Check(Loc.T("All data, also from before the leaderboard reset"), eingestellt is null);
+        // Erst nach einer kurzen Ruhe uebernehmen: jeder Pfeil im Kalender waere sonst ein
+        // neues Einlesen des ganzen Datensatzes.
+        var stichtagUhr = new System.Windows.Forms.Timer { Interval = 700 };
+        stichtagUhr.Tick += (_, _) =>
+        {
+            stichtagUhr.Stop();
+            var neu = alleDaten.Checked
+                ? Stichtag.Alle
+                : seitWahl.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            if (Stichtag.Lesen(neu) == Stichtag.Lesen(_settings.RivalsSince)) { return; }
+            _settings.RivalsSince = neu;
+            _settings.Save();
+            Stichtag.Setzen(neu);
+            ApplyDataset(_datasetPath, Loc.T("cutoff date changed"));
+            ZusatzzeitenNeu();
+        };
+        Disposed += (_, _) => stichtagUhr.Dispose();
+        seitWahl.ValueChanged += (_, _) => { stichtagUhr.Stop(); stichtagUhr.Start(); };
+        alleDaten.CheckedChanged += (_, _) =>
+        {
+            seitWahl.Enabled = !alleDaten.Checked;
+            stichtagUhr.Stop();
+            stichtagUhr.Start();
+        };
+        layout.Controls.Add(Row(Caption(Loc.T("Leaderboard data since"), 10, Ink, width: 200), seitWahl, alleDaten));
+        layout.Controls.Add(Caption(string.Format(
+            Loc.T("On {0} the game nerfed cars and deleted its Rivals leaderboards. The panels, the website's best time per car and lap submission only count laps scanned since the day set here."),
+            Stichtag.Vorgabe), 9f, Dim, wrap: 720));
 
         // BESTE RUNDEN AN DIE SEITE -- siehe LapAutoSubmit. Voreingestellt AN
         // (so gewollt; der Hinweis beim ersten Start sagt es), hier abzuschalten.
@@ -394,7 +440,7 @@ internal sealed class RivalsTab : UserControl
             _advisor = new RivalsAdvisor(RivalsDataset.Load(path)) { Extra = Zusatzzeiten.Laden() };
             _datasetPath = path;
             _dataSource.Text =
-                string.Format(Loc.T("{0} boards"), _advisor.BoardCount) + $" · {origin} · "
+                string.Format(Loc.T("{0} boards"), _advisor.BoardCount) + " · " + Umfang() + $" · {origin} · "
                 + File.GetLastWriteTime(path).ToString("yyyy-MM-dd HH:mm");
         }
         catch (Exception exception)
@@ -523,7 +569,7 @@ internal sealed class RivalsTab : UserControl
             && _advisor is not null)
         {
             _dataSource.Text = string.Format(Loc.T("{0} boards"), _advisor.BoardCount)
-                               + " · " + result.Detail;
+                               + " · " + Umfang() + " · " + result.Detail;
         }
         else
         {
@@ -535,6 +581,26 @@ internal sealed class RivalsTab : UserControl
         {
             _ = Task.Run(() => _nachreicher.NachreichenAsync());
         }
+    }
+
+    /// <summary>Welcher Teil des Datensatzes gilt: "since 2026-11-03" oder "all data".</summary>
+    private string Umfang() => _advisor?.Data.Seit is { } seit
+        ? string.Format(Loc.T("since {0}"), seit)
+        : Loc.T("all data");
+
+    /// <summary>
+    /// Die Horizon-Play-Zeiten fuer den neuen Stichtag holen (der Server rechnet ihre
+    /// 1-%-Grenze) und die eingereichten Runden neu einordnen. Scheitert leise.
+    /// </summary>
+    private async void ZusatzzeitenNeu()
+    {
+        try
+        {
+            await Zusatzzeiten.HolenAsync(_settings.ServerUrl,
+                TimeSpan.FromSeconds(Math.Max(5, _settings.DatasetProbeSeconds * 2))).ConfigureAwait(true);
+        }
+        catch (Exception) { }
+        if (_advisor is not null) { _advisor.Extra = Zusatzzeiten.Laden(); }
     }
 
     /// <summary>

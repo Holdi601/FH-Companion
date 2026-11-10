@@ -46,6 +46,7 @@ import secrets
 import sys
 import threading
 import time
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
@@ -58,6 +59,7 @@ import lap_submissions as laps  # noqa: E402
 import race_submissions as rennen_api  # noqa: E402
 import scan_submissions as scans  # noqa: E402
 import scan_needs  # noqa: E402
+import stichtag  # noqa: E402
 import submit_tickets as tickets  # noqa: E402
 import leaderboard_check as bestenliste  # noqa: E402
 import usage  # noqa: E402
@@ -788,11 +790,17 @@ def race_endpunkt(method: str, path: str, headers, body: bytes,
             d = rennen_api.store(install_id, rennen, auffaellig, beleg, root, now)
             return as_json(200, {"ok": True, "id": d["id"], "flags": auffaellig})
 
-        if method == "GET" and path == "/api/race/hp":
+        if method == "GET" and path.split("?", 1)[0] == "/api/race/hp":
             # OEFFENTLICH: je Strecke, Klasse und Auto die Zeit an der 1-%-Grenze. Ohne die
             # schnellste einzelne Zeit -- die ist genau die, die ein Betrueger stellen wuerde.
+            # "?since=JJJJ-MM-TT" (seit 2026-11-10): nur Rennen ab diesem Tag -- der Stichtag
+            # der Seite oder der App. Ohne: alle, wie bisher. Die Antwort nennt ihn ("since"),
+            # damit die App eine Liste fuer einen anderen Stichtag erkennt.
+            anfrage = urllib.parse.parse_qs(path.split("?", 1)[1] if "?" in path else "")
+            seit = stichtag.lesen((anfrage.get("since") or [""])[0], vorgabe=None)
             return as_json(200, {"boards": [{k: v for k, v in b.items() if k != "fastest"}
-                                            for b in rennen_api.hp_bretter(root)],
+                                            for b in rennen_api.hp_bretter(root, seit)],
+                                 "since": seit or "",
                                  "rule": "time at the 1 % mark of all human times, never the single fastest"})
 
         # --- ab hier nur mit Admin-Unterschrift ---

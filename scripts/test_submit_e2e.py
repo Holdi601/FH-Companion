@@ -127,7 +127,7 @@ def main() -> int:
 
     seite = urllib.request.urlopen(server + "/rivals_auto_wertung.html", timeout=120).read().decode("utf-8")
     seite = seite.replace("\r\n", "\n")
-    m = re.search(r"const D = (\{.*?\});\n", seite, re.S)
+    m = re.search(r"const D_ALL = (\{.*?\});\n", seite, re.S)
     js = (WS / "scripts" / "submitted_laps.js").read_text(encoding="utf-8")
     probe = js + """
 const D = JSON.parse(require('fs').readFileSync(0, 'utf8'));

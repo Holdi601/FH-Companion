@@ -23,6 +23,14 @@ angenommen, denn es gibt nichts, was es schlagen muesste.
 
 Die Regeln entsprechen scripts/submitted_laps.js: Strecke nach gefaltetem Namen,
 Klasse nach PI-Reihenfolge (0..6 = D C B A S1 S2 R), Auto nach Kennung.
+
+## Nur ab dem Stichtag (seit 2026-11-10)
+
+Verglichen wird mit dem, was seit dem Stichtag des Servers gescannt oder eingereicht
+wurde (server/stichtag.py) -- wie die App, die eine Runde nur schickt, wenn sie die
+Bestenliste ab ihrem Stichtag schlaegt. Am 2026-11-03 hat das Spiel Fahrzeuge
+abgeschwaecht; eine Zeit von davor ist mit diesen Autos nicht mehr zu fahren. Ein
+Board ohne Zeile ab dem Stichtag gibt es fuer diesen Vergleich noch nicht.
 """
 from __future__ import annotations
 
@@ -30,6 +38,8 @@ import json
 import re
 import threading
 from pathlib import Path
+
+import stichtag
 
 PI_ORDER = ["D", "C", "B", "A", "S1", "S2", "R"]
 
@@ -54,14 +64,14 @@ def gleiches_auto(a, b) -> bool:
     return kern(a) == kern(b)
 
 
-def _index(dataset_file: Path) -> dict:
-    """(Strecke, Klasse) -> {Autokennung: schnellste gueltige ms}. Gemerkt je Stand."""
+def _index(dataset_file: Path, seit: str | None = None) -> dict:
+    """(Strecke, Klasse) -> {Autokennung: schnellste gueltige ms}, ab dem Stichtag. Gemerkt je Stand."""
     st = dataset_file.stat()
-    schluessel = (str(dataset_file), st.st_size, st.st_mtime_ns)
+    schluessel = (str(dataset_file), st.st_size, st.st_mtime_ns, seit)
     with _SCHLOSS:
         if _INDEX["schluessel"] == schluessel:
             return _INDEX["bretter"]
-        d = json.loads(dataset_file.read_text(encoding="utf-8"))
+        d = stichtag.zuschneiden(json.loads(dataset_file.read_text(encoding="utf-8")), seit)
         flags = d.get("flags") or []
         sauber = 1 << flags.index("clean") if "clean" in flags else 0
         tracks, classes, car_ids = d["tracks"], d["classes"], d["carIds"]
@@ -104,12 +114,17 @@ class NichtSchneller(Exception):
         self.langsamer = langsamer
 
 
-def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
+def pruefe(runde: dict, dataset_file: Path, eingereicht: list,
+           seit: str | None | bool = True) -> dict:
     """Wirft NichtSchneller, wenn die Runde nichts verbessert. Gibt sonst den Befund zurueck.
 
     `eingereicht`: die schon abgelegten Einreichungen (list_laps), fuer die
     schnellste sichtbare desselben Autos auf demselben Board.
+    `seit`: der Stichtag -- True heisst der des Servers, None alles. Bestenliste und
+    fruehere Einreichungen zaehlen nur ab ihm.
     """
+    if seit is True:
+        seit = stichtag.stichtag()
     try:
         sekunden = float(runde.get("lapSeconds"))
     except (TypeError, ValueError):
@@ -130,11 +145,12 @@ def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
     if not dataset_file.exists():
         raise NichtSchneller(503, "No leaderboard on the server -- nothing to compare with.")
 
-    bretter = _index(dataset_file)
+    bretter = _index(dataset_file, seit)
     brett = bretter.get((strecke, klasse))
     if brett is None:
-        raise NichtSchneller(422, "There is no leaderboard for %s in class %s."
-                                  % (runde.get("track"), klasse))
+        raise NichtSchneller(422, "There is no leaderboard for %s in class %s%s."
+                                  % (runde.get("track"), klasse,
+                                     " scanned since %s" % seit if seit else ""))
 
     rivals = brett.get(ordinal)
     # DER WIDERSPRUCH (seit 2026-10-03): nennt die App das Auto anders als der Datensatz die
@@ -151,6 +167,7 @@ def pruefe(runde: dict, dataset_file: Path, eingereicht: list) -> dict:
 
     frueher = [e for e in eingereicht
                if not e.get("hidden")
+               and stichtag.gilt(e.get("received"), seit)
                and falte((e.get("lap") or {}).get("track")) == strecke
                and str((e.get("lap") or {}).get("carClass")) == str(runde.get("carClass"))
                and str((e.get("lap") or {}).get("carOrdinal")) == str(ordinal)]

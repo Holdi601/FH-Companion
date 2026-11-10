@@ -56,7 +56,9 @@ api.DATASET_FILE.write_text(json.dumps({
     "categories": [], "meta": {},
     "boards": [{"c": 0, "t": 0, "k": KLASSEN.index("A"),
                 "gcar": [0, 0, 1], "gsig": [1, 0, 1], "gcount": [1, 1, 1],
-                "lgrp": [0, 1, 2], "lms": [60000, 50000, 70000], "lrank": [2, 1, 3]}],
+                "lgrp": [0, 1, 2], "lms": [60000, 50000, 70000], "lrank": [2, 1, 3],
+                # Gescannt nach dem Stichtag (server/stichtag.py) -- sonst gaebe es das Board nicht.
+                "days": ["2026-11-05"]}],
 }), encoding="utf-8")
 A = 3  # PI-Reihenfolge D C B A -> A ist 3
 

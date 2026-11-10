@@ -48,6 +48,8 @@ import pyarrow.parquet as pq
 import sys  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 import run_seal  # noqa: E402
+# Der Stichtag (seit 2026-11-10): seine Vorgabe reist in meta.since_default zur Seite.
+import stichtag  # noqa: E402
 
 # Bit order of the assist signature. `clean` is bit 0 and means the lap was VALID, so
 # a filter for invalid laps asks for bit 0 clear.
@@ -410,6 +412,15 @@ def ortszeit(text) -> str:
     return datetime.fromtimestamp(t).astimezone().isoformat() if t else str(text or "")
 
 
+def run_day(state: dict) -> str:
+    """Der Tag eines Laufs (JJJJ-MM-TT, Ortszeit wie "when" in meta.scans) -- "" wenn unbekannt.
+
+    Fuer den Stichtag (server/stichtag.py): ein Lauf ohne lesbaren Zeitpunkt zaehlt als alt.
+    """
+    t = zeitpunkt(state.get("completed_at") or state.get("updated_at"))
+    return datetime.fromtimestamp(t).strftime("%Y-%m-%d") if t else ""
+
+
 def canonical_tracks(names: set[str]) -> dict[str, str]:
     """Map OCR-truncated track names onto the longest name they prefix.
 
@@ -461,6 +472,36 @@ def drop_placeholder_times(entries: list[dict]) -> tuple[list[dict], int]:
         keep.add(index)
         index = previous[index]
     return [row for i, row in enumerate(ordered) if i in keep], len(laps) - len(keep)
+
+
+def placeholder_times_by_era(valid: list[dict]) -> tuple[list[dict], int]:
+    """drop_placeholder_times -- vor der Loeschung der Bestenlisten ueber alle Laeufe wie
+    bisher, danach JE LAUF.
+
+    Seit 2026-11-10. Die Suche nach der laengsten nicht fallenden Folge laeuft ueber die
+    Zeilen ALLER Laeufe eines Boards, nach Rang sortiert. Das ging gut, solange ein Board
+    zwischen zwei Scans kaum anders aussah. Nach der Loeschung am 2026-11-03 waechst jedes
+    Board von vorn: am ersten Tag steht auf Platz 100 vielleicht 65 s, eine Woche spaeter
+    63 s. Ineinander nach Rang sortiert, faellt die Zeit bei jedem Wechsel zwischen den
+    Laeufen -- und die Suche wirft einen der beiden Laeufe fast ganz weg. Je Lauf gesucht,
+    findet sie nur, was sie finden soll: Platzhalter innerhalb eines Scans.
+
+    Die Zeilen von vor der Loeschung bleiben bei der alten Rechnung, damit "alle Daten"
+    genau zeigt, was die Seite vorher zeigte.
+    """
+    vorher = [row for row in valid if row.get("_day", "") < stichtag.VORGABE]
+    behalten, weg = drop_placeholder_times(vorher)
+    je_lauf: dict = defaultdict(list)
+    for row in valid:
+        if row.get("_day", "") >= stichtag.VORGABE:
+            je_lauf[row.get("_lauf")].append(row)
+    for zeilen in je_lauf.values():
+        gut, n = drop_placeholder_times(zeilen)
+        behalten += gut
+        weg += n
+    if je_lauf:
+        behalten.sort(key=lambda row: int(row["rank"]))
+    return behalten, weg
 
 
 def split_invalid(entries: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -826,6 +867,10 @@ def build(root: Path, *, drop_invalid: bool = False,
     # Messpunkte schreibt die App selbst hinein, und eine Installation meldet sich ohne Passwort
     # an -- "slope" mit 5000 Punkten gewaenne sonst immer.
     app_sizes: dict[tuple, tuple[tuple, int, str]] = {}
+    # JE TAG DIE BESTE MESSUNG (seit 2026-11-10, fuer den Stichtag): die Seite nimmt die
+    # erste ab ihrem Stichtag. Geordnet wie die Regel oben -- ein Lauf ohne App vor einem
+    # App-Lauf, dann nach Guete.
+    size_days: dict[tuple, dict[str, tuple]] = defaultdict(dict)
     for state, parquet, track in staged:
         implied = state.get("implied_total")
         if not implied:
@@ -835,10 +880,15 @@ def build(root: Path, *, drop_invalid: bool = False,
                (state.get("performance_class") or "?").upper())
         estimator = str(state.get("length_estimator") or "")
         score = (LENGTH_QUALITY.get(estimator, 0), len(state.get("thumb_points") or []))
-        ziel = app_sizes if (state.get("source") == "app"
-                             or str(origins.get(id(state), "")).startswith("app-")) else sizes
+        von_app = (state.get("source") == "app"
+                   or str(origins.get(id(state), "")).startswith("app-"))
+        ziel = app_sizes if von_app else sizes
         if key not in ziel or score > ziel[key][0]:
             ziel[key] = (score, int(implied), estimator)
+        tag = run_day(state)
+        rang = (not von_app, score)
+        if tag not in size_days[key] or rang > size_days[key][tag][0]:
+            size_days[key][tag] = (rang, int(implied), estimator)
     for key, wert in app_sizes.items():
         sizes.setdefault(key, wert)
 
@@ -862,11 +912,12 @@ def build(root: Path, *, drop_invalid: bool = False,
     # mit derselben Zeit ist, faellt unten nach der Autozuordnung zusammen.
     merged: dict[tuple, list[dict]] = defaultdict(list)
     gesehen: dict[tuple, dict[tuple[int, int], dict]] = defaultdict(dict)
-    for state, parquet, track in staged:
+    for lauf_nr, (state, parquet, track) in enumerate(staged):
         key = (state.get("rivals_mode") or "Unknown",
                fix.get(track, track),
                (state.get("performance_class") or "?").upper())
         aktuell = lauf_stand(state) == neuester.get(key)
+        tag = run_day(state)
         # Different scanners write different column sets -- the stream scanner's rows
         # have no `car_codename`, and asking for it aborts the whole build. Read the
         # intersection and treat the rest as absent.
@@ -882,12 +933,24 @@ def build(root: Path, *, drop_invalid: bool = False,
             if not isinstance(lap, (int, float)) or not 1.0 <= lap <= 86400.0:
                 continue
             row["_current"] = aktuell
+            # DER JUENGSTE LAUF, DER DIESE ZEILE ENTHIELT (seit 2026-11-10): sein Tag
+            # entscheidet, ob die Zeile vor oder nach einem Stichtag liegt.
+            row["_day"] = tag
+            # Der Lauf, aus dem die Zeile zuerst kam -- fuer drop_placeholder_times je Lauf.
+            row["_lauf"] = lauf_nr
             ms = round(float(lap) * 1000)
-            kept = gesehen[key].get((rank, ms))
+            # NIE UEBER DIE LOESCHUNG HINWEG ZUSAMMENGELEGT: am 2026-11-03 hat das Spiel seine
+            # Bestenlisten geloescht, keine Runde steht auf beiden Seiten. Ein neuer Platz 4.000
+            # mit zufaellig derselben Zeit wie der alte haette sonst das Auto der alten Runde
+            # geerbt -- mit dem Tag der neuen.
+            merk = (rank, ms, tag >= stichtag.VORGABE)
+            kept = gesehen[key].get(merk)
             if kept is None:
-                gesehen[key][(rank, ms)] = row
+                gesehen[key][merk] = row
                 merged[key].append(row)
                 continue
+            if tag > kept.get("_day", ""):
+                kept["_day"] = tag
             # Derselbe Rang mit derselben Zeit aus einem zweiten Lauf ist dieselbe Runde:
             # was der eine Lauf mehr weiss (PI, Auto-Kennung, "aktuell"), bekommt sie.
             if lap_pi(kept.get("pi"), key[2]) is None and lap_pi(row.get("pi"), key[2]) is not None:
@@ -921,7 +984,7 @@ def build(root: Path, *, drop_invalid: bool = False,
     total_raw = total_invalid = total_kept = total_placeholder = total_pi = 0
     for (category, track, klass), rows in sorted(merged.items()):
         valid, invalid = split_invalid(rows)
-        valid, dropped = drop_placeholder_times(valid)
+        valid, dropped = placeholder_times_by_era(valid)
         total_placeholder += dropped
         entries = valid if drop_invalid else valid + invalid
         total_raw += len(rows)
@@ -932,11 +995,16 @@ def build(root: Path, *, drop_invalid: bool = False,
         # Name -- nach der Zuordnung dasselbe Auto mit derselben Zeit. Eine Zeile je
         # (Auto, Zeit), die aktuelle vor der alten, die mit PI vor der ohne.
         eine_je_runde: dict[tuple[int, int], dict] = {}
+        # Der juengste Tag, an dem diese Runde (Auto, Zeit) auf einem Scan stand -- getrennt
+        # von der Zeile gemerkt, damit die Zaehlung je Tag (dstat, ddist) jede Zeile mit
+        # ihrem eigenen Tag sieht.
+        tag_je_runde: dict[tuple[int, int], str] = {}
         for row in entries:
             car_id = resolve_car(row)
             if car_id is None:
                 continue
             schluessel = (car_id, int(round(float(row["lap_time_seconds"]) * 1000)))
+            tag_je_runde[schluessel] = max(tag_je_runde.get(schluessel, ""), row.get("_day", ""))
             da = eine_je_runde.get(schluessel)
             if da is None:
                 eine_je_runde[schluessel] = row
@@ -947,28 +1015,57 @@ def build(root: Path, *, drop_invalid: bool = False,
                 eine_je_runde[schluessel] = row
             elif besser == bisher and da.get("car_codename") is None and row.get("car_codename"):
                 da["car_codename"] = row["car_codename"]
-        for (car_id, _ms), row in eine_je_runde.items():
+        for schluessel, row in eine_je_runde.items():
+            car_id = schluessel[0]
             if car_id not in car_slot:
                 car_slot[car_id] = len(car_ids)
                 car_ids.append(car_id)
             code = row.get("car_codename")
             if code and car_id not in codenames:
                 codenames[car_id] = code
-            groups[(car_slot[car_id], signature(row))].append(row)
+            groups[(car_slot[car_id], signature(row))].append((row, tag_je_runde[schluessel]))
+
+        # DIE TAGE DIESES BOARDS (seit 2026-11-10, fuer den Stichtag -- server/stichtag.py).
+        tage = sorted({row.get("_day", "") for row in valid + invalid}
+                      | {tag for laps in groups.values() for _, tag in laps})
+        tag_index = {tag: j for j, tag in enumerate(tage)}
+        mehrere = len(tage) > 1
 
         gcar, gsig, gcount = [], [], []
-        lgrp, lms, lrank, lpi = [], [], [], []
+        lgrp, lms, lrank, lpi, lday = [], [], [], [], []
+        # Die Runden NUR fuer Sichten ab einem Stichtag (x...), getrennt von den alten Spalten.
+        xgrp, xms, xrank, xpi, xday = [], [], [], [], []
+        gdays: list[int] = []
         for (car_index, sig), laps in sorted(groups.items()):
-            laps.sort(key=lambda row: row["lap_time_seconds"])
+            laps.sort(key=lambda paar: paar[0]["lap_time_seconds"])
             group_index = len(gcar)
             gcar.append(car_index)
             gsig.append(sig)
             gcount.append(len(laps))
-            for row in laps[:LAPS_PER_GROUP]:
-                lgrp.append(group_index)
-                lms.append(int(round(float(row["lap_time_seconds"]) * 1000)))
-                lrank.append(int(row["rank"]))
-                lpi.append(lap_pi(row.get("pi"), klass))
+            je_tag = [0] * len(tage)
+            # DIE FUENF SCHNELLSTEN AB JEDEM TAG, nicht nur ueber alles: eine Runde wird
+            # gebraucht, wenn weniger als LAPS_PER_GROUP Runden derselben Gruppe schneller
+            # sind UND an ihrem Tag oder spaeter gescannt wurden. Die fuenf schnellsten ueber
+            # alles stehen wie immer in lgrp/lms/lrank/lpi; was eine Sicht ab einem Stichtag
+            # darueber hinaus braucht, in xgrp/xms/xrank/xpi -- ein alter Leser sieht davon
+            # nichts (eine langsamere Runde aus einem anderen Lauf traegt einen Rang, der
+            # bestRank und damit die Auswahl in pickCars verschoben haette).
+            for n, (row, tag) in enumerate(laps):
+                j = tag_index[tag]
+                schneller_ab_tag = sum(je_tag[j:])
+                je_tag[j] += 1
+                if n < LAPS_PER_GROUP:
+                    ziel = (lgrp, lms, lrank, lpi, lday)
+                elif schneller_ab_tag < LAPS_PER_GROUP:
+                    ziel = (xgrp, xms, xrank, xpi, xday)
+                else:
+                    continue
+                ziel[0].append(group_index)
+                ziel[1].append(int(round(float(row["lap_time_seconds"]) * 1000)))
+                ziel[2].append(int(row["rank"]))
+                ziel[3].append(lap_pi(row.get("pi"), klass))
+                ziel[4].append(j)
+            gdays.extend(je_tag)
         total_kept += len(lgrp)
         with_pi = sum(1 for value in lpi if value is not None)
         total_pi += with_pi
@@ -988,11 +1085,34 @@ def build(root: Path, *, drop_invalid: bool = False,
             "gcar": gcar, "gsig": gsig, "gcount": gcount,
             "lgrp": lgrp, "lms": lms, "lrank": lrank,
             "dist": distribution(valid),
+            "days": tage,
         })
         # Nur wenn es etwas zu zeigen gibt: bei 1,46 Mio. Runden waere eine Spalte
         # aus lauter null gut 7 MB mehr fuer die Seite, ohne eine einzige Angabe.
         if with_pi:
             boards[-1]["lpi"] = lpi
+        # DIE ANGABEN JE TAG nur bei mehr als einem Tag -- bei einem gilt das Board, wie es
+        # ist, oder gar nicht (server/stichtag.py). Die meisten Boards haben einen.
+        if mehrere:
+            dstat: list[int] = []
+            for tag in tage:
+                eigene = [row for row in valid if row.get("_day", "") == tag]
+                schlecht = sum(1 for row in invalid if row.get("_day", "") == tag)
+                dstat += [len(eigene) + (0 if drop_invalid else schlecht), len(eigene), schlecht,
+                          max((int(row["rank"]) for row in eigene), default=0)]
+            boards[-1].update({
+                "lday": lday, "gdays": gdays, "dstat": dstat,
+                "ddist": [None] + [distribution([row for row in valid if row.get("_day", "") >= tag])
+                                   for tag in tage[1:]],
+            })
+            if xgrp:
+                boards[-1].update({"xgrp": xgrp, "xms": xms, "xrank": xrank, "xday": xday})
+                if any(value is not None for value in xpi):
+                    boards[-1]["xpi"] = xpi
+        groessen = size_days.get((category, track, klass))
+        if groessen:
+            boards[-1]["isz"] = [[tag, impl, est] for tag, (_rang, impl, est)
+                                 in sorted(groessen.items(), key=lambda e: e[1][0], reverse=True)]
 
     # A name read off the screen and matched to the public roster beats a codename
     # guessed from a partial memory dump, so it wins where both exist.
@@ -1039,6 +1159,9 @@ def build(root: Path, *, drop_invalid: bool = False,
             "roster_matched": sum(1 for meta in meta_rows if meta),
             "catalogue_ids": len(catalogue),
             "laps_per_group": LAPS_PER_GROUP,
+            # Ab welchem Tag die Seite standardmaessig zeigt (server/stichtag.py) -- leer
+            # heisst alles. Die Seite nimmt ihn als Vorgabe ihres Filters.
+            "since_default": stichtag.stichtag() or "",
         },
     }
 
