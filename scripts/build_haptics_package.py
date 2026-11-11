@@ -471,6 +471,29 @@ def copy_route_maps(root: Path) -> int:
     return kopiert
 
 
+def copy_shipped(root: Path) -> None:
+    """Die mitgelieferten Daten aus config/ ein zweites Mal nach app/shipped/ (seit 2026-11-11).
+
+    Der Aktualisierer der App ersetzte config/ nie -- dort liegen die Einstellungen --, also blieben
+    Spieltexte, Routentabelle und Sprachen auf dem Stand der ersten Installation. app/ wird bei jedem
+    Update ganz ersetzt; die App kopiert beim Start von dort nach config/ (MitgelieferteDaten.cs).
+    overlay.json gehoert NICHT hinein: das sind die Einstellungen des Nutzers.
+    """
+    quelle = root / "config"
+    ziel = root / "app" / "shipped"
+    if ziel.exists():
+        shutil.rmtree(ziel)
+    n = 0
+    for datei in sorted(quelle.rglob("*")):
+        if not datei.is_file() or datei.name == "overlay.json":
+            continue
+        z = ziel / datei.relative_to(quelle)
+        z.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(datei, z)
+        n += 1
+    say(f"  app/shipped: {n} Datei(en) fuer den Abgleich beim Start")
+
+
 def copy_config(root: Path, server: str) -> None:
     # utf-8-sig und nicht utf-8: PowerShell schreibt bei `-Encoding utf8`
     # eine Bytefolgemarke an den Anfang, und daran scheiterte der Bau am
@@ -1456,6 +1479,7 @@ def main(argv: list[str] | None = None) -> int:
         copy_route_maps(root)
         copy_car_list(root)
         copy_config(root, args.server)
+        copy_shipped(root)
         write_docs(root, facts, self_contained, args.server)
 
         say("Pruefen")

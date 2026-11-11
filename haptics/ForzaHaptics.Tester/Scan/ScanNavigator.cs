@@ -882,6 +882,10 @@ internal sealed class ScanNavigator
     {
         var n = kat.Strecken.Count;
         var unbekannt = 0;
+        // IN DIESELBE RICHTUNG WEITER (seit 2026-11-11): eine Strecke, die die Tabelle nicht kennt
+        // (neu im Spiel), lag links neben Daikoku Chase. "2 zurueck" fuehrte auf sie, "unbekannt,
+        // weiter nach rechts" wieder zurueck -- endlos hin und her, Cedar Run wurde nie erreicht.
+        byte letzte = Rechts;
         for (var druck = 0; druck <= n + 4; druck++)
         {
             var (idx, titel, beleg, liste) = LeseStrecke(kat);
@@ -895,7 +899,7 @@ internal sealed class ScanNavigator
                 Melde($"route {zielIndex} '{kat.Strecken[zielIndex]}' confirmed by {beleg} ('{titel}') after {druck} press(es)");
                 return (true, titel);
             }
-            byte taste = Rechts;
+            byte taste = letzte;
             if (idx < 0)
             {
                 if (++unbekannt > 8)
@@ -913,6 +917,7 @@ internal sealed class ScanNavigator
                 if (zurueck <= 2 && zurueck < vor) { taste = Links; }
                 Melde($"on route {idx} '{kat.Strecken[idx]}' by {beleg}, {(taste == Links ? zurueck : vor)} step(s) {(taste == Links ? "back" : "on")}");
             }
+            letzte = taste;
             Taste(taste, 450);
         }
         throw new Abbruch($"route index {zielIndex} of {kat.Name} not reached within {n + 5} presses");

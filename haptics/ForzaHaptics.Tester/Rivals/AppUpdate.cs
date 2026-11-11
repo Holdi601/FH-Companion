@@ -425,8 +425,11 @@ internal static class AppUpdate
         sb.AppendLine($"robocopy \"{quelle}\" \"{ziel}\" /E /XD \"{Path.Combine(quelle, "config")}\" /NFL /NDL /NJH /NJS /R:3 /W:2 >nul");
         sb.AppendLine("if errorlevel 8 goto fehler");
         sb.AppendLine();
-        sb.AppendLine("rem 3. config\\ nur ergaenzen -- die Einstellungen des Nutzers bleiben.");
-        sb.AppendLine($"robocopy \"{Path.Combine(quelle, "config")}\" \"{Path.Combine(ziel, "config")}\" /E /XC /XN /XO /NFL /NDL /NJH /NJS /R:3 /W:2 >nul");
+        // Seit 2026-11-11: die mitgelieferten Daten ERSETZEN (Spieltexte, Routentabelle, Sprachen),
+        // nur overlay.json -- die Einstellungen -- bleibt, und kommt nur dazu, wenn sie fehlt.
+        sb.AppendLine("rem 3. config\\: mitgelieferte Daten ersetzen, overlay.json (die Einstellungen) nur ergaenzen.");
+        sb.AppendLine($"robocopy \"{Path.Combine(quelle, "config")}\" \"{Path.Combine(ziel, "config")}\" /E /XF overlay.json /NFL /NDL /NJH /NJS /R:3 /W:2 >nul");
+        sb.AppendLine($"robocopy \"{Path.Combine(quelle, "config")}\" \"{Path.Combine(ziel, "config")}\" overlay.json /XC /XN /XO /NFL /NDL /NJH /NJS /R:3 /W:2 >nul");
         sb.AppendLine();
         sb.AppendLine(Echo(Loc.T("Done. Starting the new version.")));
         sb.AppendLine("rem 4. Wieder starten.");

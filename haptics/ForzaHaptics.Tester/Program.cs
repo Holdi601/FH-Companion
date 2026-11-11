@@ -213,6 +213,9 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // Vor allem anderen: die mitgelieferten Daten (Spieltexte, Routentabelle, Sprachen) auf den
+        // Stand dieses Programms -- der Aktualisierer laesst config/ sonst, wie es war (seit 2026-11-11).
+        MitgelieferteDaten.Abgleichen();
         if (Erweiterung.Befehl(args)) { return; }
         // Headless paths run BEFORE any WinForms setup: this is a GUI-subsystem
         // binary, so an exception after Initialize() puts up a modal dialog that

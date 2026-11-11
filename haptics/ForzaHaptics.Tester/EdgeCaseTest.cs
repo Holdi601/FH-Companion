@@ -1552,6 +1552,36 @@ internal static class EdgeCaseTest
             }
         }
         Soll(Scan.ScanWache.Taste is null, "Scan: eine Stopptaste gilt, bevor die Wache laeuft");
+        // MITGELIEFERTE DATEN (2026-11-11): was in app/shipped/ anders ist, kommt nach config/ --
+        // nie overlay.json, und persoenliche Dateien bleiben unberuehrt.
+        {
+            var wurzel = Path.Combine(Path.GetTempPath(), "fhc-shipped-" + Guid.NewGuid().ToString("N"));
+            var quelle = Path.Combine(wurzel, "shipped");
+            var ziel = Path.Combine(wurzel, "config");
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(quelle, "lang"));
+                Directory.CreateDirectory(ziel);
+                File.WriteAllText(Path.Combine(quelle, "game_text.json"), "neu");
+                File.WriteAllText(Path.Combine(quelle, "lang", "de.json"), "de");
+                File.WriteAllText(Path.Combine(quelle, "overlay.json"), "vorgabe");
+                File.WriteAllText(Path.Combine(ziel, "game_text.json"), "alt");
+                File.WriteAllText(Path.Combine(ziel, "overlay.json"), "meine Einstellungen");
+                File.WriteAllText(Path.Combine(ziel, "car_notes.json"), "meine Notizen");
+                var n = MitgelieferteDaten.Abgleichen(quelle, ziel);
+                var zweiter = MitgelieferteDaten.Abgleichen(quelle, ziel);
+                Soll(n == 2 && zweiter == 0
+                     && File.ReadAllText(Path.Combine(ziel, "game_text.json")) == "neu"
+                     && File.ReadAllText(Path.Combine(ziel, "lang", "de.json")) == "de"
+                     && File.ReadAllText(Path.Combine(ziel, "overlay.json")) == "meine Einstellungen"
+                     && File.ReadAllText(Path.Combine(ziel, "car_notes.json")) == "meine Notizen",
+                     "Mitgelieferte Daten: Abgleich ueberschreibt Einstellungen oder bringt neue Daten nicht");
+            }
+            finally
+            {
+                try { Directory.Delete(wurzel, true); } catch (Exception) { }
+            }
+        }
         // GELERNTE STRECKENLISTEN (2026-11-11): eine im Spiel gelernte Liste gilt vor der mitgelieferten,
         // eine kaputte (zu wenige bekannte Strecken) nicht; nach einem Spiel-Update wird neu gelernt.
         {
