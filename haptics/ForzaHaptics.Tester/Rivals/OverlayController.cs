@@ -334,8 +334,7 @@ internal sealed class OverlayController : IDisposable
                 ocr ??= new WindowsOcr();
                 var gebiet = _area;
                 var flaeche = GameArea.SixteenNine(gebiet);
-                var region = new Rectangle(flaeche.X + (int)(flaeche.Width * 0.66), flaeche.Y + (int)(flaeche.Height * 0.03),
-                                           (int)(flaeche.Width * 0.34), (int)(flaeche.Height * 0.52));
+                var region = SplitTrend.Gebiet(flaeche);
                 var k = Math.Min(1.0, 1440.0 / Math.Max(1, flaeche.Height));
                 using var bild = GameArea.Capture(region, new Size(Math.Max(1, (int)(region.Width * k)), Math.Max(1, (int)(region.Height * k))));
                 var gelesen = ocr.Read(bild);

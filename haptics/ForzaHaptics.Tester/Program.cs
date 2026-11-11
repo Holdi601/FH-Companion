@@ -217,6 +217,12 @@ internal static class Program
         // Stand dieses Programms -- der Aktualisierer laesst config/ sonst, wie es war (seit 2026-11-11).
         MitgelieferteDaten.Abgleichen();
         if (Erweiterung.Befehl(args)) { return; }
+        if (args.Length >= 2 && string.Equals(args[0], "--split-trend-check", StringComparison.OrdinalIgnoreCase))
+        {
+            // Die Split-Tendenz an gespeicherten Spielbildern pruefen (Rivals/SplitTrend.cs).
+            Environment.ExitCode = Rivals.SplitTrend.Pruefen(args[1]);
+            return;
+        }
         // Headless paths run BEFORE any WinForms setup: this is a GUI-subsystem
         // binary, so an exception after Initialize() puts up a modal dialog that
         // nothing will ever click, and the caller waits for ever.

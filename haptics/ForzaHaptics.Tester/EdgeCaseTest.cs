@@ -1583,7 +1583,7 @@ internal static class EdgeCaseTest
                  && zweiter[2].Text == "+1.00" && zweiter[2].Farbe == Rivals.SplitTrend.Tendenz.Besser && zweiter[1].Text.Length == 0,
                  "Split-Tendenz: die Farben zwischen zwei Splits stimmen nicht");
             var zellen = Rivals.SplitTrend.Zellen(b, zweiter, new PointF(1000, 0), 2f);
-            Soll(zellen.Count == 3 && zellen.All(z => z.Box.Right < 1000 + 200) && Math.Abs(zellen[1].Box.Top - zellen[0].Box.Bottom) <= 2,
+            Soll(zellen.Count == 3 && zellen.All(z => z.Box.Right < 1000 + 200) && Math.Abs(zellen[1].Box.Top - zellen[0].Box.Bottom) <= zellen[0].Box.Height * 0.1f,
                  "Split-Tendenz: die Spalte steht nicht links an der Liste oder schliesst nicht an");
         }
         // MITGELIEFERTE DATEN (2026-11-11): was in app/shipped/ anders ist, kommt nach config/ --
