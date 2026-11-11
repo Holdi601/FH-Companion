@@ -1364,6 +1364,11 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Tyre temperature in Fahrenheit"), settings.TyresFahrenheit,
                  v => _settings.TyresFahrenheit = v);
 
+        // ---- SPLIT-TENDENZ NEBEN DER POSITIONSLISTE (seit 2026-11-11, ab Werk aus) --------
+        Schalter(Loc.T("Split trend beside the race positions"), settings.HudSplitTrend, v => _settings.HudSplitTrend = v);
+        Rein(Note(Loc.T(
+            "A column left of the game's position list: how many seconds each driver is ahead of you (-) or behind you (+), green when that gap moved in your favour since the last split, red when it moved against you, grey when it stayed. It reads the list twice a second and disappears with it.")));
+
         // ---- DER EIGENE TACHO (seit 2026-10-18, ab Werk aus) ---------------------------
         Abschnitt(Titel(HudPart.Speedo), HudPart.Speedo);
         Schalter(Loc.T("Speedometer while driving"), settings.HudSpeedo, v => _settings.HudSpeedo = v);

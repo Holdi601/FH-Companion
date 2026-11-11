@@ -1552,6 +1552,40 @@ internal static class EdgeCaseTest
             }
         }
         Soll(Scan.ScanWache.Taste is null, "Scan: eine Stopptaste gilt, bevor die Wache laeuft");
+        // SPLIT-TENDENZ (2026-11-11): die Liste lesen (Zeit, Name, Platz -- getrennt oder in einer Zeile),
+        // mich finden, und die Farbe aus der Aenderung zwischen zwei Splits.
+        {
+            static Rivals.OcrLine Z(string t, double x, double y, double w) => new(t, x, y) { W = w, H = 20 };
+            List<Rivals.OcrLine> Liste(string erster, string ich, string dritter) => new()
+            {
+                Z(erster, 100, 10, 90), Z("ErsterFahrer", 210, 10, 150), Z("01", 520, 10, 22),
+                Z(ich + " TestFahrer 02", 100, 40, 300),
+                Z(dritter, 100, 70, 70), Z("DritterFahrer", 210, 70, 160), Z("03", 520, 70, 22),
+            };
+            var a = Rivals.SplitTrend.Lesen(Liste("00:13.423", "+0.948", "+1. 618"), _ => 0.0, "TestFahrer");
+            Soll(a is not null && a.Count == 3 && a[1].Ich && a[0].Name == "ErsterFahrer" && Math.Abs(a[0].Abstand) < 1e-9
+                 && Math.Abs(a[1].Abstand - 0.948) < 1e-9 && Math.Abs(a[2].Abstand - 1.618) < 1e-9,
+                 "Split-Tendenz: die Positionsliste wird falsch gelesen");
+            Soll(Rivals.SplitTrend.Lesen(Liste("00:13.423", "+0.948", "+1.618"), _ => 0.0, null) is null,
+                 "Split-Tendenz: ohne Gamertag und ohne gelbe Zeile wird geraten");
+            var gelb = Rivals.SplitTrend.Lesen(Liste("00:13.423", "+0.948", "+1.618"), box => box.Top > 30 && box.Top < 50 ? 0.9 : 0.0, null);
+            Soll(gelb is not null && gelb[1].Ich, "Split-Tendenz: die gelbe Zeile wird nicht als meine erkannt");
+            var v = new Rivals.SplitTrend.Verlauf();
+            v.Einordnen(a!);
+            var erster = v.Einordnen(a!);
+            Soll(erster[0].Text == "-0.95" && erster[2].Text == "+0.67" && erster.All(e => e.Farbe == Rivals.SplitTrend.Tendenz.Gleich),
+                 "Split-Tendenz: der erste Split zeigt falsche Abstaende (" + string.Join(" ", erster.Select(e => e.Text)) + ")");
+            var b = Rivals.SplitTrend.Lesen(Liste("00:27.138", "+1.000", "+2.000"), _ => 0.0, "TestFahrer")!;
+            var einmal = v.Einordnen(b);
+            Soll(einmal[0].Farbe == Rivals.SplitTrend.Tendenz.Gleich, "Split-Tendenz: eine einzelne Lesung gilt schon als Split");
+            var zweiter = v.Einordnen(b);
+            Soll(zweiter[0].Text == "-1.00" && zweiter[0].Farbe == Rivals.SplitTrend.Tendenz.Schlechter
+                 && zweiter[2].Text == "+1.00" && zweiter[2].Farbe == Rivals.SplitTrend.Tendenz.Besser && zweiter[1].Text.Length == 0,
+                 "Split-Tendenz: die Farben zwischen zwei Splits stimmen nicht");
+            var zellen = Rivals.SplitTrend.Zellen(b, zweiter, new PointF(1000, 0), 2f);
+            Soll(zellen.Count == 3 && zellen.All(z => z.Box.Right < 1000 + 200) && Math.Abs(zellen[1].Box.Top - zellen[0].Box.Bottom) <= 2,
+                 "Split-Tendenz: die Spalte steht nicht links an der Liste oder schliesst nicht an");
+        }
         // MITGELIEFERTE DATEN (2026-11-11): was in app/shipped/ anders ist, kommt nach config/ --
         // nie overlay.json, und persoenliche Dateien bleiben unberuehrt.
         {

@@ -56,6 +56,11 @@ internal sealed class OverlayController : IDisposable
     private readonly CarNoteHud _carNote;
     private readonly LiveMapHud _liveMap;
     private readonly TyreHud _reifen;
+    // Die Split-Tendenz (seit 2026-11-11): eine Spalte neben der Positionsliste des Spiels.
+    private readonly SplitTrendHud _splits;
+    private Thread? _splitFaden;
+    // Wann zuletzt ein Paket "im Rennen, Spiel vorn" kam (Ticks, UTC) -- der Faden liest nur dann.
+    private long _splitRennenTicks;
     /// <summary>Der Tacho laeuft auf seinem eigenen Faden (SpeedoMotor) -- hier nur Auftraege.</summary>
     private readonly SpeedoMotor _tacho;
     public CarNotes Notes { get; } = new();
@@ -294,6 +299,92 @@ internal sealed class OverlayController : IDisposable
     /// </remarks>
     private int _karteRunde = -1;
 
+    /// <summary>
+    /// Die Split-Tendenz lesen: ein eigener Faden mit niedriger Prioritaet, zweimal je Sekunde, nur
+    /// solange sie an ist, die Telemetrie "im Rennen" meldet und das Spiel vorn ist. Ein Durchgang:
+    /// den oberen rechten Teil der Spielflaeche aufnehmen (hoechstens in 1440p), Texterkennung, die
+    /// Liste deuten -- ist sie nicht da, verschwindet die Spalte. Gezeichnet wird im Fenster-Faden
+    /// und nur, wenn sich eine Zelle aendert. Nichts davon laeuft im Takt der Telemetrie.
+    /// </summary>
+    private void SplitFadenStarten()
+    {
+        if (_splitFaden is not null) { return; }
+        _splitFaden = new Thread(SplitSchleife) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "SplitTrend" };
+        _splitFaden.Start();
+    }
+
+    private void SplitSchleife()
+    {
+        WindowsOcr? ocr = null;
+        var verlauf = new SplitTrend.Verlauf();
+        var gezeigt = false;
+        var fehlt = 0;
+        while (!_disposed)
+        {
+            Thread.Sleep(500);
+            try
+            {
+                var seit = DateTime.UtcNow - new DateTime(Interlocked.Read(ref _splitRennenTicks), DateTimeKind.Utc);
+                if (!Running || !_settings.HudSplitTrend || _hudPreview || seit > TimeSpan.FromSeconds(2))
+                {
+                    if (gezeigt) { SplitZeigen(null); gezeigt = false; }
+                    verlauf.Vergessen();
+                    continue;
+                }
+                ocr ??= new WindowsOcr();
+                var gebiet = _area;
+                var flaeche = GameArea.SixteenNine(gebiet);
+                var region = new Rectangle(flaeche.X + (int)(flaeche.Width * 0.66), flaeche.Y + (int)(flaeche.Height * 0.03),
+                                           (int)(flaeche.Width * 0.34), (int)(flaeche.Height * 0.52));
+                var k = Math.Min(1.0, 1440.0 / Math.Max(1, flaeche.Height));
+                using var bild = GameArea.Capture(region, new Size(Math.Max(1, (int)(region.Width * k)), Math.Max(1, (int)(region.Height * k))));
+                var gelesen = ocr.Read(bild);
+                var tabelle = SplitTrend.Lesen(gelesen, kasten => SplitTrend.GelbAnteil(bild, kasten), _settings.Gamertag);
+                if (tabelle is null)
+                {
+                    // Einmal nicht gelesen ist noch nicht weg (ein Zwischenbild): beim zweiten Mal verschwindet sie.
+                    if (gezeigt && ++fehlt >= 2) { SplitZeigen(null); gezeigt = false; }
+                    continue;
+                }
+                fehlt = 0;
+                var werte = verlauf.Einordnen(tabelle);
+                var ursprung = new PointF(region.X - gebiet.X, region.Y - gebiet.Y);
+                SplitZeigen(SplitTrend.Zellen(tabelle, werte, ursprung, (float)(1.0 / k)));
+                gezeigt = true;
+            }
+            catch (Exception)
+            {
+                // Eine Anzeige darf nie die App mitnehmen.
+            }
+        }
+    }
+
+    private void SplitZeigen(List<SplitTrend.Zelle>? zellen)
+    {
+        try
+        {
+            _owner.BeginInvoke(() =>
+            {
+                if (_disposed || _splits.IsDisposed) { return; }
+                if (zellen is null || zellen.Count == 0)
+                {
+                    if (_splits.Visible) { _splits.Hide(); }
+                    return;
+                }
+                _splits.Setze(zellen);
+                if (!_splits.Visible)
+                {
+                    _splits.Show();
+                    _splits.TopMost = true;
+                }
+            });
+        }
+        catch (Exception)
+        {
+            // Das Fenster der App ist schon zu.
+        }
+    }
+
     /// <summary>Die Reifenuebersicht: sichtbar, solange gefahren wird und sie an ist.</summary>
     /// <remarks>
     /// Anders als die Live-Karte auch im freien Fahren -- Temperatur und Grip gelten
@@ -310,6 +401,10 @@ internal sealed class OverlayController : IDisposable
             // je Sekunde, und die Uebergaenge erledigt der Tick.
             var vorne = _settings.ConsoleMode || !_settings.OverlayRequireForza
                         || (_game.Running && (!_settings.OverlayRequireFocus || _game.IsForeground));
+            if (packet.Get("IsRaceOn") >= 0.5 && vorne)
+            {
+                Interlocked.Exchange(ref _splitRennenTicks, DateTime.UtcNow.Ticks);
+            }
             if (!_settings.HudTyres || packet.Get("IsRaceOn") < 0.5 || !vorne)
             {
                 if (_reifen.Visible) { _reifen.Hide(); }
@@ -557,6 +652,7 @@ internal sealed class OverlayController : IDisposable
         };
         _liveMap = new LiveMapHud(_settings, screen);
         _reifen = new TyreHud(_settings, screen);
+        _splits = new SplitTrendHud(screen);
         _tacho = new SpeedoMotor(_settings, screen);
         EigeneRundenLaden();
 
@@ -700,6 +796,7 @@ internal sealed class OverlayController : IDisposable
         Running = true;
         _tick.Start();
         _triggerTick.Start();
+        SplitFadenStarten();
         SetStatus(_reader.OcrAvailable
             ? string.Format(Loc.T("watching — OCR {0}"), _reader.OcrLanguage)
             : Loc.T("watching — no OCR language installed, the route panel cannot read"));
@@ -2328,6 +2425,7 @@ internal sealed class OverlayController : IDisposable
         _feier.SetArea(jetzt);
         _liveMap.SetArea(jetzt);
         _reifen.SetArea(jetzt);
+        _splits.SetArea(jetzt);
         _tacho.Flaeche(jetzt);
         // Der Streifen rechnet seine Einheit einmal aus der Flaeche; neu anlegen.
         if (_hud is not null && !_hud.IsDisposed)
@@ -4815,7 +4913,7 @@ internal sealed class OverlayController : IDisposable
         // und Live-Karte des alten Controllers offen -- sichtbar eingefroren, wenn sie
         // beim Wechsel gerade standen.
         try { _tacho.Dispose(); } catch (Exception) { }
-        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen })
+        foreach (var fenster in new LayeredHud[] { _shapes, _carNote, _meldung, _liveMap, _reifen, _splits })
         {
             try { fenster.Close(); fenster.Dispose(); } catch (Exception) { }
         }
