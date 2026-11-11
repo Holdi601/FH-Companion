@@ -53,7 +53,7 @@ internal sealed class ScanTab : UserControl
 
     private readonly OverlaySettings _einstellungen;
     private readonly Func<bool> _faehrt;
-    private readonly ScanRoutes? _routen;
+    private ScanRoutes? _routen;
 
     private readonly ComboBox _kategorie = new();
     private readonly CheckBox _alle = new();
@@ -294,6 +294,11 @@ internal sealed class ScanTab : UserControl
         gespeichert.Click += (_, _) => GespeichertSenden();
         knoepfe.Controls.Add(_start);
         knoepfe.Controls.Add(_stop);
+        // DIE STRECKENLISTEN AUS DEM SPIEL LERNEN (seit 2026-11-11): nach einem Update mit neuen Strecken.
+        // Vor einem Scan geschieht das von selbst, sobald das Spiel seine Texte geaendert hat.
+        var lernen = Knopf(Loc.T("Learn route lists"));
+        lernen.Click += (_, _) => Starten(alleLernen: true);
+        knoepfe.Controls.Add(lernen);
         knoepfe.Controls.Add(ordner);
         knoepfe.Controls.Add(_erneut);
         knoepfe.Controls.Add(gespeichert);
@@ -312,14 +317,15 @@ internal sealed class ScanTab : UserControl
         _tabelle.Dock = DockStyle.Fill;
         _tabelle.View = View.Details;
         _tabelle.FullRowSelect = true;
-        _tabelle.MultiSelect = false;
+        // MEHRERE AUF EINMAL (seit 2026-11-11): erneut senden geht fuer alle markierten Boards.
+        _tabelle.MultiSelect = true;
         // Was ein Zustand bedeutet und was der Server sagte: als Tooltip und, beim Auswaehlen,
         // in der Statuszeile -- die Spalte selbst ist zu schmal fuer einen Satz.
         _tabelle.ShowItemToolTips = true;
         _tabelle.SelectedIndexChanged += (_, _) =>
         {
             var z = _tabelle.SelectedItems.Count == 1 ? _tabelle.SelectedItems[0] : null;
-            _erneut.Enabled = z?.Tag is string;
+            _erneut.Enabled = _tabelle.SelectedItems.Cast<ListViewItem>().Any(i => i.Tag is string);
             if (z is not null && !string.IsNullOrEmpty(z.ToolTipText)) { Status(z.ToolTipText); }
         };
         _tabelle.BackColor = Feld;
@@ -560,11 +566,11 @@ internal sealed class ScanTab : UserControl
     // Start und Lauf
     // ------------------------------------------------------------------ //
 
-    private void Starten()
+    private void Starten(bool alleLernen = false)
     {
         if (_lauf is not null || _routen is null) { return; }
-        var ziele = Auswahl();
-        if (ziele.Count == 0)
+        var ziele = alleLernen ? new List<ScanNavigator.Ziel>() : Auswahl();
+        if (ziele.Count == 0 && !alleLernen)
         {
             Status(Loc.T("Tick at least one route and one class."));
             return;
@@ -599,7 +605,9 @@ internal sealed class ScanTab : UserControl
         _tabelle.Items.Clear();
         Status(Loc.T("Waiting for the game to come to the front ..."));
         var bedarf = _modusBedarf.Checked;
-        new Thread(() => Lauf(ziele, obergrenze, hochladen, stop, bedarf ? Anmelden : null, bedarf ? Freigeben : null))
+        // ANMELDEN IN JEDER ART (seit 2026-11-11): zwei Scanner zugleich nahmen dasselbe Board, wenn
+        // einer Strecken von Hand gewaehlt hatte -- angemeldet wurde nur im Bedarfsmodus.
+        new Thread(() => Lauf(ziele, obergrenze, hochladen, stop, Anmelden, Freigeben, alleLernen))
         {
             IsBackground = true, Name = "Board-Scan",
         }.Start();
@@ -607,7 +615,8 @@ internal sealed class ScanTab : UserControl
 
     /// <summary>Die Warteschlange abarbeiten -- auf dem eigenen Faden, nie auf dem der Oberflaeche.</summary>
     private void Lauf(IReadOnlyList<ScanNavigator.Ziel> ziele, int obergrenze, bool hochladen, CancellationToken stop,
-                      Func<ScanNavigator.Ziel, string?>? vorher = null, Action<ScanNavigator.Ziel>? nachher = null)
+                      Func<ScanNavigator.Ziel, string?>? vorher = null, Action<ScanNavigator.Ziel>? nachher = null,
+                      bool alleLernen = false)
     {
         var schluss = string.Empty;
         var fertig = 0;
@@ -635,6 +644,7 @@ internal sealed class ScanTab : UserControl
             }
             // Das erste Board von irgendwo im Spiel; danach steht es auf der vorigen Bestenliste.
             var vomBoard = false;
+            ziele = KarussellsLernen(ziele, alleLernen, stop);
             var fehlerInFolge = 0;
             var versuchDiesesBoards = 0;
             var uebersprungen = 0;
@@ -855,6 +865,74 @@ internal sealed class ScanTab : UserControl
         return entscheidung == 2;
     }
 
+    /// <summary>
+    /// NEUE STRECKEN (seit 2026-11-11): ein Spiel-Update brachte Strecken ins Karussell, die die
+    /// mitgelieferte Tabelle nicht kennt -- und der Scanner faehrt eine Strecke ueber ihre Position an.
+    /// Vor der Warteschlange wird darum die Liste jeder betroffenen Kategorie einmal im Spiel gelernt:
+    /// wenn sie nie gelernt wurde oder das Spiel seine Texte seitdem geaendert hat (oder alle, auf den
+    /// Knopf hin). Die Ziele werden danach ueber ihre NAMEN neu verortet; schlaegt das Lernen fehl,
+    /// bleibt die alte Liste und es wird gescannt wie bisher.
+    /// </summary>
+    private IReadOnlyList<ScanNavigator.Ziel> KarussellsLernen(IReadOnlyList<ScanNavigator.Ziel> ziele, bool alleLernen,
+                                                              CancellationToken stop)
+    {
+        var routen = _routen;
+        if (routen is null) { return ziele; }
+        var namen = ziele.Select(z => (Ziel: z, Name: routen.Finde(z.Kategorie) is { } k && z.RouteIndex >= 0
+                                                   && z.RouteIndex < k.Strecken.Count ? k.Strecken[z.RouteIndex] : null)).ToList();
+        var stand = ScanRoutes.SpielStand();
+        var kategorien = alleLernen
+            ? routen.Kategorien.Select(k => k.Name).ToList()
+            : ziele.Select(z => z.Kategorie).Distinct(StringComparer.OrdinalIgnoreCase)
+                   .Where(k => routen.LernenNoetig(k, stand)).ToList();
+        if (kategorien.Count == 0) { return ziele; }
+        var vomBoard = false;
+        var gelernt = 0;
+        foreach (var kategorie in kategorien)
+        {
+            stop.ThrowIfCancellationRequested();
+            var vorher = routen.Finde(kategorie)?.Strecken ?? Array.Empty<string>();
+            Zurueck(() => Status(string.Format(Loc.T("Learning the route list of {0} from the game ..."), kategorie)));
+            Log($"learning the route list of {kategorie}");
+            try
+            {
+                var nav = new ScanNavigator(routen, Melden, stop);
+                var (strecken, laengen) = nav.Lerne(kategorie, vomBoard);
+                ScanRoutes.Speichere(kategorie, strecken, laengen);
+                var neu = strecken.Where(s => !vorher.Contains(s, StringComparer.OrdinalIgnoreCase)).ToList();
+                var weg = vorher.Where(s => !strecken.Contains(s, StringComparer.OrdinalIgnoreCase)).ToList();
+                Log($"{kategorie}: {strecken.Count} routes learned"
+                    + (neu.Count > 0 ? "; new: " + string.Join(", ", neu) : string.Empty)
+                    + (weg.Count > 0 ? "; gone: " + string.Join(", ", weg) : string.Empty));
+                gelernt++;
+            }
+            catch (ScanNavigator.Abbruch a) when (!a.VomNutzer && !stop.IsCancellationRequested)
+            {
+                Log($"{kategorie}: learning failed, the old list stays -- {a.Message}");
+            }
+            // Danach steht das Spiel auf einer Streckenliste, nicht auf einem Board.
+            vomBoard = false;
+        }
+        if (gelernt == 0) { return ziele; }
+        var neuRouten = ScanRoutes.Laden();
+        _routen = neuRouten;
+        Zurueck(StreckenZeigen);
+        var raus = new List<ScanNavigator.Ziel>();
+        foreach (var (ziel, name) in namen)
+        {
+            var kat = neuRouten.Finde(ziel.Kategorie);
+            var idx = kat is null || name is null ? -1
+                : kat.Strecken.ToList().FindIndex(s => string.Equals(s, name, StringComparison.OrdinalIgnoreCase));
+            if (idx < 0)
+            {
+                Log($"{ziel.Kategorie} / {name}: not in the learned list any more -- skipped");
+                continue;
+            }
+            raus.Add(ziel with { RouteIndex = idx });
+        }
+        return raus;
+    }
+
     /// <summary>Wie --scan-board: das Spiel dreimal nacheinander vorn, sonst wird nichts gedrueckt.</summary>
     private static bool WarteAufSpiel(CancellationToken stop)
     {
@@ -933,8 +1011,23 @@ internal sealed class ScanTab : UserControl
     /// <summary>Das ausgewaehlte Board noch einmal senden -- nach einer Rueckfrage.</summary>
     private void AuswahlErneut()
     {
-        if (_tabelle.SelectedItems.Count != 1 || _tabelle.SelectedItems[0].Tag is not string ordner) { return; }
-        ErneutSenden(ordner, _tabelle.SelectedItems[0]);
+        var zeilen = _tabelle.SelectedItems.Cast<ListViewItem>().Where(i => i.Tag is string).ToList();
+        if (zeilen.Count == 0) { return; }
+        if (zeilen.Count == 1)
+        {
+            ErneutSenden((string)zeilen[0].Tag!, zeilen[0]);
+            return;
+        }
+        var frage = string.Format(Loc.T("Send these {0} boards again?\n\nA board sent again is not put on the website on its own: an admin looks at it first. The website shows each as \"Waiting for manual review\" until then."), zeilen.Count);
+        if (MessageBox.Show(this, frage, Loc.T("Send again"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+        {
+            return;
+        }
+        foreach (var zeile in zeilen)
+        {
+            zeile.SubItems[4].Text = Loc.T("sending ...");
+            Senden((string)zeile.Tag!, zeile, erneut: true);
+        }
     }
 
     private void ErneutSenden(string ordner, ListViewItem zeile)

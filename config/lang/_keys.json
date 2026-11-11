@@ -181,8 +181,8 @@
  ],
  "Another automation (board scan or auction check) is driving the game. Nothing was pressed.": [
   "Auction/AuctionWatch.cs:207",
-  "Scan/ScanTab.cs:584",
-  "Scan/ScanTab.cs:624"
+  "Scan/ScanTab.cs:590",
+  "Scan/ScanTab.cs:633"
  ],
  "Any class": [
   "Rivals/CarCollectionTab.cs:131"
@@ -340,10 +340,10 @@
   "MainForm.cs:418"
  ],
  "Board": [
-  "Scan/ScanTab.cs:329"
+  "Scan/ScanTab.cs:335"
  ],
  "Board {0} of {1}: {2}": [
-  "Scan/ScanTab.cs:650"
+  "Scan/ScanTab.cs:660"
  ],
  "Body frequency mix": [
   "BlueprintEditor.cs:1632"
@@ -541,7 +541,7 @@
   "BlueprintEditor.cs:1733"
  ],
  "Choose the folder of a saved scan (it holds state.json and rows.jsonl).": [
-  "Scan/ScanTab.cs:959"
+  "Scan/ScanTab.cs:1052"
  ],
  "Chrome ring": [
   "Rivals/GMeterTab.cs:622",
@@ -894,7 +894,7 @@
   "Rivals/CarCollectionTab.cs:369"
  ],
  "Duration": [
-  "Scan/ScanTab.cs:330"
+  "Scan/ScanTab.cs:336"
  ],
  "Each press takes the next step, from the narrowest to the widest, and says so on screen. The key only does this while Forza is running.": [
   "Rivals/HudTab.cs:1281"
@@ -957,8 +957,8 @@
   "Tuning/TunesTab.cs:83"
  ],
  "Every valid lap was read; after them the board holds only invalid laps, which are not needed. Complete.": [
-  "Scan/ScanTab.cs:397",
-  "Scan/ScanTab.cs:398"
+  "Scan/ScanTab.cs:403",
+  "Scan/ScanTab.cs:404"
  ],
  "Example: this is how a personal record looks.": [
   "Rivals/OverlayController.cs:4986"
@@ -1485,8 +1485,14 @@
  "Leaderboard scan: Server Error": [
   "Scan/ServerFehlerHinweis.cs:60"
  ],
+ "Learn route lists": [
+  "Scan/ScanTab.cs:299"
+ ],
  "Learned per car (peak power)": [
   "Rivals/SpeedoTab.cs:877"
+ ],
+ "Learning the route list of {0} from the game ...": [
+  "Scan/ScanTab.cs:895"
  ],
  "Left edge": [
   "Rivals/HudTab.cs:1137"
@@ -2285,16 +2291,16 @@
   "Rivals/RaceStatsTab.cs:335"
  ],
  "Queue finished: {0} of {1} board(s) scanned, {2} skipped after three failed tries.": [
-  "Scan/ScanTab.cs:759"
+  "Scan/ScanTab.cs:769"
  ],
  "Queue finished: {0} of {1} board(s) scanned.": [
-  "Scan/ScanTab.cs:758"
+  "Scan/ScanTab.cs:768"
  ],
  "Queue stopped: {0}": [
-  "Scan/ScanTab.cs:712",
-  "Scan/ScanTab.cs:726",
-  "Scan/ScanTab.cs:768",
-  "Scan/ScanTab.cs:773"
+  "Scan/ScanTab.cs:722",
+  "Scan/ScanTab.cs:736",
+  "Scan/ScanTab.cs:778",
+  "Scan/ScanTab.cs:783"
  ],
  "Quit": [
   "Disclosure.cs:481",
@@ -2341,7 +2347,7 @@
   "Rivals/RivalsTab.cs:349"
  ],
  "Read to the end of the board. Complete.": [
-  "Scan/ScanTab.cs:396"
+  "Scan/ScanTab.cs:402"
  ],
  "Reading the screen": [
   "Rivals/RivalsTab.cs:342"
@@ -2542,7 +2548,7 @@
   "Scan/ScanTab.cs:176"
  ],
  "Rows": [
-  "Scan/ScanTab.cs:329"
+  "Scan/ScanTab.cs:335"
  ],
  "Royal": [
   "Rivals/Farbthemen.cs:115"
@@ -2667,13 +2673,17 @@
   "Scan/ScanTab.cs:293"
  ],
  "Send again": [
-  "Scan/ScanTab.cs:943"
+  "Scan/ScanTab.cs:1022",
+  "Scan/ScanTab.cs:1036"
  ],
  "Send selected again": [
   "Scan/ScanTab.cs:290"
  ],
+ "Send these {0} boards again?\n\nA board sent again is not put on the website on its own: an admin looks at it first. The website shows each as \"Waiting for manual review\" until then.": [
+  "Scan/ScanTab.cs:1021"
+ ],
  "Send this board again?\n\nA board sent again is not put on the website on its own: an admin looks at it first, because a resent scan is more likely to have been changed. The website shows it as \"Waiting for manual review\" until then.": [
-  "Scan/ScanTab.cs:942"
+  "Scan/ScanTab.cs:1035"
  ],
  "Sending is switched off (tab Rivals overlay, \"Submit my laps when they beat the leaderboard\"). Scans go out only while it is on.": [
   "Scan/ScanUpload.cs:174"
@@ -2702,7 +2712,7 @@
   "Rivals/CarCollectionTab.cs:502"
  ],
  "Server error ({0} in a row): the game cannot reach the leaderboards. Waiting until {1}, then this board once more.": [
-  "Scan/ScanTab.cs:695"
+  "Scan/ScanTab.cs:705"
  ],
  "Seven-segment": [
   "Rivals/GMeterTab.cs:633",
@@ -2941,7 +2951,7 @@
  ],
  "Status": [
   "Auction/AuctionTab.cs:141",
-  "Scan/ScanTab.cs:329"
+  "Scan/ScanTab.cs:335"
  ],
  "Stealth": [
   "Rivals/Farbthemen.cs:116"
@@ -2972,19 +2982,19 @@
   "Scan/ServerFehlerHinweis.cs:66"
  ],
  "Stopped after the Server Error.": [
-  "Scan/ScanTab.cs:701"
+  "Scan/ScanTab.cs:711"
  ],
  "Stopped at the rank limit set under \"First ranks only\". The website takes it on its own only from 3,000 ranks.": [
-  "Scan/ScanTab.cs:399"
+  "Scan/ScanTab.cs:405"
  ],
  "Stopped before the end: by Stop, by the Pause key, or because another window came to the front. What was read is kept and sent; the server holds a board that is too short.": [
-  "Scan/ScanTab.cs:403"
+  "Scan/ScanTab.cs:409"
  ],
  "Stopped.": [
   "MainForm.cs:748",
-  "Scan/ScanTab.cs:726",
-  "Scan/ScanTab.cs:764",
-  "Scan/ScanTab.cs:768"
+  "Scan/ScanTab.cs:736",
+  "Scan/ScanTab.cs:774",
+  "Scan/ScanTab.cs:778"
  ],
  "Stopping ...": [
   "Auction/AuctionTab.cs:93",
@@ -3124,7 +3134,7 @@
   "Auction/AuctionTab.cs:474"
  ],
  "The board stopped loading new rows before its end; usually the game's online session ran out. What was read is kept. Scan the board again later for the rest.": [
-  "Scan/ScanTab.cs:400"
+  "Scan/ScanTab.cs:406"
  ],
  "The countdown colours its BACKGROUND, not its digits: calm, then warning, then pop-in. The text colour is yours to pick.": [
   "Rivals/HudTab.cs:1303"
@@ -3152,10 +3162,10 @@
   "Scan/ServerFehlerHinweis.cs:111"
  ],
  "The game closed during the scan. The queue stops here. Start the game again and scan this board once more.": [
-  "Scan/ScanTab.cs:404"
+  "Scan/ScanTab.cs:410"
  ],
  "The game could not be brought to the front. Click into the game once, come back and press Start scan again.": [
-  "Scan/ScanTab.cs:591"
+  "Scan/ScanTab.cs:597"
  ],
  "The game does not record which tune a lap was driven with: \"~\" marks laps given to the tune saved last before them.": [
   "Tuning/TunesTab.cs:499"
@@ -3167,13 +3177,13 @@
   "Auction/AuctionTab.cs:467"
  ],
  "The game is not running. Start it, open any menu, then press Start scan.": [
-  "Scan/ScanTab.cs:574"
+  "Scan/ScanTab.cs:580"
  ],
  "The game runs on:": [
   "Konsole.cs:737"
  ],
  "The game showed \"Server Error\": it could not reach its leaderboards. The scan itself is fine. Try again later; this board is not sent.": [
-  "Scan/ScanTab.cs:402"
+  "Scan/ScanTab.cs:408"
  ],
  "The game will refuse new downloads.": [
   "Rivals/OverlayController.cs:673"
@@ -3219,7 +3229,7 @@
   "Konsole.cs:294"
  ],
  "The route list could not be loaded: {0}": [
-  "Scan/ScanTab.cs:346"
+  "Scan/ScanTab.cs:352"
  ],
  "The route names have to be on screen as text.": [
   "Rivals/OverlayController.cs:4588"
@@ -3231,7 +3241,7 @@
   "scripts/contrib_scan.py:357"
  ],
  "The scanner reached what looks like the end, but the scrollbar did not confirm it. The server may hold the scan back.": [
-  "Scan/ScanTab.cs:401"
+  "Scan/ScanTab.cs:407"
  ],
  "The server could not be reached.": [
   "Rivals/CarCollectionTab.cs:412"
@@ -3306,7 +3316,7 @@
   "Rivals/SpeedoTab.cs:478"
  ],
  "This folder holds no scan: state.json or rows.jsonl is missing.": [
-  "Scan/ScanTab.cs:968",
+  "Scan/ScanTab.cs:1061",
   "Scan/ScanUpload.cs:134"
  ],
  "This ordinal matches no car in the records.": [
@@ -3332,7 +3342,7 @@
   "Rivals/SpeedoTab.cs:659"
  ],
  "Tick at least one route and one class.": [
-  "Scan/ScanTab.cs:569"
+  "Scan/ScanTab.cs:575"
  ],
  "Time": [
   "Auction/AuctionTab.cs:181",
@@ -3498,14 +3508,14 @@
   "Rivals/RivalsTab.cs:717"
  ],
  "Upload": [
-  "Scan/ScanTab.cs:330"
+  "Scan/ScanTab.cs:336"
  ],
  "Upload each finished board": [
   "Scan/ScanTab.cs:239"
  ],
  "Upload: ": [
-  "Scan/ScanTab.cs:926",
-  "Scan/ScanTab.cs:927"
+  "Scan/ScanTab.cs:1004",
+  "Scan/ScanTab.cs:1005"
  ],
  "Uploading to {server} ...": [
   "scripts/contrib_scan.py:383"
@@ -3577,7 +3587,7 @@
   "TelemetryInspector.cs:27"
  ],
  "Waiting for the game to come to the front ...": [
-  "Scan/ScanTab.cs:600"
+  "Scan/ScanTab.cs:606"
  ],
  "Waiting for the program to close ...": [
   "Rivals/AppUpdate.cs:411"
@@ -3728,7 +3738,7 @@
   "Rivals/RivalsTab.cs:679"
  ],
  "You are driving. Open a menu in the game first: the scanner takes over the keyboard.": [
-  "Scan/ScanTab.cs:579"
+  "Scan/ScanTab.cs:585"
  ],
  "You beat the leaderboard!": [
   "Rivals/OverlayController.cs:4840",
@@ -3815,7 +3825,7 @@
   "Rivals/OwnTimes.cs:417"
  ],
  "being scanned until {0}": [
-  "Scan/ScanTab.cs:513"
+  "Scan/ScanTab.cs:519"
  ],
  "best fit: {0} {1} (#{2} of {3})": [
   "Rivals/OverlayController.cs:4722"
@@ -3878,10 +3888,10 @@
   "Rivals/OverlayController.cs:979"
  ],
  "complete": [
-  "Scan/ScanTab.cs:410"
+  "Scan/ScanTab.cs:416"
  ],
  "complete (valid laps)": [
-  "Scan/ScanTab.cs:411"
+  "Scan/ScanTab.cs:417"
  ],
  "console mode -- telemetry over the network, no video source (screen reading off)": [
   "Rivals/OverlayController.cs:2814"
@@ -3896,7 +3906,7 @@
   "Rivals/RivalsTab.cs:411"
  ],
  "cut short": [
-  "Scan/ScanTab.cs:413"
+  "Scan/ScanTab.cs:419"
  ],
  "cutoff date changed": [
   "Rivals/RivalsTab.cs:146"
@@ -3905,7 +3915,7 @@
   "Rivals/RivalsTab.cs:452"
  ],
  "deepest rank {0:n0}": [
-  "Scan/ScanTab.cs:520"
+  "Scan/ScanTab.cs:526"
  ],
  "do not scan, only pack what is already there": [
   "scripts/contrib_scan.py:302"
@@ -3939,7 +3949,7 @@
   "scripts/contrib_scan.py:287"
  ],
  "end not confirmed": [
-  "Scan/ScanTab.cs:414"
+  "Scan/ScanTab.cs:420"
  ],
  "ended": [
   "Auction/AuctionTab.cs:266",
@@ -3958,7 +3968,7 @@
   "Rivals/CarNotesTab.cs:287"
  ],
  "failed, trying again": [
-  "Scan/ScanTab.cs:740"
+  "Scan/ScanTab.cs:750"
  ],
  "ffmpeg found.": [
   "Konsole.cs:438"
@@ -3970,7 +3980,7 @@
   "Rivals/RaceStatsTab.cs:351"
  ],
  "first ranks read": [
-  "Scan/ScanTab.cs:412"
+  "Scan/ScanTab.cs:418"
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:147",
@@ -4014,8 +4024,8 @@
  ],
  "game crashed": [
   "EdgeCaseTest.cs:1463",
-  "Scan/ScanTab.cs:417",
-  "Scan/ScanTab.cs:712"
+  "Scan/ScanTab.cs:423",
+  "Scan/ScanTab.cs:722"
  ],
  "garage": [
   "Rivals/CarNotesTab.cs:191"
@@ -4080,7 +4090,7 @@
   "Rivals/OverlayController.cs:4635"
  ],
  "loading ...": [
-  "Scan/ScanTab.cs:492"
+  "Scan/ScanTab.cs:498"
  ],
  "long": [
   "Rivals/GMeterRenderer.cs:448"
@@ -4099,7 +4109,7 @@
   "TelemetryInspector.cs:138"
  ],
  "never": [
-  "Scan/ScanTab.cs:511"
+  "Scan/ScanTab.cs:517"
  ],
  "new version: {0}": [
   "Rivals/AppUpdate.cs:210"
@@ -4144,14 +4154,14 @@
   "Rivals/CourseShapeHud.cs:187"
  ],
  "not in the route list": [
-  "Scan/ScanTab.cs:515"
+  "Scan/ScanTab.cs:521"
  ],
  "not scanned yet: {0}": [
   "Rivals/OverlayController.cs:4727"
  ],
  "not sent": [
-  "Scan/ScanTab.cs:909",
-  "Scan/ScanTab.cs:917"
+  "Scan/ScanTab.cs:987",
+  "Scan/ScanTab.cs:995"
  ],
  "not uploaded: {error}": [
   "scripts/contrib_scan.py:263"
@@ -4163,7 +4173,7 @@
   "Rivals/SpeedoTab.cs:234"
  ],
  "off": [
-  "Scan/ScanTab.cs:803"
+  "Scan/ScanTab.cs:813"
  ],
  "one-make event": [
   "Rivals/RivalsTab.cs:906"
@@ -4265,10 +4275,10 @@
   "Rivals/CarNotesTab.cs:306"
  ],
  "saved scan": [
-  "Scan/ScanTab.cs:971"
+  "Scan/ScanTab.cs:1064"
  ],
  "scanning ...": [
-  "Scan/ScanTab.cs:651"
+  "Scan/ScanTab.cs:661"
  ],
  "search car": [
   "Rivals/OwnTimesTab.cs:172"
@@ -4280,21 +4290,22 @@
   "scripts/contrib_scan.py:281"
  ],
  "sending ...": [
-  "Scan/ScanTab.cs:803",
-  "Scan/ScanTab.cs:947"
+  "Scan/ScanTab.cs:813",
+  "Scan/ScanTab.cs:1028",
+  "Scan/ScanTab.cs:1040"
  ],
  "sent": [
-  "Scan/ScanTab.cs:911"
+  "Scan/ScanTab.cs:989"
  ],
  "sent again, for review": [
-  "Scan/ScanTab.cs:910"
+  "Scan/ScanTab.cs:988"
  ],
  "sent, held back": [
-  "Scan/ScanTab.cs:911"
+  "Scan/ScanTab.cs:989"
  ],
  "server error": [
-  "Scan/ScanTab.cs:415",
-  "Scan/ScanTab.cs:691"
+  "Scan/ScanTab.cs:421",
+  "Scan/ScanTab.cs:701"
  ],
  "server not reachable: {0}": [
   "Rivals/AppUpdate.cs:215"
@@ -4312,14 +4323,14 @@
   "Rivals/RivalsTab.cs:588"
  ],
  "skipped": [
-  "Scan/ScanTab.cs:746"
+  "Scan/ScanTab.cs:756"
  ],
  "sold": [
   "Auction/AuctionWatch.cs:176",
   "EdgeCaseTest.cs:1236"
  ],
  "someone else is scanning it": [
-  "Scan/ScanTab.cs:657"
+  "Scan/ScanTab.cs:667"
  ],
  "sprint": [
   "Rivals/OwnTimesTab.cs:443"
@@ -4349,9 +4360,9 @@
   "Rivals/OverlayController.cs:690",
   "Rivals/OverlayController.cs:716",
   "Rivals/RivalsTab.cs:880",
-  "Scan/ScanTab.cs:416",
-  "Scan/ScanTab.cs:724",
-  "Scan/ScanTab.cs:780"
+  "Scan/ScanTab.cs:422",
+  "Scan/ScanTab.cs:734",
+  "Scan/ScanTab.cs:790"
  ],
  "telemetry: not connected to the app's listener": [
   "Rivals/RivalsTab.cs:865"
@@ -4544,7 +4555,7 @@
   "Rivals/RaceStatsTab.cs:360"
  ],
  "{0} board(s) selected": [
-  "Scan/ScanTab.cs:556"
+  "Scan/ScanTab.cs:562"
  ],
  "{0} boards": [
   "Rivals/RivalsTab.cs:443",
@@ -4553,7 +4564,7 @@
   "Rivals/RivalsTab.cs:882"
  ],
  "{0} boards, the ones that need a scan most at the top. Boards someone is scanning now are at the end.": [
-  "Scan/ScanTab.cs:530"
+  "Scan/ScanTab.cs:536"
  ],
  "{0} car(s) hidden: the dataset has no name for them, only an id": [
   "Rivals/OverlayController.cs:3903"
@@ -4571,7 +4582,7 @@
   "Rivals/OverlayController.cs:4657"
  ],
  "{0} d": [
-  "Scan/ScanTab.cs:511"
+  "Scan/ScanTab.cs:517"
  ],
  "{0} file(s) could not be deleted -- another program may have them open. Try again later.": [
   "Rivals/OwnTimesTab.cs:267"

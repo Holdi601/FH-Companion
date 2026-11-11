@@ -156,6 +156,36 @@ def anmelden(install_id: str, strecke, klasse, pfad: Path | None = None, now: fl
         return True, bis
 
 
+#: So lange gilt ein Board nach einem Scan als erledigt (seit 2026-11-11, der Nutzer: "it
+#: shouldn't do one ... scanned within the last 24 hours").
+FRISCH_SEKUNDEN = 24 * 3600
+
+#: Ein Scan zaehlt dafuer nur, wenn er das Board wirklich abdeckt -- ein abgebrochener nicht.
+GANZE_SCANS = ("end_detected", "invalid_tail", "valid_section_complete", "row_cap_reached")
+
+
+def zuletzt_gescannt(eingegangen: list, strecke, klasse, now: float | None = None,
+                     sekunden: float = FRISCH_SEKUNDEN) -> float | None:
+    """Wann dieses Board zuletzt ganz gescannt hereinkam, wenn es weniger als `sekunden` her ist.
+
+    `eingegangen`: alle Scans aus scan_submissions (auch die angehaltenen und die zur Pruefung:
+    gescannt hat das Board trotzdem jemand -- ein zweiter Scanner soll es nicht gleich noch einmal
+    nehmen). None, wenn es keinen solchen gibt.
+    """
+    jetzt = now or time.time()
+    k = board_schluessel(strecke, klasse)
+    beste = None
+    for d in eingegangen:
+        if not isinstance(d, dict) or board_schluessel(d.get("track"), d.get("class")) != k:
+            continue
+        t = d.get("received") or 0
+        ganz = (str(d.get("status") or d.get("end_status") or "") in GANZE_SCANS
+                or int(d.get("rows") or 0) >= 3000)
+        if ganz and jetzt - t < sekunden and (beste is None or t > beste):
+            beste = float(t)
+    return beste
+
+
 def freigeben(strecke, klasse, install_id: str | None = None, pfad: Path | None = None,
               now: float | None = None) -> bool:
     """Die Anmeldung loesen -- die eigene, oder (install_id None) jede: das Board wurde gescannt."""

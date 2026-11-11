@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace ForzaHaptics.Tester.Scan;
@@ -41,6 +43,20 @@ internal sealed class ScanRoutes
 
     private readonly Dictionary<string, Kategorie> _kategorien = new(StringComparer.OrdinalIgnoreCase);
 
+    // GELERNTE LISTEN (seit 2026-11-11). Mit einem Spiel-Update kamen neue Strecken ins Karussell;
+    // die mitgelieferte Tabelle kennt sie nicht, und der Scanner faehrt Strecken ueber ihre Position
+    // an. Der Scanner geht darum das Karussell einer Kategorie einmal ganz durch (ScanNavigator.Lerne)
+    // und legt die Reihenfolge hier ab -- sie gilt vor der mitgelieferten, bis das Spiel sich wieder
+    // aendert.
+    private readonly Dictionary<string, DateTime> _gelernt = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Wo die gelernten Listen liegen (je Rechner, im Datenordner der App).</summary>
+    public static string LernDatei => Path.Combine(AppInfo.DataFolder, "scan_routes_learned.json");
+
+    /// <summary>Wann die Liste dieser Kategorie zuletzt im Spiel gelernt wurde (UTC) -- null: nie.</summary>
+    public DateTime? GelerntAm(string kategorie) =>
+        Finde(kategorie) is { } k && _gelernt.TryGetValue(k.Name, out var t) ? t : null;
+
     public ScanRoutes(IEnumerable<Kategorie> kategorien)
     {
         foreach (var k in kategorien) { _kategorien[k.Name] = k; }
@@ -74,7 +90,123 @@ internal sealed class ScanRoutes
     {
         pfad ??= Datei() ?? throw new FileNotFoundException(
             "config/fh6_scan_routes.json is missing -- build it with scripts/build_scan_routes.py.");
-        return AusJson(File.ReadAllText(pfad));
+        return MitGelerntem(AusJson(File.ReadAllText(pfad)), LernDatei);
+    }
+
+    /// <summary>
+    /// Die mitgelieferte Tabelle, ueberschrieben von den im Spiel gelernten Listen. Eine gelernte
+    /// Liste, die weniger als vier Fuenftel der mitgelieferten Strecken enthaelt, gilt nicht --
+    /// dann lief beim Lernen etwas schief, und die alte Tabelle ist die bessere.
+    /// </summary>
+    internal static ScanRoutes MitGelerntem(ScanRoutes basis, string? datei)
+    {
+        if (datei is null || !File.Exists(datei)) { return basis; }
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(datei));
+            if (!doc.RootElement.TryGetProperty("categories", out var gelernt) || gelernt.ValueKind != JsonValueKind.Object)
+            {
+                return basis;
+            }
+            var liste = new List<Kategorie>();
+            var am = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+            foreach (var k in basis.Kategorien)
+            {
+                if (gelernt.TryGetProperty(k.Name, out var g) && g.ValueKind == JsonValueKind.Object
+                    && g.TryGetProperty("routes", out var r) && r.ValueKind == JsonValueKind.Array)
+                {
+                    var strecken = r.EnumerateArray().Select(x => x.GetString() ?? string.Empty).Where(x => x.Length > 0).ToList();
+                    var laengen = new List<double?>();
+                    if (g.TryGetProperty("lengths", out var ls) && ls.ValueKind == JsonValueKind.Array)
+                    {
+                        laengen.AddRange(ls.EnumerateArray().Select(x => x.ValueKind == JsonValueKind.Number ? x.GetDouble() : (double?)null));
+                    }
+                    while (laengen.Count < strecken.Count) { laengen.Add(null); }
+                    var bekannt = k.Strecken.Count(s => strecken.Contains(s, StringComparer.OrdinalIgnoreCase));
+                    if (strecken.Count > 0 && bekannt * 5 >= k.Strecken.Count * 4)
+                    {
+                        liste.Add(k with { Strecken = strecken, Laengen = laengen.Take(strecken.Count).ToList() });
+                        if (g.TryGetProperty("learned", out var l) && l.ValueKind == JsonValueKind.String
+                            && DateTime.TryParse(l.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var t))
+                        {
+                            am[k.Name] = t.ToUniversalTime();
+                        }
+                        continue;
+                    }
+                }
+                liste.Add(k);
+            }
+            var neu = new ScanRoutes(liste);
+            foreach (var e in am) { neu._gelernt[e.Key] = e.Value; }
+            return neu;
+        }
+        catch (Exception)
+        {
+            return basis;
+        }
+    }
+
+    /// <summary>Eine im Spiel gelernte Liste ablegen; die anderen Kategorien der Datei bleiben.</summary>
+    public static void Speichere(string kategorie, IReadOnlyList<string> strecken, IReadOnlyList<double?> laengen,
+                                 string? datei = null)
+    {
+        datei ??= LernDatei;
+        JsonObject wurzel;
+        try
+        {
+            wurzel = File.Exists(datei) && JsonNode.Parse(File.ReadAllText(datei)) is JsonObject o ? o : new JsonObject();
+        }
+        catch (Exception)
+        {
+            wurzel = new JsonObject();
+        }
+        wurzel["format"] = 1;
+        if (wurzel["categories"] is not JsonObject kategorien)
+        {
+            kategorien = new JsonObject();
+            wurzel["categories"] = kategorien;
+        }
+        var ls = new JsonArray();
+        foreach (var l in laengen) { ls.Add(l is { } km ? JsonValue.Create(Math.Round(km, 1)) : null); }
+        kategorien[kategorie] = new JsonObject
+        {
+            ["routes"] = new JsonArray(strecken.Select(s => (JsonNode?)JsonValue.Create(s)).ToArray()),
+            ["lengths"] = ls,
+            ["learned"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
+        };
+        Directory.CreateDirectory(Path.GetDirectoryName(datei)!);
+        var tmp = datei + ".tmp";
+        File.WriteAllText(tmp, wurzel.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        File.Move(tmp, datei, overwrite: true);
+    }
+
+    /// <summary>
+    /// Wann das Spiel zuletzt seine Texte geaendert hat (UTC) -- ein Update, das Strecken bringt,
+    /// bringt auch ihre Namen. Aus dem Ordner des laufenden Spiels; null, wenn es nicht zu sehen ist.
+    /// </summary>
+    public static DateTime? SpielStand()
+    {
+        try
+        {
+            var p = System.Diagnostics.Process.GetProcessesByName(GameWatch.DefaultProcessName).FirstOrDefault();
+            var exe = p?.MainModule?.FileName;
+            p?.Dispose();
+            if (exe is null) { return null; }
+            var en = Path.Combine(Path.GetDirectoryName(exe)!, "media", "Stripped", "StringTables", "EN.zip");
+            return File.Exists(en) ? File.GetLastWriteTimeUtc(en) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Muss die Liste dieser Kategorie im Spiel (neu) gelernt werden?</summary>
+    public bool LernenNoetig(string kategorie, DateTime? spielStand)
+    {
+        var am = GelerntAm(kategorie);
+        if (am is null) { return true; }
+        return spielStand is { } s && s > am.Value;
     }
 
     public static ScanRoutes AusJson(string json)

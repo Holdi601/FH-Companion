@@ -114,6 +114,25 @@ internal static class GameText
     /// <summary>Wie viele Spielsprachen die Datei kennt (0: keine Datei).</summary>
     internal static int SprachenAnzahl => Laden().Sprachen.Count;
 
+    /// <summary>
+    /// Alle Streckennamen des Spiels (englisch), je Schreibweise einmal -- "EDO CIRCUIT" und
+    /// "Edo Circuit" sind dieselbe Strecke, die gemischte Schreibung gewinnt.
+    /// </summary>
+    internal static IReadOnlyList<string> AlleStrecken()
+    {
+        var je = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var name in Laden().Strecken.Keys)
+        {
+            var k = Falte(name);
+            if (k.Length == 0) { continue; }
+            if (!je.TryGetValue(k, out var da) || (da == da.ToUpperInvariant() && name != name.ToUpperInvariant()))
+            {
+                je[k] = name;
+            }
+        }
+        return je.Values.ToList();
+    }
+
     /// <summary>Gefaltet wie Normalise, dazu das "ɨ"/"ı" des Tuerkischen als "i".</summary>
     internal static string Falte(string? text) =>
         TextMatch.Normalise((text ?? string.Empty).Replace('ɨ', 'i').Replace('Ɨ', 'I').Replace('ı', 'i'));

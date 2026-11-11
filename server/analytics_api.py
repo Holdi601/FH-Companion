@@ -921,7 +921,14 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
         # fuer die App ("work down the list") und die Seite. Ohne Anmeldung, ohne Absender.
         if method == "GET" and path == "/api/scan/needs":
             versteckt_n = _versteckt(visibility)
-            angenommen = [d for d in scans.list_scans(root) if d.get("run_id") not in versteckt_n]
+            alle_scans = scans.list_scans(root)
+            angenommen = [d for d in alle_scans if d.get("run_id") not in versteckt_n]
+            # Auch ein angehaltener Scan der letzten 24 Stunden schiebt sein Board nach hinten:
+            # gescannt hat es jemand, ein zweiter Scanner soll es nicht gleich noch einmal nehmen.
+            grenze_frisch = (now or time.time()) - scan_needs.FRISCH_SEKUNDEN
+            angenommen += [d for d in alle_scans if d.get("run_id") in versteckt_n
+                           and (d.get("received") or 0) >= grenze_frisch
+                           and scan_needs.zuletzt_gescannt([d], d.get("track"), d.get("class"), now=now) is not None]
             try:
                 boards = scan_needs.liste(DATASET_FILE, angenommen, scan_needs.anmeldungen(now=now), now)
             except (OSError, ValueError, KeyError):
@@ -944,6 +951,15 @@ def scan_endpunkt(method: str, path: str, headers, body: bytes,
                 raise ApiError(400, "track and class are needed")
             if path.endswith("/release"):
                 return as_json(200, {"ok": True, "released": scan_needs.freigeben(strecke, klasse, install_id, now=now)})
+            # DIE LETZTE PRUEFUNG VOR DEM SCAN (seit 2026-11-11): zwei Scanner zugleich nahmen dasselbe
+            # Board. Ganz gescannt in den letzten 24 Stunden -- von wem auch immer, auch angehalten --
+            # heisst: ueberspringen.
+            frisch = scan_needs.zuletzt_gescannt(scans.list_scans(root), strecke, klasse, now=now)
+            if frisch is not None:
+                stunden = max(0.0, ((now or time.time()) - frisch) / 3600)
+                return as_json(409, {"ok": False, "recent": frisch,
+                                     "error": "This board was scanned %s ago; boards scanned in the last 24 hours are skipped."
+                                              % ("%.0f h" % stunden if stunden >= 1 else "%.0f min" % (stunden * 60))})
             ok, bis = scan_needs.anmelden(install_id, strecke, klasse, now=now)
             if not ok:
                 return as_json(409, {"ok": False, "until": bis,

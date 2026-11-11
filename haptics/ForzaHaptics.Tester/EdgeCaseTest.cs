@@ -1434,6 +1434,33 @@ internal static class EdgeCaseTest
             }
         }
         Soll(Scan.ScanWache.Taste is null, "Scan: eine Stopptaste gilt, bevor die Wache laeuft");
+        // GELERNTE STRECKENLISTEN (2026-11-11): eine im Spiel gelernte Liste gilt vor der mitgelieferten,
+        // eine kaputte (zu wenige bekannte Strecken) nicht; nach einem Spiel-Update wird neu gelernt.
+        {
+            var basis = Scan.ScanRoutes.Laden(Scan.ScanRoutes.Datei());
+            var road = basis.Finde("Road Racing")!;
+            var gelernt = road.Strecken.Take(3).Append("Edo Circuit").Concat(road.Strecken.Skip(3)).ToList();
+            var datei = Path.Combine(Path.GetTempPath(), "fhc-learned-" + Guid.NewGuid().ToString("N") + ".json");
+            try
+            {
+                Scan.ScanRoutes.Speichere("Road Racing", gelernt, gelernt.Select(_ => (double?)5.0).ToList(), datei);
+                Scan.ScanRoutes.Speichere("Touge", new[] { "Nirgendwo" }, new double?[] { 1.0 }, datei);
+                var mit = Scan.ScanRoutes.MitGelerntem(basis, datei);
+                var r = mit.Finde("Road Racing")!;
+                Soll(r.Strecken.Count == road.Strecken.Count + 1 && r.Strecken[3] == "Edo Circuit" && r.Lokalisiere("Edo Circuit") == 3,
+                     "Scan: die gelernte Liste mit einer neuen Strecke gilt nicht");
+                Soll(mit.Finde("Touge")!.Strecken.SequenceEqual(basis.Finde("Touge")!.Strecken),
+                     "Scan: eine kaputte gelernte Liste ersetzt die mitgelieferte");
+                var am = mit.GelerntAm("Road Racing");
+                Soll(am is not null && !mit.LernenNoetig("Road Racing", am.Value.AddDays(-1)) && mit.LernenNoetig("Road Racing", am.Value.AddDays(1))
+                     && mit.LernenNoetig("Street Racing", null),
+                     "Scan: wann neu gelernt wird, stimmt nicht");
+            }
+            finally
+            {
+                File.Delete(datei);
+            }
+        }
         // Der Reiter baut sich ohne Spiel und ohne Fenster auf (nur erzeugt, nie gezeigt).
         using var reiter = new Scan.ScanTab(new Rivals.OverlaySettings(), () => false);
         Soll(reiter.Controls.Count == 3, "der Scan-Reiter baut sich nicht auf");

@@ -53,6 +53,129 @@ internal sealed class ScanNavigator
 
     private readonly WindowsOcr _ocr = new();
     private readonly ScanEingabe _eingabe;
+    // Lernen statt scannen: an der Streckenliste der Kategorie das Karussell einmal ganz ablaufen.
+    private bool _lernen;
+
+    /// <summary>Das Ergebnis des Lernens -- aus Fahre heraus, an Lerne zurueck.</summary>
+    private sealed class Gelernt(List<string> strecken, List<double?> laengen) : Exception("learned")
+    {
+        public List<string> Strecken { get; } = strecken;
+        public List<double?> Laengen { get; } = laengen;
+    }
+
+    /// <summary>
+    /// Die Strecken einer Kategorie in der Reihenfolge des Karussells, aus dem Spiel gelesen
+    /// (seit 2026-11-11): Index 0 bleibt der Anker der mitgelieferten Tabelle. Wirft
+    /// <see cref="Abbruch"/>, wenn die Liste nicht sicher zu lesen ist -- dann bleibt die alte.
+    /// </summary>
+    public (List<string> Strecken, List<double?> Laengen) Lerne(string kategorie, bool vomBoard)
+    {
+        _lernen = true;
+        try
+        {
+            Fahre(new Ziel(kategorie, 0, "D"), vomBoard);
+            throw new Abbruch($"learning {kategorie}: the route list was never reached");
+        }
+        catch (Gelernt g)
+        {
+            return (g.Strecken, g.Laengen);
+        }
+        finally
+        {
+            _lernen = false;
+        }
+    }
+
+    /// <summary>
+    /// Den Titel der Strecke lesen, die gerade gewaehlt ist -- gegen alle Streckennamen des Spiels,
+    /// erst wenn zwei Lesungen hintereinander dieselbe ergeben. (null, null), wenn es nicht gelingt.
+    /// </summary>
+    private (string? Name, double? Km) TitelLesen(IReadOnlyList<string> kandidaten, int schritt)
+    {
+        string? vorher = null;
+        double? km = null;
+        for (var i = 0; i < 8; i++)
+        {
+            using var b = Sehen($"learn-{schritt}-{i}");
+            if (b.Schirm is ScanSchirm.Klassenschirm or ScanSchirm.RivalDetail or ScanSchirm.Bestenliste)
+            {
+                throw new Abbruch($"learning: left the route list ({b.Schirm})");
+            }
+            if (b.Schirm != ScanSchirm.Streckenliste)
+            {
+                vorher = null;
+                Thread.Sleep(400);
+                continue;
+            }
+            var idx = ScanScreen.Lokalisiere(b.Lesung.Titel, kandidaten);
+            var name = idx >= 0 ? kandidaten[idx] : null;
+            km = b.Lesung.Laenge ?? km;
+            if (name is not null && name == vorher) { return (name, km); }
+            vorher = name;
+            Thread.Sleep(300);
+        }
+        return (null, null);
+    }
+
+    /// <summary>
+    /// Das Karussell einmal ganz ablaufen, nach RECHTS, bis die erste Strecke wiederkommt -- zweimal,
+    /// und nur wenn beide Runden dieselbe Reihenfolge ergeben, gilt sie: Druecke gehen verloren
+    /// oder zaehlen doppelt, und eine uebersprungene Strecke saehe man einer Runde allein nicht an.
+    /// </summary>
+    private (List<string>, List<double?>) KarussellAblaufen(ScanRoutes.Kategorie kat)
+    {
+        var kandidaten = kat.Strecken.Concat(GameText.AlleStrecken())
+                            .GroupBy(ScanScreen.Falte).Select(g => g.First()).Where(n => n.Length > 0).ToList();
+        List<(string Name, double? Km)>? vorige = null;
+        for (var runde = 0; runde < 3; runde++)
+        {
+            var liste = new List<(string Name, double? Km)>();
+            string? letzter = null;
+            var gleich = 0;
+            for (var schritt = 0; schritt < kat.Strecken.Count + 30; schritt++)
+            {
+                var (name, km) = TitelLesen(kandidaten, schritt);
+                if (name is null) { throw new Abbruch($"learning {kat.Name}: route title unreadable at step {schritt}"); }
+                if (name == letzter)
+                {
+                    // Der Druck ging verloren: noch einmal, ohne die Strecke doppelt zu zaehlen.
+                    if (++gleich > 4) { throw new Abbruch($"learning {kat.Name}: the carousel does not move from '{name}'"); }
+                    Taste(Rechts, 500);
+                    continue;
+                }
+                gleich = 0;
+                if (liste.Count > 0 && name == liste[0].Name) { break; }
+                if (liste.Any(e => e.Name == name))
+                {
+                    throw new Abbruch($"learning {kat.Name}: '{name}' came twice before the list wrapped");
+                }
+                liste.Add((name, km));
+                letzter = name;
+                Taste(Rechts, 500);
+            }
+            Melde($"learning {kat.Name}, lap {runde + 1}: {liste.Count} routes -- {string.Join(", ", liste.Select(e => e.Name))}");
+            if (vorige is not null && vorige.Select(e => e.Name).SequenceEqual(liste.Select(e => e.Name)))
+            {
+                // Laengen aus beiden Runden: was eine nicht las, liest vielleicht die andere.
+                var laengen = liste.Select((e, i) => e.Km ?? vorige[i].Km).ToList();
+                var namen = liste.Select(e => e.Name).ToList();
+                var anker = namen.FindIndex(n => string.Equals(n, kat.Strecken[0], StringComparison.OrdinalIgnoreCase));
+                if (anker > 0)
+                {
+                    namen = namen.Skip(anker).Concat(namen.Take(anker)).ToList();
+                    laengen = laengen.Skip(anker).Concat(laengen.Take(anker)).ToList();
+                }
+                var bekannt = kat.Strecken.Count(s => namen.Contains(s, StringComparer.OrdinalIgnoreCase));
+                if (bekannt * 5 < kat.Strecken.Count * 4)
+                {
+                    throw new Abbruch($"learning {kat.Name}: only {bekannt} of {kat.Strecken.Count} known routes found -- not saved");
+                }
+                return (namen, laengen);
+            }
+            vorige = liste;
+        }
+        throw new Abbruch($"learning {kat.Name}: three laps of the carousel did not agree");
+    }
     private readonly ScanRoutes _routen;
     private readonly Action<string> _melden;
     private readonly CancellationToken _stop;
@@ -529,6 +652,11 @@ internal sealed class ScanNavigator
                         kategorieBestaetigt = true;
                     }
                     listeGesehen = true;
+                    if (_lernen)
+                    {
+                        var (namen, laengen) = KarussellAblaufen(kat);
+                        throw new Gelernt(namen, laengen);
+                    }
                     var (erreicht, gelesen) = StreckeWaehlen(kat, ziel.RouteIndex);
                     if (!erreicht) { break; }
                     strecke = gelesen;

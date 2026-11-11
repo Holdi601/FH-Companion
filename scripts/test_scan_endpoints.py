@@ -726,6 +726,15 @@ with tempfile.TemporaryDirectory() as tmp:
         z_c, r_c = ein_lauf("ocr_claimed_1", klasse="B", basis=90.0, n=3000)
         st_c, a_c = einreichen(z_c, r_c)
         pruefe(st_c == 200 and "festival chase|B" not in scan_needs.anmeldungen(), "der Scan loest die Anmeldung (%d)" % st_c)
+        # DIE LETZTE PRUEFUNG (2026-11-11): ein eben ganz gescanntes Board nimmt kein zweiter Scanner.
+        st_f, a_f = anmelden_bei(neu_geheim, neu_id, "/api/scan/claim", "Festival Chase", "B")
+        pruefe(st_f == 409 and "last 24 hours" in a_f.get("error", "") and a_f.get("recent"),
+               "ein in den letzten 24 Stunden gescanntes Board wird nicht noch einmal angemeldet (%d, %s)" % (st_f, a_f.get("error")))
+        pruefe(scan_needs.zuletzt_gescannt([{"track": "Festival Chase", "class": "B", "received": time.time() - 25 * 3600,
+                                             "status": "end_detected", "rows": 5000}], "Festival Chase", "B") is None
+               and scan_needs.zuletzt_gescannt([{"track": "Festival Chase", "class": "B", "received": time.time() - 3600,
+                                                 "status": "stopped", "rows": 800}], "Festival Chase", "B") is None,
+               "nach 24 Stunden, und nach einem abgebrochenen Scan, darf das Board wieder gescannt werden")
         # Und sie verfaellt von selbst.
         scan_needs.anmelden(install_id, "Festival Chase", "A", now=time.time() - 41 * 60)
         pruefe("festival chase|A" not in scan_needs.anmeldungen(), "eine Anmeldung verfaellt nach 40 Minuten")

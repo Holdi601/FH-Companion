@@ -71,7 +71,9 @@ internal static class ScanBedarf
                                                                       bool freigeben = false)
     {
         var pfad = freigeben ? "/api/scan/release" : "/api/scan/claim";
-        if (s.Offline || string.IsNullOrWhiteSpace(s.DatasetUrl) || !s.SubmitLaps)
+        // ANMELDEN AUCH OHNE VERSAND (seit 2026-11-11): zwei Scanner stoerten sich, weil einer nicht
+        // anmeldete. Die Anmeldung nennt nur Strecke und Klasse -- keine Runde, keinen Namen.
+        if (s.Offline || string.IsNullOrWhiteSpace(s.DatasetUrl))
         {
             // Ohne Server: scannen geht trotzdem, nur weiss kein anderer davon.
             return (true, string.Empty);
