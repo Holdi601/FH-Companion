@@ -76,12 +76,16 @@ if (!match) { console.error("no script block in " + page); process.exit(2); }
  * die Seite, Python und C# deckungsgleich halten sollen. Aufgefallen 2026-09-09.
  * Der alte Name wird weiter akzeptiert, damit eine aeltere gebaute Seite pruefbar
  * bleibt. */
-const api = eval(match[1] + "\n;({ D, F, ASSISTS, scoreTable: (typeof scoreTable !== 'undefined' ? scoreTable : null), classTable: (typeof classTable !== 'undefined' ? classTable : null) });");
+const api = eval(match[1] + "\n;({ get D() { return D; }, setSince: (typeof setSince !== 'undefined' ? setSince : null), F, ASSISTS, scoreTable: (typeof scoreTable !== 'undefined' ? scoreTable : null), classTable: (typeof classTable !== 'undefined' ? classTable : null) });");
 const score = api.scoreTable ? (k) => api.scoreTable([k]) : (k) => api.classTable(k);
 if (!api.scoreTable && !api.classTable) {
   console.error("weder scoreTable noch classTable in " + page);
   process.exit(2);
 }
+
+/* ALLE DATEN (seit 2026-11-10): die Seite oeffnet auf dem Stichtag; verglichen wird wie in der
+ * App ohne --since, also ueber alles. */
+if (api.setSince) api.setSince(null);
 
 /* ---------- the one scenario asked for ---------- */
 // Der Seitenfilter arbeitet inzwischen durchgehend mit Sets (leer = alle);
@@ -114,3 +118,5 @@ process.stdout.write(JSON.stringify({
   shallowTracks: table.shallowTracks,
   cars: cars, byPoints: byPoints, byTime: byTime,
 }));
+// Die Seite haengt Zeitgeber an (Nachladen jede Minute): ohne dieses Ende liefe node weiter.
+process.exit(0);
