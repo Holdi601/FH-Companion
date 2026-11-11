@@ -6,7 +6,7 @@
   "Rivals/SpeedoTab.cs:431"
  ],
  "#{0} of {1}": [
-  "Rivals/OverlayController.cs:4708"
+  "Rivals/OverlayController.cs:4704"
  ],
  "(no file)": [
   "Rivals/AufprallDialog.cs:113"
@@ -240,7 +240,7 @@
  "Auction house: the game could not be brought to the front.": [
   "Auction/AuctionBidder.cs:317"
  ],
- "Automatic: your laps, else Rivals": [
+ "Automatic: Rivals map, else your cleanest lap": [
   "Rivals/HudTab.cs:1411"
  ],
  "Autoshow": [
@@ -477,7 +477,7 @@
   "MainForm.cs:460"
  ],
  "Car ordinal {0}": [
-  "Rivals/OverlayController.cs:4664"
+  "Rivals/OverlayController.cs:4660"
  ],
  "Car records and impacts": [
   "Rivals/AufprallDialog.cs:37"
@@ -651,7 +651,7 @@
  ],
  "Continue": [
   "Disclosure.cs:472",
-  "EdgeCaseTest.cs:125"
+  "EdgeCaseTest.cs:126"
  ],
  "Continuous": [
   "BlueprintEditor.cs:1616",
@@ -698,7 +698,7 @@
   "MainForm.cs:2187"
  ],
  "Could not read the routes": [
-  "Rivals/OverlayController.cs:4594"
+  "Rivals/OverlayController.cs:4590"
  ],
  "Could not sign up with the server: ": [
   "Scan/ScanUpload.cs:187",
@@ -961,19 +961,19 @@
   "Scan/ScanTab.cs:398"
  ],
  "Example: this is how a personal record looks.": [
-  "Rivals/OverlayController.cs:4986"
+  "Rivals/OverlayController.cs:4982"
  ],
  "Example: this is how it looks when a lap beats the website's time.": [
-  "Rivals/OverlayController.cs:5003"
+  "Rivals/OverlayController.cs:4999"
  ],
  "Example: this is how it looks when your lap adds a new car to the leaderboard.": [
-  "Rivals/OverlayController.cs:4993"
+  "Rivals/OverlayController.cs:4989"
  ],
  "Examples:": [
   "scripts/contrib_scan.py:278"
  ],
  "Exclusive fullscreen hides the overlay entirely — use borderless.": [
-  "Rivals/OverlayController.cs:4589"
+  "Rivals/OverlayController.cs:4585"
  ],
  "Expand workspace": [
   "BlueprintEditor.cs:224"
@@ -1012,7 +1012,7 @@
   "MainForm.cs:796"
  ],
  "FIRST": [
-  "Rivals/OverlayController.cs:4978"
+  "Rivals/OverlayController.cs:4974"
  ],
  "Feel wheel lock separately": [
   "MainForm.cs:1092"
@@ -1041,7 +1041,7 @@
   "Rivals/RaceStatsTab.cs:698"
  ],
  "First lap in class {0} here": [
-  "Rivals/OverlayController.cs:4976"
+  "Rivals/OverlayController.cs:4972"
  ],
  "First ranks only (0 = whole board)": [
   "Scan/ScanTab.cs:225"
@@ -1087,7 +1087,7 @@
   "MainForm.cs:1389"
  ],
  "Forza: Settings → HUD and Gameplay → Data Out": [
-  "Rivals/OverlayController.cs:4629"
+  "Rivals/OverlayController.cs:4625"
  ],
  "Frame": [
   "Rivals/GMeterTab.cs:460",
@@ -1410,8 +1410,8 @@
   "Rivals/SpeedoTab.cs:645"
  ],
  "Its first time here on the website -- thanks to you!": [
-  "Rivals/OverlayController.cs:4867",
-  "Rivals/OverlayController.cs:4992"
+  "Rivals/OverlayController.cs:4863",
+  "Rivals/OverlayController.cs:4988"
  ],
  "Keep these for this car": [
   "Rivals/SpeedoTab.cs:119"
@@ -1754,9 +1754,9 @@
   "Rivals/HudTab.cs:1542"
  ],
  "NEW": [
-  "Rivals/OverlayController.cs:4868",
-  "Rivals/OverlayController.cs:4974",
-  "Rivals/OverlayController.cs:4994"
+  "Rivals/OverlayController.cs:4864",
+  "Rivals/OverlayController.cs:4970",
+  "Rivals/OverlayController.cs:4990"
  ],
  "NO OCR LANGUAGE": [
   "Rivals/RivalsTab.cs:881"
@@ -1773,7 +1773,7 @@
   "Rivals/SpeedoTab.cs:602"
  ],
  "Name assumed from the ordinal — not confirmed.": [
-  "Rivals/OverlayController.cs:4676"
+  "Rivals/OverlayController.cs:4672"
  ],
  "Name of the style": [
   "Rivals/HudStilDialog.cs:134"
@@ -1807,11 +1807,11 @@
   "Rivals/GMeterTab.cs:189"
  ],
  "New car on the leaderboard!": [
-  "Rivals/OverlayController.cs:4865",
-  "Rivals/OverlayController.cs:4991"
+  "Rivals/OverlayController.cs:4861",
+  "Rivals/OverlayController.cs:4987"
  ],
  "New car on your list": [
-  "Rivals/OverlayController.cs:4973"
+  "Rivals/OverlayController.cs:4969"
  ],
  "New version available": [
   "Rivals/RivalsTab.cs:681"
@@ -1856,7 +1856,7 @@
   "Rivals/AufprallDialog.cs:208"
  ],
  "No lap by this car in the records yet.": [
-  "Rivals/OverlayController.cs:4683"
+  "Rivals/OverlayController.cs:4679"
  ],
  "No layout called \"{0}\".": [
   "Rivals/HudTab.cs:1214"
@@ -1881,7 +1881,7 @@
   "Rivals/HudTab.cs:1699"
  ],
  "No route name matched.": [
-  "Rivals/OverlayController.cs:4575"
+  "Rivals/OverlayController.cs:4571"
  ],
  "No server in the configuration -- send the file by hand.": [
   "scripts/contrib_scan.py:380"
@@ -1951,7 +1951,7 @@
   "Scan/ScanTab.cs:176"
  ],
  "Now it is the time to beat": [
-  "Rivals/OverlayController.cs:4977"
+  "Rivals/OverlayController.cs:4973"
  ],
  "Now line": [
   "Rivals/HudTab.cs:1717"
@@ -2009,7 +2009,7 @@
   "Rivals/RivalsTab.cs:159"
  ],
  "On · 127.0.0.1 · port {0}": [
-  "Rivals/OverlayController.cs:4631"
+  "Rivals/OverlayController.cs:4627"
  ],
  "On: Discord and OBS show the HUD. The app reads the game from its own window, so it never reads its own HUD.": [
   "Rivals/HudTab.cs:1903"
@@ -2030,7 +2030,7 @@
   "Rivals/RivalsTab.cs:190"
  ],
  "Only cars that appear on a scanned leaderboard can be placed.": [
-  "Rivals/OverlayController.cs:4686"
+  "Rivals/OverlayController.cs:4682"
  ],
  "Only tunes that are on no car": [
   "Tuning/TunesTab.cs:69"
@@ -2060,7 +2060,7 @@
   "Scan/ScanTab.cs:286"
  ],
  "Open the Event Sign Up screen, then press again.": [
-  "Rivals/OverlayController.cs:4587"
+  "Rivals/OverlayController.cs:4583"
  ],
  "Open the recording window": [
   "Rivals/HudTab.cs:1528"
@@ -2129,14 +2129,14 @@
   "Rivals/HudTab.cs:1478"
  ],
  "Personal best in class {0}!": [
-  "Rivals/OverlayController.cs:4965",
-  "Rivals/OverlayController.cs:4984"
+  "Rivals/OverlayController.cs:4961",
+  "Rivals/OverlayController.cs:4980"
  ],
  "Personal best with a car (every car, class and course)": [
   "Rivals/HudTab.cs:1479"
  ],
  "Personal best with this car": [
-  "Rivals/OverlayController.cs:4969"
+  "Rivals/OverlayController.cs:4965"
  ],
  "Personal records": [
   "Rivals/HudTab.cs:1475"
@@ -2235,7 +2235,7 @@
   "Rivals/HudTab.cs:1593"
  ],
  "Previous best with it: {0}": [
-  "Rivals/OverlayController.cs:4970"
+  "Rivals/OverlayController.cs:4966"
  ],
  "Price": [
   "Rivals/CarCollectionTab.cs:158"
@@ -2278,7 +2278,7 @@
   "MainForm.cs:323"
  ],
  "P{0} of {1} on your list": [
-  "Rivals/OverlayController.cs:4958"
+  "Rivals/OverlayController.cs:4954"
  ],
  "P{0} on average": [
   "Rivals/RaceStatsTab.cs:333",
@@ -3094,7 +3094,7 @@
   "Konsole.cs:505"
  ],
  "The Rivals overlay tab has a \"Save mask preview\" button: it draws both regions on a capture, which is how a mask that has drifted is spotted.": [
-  "Rivals/OverlayController.cs:4596"
+  "Rivals/OverlayController.cs:4592"
  ],
  "The Start menu entry could not be created.": [
   "MainForm.cs:1710"
@@ -3222,7 +3222,7 @@
   "Scan/ScanTab.cs:346"
  ],
  "The route names have to be on screen as text.": [
-  "Rivals/OverlayController.cs:4588"
+  "Rivals/OverlayController.cs:4584"
  ],
  "The scan could not be read: ": [
   "Scan/ScanUpload.cs:155"
@@ -3310,7 +3310,7 @@
   "Scan/ScanUpload.cs:134"
  ],
  "This ordinal matches no car in the records.": [
-  "Rivals/OverlayController.cs:4668"
+  "Rivals/OverlayController.cs:4664"
  ],
  "This race": [
   "Rivals/SpeedoTab.cs:871"
@@ -3595,8 +3595,8 @@
   "BlueprintEditor.cs:1298"
  ],
  "Website best {0}": [
-  "Rivals/OverlayController.cs:4843",
-  "Rivals/OverlayController.cs:5002"
+  "Rivals/OverlayController.cs:4839",
+  "Rivals/OverlayController.cs:4998"
  ],
  "Wedge": [
   "Rivals/SpeedoTab.cs:837"
@@ -3617,7 +3617,7 @@
  ],
  "What {0} does": [
   "Disclosure.cs:92",
-  "EdgeCaseTest.cs:125"
+  "EdgeCaseTest.cs:126"
  ],
  "Wheel-lock detection from braking slip ratio": [
   "MainForm.cs:865"
@@ -3731,14 +3731,14 @@
   "Scan/ScanTab.cs:579"
  ],
  "You beat the leaderboard!": [
-  "Rivals/OverlayController.cs:4840",
-  "Rivals/OverlayController.cs:5001"
+  "Rivals/OverlayController.cs:4836",
+  "Rivals/OverlayController.cs:4997"
  ],
  "Your best laps": [
   "Tuning/TunesTab.cs:484"
  ],
  "Your car": [
-  "Rivals/OverlayController.cs:4633",
+  "Rivals/OverlayController.cs:4629",
   "Rivals/RivalsTab.cs:332"
  ],
  "Your first lap in a class on a course": [
@@ -3757,8 +3757,8 @@
   "Rivals/HudTab.cs:1476"
  ],
  "Your previous best here: {0}": [
-  "Rivals/OverlayController.cs:4966",
-  "Rivals/OverlayController.cs:4985"
+  "Rivals/OverlayController.cs:4962",
+  "Rivals/OverlayController.cs:4981"
  ],
  "Your window is not in the list? Copy the list of all windows": [
   "Konsole.cs:395"
@@ -3818,7 +3818,7 @@
   "Scan/ScanTab.cs:513"
  ],
  "best fit: {0} {1} (#{2} of {3})": [
-  "Rivals/OverlayController.cs:4722"
+  "Rivals/OverlayController.cs:4718"
  ],
  "best here {0}": [
   "Rivals/OverlayController.cs:1825"
@@ -3853,16 +3853,16 @@
   "Rivals/OverlayController.cs:3896"
  ],
  "class {0}": [
-  "Rivals/OverlayController.cs:4649"
+  "Rivals/OverlayController.cs:4645"
  ],
  "class: none": [
   "Rivals/RivalsTab.cs:903"
  ],
  "class: not found": [
-  "Rivals/OverlayController.cs:4579"
+  "Rivals/OverlayController.cs:4575"
  ],
  "class: {0}": [
-  "Rivals/OverlayController.cs:4580",
+  "Rivals/OverlayController.cs:4576",
   "Rivals/RivalsTab.cs:902"
  ],
  "co-op races only": [
@@ -3944,12 +3944,12 @@
  "ended": [
   "Auction/AuctionTab.cs:266",
   "Auction/AuctionWatch.cs:180",
-  "EdgeCaseTest.cs:1227"
+  "EdgeCaseTest.cs:1342"
  ],
  "ended ~{0}": [
   "Auction/AuctionTab.cs:273",
-  "EdgeCaseTest.cs:1228",
-  "EdgeCaseTest.cs:1229"
+  "EdgeCaseTest.cs:1343",
+  "EdgeCaseTest.cs:1344"
  ],
  "estimate field size for older races": [
   "Rivals/RaceStatsTab.cs:89"
@@ -3999,7 +3999,7 @@
   "Scan/ScanTab.cs:194"
  ],
  "front": [
-  "EdgeCaseTest.cs:2965",
+  "EdgeCaseTest.cs:3080",
   "Rivals/Aufprall.cs:117",
   "Rivals/AufprallDialog.cs:151"
  ],
@@ -4013,7 +4013,7 @@
   "Rivals/OverlayController.cs:2340"
  ],
  "game crashed": [
-  "EdgeCaseTest.cs:1463",
+  "EdgeCaseTest.cs:1578",
   "Scan/ScanTab.cs:417",
   "Scan/ScanTab.cs:712"
  ],
@@ -4077,7 +4077,7 @@
   "Rivals/SpeedoTab.cs:91"
  ],
  "listening on {0}, no packets yet": [
-  "Rivals/OverlayController.cs:4635"
+  "Rivals/OverlayController.cs:4631"
  ],
  "loading ...": [
   "Scan/ScanTab.cs:492"
@@ -4087,7 +4087,7 @@
  ],
  "lost": [
   "Auction/AuctionWatch.cs:178",
-  "EdgeCaseTest.cs:1234"
+  "EdgeCaseTest.cs:1349"
  ],
  "minimized": [
   "Rivals/FensterQuelle.cs:776"
@@ -4147,7 +4147,7 @@
   "Scan/ScanTab.cs:515"
  ],
  "not scanned yet: {0}": [
-  "Rivals/OverlayController.cs:4727"
+  "Rivals/OverlayController.cs:4723"
  ],
  "not sent": [
   "Scan/ScanTab.cs:909",
@@ -4172,14 +4172,14 @@
   "Rivals/CarNotesTab.cs:289"
  ],
  "ordinal {0}": [
-  "Rivals/OverlayController.cs:4660"
+  "Rivals/OverlayController.cs:4656"
  ],
  "outbid": [
   "Auction/AuctionWatch.cs:172"
  ],
  "outcome not seen": [
   "Auction/AuctionTab.cs:283",
-  "EdgeCaseTest.cs:1232"
+  "EdgeCaseTest.cs:1347"
  ],
  "overlay for recording": [
   "Rivals/AufnahmeFenster.cs:31"
@@ -4236,7 +4236,7 @@
   "Rivals/AufprallDialog.cs:151"
  ],
  "routes recognised": [
-  "Rivals/OverlayController.cs:4564"
+  "Rivals/OverlayController.cs:4560"
  ],
  "routes: none matched": [
   "Rivals/RivalsTab.cs:900"
@@ -4316,7 +4316,7 @@
  ],
  "sold": [
   "Auction/AuctionWatch.cs:176",
-  "EdgeCaseTest.cs:1236"
+  "EdgeCaseTest.cs:1351"
  ],
  "someone else is scanning it": [
   "Scan/ScanTab.cs:657"
@@ -4345,7 +4345,7 @@
   "Rivals/OwnTimesTab.cs:122"
  ],
  "stopped": [
-  "EdgeCaseTest.cs:1463",
+  "EdgeCaseTest.cs:1578",
   "Rivals/OverlayController.cs:690",
   "Rivals/OverlayController.cs:716",
   "Rivals/RivalsTab.cs:880",
@@ -4369,7 +4369,7 @@
   "Rivals/HudTab.cs:463"
  ],
  "the listener is not running on {0}": [
-  "Rivals/OverlayController.cs:4636"
+  "Rivals/OverlayController.cs:4632"
  ],
  "the program file is not where it is expected": [
   "Shortcuts.cs:322"
@@ -4397,7 +4397,7 @@
   "Rivals/AppUpdate.cs:206"
  ],
  "this course": [
-  "Rivals/OverlayController.cs:4955"
+  "Rivals/OverlayController.cs:4951"
  ],
  "this version stays skipped": [
   "Rivals/RivalsTab.cs:688"
@@ -4473,7 +4473,7 @@
   "Rivals/CarCollectionTab.cs:556"
  ],
  "what usually fixes it": [
-  "Rivals/OverlayController.cs:4583"
+  "Rivals/OverlayController.cs:4579"
  ],
  "window: {0}": [
   "Rivals/OverlayController.cs:2813"
@@ -4483,7 +4483,7 @@
  ],
  "won": [
   "Auction/AuctionWatch.cs:177",
-  "EdgeCaseTest.cs:1236"
+  "EdgeCaseTest.cs:1351"
  ],
  "wrote {0} — the routes box must hold the 01/02/03 list, the class box only the badge": [
   "Rivals/RivalsTab.cs:933"
@@ -4568,7 +4568,7 @@
   "Tuning/TunesTab.cs:315"
  ],
  "{0} cyl": [
-  "Rivals/OverlayController.cs:4657"
+  "Rivals/OverlayController.cs:4653"
  ],
  "{0} d": [
   "Scan/ScanTab.cs:511"
@@ -4598,7 +4598,7 @@
   "Rivals/OwnTimesTab.cs:465"
  ],
  "{0} lines of text in the masks": [
-  "Rivals/OverlayController.cs:4595"
+  "Rivals/OverlayController.cs:4591"
  ],
  "{0} more with a car not on the leaderboard": [
   "Rivals/RaceStatsTab.cs:379"
@@ -4659,7 +4659,7 @@
   "Rivals/RaceStatsTab.cs:326"
  ],
  "{0}/{1} routes": [
-  "Rivals/OverlayController.cs:4712"
+  "Rivals/OverlayController.cs:4708"
  ],
  "{0}: general values": [
   "Rivals/SpeedoTab.cs:230"

@@ -1408,7 +1408,7 @@ internal sealed class HudPartPanel : Panel
         Rein(Note(Loc.T("Before the race: one map per offered route, until you pick a car.")));
         Rein(Note(Loc.T("Where the sign-up maps come from")));
         var quelle = new ComboBox { Width = 232, DropDownStyle = ComboBoxStyle.DropDownList };
-        var quellen = new[] { ("auto", Loc.T("Automatic: your laps, else Rivals")),
+        var quellen = new[] { ("auto", Loc.T("Automatic: Rivals map, else your cleanest lap")),
                               ("telemetry", Loc.T("Your laps only (telemetry)")),
                               ("rivals", Loc.T("Rivals maps only")) };
         foreach (var (_, name) in quellen) { quelle.Items.Add(name); }

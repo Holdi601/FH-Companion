@@ -265,14 +265,21 @@ internal static class OwnCars
         string strecke, double meter)
     {
         // 1. Der Name. Wer ihn gesetzt hat, meint ihn.
+        // ZWEI ORDNER MIT DEMSELBEN NAMEN (2026-11-11 im Bestand: "Soni Circuit" mit 1,9 und
+        // mit 3,9 km): dann der, dessen Laenge passt -- vorher gewann der erste im Verzeichnis.
+        string? genannt = null;
+        var abweichung = double.MaxValue;
         foreach (var (kurs, v) in vermerke)
         {
             if (v.Name.Length > 0
                 && string.Equals(v.Name, strecke, StringComparison.OrdinalIgnoreCase))
             {
-                return (kurs, false, true);
+                if (meter <= 0 || v.Metres <= 0) { genannt ??= kurs; continue; }
+                var d = Math.Abs(v.Metres - meter) / meter;
+                if (genannt is null || d < abweichung) { genannt = kurs; abweichung = d; }
             }
         }
+        if (genannt is not null) { return (genannt, false, true); }
 
         if (meter <= 0) { return (null, false, false); }
 

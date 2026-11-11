@@ -69,6 +69,7 @@ internal static class EdgeCaseTest
         LapCleanupKeepsTheBest();
         CarFoldersCarryTheName();
         RouteTilesByNameNotLength();
+        CourseOutlineFromCleanestLap();
         FastestTimePerCarWins();
         RivalsCutoffDate();
         ScanScreensAreRecognised();
@@ -1025,6 +1026,9 @@ internal static class EdgeCaseTest
                     "{\"Name\":\"" + name + "\",\"ShortestMetres\":" + meter.ToString(System.Globalization.CultureInfo.InvariantCulture)
                     + ",\"LongestMetres\":" + (meter + 20).ToString(System.Globalization.CultureInfo.InvariantCulture) + "}");
             }
+            // Ein zweiter, falsch benannter Ordner gleichen Namens, der im Verzeichnis zuerst kommt:
+            // es gilt der, dessen Laenge passt (2026-11-11).
+            Kurs("Soni Circuit (course_-9_-9_to_-9_-9)", "Soni Circuit", 3900);
             Kurs("Soni Circuit (course_1_2_to_1_2)", "Soni Circuit", 2100);
             Kurs("course_5_6_to_7_8", "course_5_6_to_7_8", 2620);
             var tabelle = Rivals.OwnCars.Table("D", new[] { ("Sekibe Scramble", 2100.0), ("Soni Circuit", 2100.0), ("Chiheisen Scramble", 2600.0) }, wurzel);
@@ -1034,6 +1038,120 @@ internal static class EdgeCaseTest
                  "Kacheln: der Kurs mit demselben Namen wurde nicht gefunden");
             Soll(tabelle.Courses[2].Key == "course_5_6_to_7_8" && !tabelle.Courses[2].ByName,
                  "Kacheln: ein unbenannter Kurs passt nicht mehr ueber die Laenge: " + tabelle.Courses[2].Key);
+        }
+        finally
+        {
+            try { Directory.Delete(wurzel, recursive: true); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// DER UMRISS AUS DER SAUBERSTEN RUNDE (2026-11-11): bis dahin gewann die Runde mit den
+    /// meisten Messpunkten -- also die mit den meisten Umwegen. "Shimanoyama Circuit" zeigte
+    /// eine Freifahrt voller Dreher, "Soni Circuit" einen Strich quer durch die Schleife.
+    /// Hier liegen ein sauberer Kreis, einer mit Dreher, einer mit Zurueckspulen, eine
+    /// Drift-Wertung und eine Freifahrt mit Schleife im selben Kurs. Der saubere muss gewinnen.
+    /// </summary>
+    private static void CourseOutlineFromCleanestLap()
+    {
+        const float Radius = 300f;
+        PointF AmKreis(double meter) =>
+            new((float)(Radius * Math.Cos(meter / Radius)), (float)(Radius * Math.Sin(meter / Radius)));
+        var umfang = 2 * Math.PI * Radius;
+        List<PointF> Kreis(double versatz = 0)
+        {
+            var p = new List<PointF>();
+            for (var m = 0.0; m <= umfang + 0.1; m += 5) { p.Add(AmKreis(m + versatz)); }
+            return p;
+        }
+        // Ein Dreher: nach einem Viertel eine kleine Schleife von 8 m Halbmesser.
+        List<PointF> MitDreher()
+        {
+            var p = Kreis();
+            var bei = p.Count / 4;
+            var mitte = p[bei];
+            var schleife = new List<PointF>();
+            for (var w = 0; w <= 360; w += 36)
+            {
+                var r = w * Math.PI / 180;
+                schleife.Add(new PointF(mitte.X + 8f - (float)(8 * Math.Cos(r)), mitte.Y + (float)(8 * Math.Sin(r))));
+            }
+            p.InsertRange(bei, schleife);
+            return p;
+        }
+        // Zurueckgespult: bei der Haelfte 200 m zurueck und noch einmal gefahren.
+        List<PointF> MitSprung()
+        {
+            var p = Kreis();
+            var bei = p.Count / 2;
+            p.InsertRange(bei, p.GetRange(bei - 40, 40));
+            return p;
+        }
+        var laeufe = new List<Rivals.CourseShape.Runde>
+        {
+            new(MitDreher()),
+            new(MitSprung()),
+            new(Kreis(), Drift: true),
+            new(MitDreher(), FreieFahrt: true),
+            new(Kreis()),
+        };
+        var start = AmKreis(0);
+        Soll(Rivals.CourseShape.Sauberste(laeufe, start, start) == 4,
+             "Umriss: nicht die saubere Runde gewann: " + Rivals.CourseShape.Sauberste(laeufe, start, start));
+        Soll(Rivals.CourseShape.Messen(MitDreher()).Schleifen > 0 && Rivals.CourseShape.Messen(Kreis()).Makellos,
+             "Umriss: der Dreher wird nicht als Schleife erkannt, oder der Kreis gilt als unsauber");
+        Soll(Rivals.CourseShape.Messen(MitSprung()).SprungMeter > 0, "Umriss: das Zurueckspulen wird nicht als Sprung erkannt");
+        Soll(Rivals.CourseShape.Sauberste(new[] { new Rivals.CourseShape.Runde(Kreis(), Drift: true) }, start, start) < 0,
+             "Umriss: eine Drift-Wertung gibt einen Umriss");
+        Soll(Rivals.CourseShape.Sauberste(new[] { new Rivals.CourseShape.Runde(Kreis(), Abgebrochen: true) }, start, start) < 0,
+             "Umriss: eine abgebrochene Fahrt gibt einen Umriss");
+        Soll(Rivals.CourseShape.Sauberste(new[] { new Rivals.CourseShape.Runde(MitDreher(), FreieFahrt: true) }, start, start) < 0,
+             "Umriss: eine unsaubere Freifahrt gibt einen Umriss");
+        Soll(Rivals.CourseShape.Sauberste(new[] { new Rivals.CourseShape.Runde(Kreis(), FreieFahrt: true) }, start, start) == 0,
+             "Umriss: eine saubere Freifahrt gibt keinen Umriss");
+        // Endet 600 m vor dem Ziel: kein Umriss aus dieser Fahrt.
+        var kurz = Kreis().Take(Kreis().Count * 2 / 3).ToList();
+        Soll(Rivals.CourseShape.Sauberste(new[] { new Rivals.CourseShape.Runde(kurz) }, start, start) < 0,
+             "Umriss: eine Fahrt, die nicht am Ziel endet, gibt einen Umriss");
+
+        // Derselbe Fall ueber Dateien, wie die App ihn liest -- und im alten Format ohne Drift-Kennung.
+        var wurzel = Path.Combine(Path.GetTempPath(), "fhc-edge-umriss-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            const string Kennung = "course_300_0_to_300_0";
+            var ordner = Directory.CreateDirectory(Path.Combine(wurzel, "Testkreis (" + Kennung + ")")).FullName;
+            File.WriteAllText(Path.Combine(ordner, "course.json"),
+                "{\"Name\":\"Testkreis\",\"StartX\":300,\"StartZ\":0,\"FinishX\":300,\"FinishZ\":0}");
+            void Ablegen(string datei, List<PointF> punkte, bool drift = false, bool frei = false)
+            {
+                var lap = new Rivals.RecordedLap
+                {
+                    Samples = punkte.Select((q, i) => new Rivals.LapSample(i * 5f, i * 0.1f, q.X, 0f, q.Y)).ToList(),
+                    LengthMetres = punkte.Count * 5f, FreeRoam = frei,
+                };
+                if (drift) { lap.Kind = "drift"; lap.DriftScore = 250_000f; }
+                var unter = Directory.CreateDirectory(Path.Combine(ordner, "A", "car1", "untagged")).FullName;
+                File.WriteAllText(Path.Combine(unter, datei), System.Text.Json.JsonSerializer.Serialize(
+                    new Rivals.LapArchive.ArchivedLap { Course = Kennung, Class = "A", Lap = lap }));
+            }
+            Ablegen("1_dreher.json", MitDreher());
+            Ablegen("2_sprung.json", MitSprung());
+            Ablegen("3_drift.json", Kreis(-3), drift: true);
+            Ablegen("4_frei.json", MitDreher(), frei: true);
+            Ablegen("5_sauber.json", Kreis());
+            var umriss = Rivals.CourseShape.For(Kennung, Rivals.ShapeSource.Telemetry, wurzel);
+            Soll(umriss is { Source: Rivals.ShapeSource.Telemetry } && Math.Abs(umriss.Metres - umfang) < 10,
+                 $"Umriss aus Dateien: nicht die saubere Runde ({umriss?.Metres:0} m statt {umfang:0} m)");
+
+            // Eine nachgezeichnete Karte gewinnt auch gegen den eigenen Kurs mit Namen.
+            var karte = Rivals.CourseShape.ForRoute("Daikoku Circuit", Rivals.ShapeSource.Auto);
+            if (Rivals.CourseShape.Nachgezeichnet(karte))
+            {
+                Soll(Rivals.CourseShape.FuerAngebot("Daikoku Circuit", Kennung, true, Rivals.ShapeSource.Auto, wurzel) == karte,
+                     "Kacheln: die eigene Runde schlug die nachgezeichnete Karte");
+                Soll(Rivals.CourseShape.FuerAngebot("Daikoku Circuit", Kennung, true, Rivals.ShapeSource.Telemetry, wurzel)?.Source
+                     == Rivals.ShapeSource.Telemetry, "Kacheln: 'nur eigene Runden' zeigte eine Karte");
+            }
         }
         finally
         {
