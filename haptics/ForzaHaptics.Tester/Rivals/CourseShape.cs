@@ -14,7 +14,10 @@ internal enum ShapeSource
     /// <summary>Aus der magenta Linie des Rivalen-Schirms, sofern geerntet.</summary>
     Rivals,
 
-    /// <summary>Erst Telemetrie, sonst Rivalen. Die uebliche Wahl.</summary>
+    /// <summary>
+    /// Erst die nachgezeichnete Rivalen-Karte, sonst die sauberste eigene Runde, sonst
+    /// jede Karte. Die uebliche Wahl. Bis 2026-11-11 kam die eigene Runde zuerst.
+    /// </summary>
     Auto,
 }
 
@@ -31,8 +34,12 @@ internal enum ShapeSource
 ///
 /// Die eigenen Runden haben dagegen ALLES, was man je gefahren ist, mit
 /// Weltkoordinaten alle fünf Meter. Von oben betrachtet ist das der Streckenverlauf.
-/// Darum ist <see cref="ShapeSource.Telemetry"/> die Voreinstellung und die
+/// Darum war <see cref="ShapeSource.Telemetry"/> die Voreinstellung und die
 /// Rivalen-Karte die Ausweiche.
+///
+/// Seit 2026-11-11 ist es umgekehrt, wo es eine nachgezeichnete Karte gibt: die ist
+/// immer sauber, eine eigene Runde nur, wenn die Fahrt es war. Fuer alles ohne Karte
+/// bleibt die eigene Runde -- und zwar die sauberste, siehe <see cref="Sauberste"/>.
 ///
 /// ## Nordweisend, seitenrichtig
 ///
@@ -118,32 +125,28 @@ internal static class CourseShape
         if (Speicher.TryGetValue(schluessel, out var da)) { return da; }
 
         Outline? umriss = null;
-        if (quelle is ShapeSource.Telemetry or ShapeSource.Auto)
+        Outline? karte = null;
+        if (quelle is ShapeSource.Rivals or ShapeSource.Auto)
         {
-            umriss = AusTelemetrie(wurzel, kurs);
+            karte = AusRivalenKarte(kurs, wurzel);
+            if (quelle == ShapeSource.Rivals || Nachgezeichnet(karte)) { umriss = karte; }
         }
-        if (umriss is null && quelle is ShapeSource.Rivals or ShapeSource.Auto)
+        if (umriss is null && quelle is ShapeSource.Telemetry or ShapeSource.Auto)
         {
-            umriss = AusRivalenKarte(kurs, wurzel);
+            umriss = AusTelemetrie(wurzel, kurs) ?? karte;
         }
         if (umriss is not null) { Speicher[schluessel] = umriss; }
         return umriss;
     }
 
-    /// <summary>Aus einer aufgezeichneten Runde: X/Z von oben.</summary>
+    /// <summary>Aus den aufgezeichneten Runden: X/Z von oben, die SAUBERSTE Runde.</summary>
     private static Outline? AusTelemetrie(string wurzel, string kurs)
     {
         var ordner = LapArchive.KursPfad(wurzel, kurs);
         if (!Directory.Exists(ordner)) { return null; }
+        var (start, ziel) = StartUndZiel(ordner);
 
-        // DIE LÄNGSTE RUNDE, nicht die erste. Eine abgebrochene Runde liefert ein
-        // Bruchstück, und ein Bruchstück sieht aus wie eine kurze Strecke.
-        string? beste = null;
-        var meisten = 0;
-        List<PointF>? punkte = null;
-        // Eine Runde mit Sprung (zurueckgesetzt, zurueckgespult) zeichnete eine gerade
-        // Linie quer ueber die Kachel. Sie zaehlt nur, wenn es keine saubere gibt.
-        var sauber = false;
+        var runden = new List<Runde>();
         try
         {
             foreach (var datei in Directory.EnumerateFiles(
@@ -154,23 +157,225 @@ internal static class CourseShape
                 {
                     continue;
                 }
-                var gelesen = PunkteAus(datei);
-                if (gelesen is null) { continue; }
-                var ohneSprung = !HatSprung(gelesen);
-                if ((ohneSprung && !sauber) || (ohneSprung == sauber && gelesen.Count > meisten))
-                {
-                    meisten = gelesen.Count;
-                    punkte = gelesen;
-                    beste = datei;
-                    sauber = ohneSprung;
-                }
+                if (RundeAus(datei) is { } r) { runden.Add(r); }
             }
         }
         catch (Exception) { return null; }
 
-        if (punkte is null || punkte.Count < 8 || beste is null) { return null; }
-        return new Outline(Normieren(punkte), ShapeSource.Telemetry,
-                           LaengeVon(punkte));
+        var beste = Sauberste(runden, start, ziel);
+        if (beste < 0) { return null; }
+        var punkte = runden[beste].Punkte;
+        return new Outline(Normieren(punkte), ShapeSource.Telemetry, LaengeVon(punkte));
+    }
+
+    // ---- WELCHE RUNDE DEN UMRISS GIBT (seit 2026-11-11) ------------------------
+    //
+    // Bis dahin: "ohne Sprung, dann die mit den MEISTEN Messpunkten". Gerade das
+    // waehlte die schlechteste Runde. Messpunkte liegen alle fuenf Meter, und wer sich
+    // dreht, zurueckspult, abkuerzt oder quer ueber die Wiese faehrt, legt mehr Meter
+    // zurueck -- die Runde mit den meisten Punkten ist die mit den meisten Umwegen.
+    // "Shimanoyama Circuit" zeigte so eine Freifahrt mit fuenf Drehern (ein Gekritzel),
+    // "Soni Circuit" eine Runde mit 71-m-Sprung (unter der 150-m-Grenze, also "sauber")
+    // und einem Strich quer durch die Schleife. Saubere Runden lagen jeweils ueber 140.
+    //
+    // Jetzt wird jede Runde bewertet und die beste genommen:
+    //   NIE   Drift-Wertungen, abgebrochene Fahrten, Fahrten, die nicht am Start des
+    //         Kurses beginnen oder nicht an seinem Ziel enden.
+    //   STRAFE Spruenge (Zuruecksetzen, Zurueckspulen), Wenden (Richtung kehrt sich in
+    //         zehn Metern um), Schleifen (mehr als 300 Grad Drehung auf 120 m),
+    //         Abweichung der Weglaenge vom Median aller Runden, eine Gesamtdrehung, die
+    //         vom Median abweicht (ein Dreher addiert eine ganze Umdrehung), und zuletzt
+    //         der mittlere Abstand zu den anderen guten Runden (der Konsens).
+    //   FREIE FAHRT nur, wenn sie ganz sauber ist: in der offenen Welt gibt es keine
+    //         Streckengrenzen, und eine Abkuerzung sieht dort aus wie die Strecke.
+    // Vorbild und Messung am echten Bestand: alle 87 Kursordner bekommen eine Runde
+    // ohne Sprung, Wende und Schleife, wo es eine gibt.
+
+    /// <summary>Eine Runde, wie die Wahl sie braucht.</summary>
+    /// <param name="Punkte">X/Z der Messpunkte, ohne fehlende (0/0).</param>
+    /// <param name="Drift">Eine Drift-Wertung: Punkte statt Zeit, gefahren wird quer.</param>
+    /// <param name="FreieFahrt">In der offenen Welt gestoppt, nicht vom Spiel gewertet.</param>
+    /// <param name="Abgebrochen">Vor dem Ziel abgebrochen (gehoert nach "unfinished").</param>
+    internal sealed record Runde(IReadOnlyList<PointF> Punkte, bool Drift = false,
+                                 bool FreieFahrt = false, bool Abgebrochen = false);
+
+    /// <summary>Was an einer Runde gemessen wird.</summary>
+    internal readonly record struct Guete(double Weg, double SprungMeter, int GrosseSpruenge,
+                                          int Wenden, int Schleifen, double Umdrehungen)
+    {
+        /// <summary>Strafe aus der Runde allein, ohne Vergleich mit den anderen.</summary>
+        public double Eigen => (SprungMeter / 50.0) + (5.0 * GrosseSpruenge) + Wenden + (2.0 * Schleifen);
+
+        public bool Makellos => SprungMeter <= 0 && Wenden == 0 && Schleifen == 0;
+    }
+
+    /// <summary>Ab hier ist ein Schritt zwischen zwei Messpunkten kein Fahren mehr, sondern ein Sprung.</summary>
+    /// <remarks>Die Punkte liegen alle fuenf Meter; auch bei 400 km/h sind es keine 25.</remarks>
+    private const float Luecke = 25f;
+
+    /// <summary>Spruenge, Wenden, Schleifen und Drehung einer Runde.</summary>
+    /// <remarks>
+    /// Die Richtung wird ueber Stuecke von zehn Metern gemessen, nicht von Punkt zu Punkt:
+    /// das Zittern der Messpunkte gaebe sonst Wenden, wo keine sind. Ueber einen Sprung
+    /// hinweg wird NIE gedreht -- der Strich von der Spul-Stelle zurueck ist keine Kurve,
+    /// und als Kurve gezaehlt machte er aus jeder zurueckgespulten Runde zwei Umdrehungen.
+    /// </remarks>
+    internal static Guete Messen(IReadOnlyList<PointF> p)
+    {
+        double weg = 0, sprungMeter = 0, drehung = 0, fensterSumme = 0;
+        int gross = 0, wenden = 0, schleifen = 0;
+        double? letzte = null;
+        var anker = p.Count > 0 ? p[0] : PointF.Empty;
+        var fenster = new Queue<(double Meter, double Winkel)>();
+        var wende = 135.0 * Math.PI / 180.0;
+        var schleife = 300.0 * Math.PI / 180.0;
+        for (var i = 1; i < p.Count; i++)
+        {
+            var sx = p[i].X - p[i - 1].X;
+            var sy = p[i].Y - p[i - 1].Y;
+            var schritt = Math.Sqrt((sx * sx) + (sy * sy));
+            if (schritt > Luecke)
+            {
+                sprungMeter += schritt;
+                if (schritt > LiveMapHud.Sprung) { gross++; }
+                letzte = null;
+                anker = p[i];
+                fenster.Clear();
+                fensterSumme = 0;
+                continue;
+            }
+            weg += schritt;
+            var dx = p[i].X - anker.X;
+            var dy = p[i].Y - anker.Y;
+            if ((dx * dx) + (dy * dy) < 100f) { continue; }
+            var richtung = Math.Atan2(dy, dx);
+            anker = p[i];
+            if (letzte is { } vorher)
+            {
+                var dreh = richtung - vorher;
+                while (dreh > Math.PI) { dreh -= 2 * Math.PI; }
+                while (dreh < -Math.PI) { dreh += 2 * Math.PI; }
+                drehung += dreh;
+                if (Math.Abs(dreh) > wende) { wenden++; }
+                fenster.Enqueue((weg, dreh));
+                fensterSumme += dreh;
+                while (fenster.Count > 0 && weg - fenster.Peek().Meter > 120) { fensterSumme -= fenster.Dequeue().Winkel; }
+                if (Math.Abs(fensterSumme) > schleife)
+                {
+                    schleifen++;
+                    fenster.Clear();
+                    fensterSumme = 0;
+                }
+            }
+            letzte = richtung;
+        }
+        return new Guete(weg, sprungMeter, gross, wenden, schleifen, drehung / (2 * Math.PI));
+    }
+
+    /// <summary>Die sauberste Runde, als Index in <paramref name="runden"/>; -1 wenn keine taugt.</summary>
+    /// <param name="start">Startpunkt des Kurses (X/Z), null wenn unbekannt.</param>
+    /// <param name="ziel">Zielpunkt des Kurses (X/Z), null wenn unbekannt.</param>
+    internal static int Sauberste(IReadOnlyList<Runde> runden, PointF? start, PointF? ziel)
+    {
+        static double Abstand(PointF a, PointF b) =>
+            Math.Sqrt(((a.X - b.X) * (a.X - b.X)) + ((a.Y - b.Y) * (a.Y - b.Y)));
+
+        var kandidaten = new List<(int Index, Guete G)>();
+        for (var i = 0; i < runden.Count; i++)
+        {
+            var r = runden[i];
+            if (r.Drift || r.Abgebrochen || r.Punkte.Count < 8) { continue; }
+            if (start is { } s && Abstand(r.Punkte[0], s) > RecordedLap.StartTolerance) { continue; }
+            if (ziel is { } z && Abstand(r.Punkte[^1], z) > RecordedLap.StartTolerance) { continue; }
+            kandidaten.Add((i, Messen(r.Punkte)));
+        }
+        if (kandidaten.Count == 0) { return -1; }
+
+        var medianWeg = Median(kandidaten.Select(k => k.G.Weg));
+        var medianDreh = Median(kandidaten.Select(k => k.G.Umdrehungen));
+        var bewertet = new List<(int Index, double Strafe)>();
+        foreach (var (index, g) in kandidaten)
+        {
+            var laenge = medianWeg > 0 ? Math.Abs(g.Weg - medianWeg) / medianWeg : 0;
+            var dreh = Math.Abs(g.Umdrehungen - medianDreh);
+            var strafe = g.Eigen + (20.0 * laenge) + (dreh >= 0.5 ? 2.0 * Math.Round(dreh) : 0);
+            if (runden[index].FreieFahrt)
+            {
+                if (!g.Makellos || laenge > 0.05 || dreh >= 0.5) { continue; }
+                strafe += 0.5;
+            }
+            bewertet.Add((index, strafe));
+        }
+        if (bewertet.Count == 0) { return -1; }
+        bewertet.Sort((a, b) => a.Strafe.CompareTo(b.Strafe));
+
+        // DER KONSENS, nur unter den acht besten: je 48 Punkte einer Runde gegen alle
+        // Punkte der anderen. Ein Abkuerzer liegt dort, wo keine andere Runde faehrt.
+        var spitze = bewertet.Take(8).ToList();
+        if (spitze.Count > 1)
+        {
+            for (var a = 0; a < spitze.Count; a++)
+            {
+                var pa = runden[spitze[a].Index].Punkte;
+                var schritt = Math.Max(1, pa.Count / 48);
+                double summe = 0;
+                for (var b = 0; b < spitze.Count; b++)
+                {
+                    if (a == b) { continue; }
+                    var pb = runden[spitze[b].Index].Punkte;
+                    double teil = 0;
+                    var n = 0;
+                    for (var k = 0; k < pa.Count; k += schritt)
+                    {
+                        var naechste = double.MaxValue;
+                        foreach (var q in pb)
+                        {
+                            var dx = pa[k].X - q.X;
+                            var dy = pa[k].Y - q.Y;
+                            var d = (dx * dx) + (dy * dy);
+                            if (d < naechste) { naechste = d; }
+                        }
+                        teil += Math.Sqrt(naechste);
+                        n++;
+                    }
+                    summe += n > 0 ? teil / n : 0;
+                }
+                spitze[a] = (spitze[a].Index, spitze[a].Strafe + (summe / (spitze.Count - 1) / 10.0));
+            }
+            spitze.Sort((a, b) => a.Strafe.CompareTo(b.Strafe));
+        }
+        return spitze[0].Index;
+    }
+
+    private static double Median(IEnumerable<double> werte)
+    {
+        var w = werte.OrderBy(x => x).ToArray();
+        if (w.Length == 0) { return 0; }
+        return w.Length % 2 == 1 ? w[w.Length / 2] : (w[(w.Length / 2) - 1] + w[w.Length / 2]) / 2.0;
+    }
+
+    /// <summary>Start und Ziel aus dem <c>course.json</c> des Ordners; 0/0 heisst unbekannt.</summary>
+    private static (PointF? Start, PointF? Ziel) StartUndZiel(string ordner)
+    {
+        try
+        {
+            var datei = Path.Combine(ordner, "course.json");
+            if (!File.Exists(datei)) { return (null, null); }
+            using var strom = File.OpenRead(datei);
+            using var dok = JsonDocument.Parse(strom);
+            PointF? Punkt(string x, string z)
+            {
+                var w = dok.RootElement;
+                var px = w.TryGetProperty(x, out var a) && a.ValueKind == JsonValueKind.Number ? a.GetSingle() : 0f;
+                var pz = w.TryGetProperty(z, out var b) && b.ValueKind == JsonValueKind.Number ? b.GetSingle() : 0f;
+                return px == 0f && pz == 0f ? null : new PointF(px, pz);
+            }
+            return (Punkt("StartX", "StartZ"), Punkt("FinishX", "FinishZ"));
+        }
+        catch (Exception)
+        {
+            return (null, null);
+        }
     }
 
     /// <summary>Liegen irgendwo zwei Messpunkte mehr als 150 m auseinander?</summary>
@@ -185,14 +390,14 @@ internal static class CourseShape
         return false;
     }
 
-    private static List<PointF>? PunkteAus(string datei)
+    private static Runde? RundeAus(string datei)
     {
         try
         {
             using var strom = File.OpenRead(datei);
-            var abgelegt = JsonSerializer.Deserialize<LapArchive.ArchivedLap>(strom);
-            var proben = abgelegt?.Lap?.Samples;
-            if (proben is null || proben.Count < 8) { return null; }
+            var runde = JsonSerializer.Deserialize<LapArchive.ArchivedLap>(strom)?.Lap;
+            var proben = runde?.Samples;
+            if (runde is null || proben is null || proben.Count < 8) { return null; }
             var punkte = new List<PointF>(proben.Count);
             foreach (var p in proben)
             {
@@ -201,7 +406,13 @@ internal static class CourseShape
                 if (p.X == 0f && p.Z == 0f) { continue; }
                 punkte.Add(new PointF(p.X, p.Z));
             }
-            return punkte.Count >= 8 ? punkte : null;
+            if (punkte.Count < 8) { return null; }
+            // DRIFT: die Kennung kam erst am 2026-10-18; aeltere Drift-Laeufe tragen sie
+            // nicht und fallen ueber ihre Dreher und Schleifen heraus.
+            return new Runde(punkte,
+                             Drift: runde.IstDrift || runde.DriftScore is > 0f,
+                             FreieFahrt: runde.FreeRoam || runde.Mode == "freeroam",
+                             Abgebrochen: runde.Unfinished);
         }
         catch (Exception)
         {
@@ -242,6 +453,35 @@ internal static class CourseShape
         if (umriss is not null) { Speicher[schluessel] = umriss; }
         return umriss;
     }
+
+    /// <summary>Der Umriss einer angebotenen Strecke auf dem Anmeldeschirm.</summary>
+    /// <param name="route">Der Streckenname vom Schirm.</param>
+    /// <param name="kurs">Der eigene Kursordner dazu, leer wenn keiner.</param>
+    /// <param name="nachName">Der eigene Kurs wurde ueber seinen Namen gefunden.</param>
+    /// <remarks>
+    /// DIE NACHGEZEICHNETE KARTE ZUERST (seit 2026-11-11). Sie stammt aus der Karte des
+    /// Spiels und ist immer sauber; eine eigene Runde ist so gut wie die Fahrt -- am
+    /// 2026-11-11 zeigte die Kachel fuer "Shimanoyama Circuit" eine Freifahrt voller
+    /// Dreher. Eine Karte, deren Linie unsicher ist und zu der kein Kartenbild vorliegt,
+    /// gilt nicht als nachgezeichnet: dort ist die sauberste eigene Runde die bessere Form.
+    ///
+    /// Ein eigener Kurs, der nur ueber die LAENGE passt, kommt weiterhin erst nach jeder
+    /// Karte (seit 2026-10-03): "Sekibe Scramble" zeigte sonst die eigenen Runden eines
+    /// gleich langen Rundkurses.
+    /// </remarks>
+    public static Outline? FuerAngebot(string route, string kurs, bool nachName,
+                                       ShapeSource quelle = ShapeSource.Auto, string? root = null)
+    {
+        var karte = ForRoute(route, quelle);
+        if (quelle == ShapeSource.Auto && Nachgezeichnet(karte)) { return karte; }
+        var eigener = kurs.Length > 0 ? For(kurs, quelle, root) : null;
+        return nachName ? eigener ?? karte : karte ?? eigener;
+    }
+
+    /// <summary>Eine geordnete Rivalen-Karte, die sauber gezeichnet werden kann (Linie oder Bild).</summary>
+    internal static bool Nachgezeichnet(Outline? karte) =>
+        karte is { IsEmpty: false, Ordered: true, Source: ShapeSource.Rivals }
+        && (karte.Reliable || karte.Image is not null);
 
     // NAME -> BESTE KARTE, einmal je Stand des Ernteordners. Auf dem Bau-Rechner
     // liegen dort ueber 2000 Aufnahmen (166 MB); jede bei jeder Anzeige ganz zu

@@ -1315,9 +1315,18 @@ internal static class Program
             var drei = new List<(string, Rivals.CourseShape.Outline?)>();
             if (Wert("routes") is { } routen)
             {
-                foreach (var r in routen.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                // DIESELBE WAHL WIE AUF DEM ANMELDESCHIRM: eigener Kursordner nach Name,
+                // dann Karte oder eigene Runde -- sonst zeigte die Vorschau nur Karten.
+                var namen = routen.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var spalten = Rivals.OwnCars.Table(string.Empty, namen.Select(n => (n, 0.0)).ToList(), wurzel).Courses;
+                for (var i = 0; i < namen.Length; i++)
                 {
-                    drei.Add((r, Rivals.CourseShape.ForRoute(r, einst.ShapeSourceChoice)));
+                    var key = i < spalten.Count ? spalten[i].Key : string.Empty;
+                    var nachName = i < spalten.Count && spalten[i].ByName;
+                    var u = Rivals.CourseShape.FuerAngebot(namen[i], key, nachName, einst.ShapeSourceChoice, wurzel);
+                    Console.WriteLine($"{namen[i]}: {(u is null ? "none" : u.Source + (u.Image is not null && !u.Reliable ? " (image)" : string.Empty))}"
+                                      + (key.Length > 0 ? $", own course {key}" : string.Empty));
+                    drei.Add((namen[i], u));
                 }
             }
             else

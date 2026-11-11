@@ -4540,13 +4540,9 @@ internal sealed class OverlayController : IDisposable
         foreach (var (name, key, nachName) in routen)
         {
             // Ohne eigenen Kursordner (nie gefahren) gibt es keine Telemetrie -- aber die
-            // geerntete Rivalen-Karte, nach dem Namen der Strecke. Ein eigener Kurs, der
-            // nur ueber die LAENGE passt, kommt erst nach der Karte (seit 2026-10-03):
-            // "Sekibe Scramble" zeigte sonst die eigenen Runden eines gleich langen Rundkurses.
-            var karte = CourseShape.ForRoute(name, _settings.ShapeSourceChoice);
-            var eigener = key.Length > 0 ? CourseShape.For(key, _settings.ShapeSourceChoice) : null;
-            var umriss = nachName ? eigener ?? karte : karte ?? eigener;
-            umrisse.Add((name, umriss));
+            // geerntete Rivalen-Karte, nach dem Namen der Strecke. Welche Quelle wann
+            // gewinnt, steht bei CourseShape.FuerAngebot -- die Vorschau nutzt dieselbe Wahl.
+            umrisse.Add((name, CourseShape.FuerAngebot(name, key, nachName, _settings.ShapeSourceChoice)));
         }
         _shapes.SetCourses(umrisse, Stati(umrisse.Count, _erledigt));
         if (!_shapes.Visible) { _shapes.Show(); }
