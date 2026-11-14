@@ -115,7 +115,9 @@ internal sealed class ScanRoutes
                 if (gelernt.TryGetProperty(k.Name, out var g) && g.ValueKind == JsonValueKind.Object
                     && g.TryGetProperty("routes", out var r) && r.ValueKind == JsonValueKind.Array)
                 {
-                    var strecken = r.EnumerateArray().Select(x => x.GetString() ?? string.Empty).Where(x => x.Length > 0).ToList();
+                    // Die uebliche Schreibweise: am 2026-11-12 wurde "SHUTO CHARGE" gelernt.
+                    var strecken = r.EnumerateArray().Select(x => Rivals.GameText.Schreibweise(x.GetString() ?? string.Empty))
+                                    .Where(x => x.Length > 0).ToList();
                     var laengen = new List<double?>();
                     if (g.TryGetProperty("lengths", out var ls) && ls.ValueKind == JsonValueKind.Array)
                     {
@@ -170,7 +172,7 @@ internal sealed class ScanRoutes
         foreach (var l in laengen) { ls.Add(l is { } km ? JsonValue.Create(Math.Round(km, 1)) : null); }
         kategorien[kategorie] = new JsonObject
         {
-            ["routes"] = new JsonArray(strecken.Select(s => (JsonNode?)JsonValue.Create(s)).ToArray()),
+            ["routes"] = new JsonArray(strecken.Select(s => (JsonNode?)JsonValue.Create(Rivals.GameText.Schreibweise(s))).ToArray()),
             ["lengths"] = ls,
             ["learned"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
         };

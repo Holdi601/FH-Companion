@@ -90,11 +90,12 @@ internal sealed class ScanNavigator
     /// Den Titel der Strecke lesen, die gerade gewaehlt ist -- gegen alle Streckennamen des Spiels,
     /// erst wenn zwei Lesungen hintereinander dieselbe ergeben. (null, null), wenn es nicht gelingt.
     /// </summary>
-    private (string? Name, double? Km) TitelLesen(IReadOnlyList<string> kandidaten, int schritt)
+    private (string? Name, double? Km, string? Gelesen) TitelLesen(ScanRoutes.Kategorie kat, IReadOnlyList<string> neue, int schritt)
     {
         string? vorher = null;
         double? km = null;
-        for (var i = 0; i < 8; i++)
+        string? gelesen = null;
+        for (var i = 0; i < 10; i++)
         {
             using var b = Sehen($"learn-{schritt}-{i}");
             if (b.Schirm is ScanSchirm.Klassenschirm or ScanSchirm.RivalDetail or ScanSchirm.Bestenliste)
@@ -107,14 +108,37 @@ internal sealed class ScanNavigator
                 Thread.Sleep(400);
                 continue;
             }
-            var idx = ScanScreen.Lokalisiere(b.Lesung.Titel, kandidaten);
-            var name = idx >= 0 ? kandidaten[idx] : null;
+            // ERST DIE STRECKEN DER KATEGORIE (seit 2026-11-12): lange Titel laufen als Laufschrift durch,
+            // die Texterkennung liefert Bruchstuecke ("ountry Cir"). Gegen alle 230 Namen des Spiels war das
+            // zu vieldeutig -- das Lernen brach genau dort ab. Gegen die eigene Kategorie reicht ein
+            // Bruchstueck wie in der normalen Navigation. Dann die uebrigen Namen des Spiels (die neuen
+            // Strecken), und ohne lesbaren Titel die Kilometerleiste.
+            gelesen = b.Lesung.Titel ?? gelesen;
+            string? name = null;
+            var idx = ScanScreen.Lokalisiere(b.Lesung.Titel, kat.Strecken);
+            if (idx >= 0)
+            {
+                name = kat.Strecken[idx];
+            }
+            else
+            {
+                var neu = ScanScreen.Lokalisiere(b.Lesung.Titel, neue);
+                if (neu >= 0)
+                {
+                    name = neue[neu];
+                }
+                else if (string.IsNullOrWhiteSpace(b.Lesung.Titel))
+                {
+                    var (nachLeiste, _) = kat.Verorte(b.Lesung);
+                    if (nachLeiste >= 0) { name = kat.Strecken[nachLeiste]; }
+                }
+            }
             km = b.Lesung.Laenge ?? km;
-            if (name is not null && name == vorher) { return (name, km); }
+            if (name is not null && name == vorher) { return (name, km, gelesen); }
             vorher = name;
             Thread.Sleep(300);
         }
-        return (null, null);
+        return (null, null, gelesen);
     }
 
     /// <summary>
@@ -124,8 +148,9 @@ internal sealed class ScanNavigator
     /// </summary>
     private (List<string>, List<double?>) KarussellAblaufen(ScanRoutes.Kategorie kat)
     {
-        var kandidaten = kat.Strecken.Concat(GameText.AlleStrecken())
-                            .GroupBy(ScanScreen.Falte).Select(g => g.First()).Where(n => n.Length > 0).ToList();
+        // Die uebrigen Streckennamen des Spiels -- fuer neue Strecken; was die Kategorie schon kennt, nicht noch einmal.
+        var schonDa = new HashSet<string>(kat.Strecken.Select(ScanScreen.Falte), StringComparer.Ordinal);
+        var neue = GameText.AlleStrecken().Where(n => n.Length > 0 && !schonDa.Contains(ScanScreen.Falte(n))).ToList();
         List<(string Name, double? Km)>? vorige = null;
         for (var runde = 0; runde < 3; runde++)
         {
@@ -134,8 +159,8 @@ internal sealed class ScanNavigator
             var gleich = 0;
             for (var schritt = 0; schritt < kat.Strecken.Count + 30; schritt++)
             {
-                var (name, km) = TitelLesen(kandidaten, schritt);
-                if (name is null) { throw new Abbruch($"learning {kat.Name}: route title unreadable at step {schritt}"); }
+                var (name, km, gelesen) = TitelLesen(kat, neue, schritt);
+                if (name is null) { throw new Abbruch($"learning {kat.Name}: route title unreadable at step {schritt} (read '{gelesen}')"); }
                 if (name == letzter)
                 {
                     // Der Druck ging verloren: noch einmal, ohne die Strecke doppelt zu zaehlen.

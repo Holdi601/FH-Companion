@@ -123,7 +123,8 @@ internal static class GameText
         var je = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var name in Laden().Strecken.Keys)
         {
-            var k = Falte(name);
+            // Klein gefaltet: "EDO CIRCUIT" und "Edo Circuit" muessen auf denselben Schluessel fallen.
+            var k = Falte(name).ToLowerInvariant();
             if (k.Length == 0) { continue; }
             if (!je.TryGetValue(k, out var da) || (da == da.ToUpperInvariant() && name != name.ToUpperInvariant()))
             {
@@ -131,6 +132,17 @@ internal static class GameText
             }
         }
         return je.Values.ToList();
+    }
+
+    /// <summary>
+    /// Die uebliche Schreibweise eines Streckennamens ("SHUTO CHARGE" -> "Shuto Charge"), wenn das Spiel
+    /// eine kennt; sonst der Name, wie er ist.
+    /// </summary>
+    internal static string Schreibweise(string name)
+    {
+        if (name.Length == 0 || name != name.ToUpperInvariant()) { return name; }
+        var k = Falte(name).ToLowerInvariant();
+        return AlleStrecken().FirstOrDefault(n => Falte(n).ToLowerInvariant() == k) ?? name;
     }
 
     /// <summary>Gefaltet wie Normalise, dazu das "ɨ"/"ı" des Tuerkischen als "i".</summary>
