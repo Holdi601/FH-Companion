@@ -216,6 +216,7 @@ internal static class Program
         // Vor allem anderen: die mitgelieferten Daten (Spieltexte, Routentabelle, Sprachen) auf den
         // Stand dieses Programms -- der Aktualisierer laesst config/ sonst, wie es war (seit 2026-11-11).
         MitgelieferteDaten.Abgleichen();
+        Speicherpflege.Starten();
         if (Erweiterung.Befehl(args)) { return; }
         if (args.Length >= 2 && string.Equals(args[0], "--split-trend-check", StringComparison.OrdinalIgnoreCase))
         {

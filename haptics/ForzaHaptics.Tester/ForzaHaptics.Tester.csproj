@@ -12,6 +12,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Den Large Object Heap verdichten, wenn er zerfaellt (seit 2026-11-14): nach vier Stunden
+         standen 1,66 GB darin, davon 1,34 GB Luecken. -->
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyName>FH Companion</AssemblyName>
@@ -79,5 +82,9 @@
   <ItemGroup>
     <PackageReference Include="HidSharp" Version="2.1.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 0..9: ab 5 verdichtet der GC den Large Object Heap, sobald er stark zerfallen ist. -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
   </ItemGroup>
 </Project>

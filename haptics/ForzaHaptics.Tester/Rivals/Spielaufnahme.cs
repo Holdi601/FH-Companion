@@ -42,6 +42,13 @@ internal static class Spielaufnahme
     // Das Fenster, aus dem schon ein echtes (nicht schwarzes) Bild kam.
     private static IntPtr _bestaetigt;
     private static bool _bereit;
+    // RUHEN, WENN NIEMAND FRAGT (seit 2026-11-14): die Aufnahme des Spielfensters lief ununterbrochen
+    // mit -- neben Steams eigener Aufnahme, die in Forza immer wieder abbrach, und waehrend die Bildrate
+    // ueber lange Sitzungen sank. Fragt 20 Sekunden lang kein Leser, wird sie beendet; der naechste
+    // Leser startet sie wieder. "Bereit" bleibt dabei stehen: das Fenster ist bestaetigt.
+    private static DateTime _zuletztGefragt = DateTime.UtcNow;
+    private static bool _ruht;
+    private static readonly TimeSpan RuhenNach = TimeSpan.FromSeconds(20);
 
     /// <summary>Fuer --hud-capture-check: ein Ersatzfenster statt Forza.</summary>
     internal static Func<IntPtr>? TestFenster { get; set; }
@@ -69,15 +76,15 @@ internal static class Spielaufnahme
             _prozess = string.IsNullOrWhiteSpace(prozess) ? GameWatch.DefaultProcessName : prozess!;
             _gewuenscht = gewuenscht;
             var an = gewuenscht && Moeglich && !_schwarz;
-            if (an && _quelle is null)
+            if (an && _quelle is null && !_ruht)
             {
-                var test = TestFenster;
-                _quelle = new FensterQuelle("forza", () => test?.Invoke() ?? Spielfenster(_prozess)) { Frische = TimeSpan.FromMilliseconds(30) };
+                _quelle = NeueQuelle();
             }
-            else if (!an && _quelle is not null)
+            else if (!an)
             {
-                _quelle.Dispose();
+                _quelle?.Dispose();
                 _quelle = null;
+                _ruht = false;
             }
         }
         Pruefen();
@@ -90,13 +97,27 @@ internal static class Spielaufnahme
     public static Bitmap? Ausschnitt(Rectangle schirm, Size ziel, PixelFormat format)
     {
         FensterQuelle? quelle;
+        var geweckt = false;
         lock (Sperre)
         {
+            _zuletztGefragt = DateTime.UtcNow;
             if (!_bereit) { return null; }
+            if (_ruht && _quelle is null)
+            {
+                _quelle = NeueQuelle();
+                _ruht = false;
+                geweckt = true;
+            }
             quelle = _quelle;
         }
         if (quelle is null) { return null; }
         var bild = quelle.Neuestes();
+        // Frisch geweckt: kurz auf das erste Bild warten (der Schirm darunter zeigte den HUD).
+        for (var i = 0; geweckt && bild is null && i < 12; i++)
+        {
+            Thread.Sleep(50);
+            bild = quelle.Neuestes();
+        }
         if (bild is null || quelle.Schirmflaeche is not { Width: > 0, Height: > 0 } flaeche) { return null; }
         var groesse = Bildquellen.Groesse(bild);
         if (groesse is not { Width: > 0, Height: > 0 } g) { return null; }
@@ -139,7 +160,16 @@ internal static class Spielaufnahme
             quelle = _quelle;
             if (quelle is null)
             {
-                Setze(false);
+                if (!_ruht) { Setze(false); }
+                return;
+            }
+            // Niemand hat gefragt: ruhen lassen, sobald das Fenster einmal bestaetigt ist.
+            if (_bereit && _bestaetigt != IntPtr.Zero && quelle.Aufgenommenes == _bestaetigt
+                && DateTime.UtcNow - _zuletztGefragt > RuhenNach)
+            {
+                quelle.Dispose();
+                _quelle = null;
+                _ruht = true;
                 return;
             }
         }
@@ -185,6 +215,14 @@ internal static class Spielaufnahme
             _schwarzSeit = DateTime.MinValue;
         }
         Setze(false);
+    }
+
+    // Hoechstens alle 250 ms ein neues Vollbild vom Spiel (war 30 ms): jede Umwandlung kopiert
+    // das ganze 4K-Bild aus dem Grafikspeicher -- das kostet die Grafikkarte Zeit, mitten im Rennen.
+    private static FensterQuelle NeueQuelle()
+    {
+        var test = TestFenster;
+        return new FensterQuelle("forza", () => test?.Invoke() ?? Spielfenster(_prozess)) { Frische = TimeSpan.FromMilliseconds(250) };
     }
 
     private static void Setze(bool bereit)
