@@ -218,6 +218,12 @@ internal static class Program
         MitgelieferteDaten.Abgleichen();
         Speicherpflege.Starten();
         if (Erweiterung.Befehl(args)) { return; }
+        if (args.Length >= 2 && string.Equals(args[0], "--speedo-check", StringComparison.OrdinalIgnoreCase))
+        {
+            // Den Tacho an aufgezeichneten Runden pruefen (Rivals/SpeedoPruefung.cs).
+            Environment.ExitCode = Rivals.SpeedoPruefung.Pruefen(args[1], args.Length >= 3 && int.TryParse(args[2], out var n) ? n : 200);
+            return;
+        }
         if (args.Length >= 2 && string.Equals(args[0], "--split-trend-check", StringComparison.OrdinalIgnoreCase))
         {
             // Die Split-Tendenz an gespeicherten Spielbildern pruefen (Rivals/SplitTrend.cs).

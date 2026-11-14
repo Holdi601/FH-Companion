@@ -3354,7 +3354,7 @@ internal static class EdgeCaseTest
             if (!ForzaPacket.TryParse(roh, out var p)) { Soll(false, "Tacho: Testpaket parst nicht"); return; }
             zustand.Aufnehmen(p, 0f, design, t0.AddMilliseconds(i * 16));
         }
-        var punkt = zustand.Schaltpunkt(987654, 8000f);
+        var punkt = zustand.Schaltpunkt(zustand.Tune, 8000f);
         Soll(Math.Abs(punkt - 6550f) <= 100f, $"Tacho: Schaltpunkt {punkt:0} statt um 6.500 (Leistungshoechstwert)");
         Soll(zustand.Letztes.Gear == 3 && zustand.Letztes.TripM > 20f && zustand.Letztes.TripM < 30f,
              $"Tacho: Gang {zustand.Letztes.Gear} oder Strecke {zustand.Letztes.TripM:0.0} m stimmt nicht (30 m/s, 0,8 s)");
@@ -3406,17 +3406,47 @@ internal static class EdgeCaseTest
             for (var i = 0; i < 40; i++) { Fahre(gang, verh, 3000f + i * 5f); }
             for (var r = 3000f; r <= 7950f; r += 50f) { Fahre(gang, verh, r); }
         }
-        var vorher = rat.Beraten(4713, 2, 7000f, 70f, 8000f, 800f, 1f, tr);
-        var hoch1 = rat.Beraten(4713, 2, 7500f, 75f, 8000f, 800f, 1f, tr.AddMilliseconds(20));
-        var hoch2 = rat.Beraten(4713, 2, 7500f, 75f, 8000f, 800f, 1f, tr.AddMilliseconds(120));
+        rat.Beraten(rat.Tune, 2, 7000f, 70f, 8000f, 800f, 1f, tr.AddMilliseconds(300));
+        var vorher = rat.Beraten(rat.Tune, 2, 7000f, 70f, 8000f, 800f, 1f, tr.AddMilliseconds(600));
+        var voraus = rat.Beraten(rat.Tune, 2, 7000f, 70f, 8000f, 800f, 1f, tr.AddMilliseconds(620), 3000f);
+        var hoch1 = rat.Beraten(rat.Tune, 2, 7500f, 75f, 8000f, 800f, 1f, tr.AddMilliseconds(640));
+        var hoch2 = rat.Beraten(rat.Tune, 2, 7500f, 75f, 8000f, 800f, 1f, tr.AddMilliseconds(740));
         Soll(Math.Abs(hoch2.Hochpunkt - 7430f) <= 60f, $"Schaltrat: Hochpunkt {hoch2.Hochpunkt:0} statt um 7.430 (Schnitt der Leistungskurven)");
-        Soll(vorher.Rat == 0 && hoch1.Rat == 0 && hoch2.Rat == 1, $"Schaltrat: hoch bei 7.500 nach 80 ms erwartet ({vorher.Rat}, {hoch1.Rat}, {hoch2.Rat})");
+        Soll(vorher.Rat == 0 && hoch1.Rat == 1 && hoch2.Rat == 1, $"Schaltrat: hoch bei 7.500 sofort erwartet ({vorher.Rat}, {hoch1.Rat}, {hoch2.Rat})");
+        // Vorausschauend: bei 7.000 und 3.000 U/min je Sekunde ist der Schnittpunkt (7.430) in 0,2 s erreicht.
+        Soll(voraus.Rat == 1, "Schaltrat: der Pfeil kommt nicht vor dem Schaltpunkt");
         Soll(vorher.BesterGang == 2 && hoch2.BesterGang == 3,
              $"Schaltrat: bester Gang bei 70 m/s 2 (7.000 gegen 5.250), bei 75 m/s 3 (5.625, hinter dem Schnittpunkt) -- war {vorher.BesterGang}, {hoch2.BesterGang}");
         // Im dritten Gang bei 4.500 (Gang 2 waere 6.000, ~270 statt ~180 kW): runter.
-        rat.Beraten(4713, 3, 4500f, 60f, 8000f, 800f, 1f, tr.AddMilliseconds(500));
-        var runter = rat.Beraten(4713, 3, 4500f, 60f, 8000f, 800f, 1f, tr.AddMilliseconds(900));
+        rat.Beraten(rat.Tune, 3, 4500f, 60f, 8000f, 800f, 1f, tr.AddMilliseconds(1000));
+        var runter = rat.Beraten(rat.Tune, 3, 4500f, 60f, 8000f, 800f, 1f, tr.AddMilliseconds(1400));
         Soll(runter.Rat == -1 && runter.BesterGang == 2, $"Schaltrat: runter in den zweiten erwartet ({runter.Rat}, {runter.BesterGang})");
+        // DER BEGRENZER (2026-11-14): EngineMaxRpm 8.000, der Motor regelt aber bei 7.600 ab -- die Drehzahl
+        // springt zwischen 7.480 und 7.600, die Leistung setzt aus (negativ). Gelernt wird 7.600; die Anzeige
+        // geht dort an. Davor: ein Hochschalten bei 7.000 (Aussetzer, dann Leerlauf) zaehlt nicht.
+        for (var i = 0; i < 30; i++)
+        {
+            var r = i % 2 == 0 ? 7600f : 7480f;
+            var roh = SelfTest.LapPacket(1, 0, 100f, 10f, 0f, 4713, 700, 5, maxRpm: 8000f, speed: 76f);
+            BitConverter.GetBytes(r).CopyTo(roh, 16);
+            BitConverter.GetBytes(800f).CopyTo(roh, 12);
+            BitConverter.GetBytes(i % 2 == 0 ? 250000f : -50000f).CopyTo(roh, 260);
+            roh[315] = 255;
+            roh[319] = 2;
+            ForzaPacket.TryParse(roh, out var p);
+            rat.Aufnehmen(p, 0f, design, std, tr);
+            tr = tr.AddMilliseconds(20);
+        }
+        Soll(Math.Abs(rat.Begrenzer(rat.Tune, 8000f) - 7600f) < 1f && rat.Letztes.AtLimiter && !rat.AmBegrenzer(rat.Tune, 7400f, 8000f),
+             $"Tacho: Begrenzer {rat.Begrenzer(rat.Tune, 8000f):0} statt 7.600 gelernt");
+        var amBegrenzer = rat.Beraten(rat.Tune, 2, 7550f, 75.5f, 8000f, 800f, 1f, tr.AddMilliseconds(2000));
+        amBegrenzer = rat.Beraten(rat.Tune, 2, 7550f, 75.5f, 8000f, 800f, 1f, tr.AddMilliseconds(2100));
+        Soll(amBegrenzer.Rat == 1, "Schaltrat: am gelernten Begrenzer kein Pfeil nach oben");
+        // Ein anderes Tune desselben Autos (anderer Leistungsindex) lernt von vorn.
+        Soll(Rivals.SpeedoState.TuneKennung(4713, 800, 1, 8, 8000f) != Rivals.SpeedoState.TuneKennung(4713, 900, 1, 8, 8000f)
+             && Rivals.SpeedoState.TuneKennung(4713, 800, 1, 8, 8000f) == Rivals.SpeedoState.TuneKennung(4713, 800, 1, 8, 8010f)
+             && Rivals.SpeedoState.TuneKennung(4713, 800, 1, 8, 8000f) > 1_000_000_000,
+             "Tacho: das Tune wird nicht vom Auto unterschieden");
         var leer2 = new Rivals.SpeedoState(merken: false).Beraten(1, 3, 5000f, 50f, 8000f, 800f, 1f, tr);
         Soll(leer2 is { Rat: 0, BesterGang: 0 }, "Schaltrat: ohne gelernte Kurve gibt es trotzdem einen Rat");
 

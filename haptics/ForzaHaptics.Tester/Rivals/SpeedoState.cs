@@ -113,6 +113,32 @@ internal sealed class SpeedoState
     private int _auto;
     private readonly Dictionary<int, Dictionary<int, float>> _leistung = new();
     private readonly Dictionary<int, float> _maxRpm = new();
+
+    // DER ECHTE BEGRENZER JE AUTO UND TUNE (seit 2026-11-14, Nutzer: "der Rev-Limiter stimmt nicht").
+    // EngineMaxRpm ist das Ende der Skala, nicht die Drehzahl, an der der Motor abregelt: in 40 echten
+    // Runden mit 8 Autos lag der Begrenzer bei ALLEN 3 bis 10 % darunter (GR86 8.277 statt 9.000, Megane
+    // 7.227 statt 8.000) -- die Begrenzer-Anzeige und der Hochschalt-Pfeil (98,5 % der Skala) kamen darum
+    // praktisch nie. Woran er sich in der Telemetrie zeigt (an denselben Runden abgelesen): bei Vollgas
+    // faellt die Leistung schlagartig ins Negative (die Zuendung setzt aus), die Drehzahl faellt und
+    // steigt wieder an dieselbe Stelle. Gelernt wird jeder solche Aussetzer, nach dem der Gang bleibt;
+    // es gilt die hoechste Haeufung (Werte der 8 Autos lagen je auf 0,5 % beisammen). Gemerkt in
+    // speedo_gears.json unter "limiter". Ein erster Versuch ("Drehzahl steht 200 ms still") fing das
+    // langsame Hochdrehen in hohen Gaengen ein und lernte 6.400 statt 7.350.
+    private readonly Dictionary<int, float> _begrenzer = new();
+    private readonly Dictionary<int, List<float>> _begrenzerFunde = new();
+    private (float Rpm, float Leistung)? _vorher;
+    private (float Rpm, int Gang, DateTime Zeit)? _schnitt;
+    private DateTime _vollgasSeit = DateTime.MinValue;
+
+    /// <summary>Der Begrenzer dieses Autos: gelernt, sonst EngineMaxRpm.</summary>
+    public float Begrenzer(int auto, float max) => _begrenzer.TryGetValue(auto, out var b) && b > 0f ? b : max;
+
+    /// <summary>
+    /// Am Begrenzer: ab 97,5 % des gelernten (der Motor faellt beim Abregeln kurz darunter, die Anzeige
+    /// soll dabei nicht flackern) -- ungelernt wie bisher 98,5 % der Hoechstdrehzahl.
+    /// </summary>
+    public bool AmBegrenzer(int auto, float rpm, float max) =>
+        max > 0f && (_begrenzer.TryGetValue(auto, out var b) && b > 0f ? rpm >= b * 0.975f : rpm >= max * 0.985f);
     private bool _geaendert;
     private DateTime _gespeichert = DateTime.UtcNow;
     private readonly DateTime _start = DateTime.UtcNow;
@@ -125,6 +151,37 @@ internal sealed class SpeedoState
     /// <summary>Das Auto des letzten Pakets (CarOrdinal).</summary>
     public int Auto => _auto;
 
+    /// <summary>
+    /// FINGERABDRUCK AUS AUTO UND TUNE (seit 2026-11-14, Nutzer: "Drehzahlbegrenzer lernen muss je Auto
+    /// und Tune abhaengig sein, und das Hochschalten"; "mach vom Auto+Tune einen Fingerprint ... und leg
+    /// deine gelernten Sachen darunter ab, damit du es nicht immer neu lernen musst"). Ein anderes Tune
+    /// desselben Autos hat eine andere Leistungskurve, andere Gaenge, oft einen anderen Motor und
+    /// Begrenzer. Die Telemetrie nennt kein Tune -- erkannt wird es an dem, was jedes Paket vom Motor und
+    /// Aufbau sagt: Fahrzeugnummer, Leistungsindex, Klasse, Antrieb, Zylinderzahl, Hoechst- und
+    /// Leerlaufdrehzahl (die Leistung selbst steht erst nach dem Lernen fest und kann darum nicht in den
+    /// Schluessel). Darunter liegt alles Gelernte -- Leistungskurve, Uebersetzungen, Begrenzer, und daraus
+    /// die Schaltpunkte -- in speedo_shift.json und speedo_gears.json; dasselbe Tune wird wiedererkannt
+    /// und nicht neu gelernt. Der Schluessel liegt oberhalb aller Fahrzeugnummern: alte Eintraege je
+    /// Auto mischen sich nicht hinein.
+    /// </summary>
+    public int Tune => _tune;
+
+    private int _tune;
+
+    internal static int TuneKennung(int auto, int pi, int antrieb, int zylinder, float max, int klasse = 0, float leerlauf = 0f)
+    {
+        if (auto <= 0) { return 0; }
+        unchecked
+        {
+            var h = 2166136261u;
+            foreach (var w in new[] { auto, pi, antrieb, zylinder, (int)Math.Round(max / 50f), klasse, (int)Math.Round(leerlauf / 50f) })
+            {
+                h = (h ^ (uint)w) * 16777619u;
+            }
+            return (int)((h & 0x3FFFFFFFu) | 0x40000000u);
+        }
+    }
+
     private readonly Lampe _tc = new();
     private readonly Lampe _abs = new();
     private readonly Lampe _stabWarn = new();
@@ -135,7 +192,10 @@ internal sealed class SpeedoState
     {
         private DateTime _ueberSeit = DateTime.MinValue;
         private DateTime _unterSeit = DateTime.MinValue;
+        private readonly int _anMs;
         public bool An { get; private set; }
+
+        public Lampe(int anMs = 80) => _anMs = anMs;
 
         public bool Setze(bool ueber, bool unter, DateTime nun)
         {
@@ -143,7 +203,7 @@ internal sealed class SpeedoState
             {
                 _unterSeit = DateTime.MinValue;
                 if (_ueberSeit == DateTime.MinValue) { _ueberSeit = nun; }
-                if (!An && (nun - _ueberSeit).TotalMilliseconds >= 80) { An = true; }
+                if (!An && (nun - _ueberSeit).TotalMilliseconds >= _anMs) { An = true; }
             }
             else
             {
@@ -169,7 +229,11 @@ internal sealed class SpeedoState
     /// <summary>Je Auto und Gang: Drehzahl je Meter pro Sekunde (die Uebersetzung bis zum Rad).</summary>
     private readonly Dictionary<int, Dictionary<int, float>> _uebersetzung = new();
     private bool _gaengeGeaendert;
-    private readonly Lampe _hoch = new();
+    // Der Hochschalt-Pfeil ohne Einschaltverzoegerung: er kommt ohnehin vorausschauend (siehe Beraten).
+    private readonly Lampe _hoch = new(0);
+    private float _rpmSteigt;
+    private float _rpmVorher;
+    private DateTime _rpmZeit = DateTime.MinValue;
     private readonly Lampe _runter = new();
 
     private readonly bool _merken;
@@ -215,6 +279,18 @@ internal sealed class SpeedoState
         var k = 1f - Math.Clamp(glaettung, 0f, 0.95f);
         _rpm += (rpm - _rpm) * k;
         _speed += (speed - _speed) * Math.Min(1f, k * 1.4f);
+        // Wie schnell die Drehzahl steigt (U/min je Sekunde, geglaettet) -- fuer den vorausschauenden Pfeil.
+        if (gang != _gang || _rpmZeit == DateTime.MinValue || (nun - _rpmZeit).TotalSeconds > 0.25)
+        {
+            _rpmSteigt = 0f;
+        }
+        else if ((nun - _rpmZeit).TotalSeconds > 0.004)
+        {
+            var rate = (rpm - _rpmVorher) / (float)(nun - _rpmZeit).TotalSeconds;
+            _rpmSteigt += (Math.Clamp(rate, -20000f, 20000f) - _rpmSteigt) * 0.25f;
+        }
+        _rpmVorher = rpm;
+        _rpmZeit = nun;
         if (gang != _gang)
         {
             _gang = gang;
@@ -229,18 +305,36 @@ internal sealed class SpeedoState
             _odometer += speed * dt;
         }
 
-        if (auto > 0 && max > 1000f)
+        var tune = TuneKennung(auto, (int)p.Get("CarPerformanceIndex"), (int)p.Get("DrivetrainType"), (int)p.Get("NumCylinders"), max,
+                               (int)p.Get("CarClass"), idle);
+        if (tune != _tune)
         {
-            _maxRpm[auto] = max;
-            if (gas > 0.97f && leistung > 1000f && rpm > idle + 200f)
+            _tune = tune;
+            _vorher = null;
+            _schnitt = null;
+        }
+        if (gas > 0.97f)
+        {
+            if (_vollgasSeit == DateTime.MinValue) { _vollgasSeit = nun; }
+        }
+        else
+        {
+            _vollgasSeit = DateTime.MinValue;
+        }
+        if (tune > 0 && max > 1000f)
+        {
+            _maxRpm[tune] = max;
+            // DIE LEISTUNGSKURVE GLEITEND (seit 2026-11-14): bisher galt der hoechste je gesehene Wert je
+            // 100 U/min -- ein einzelner Ausreisser verschob den Schnittpunkt der Kurven (der Pfeil kam an
+            // falscher Stelle), und nach einem neuen Tuning blieb die alte Kurve stehen. Jetzt nur bei
+            // gehaltenem Vollgas (0,3 s, der Lader ist da), nicht am Begrenzer, und gleitend.
+            if (gas > 0.97f && (nun - _vollgasSeit).TotalSeconds >= 0.3 && leistung > 1000f && rpm > idle + 200f
+                && rpm < Begrenzer(tune, max) * 0.98f)
             {
                 var stufe = (int)(rpm / 100f);
-                var tabelle = _leistung.TryGetValue(auto, out var t) ? t : _leistung[auto] = new Dictionary<int, float>();
-                if (!tabelle.TryGetValue(stufe, out var alt) || leistung > alt)
-                {
-                    tabelle[stufe] = leistung;
-                    _geaendert = true;
-                }
+                var tabelle = _leistung.TryGetValue(tune, out var t) ? t : _leistung[tune] = new Dictionary<int, float>();
+                tabelle[stufe] = tabelle.TryGetValue(stufe, out var alt) && alt > 0f ? alt + ((leistung - alt) * 0.3f) : leistung;
+                _geaendert = true;
             }
         }
         var m = Messen(p, (int)p.Get("DrivetrainType"));
@@ -248,21 +342,22 @@ internal sealed class SpeedoState
         // greift, das Rad nicht durchdreht und der Gang schon eine Weile drin ist -- gleitend, damit
         // ein neues Tuning (andere Uebersetzung, gleiches Auto) sich von selbst durchsetzt.
         var kupplung = (float)p.Get("Clutch") / 255f;
-        if (auto > 0 && gang is >= 1 and <= 10 && speed > 6f && kupplung < 0.1f && m.Spin < 0.5f
+        if (tune > 0 && gang is >= 1 and <= 10 && speed > 6f && kupplung < 0.1f && m.Spin < 0.5f
             && max > 1000f && rpm < max * 0.99f && _gangSeit != DateTime.MinValue && (nun - _gangSeit).TotalSeconds > 0.4)
         {
-            var je = _uebersetzung.TryGetValue(auto, out var u) ? u : _uebersetzung[auto] = new Dictionary<int, float>();
+            var je = _uebersetzung.TryGetValue(tune, out var u) ? u : _uebersetzung[tune] = new Dictionary<int, float>();
             var wert = rpm / speed;
             // Ein neuer Gang aendert die Schaltpunkte: die gemerkten weg.
             if (!je.ContainsKey(gang)) { _hochpunkte.Clear(); }
             je[gang] = je.TryGetValue(gang, out var alt) && alt > 0f ? alt + (wert - alt) * 0.05f : wert;
             _gaengeGeaendert = true;
         }
+        BegrenzerLernen(tune, gang, rpm, max, leistung, gas, nun);
         if ((nun - _gespeichert).TotalSeconds > 60) { Speichern(); }
 
-        var rat = Beraten(auto, gang, rpm, speed, max, idle, gas, nun);
+        var rat = Beraten(tune, gang, rpm, speed, max, idle, gas, nun, _rpmSteigt);
         var rot = design.Redline == SpeedoRedline.Learned
-            ? (rat.Hochpunkt > 0f ? rat.Hochpunkt : Schaltpunkt(auto, max))
+            ? (rat.Hochpunkt > 0f ? rat.Hochpunkt : Schaltpunkt(tune, Begrenzer(tune, max)))
             : max * design.RedlinePercent;
         // Nur, wo es etwas bedeutet: Gas fuer TC, Bremse fuer ABS, Fahrt (ueber 25 km/h) fuer STAB.
         var spin = gas > 0.1f ? m.Spin : 0f;
@@ -276,13 +371,63 @@ internal sealed class SpeedoState
         var bild = new SpeedoBild(
             _rpm, max, idle, rot, _speed, _topSpeed, gang,
             Math.Max(0f, leistung), (float)p.Get("Boost"), gas, bremse,
-            tc, abs, max > 0f && rpm >= max * 0.985f,
+            tc, abs, AmBegrenzer(tune, rpm, max),
             _trip, (float)p.Get("DistanceTraveled"), _odometer,
             (float)p.Get("CurrentRaceTime"), (float)p.Get("CurrentLap"),
             _gangSeit == DateTime.MinValue ? 99f : (float)(nun - _gangSeit).TotalSeconds,
             (nun - _start).TotalSeconds) { Stab = rutscht ? 2 : warn ? 1 : 0, Rat = rat.Rat, BesterGang = rat.BesterGang };
         Letztes = bild;
         return bild;
+    }
+
+    private void BegrenzerLernen(int tune, int gang, float rpm, float max, float leistung, float gas, DateTime nun)
+    {
+        if (tune <= 0 || max <= 1000f)
+        {
+            _vorher = null;
+            _schnitt = null;
+            return;
+        }
+        // Ein Aussetzer zaehlt erst, wenn der Gang danach 100 ms derselbe bleibt: beim Hochschalten setzt
+        // die Leistung ebenfalls aus, dann folgt aber der Leerlauf (Gang 11) -- und das unterhalb des Begrenzers.
+        if (_schnitt is { } s)
+        {
+            if (gang != s.Gang) { _schnitt = null; }
+            else if ((nun - s.Zeit).TotalMilliseconds >= 100)
+            {
+                Fund(tune, s.Rpm, max);
+                _schnitt = null;
+            }
+        }
+        if (_schnitt is null && _vorher is { } v && gas > 0.9f && v.Leistung > 0f && leistung < 0f && Math.Max(v.Rpm, rpm) > max * 0.6f)
+        {
+            _schnitt = (Math.Max(v.Rpm, rpm), gang, nun);
+        }
+        _vorher = gas > 0.9f ? (rpm, leistung) : null;
+    }
+
+    private void Fund(int tune, float rpm, float max)
+    {
+        if (rpm > max * 1.05f) { return; }
+        var funde = _begrenzerFunde.TryGetValue(tune, out var f) ? f : _begrenzerFunde[tune] = new List<float>();
+        funde.Add(rpm);
+        if (funde.Count > 40) { funde.RemoveAt(0); }
+        // Der Begrenzer ist die HOECHSTE Stelle, an der es mindestens dreimal aussetzte (auf 1 % genau);
+        // davon der Median. Einzelne hoehere Werte (Ausreisser) und tiefere Haeufungen zaehlen nicht.
+        var sortiert = funde.OrderByDescending(x => x).ToList();
+        foreach (var oben in sortiert)
+        {
+            var haufen = sortiert.Where(x => Math.Abs(x - oben) <= oben * 0.01f).ToList();
+            if (haufen.Count < 3) { continue; }
+            var neu = haufen[haufen.Count / 2];
+            if (!_begrenzer.TryGetValue(tune, out var alt) || Math.Abs(alt - neu) > 1f)
+            {
+                _begrenzer[tune] = neu;
+                _hochpunkte.Clear();
+                _gaengeGeaendert = true;
+            }
+            return;
+        }
     }
 
     /// <summary>
@@ -322,17 +467,34 @@ internal sealed class SpeedoState
     ///   laufen.
     /// Nur, wo Leistungskurve und Uebersetzungen gelernt sind; sonst schweigt der Rat.
     /// </remarks>
-    internal Ratschlag Beraten(int auto, int gang, float rpm, float speed, float max, float idle, float gas, DateTime nun)
+    internal Ratschlag Beraten(int auto, int gang, float rpm, float speed, float max, float idle, float gas, DateTime nun, float steigt = 0f)
     {
-        if (max <= 1000f || gang is < 1 or > 10 || !_uebersetzung.TryGetValue(auto, out var je)) { return new Ratschlag(0, 0, 0f); }
+        if (max <= 1000f || gang is < 1 or > 10) { return new Ratschlag(0, 0, 0f); }
+        // Ohne gelernte Uebersetzungen trotzdem ein Pfeil am Begrenzer (seit 2026-11-14): bisher schwieg der
+        // Rat dann ganz -- bei jedem neuen Auto und Tune, bis die Gaenge gelernt waren.
+        var je = _uebersetzung.TryGetValue(auto, out var gelernt) ? gelernt : new Dictionary<int, float>();
+        // Alles am echten Begrenzer, nicht am Ende der Skala (seit 2026-11-14).
+        max = Begrenzer(auto, max);
         var hochpunkt = Hochpunkt(auto, gang, max, je);
         var hoch = false;
         var runter = false;
-        if (gas > 0.8f && je.TryGetValue(gang, out var jetzt) && jetzt > 0f)
+        if (gas > 0.8f)
         {
-            if (rpm >= max * 0.985f && je.ContainsKey(gang + 1)) { hoch = true; }
-            else if (hochpunkt > 0f && rpm >= hochpunkt) { hoch = true; }
-            if (je.TryGetValue(gang - 1, out var klein) && klein > 0f)
+            // HOCH (seit 2026-11-14 ueberarbeitet, Nutzer: "in vielen Gaengen kommt der gruene Pfeil gar nicht").
+            // Bisher stand der ganze Rat unter der Bedingung, dass die Uebersetzung DIESES Gangs gelernt ist --
+            // gelernt wird sie nur ohne durchdrehende Raeder, und in den unteren Gaengen drehen sie oft durch:
+            // dort kam nie ein Pfeil. Jetzt: der beste Schaltpunkt aus den Leistungskurven, wo er bekannt ist,
+            // sonst kurz vor dem Begrenzer -- in Gaengen, in denen die Kurven sich vor dem Begrenzer nicht
+            // schneiden (bei den meisten Autos in 40 echten Runden), ist das auch der beste Punkt.
+            //
+            // VORAUSSCHAUEND (seit 2026-11-14, an 40 echten Runden gemessen): der Pfeil kam erst AM Schaltpunkt
+            // und dann noch 80 ms spaeter -- in den unteren Gaengen war der Motor da laengst im Begrenzer; vor
+            // nur 31 bis 77 % der Hochschaltungen war er zu sehen. Jetzt kommt er, wenn die Drehzahl den
+            // Schaltpunkt in 0,2 s erreicht (Reaktionszeit), hoechstens 8 % vorher, ohne Einschaltverzoegerung.
+            var ziel = hochpunkt > 0f ? Math.Min(max * 0.985f, hochpunkt) : max * 0.985f;
+            var voraus = Math.Clamp(steigt * 0.2f, 0f, max * 0.08f);
+            if (rpm + voraus >= ziel) { hoch = true; }
+            if (je.TryGetValue(gang, out var jetzt) && jetzt > 0f && je.TryGetValue(gang - 1, out var klein) && klein > 0f)
             {
                 var rpmKlein = rpm * klein / jetzt;
                 var pJetzt = Leistung(auto, rpm);
@@ -371,16 +533,30 @@ internal sealed class SpeedoState
         return wert;
     }
 
+    /// <summary>Die besten Hochschaltpunkte je Gang dieses Autos und Tunes (0 = noch unbekannt) -- fuer die Pruefung.</summary>
+    internal SortedDictionary<int, float> Schaltpunkte(int tune, float max)
+    {
+        var raus = new SortedDictionary<int, float>();
+        if (!_uebersetzung.TryGetValue(tune, out var je)) { return raus; }
+        var lim = Begrenzer(tune, max);
+        foreach (var g in je.Keys.Where(g => je.ContainsKey(g + 1))) { raus[g] = HochpunktSuchen(tune, g, lim, je); }
+        return raus;
+    }
+
     private float HochpunktSuchen(int auto, int gang, float max, Dictionary<int, float> je)
     {
         if (!je.TryGetValue(gang, out var jetzt) || !je.TryGetValue(gang + 1, out var naechst) || jetzt <= 0f || naechst <= 0f) { return 0f; }
         var faktor = naechst / jetzt;
-        for (var r = max * 0.5f; r <= max * 0.99f; r += 50f)
+        // Nie vor der hoechsten Leistung: dort schneiden sich zwei Gaenge nicht (ein frueherer "Schnitt"
+        // waere ein Messfehler der Kurve und liess den Pfeil zu frueh kommen).
+        var start = max * 0.5f;
+        if (_leistung.TryGetValue(auto, out var kurve) && kurve.Count >= 8) { start = Math.Max(start, kurve.MaxBy(e => e.Value).Key * 100f); }
+        for (var r = start; r <= max * 0.99f; r += 50f)
         {
             if (Leistung(auto, r) is { } pJetzt && Leistung(auto, r * faktor) is { } pNaechst && pNaechst >= pJetzt) { return r; }
         }
-        // Die Kurven schneiden sich nicht: bis kurz vor den Begrenzer.
-        return Leistung(auto, max * 0.97f) is null ? 0f : max * 0.97f;
+        // Die Kurven schneiden sich nicht: dieser Gang zieht bis zum Begrenzer besser -- dort schalten.
+        return Leistung(auto, max * 0.97f) is null ? 0f : max * 0.985f;
     }
 
     /// <summary>Der gelernte Schaltpunkt dieses Autos -- oder 90 % der Hoechstdrehzahl.</summary>
@@ -445,6 +621,11 @@ internal sealed class SpeedoState
                 {
                     if (!int.TryParse(auto, out var a)) { continue; }
                     _uebersetzung[a] = tabelle.Where(e => int.TryParse(e.Key, out _)).ToDictionary(e => int.Parse(e.Key), e => e.Value);
+                    if (tabelle.TryGetValue("limiter", out var lim) && lim > 0f)
+                    {
+                        _begrenzer[a] = lim;
+                        _begrenzerFunde[a] = new List<float> { lim, lim, lim };
+                    }
                 }
             }
             if (File.Exists(StreckeDatei))
@@ -477,6 +658,12 @@ internal sealed class SpeedoState
             {
                 var raus = _uebersetzung.ToDictionary(e => e.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     e => e.Value.ToDictionary(s => s.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), s => (float)Math.Round(s.Value, 3)));
+                foreach (var (auto, lim) in _begrenzer)
+                {
+                    var k = auto.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    if (!raus.TryGetValue(k, out var t)) { raus[k] = t = new Dictionary<string, float>(); }
+                    t["limiter"] = (float)Math.Round(lim);
+                }
                 File.WriteAllText(GangDatei, JsonSerializer.Serialize(raus));
                 _gaengeGeaendert = false;
             }
