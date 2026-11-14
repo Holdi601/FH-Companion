@@ -32,13 +32,15 @@ internal static class SplitTrend
     /// <summary>Eine Zeile der Liste: Name, Abstand zum Ersten (s), ob ich es bin, wo sie steht (Bildpunkte des Ausschnitts).</summary>
     internal sealed record Zeile(string Name, double Abstand, bool Ich, RectangleF Text, RectangleF Zeit);
 
-    internal enum Tendenz { Gleich, Besser, Schlechter }
+    internal enum Tendenz { Gleich, Besser, Schlechter, Ich }
 
     /// <summary>Eine Zelle der Spalte: wo (Koordinaten der Spielflaeche), was, welche Farbe.</summary>
-    internal readonly record struct Zelle(RectangleF Box, string Text, Tendenz Farbe, float Schrift);
+    internal readonly record struct Zelle(RectangleF Box, string Text, Tendenz Farbe, float Schrift, bool Deckend = false);
 
-    // "00:13.423" (der Erste), "+0.948", "+1:02.345". Die Texterkennung liest den Punkt auch als Komma.
-    private static readonly Regex ZeitMuster = new(@"^([+\-])?(?:(\d{1,2})[:;])?(\d{1,2})[.,](\d{3})$", RegexOptions.CultureInvariant);
+    // "00:13.423" (der Erste), "+0.948", "+1:02.345". Die Texterkennung liest den Punkt auch als Komma --
+    // und verschluckt den Doppelpunkt in der Zeit des Ersten ("0020.403", an Aufnahmen 2026-11-14): ohne
+    // ihn fehlte die Zeile des Fuehrenden in jeder Lesung. Minuten ohne Doppelpunkt nur vor zwei Sekundenziffern.
+    private static readonly Regex ZeitMuster = new(@"^([+\-])?(?:(\d{1,2})(?:[:;]|(?=\d{2}[.,])))?(\d{1,2})[.,](\d{3})$", RegexOptions.CultureInvariant);
     private static readonly Regex PlatzMuster = new(@"^[0O]?\d{1,2}$", RegexOptions.CultureInvariant);
 
     /// <summary>Eine Zeitangabe als Sekunden und ob sie ein Abstand ("+") ist; null, wenn es keine ist.</summary>
@@ -198,70 +200,117 @@ internal static class SplitTrend
         return 1.0 - (v[b.Length] / (double)Math.Max(a.Length, b.Length));
     }
 
+    /// <summary>Was eine Zelle zeigt: der Abstand, seine Farbe, und wie er sich seit dem vorigen Split veraendert hat.</summary>
+    internal readonly record struct Wert(string Text, Tendenz Farbe, string Aenderung);
+
+    /// <summary>Eine Zahl mit Vorzeichen und drei Nachkommastellen, wie das Spiel sie schreibt.</summary>
+    internal static string Zahl(double d) => (d >= 0 ? "+" : "-") + Math.Abs(d).ToString("0.000", CultureInfo.InvariantCulture);
+
     /// <summary>
-    /// Was die Liste zwischen den Splits gesagt hat. Ein Split gilt, wenn zwei Lesungen
-    /// hintereinander dieselben Abstaende zeigen (eine einzelne kann ein Zwischenbild sein).
+    /// Was die Liste zwischen den Splits gesagt hat, je Fahrer.
     /// </summary>
     internal sealed class Verlauf
     {
         // JE FAHRER (seit 2026-11-11, an Aufnahmen geprueft): der bestaetigte Abstand zu mir, der davor,
-        // und ein Kandidat. Ein neuer Wert gilt, wenn ihn zwei Lesungen hintereinander zeigen -- ein
-        // einzelnes Zwischenbild loest so keine Farbe aus. Pro Fahrer, nicht ueber die ganze Liste:
-        // die Texterkennung verliert mal die eine, mal die andere Zeile.
+        // und ein Kandidat. Pro Fahrer, nicht ueber die ganze Liste: die Texterkennung verliert mal die
+        // eine, mal die andere Zeile.
+        //
+        // FARBE NUR BEI EINEM ECHTEN SPLIT (seit 2026-11-14, Nutzer: "wechselt die Farbe, obwohl kein
+        // Checkpoint da war"). Zwei gleiche Lesungen reichten: ein zweimal gleich verlesener Wert wurde
+        // zum Split, die naechste richtige Lesung zum zweiten -- die Farbe sprang hin und zurueck. Jetzt:
+        // ein neuer Wert gilt erst nach DREI gleichen Lesungen, und ein Wert, der schon einmal galt, wird
+        // nie wieder zum Split (das Spiel zeigt keinen alten Abstand ein zweites Mal; ein Ruecksprung ist
+        // ein Lesefehler). Zahl und Farbe wechseln zusammen, beim Bestaetigen.
+        private const int Noetig = 3;
+
         private sealed class Fahrer
         {
             public double? Bestaetigt;
             public double? Vorher;
             public double? Kandidat;
+            public int Gesehen;
+            public readonly List<double> Frueher = new();
         }
 
         private readonly Dictionary<string, Fahrer> _fahrer = new(StringComparer.Ordinal);
 
         public void Vergessen() => _fahrer.Clear();
 
-        /// <summary>Die neue Lesung einordnen; gibt je Zeile (in Reihenfolge der Liste) Text und Farbe.</summary>
-        public List<(string Text, Tendenz Farbe)> Einordnen(IReadOnlyList<Zeile> zeilen)
+        /// <summary>Die neue Lesung einordnen; gibt je Zeile (in Reihenfolge der Liste) Text, Farbe und Aenderung.</summary>
+        public List<Wert> Einordnen(IReadOnlyList<Zeile> zeilen)
         {
             var ich = zeilen.First(z => z.Ich);
-            var raus = new List<(string, Tendenz)>();
+            var raus = new List<Wert>();
             var vergeben = new HashSet<Fahrer>();
+            var ohneNamen = new List<(int Stelle, double D)>();
             foreach (var z in zeilen)
             {
-                if (z.Ich) { raus.Add((string.Empty, Tendenz.Gleich)); continue; }
+                if (z.Ich) { raus.Add(new Wert(string.Empty, Tendenz.Gleich, string.Empty)); continue; }
                 var d = Math.Round(z.Abstand - ich.Abstand, 3);
                 if (ScanFalte(z.Name).Length == 0)
                 {
-                    // Ohne Namen kein Verlauf -- nur der Abstand.
-                    raus.Add(((d >= 0 ? "+" : "-") + Math.Abs(d).ToString("0.00", CultureInfo.InvariantCulture), Tendenz.Gleich));
+                    // Ohne Namen erst nach den anderen: dann zu dem Fahrer, dessen bestaetigter Abstand es ist.
+                    ohneNamen.Add((raus.Count, d));
+                    raus.Add(new Wert(Zahl(d), Tendenz.Gleich, string.Empty));
                     continue;
                 }
                 var f = Finde(ScanFalte(z.Name), vergeben);
                 vergeben.Add(f);
-                if (f.Bestaetigt is { } b && Math.Abs(d - b) < 0.0005)
+                if (f.Bestaetigt is { } b && Gleich(d, b))
                 {
                     f.Kandidat = null;
+                    f.Gesehen = 0;
                 }
-                else if (f.Kandidat is { } k && Math.Abs(d - k) < 0.0005)
+                else if (f.Frueher.Any(x => Gleich(d, x)))
                 {
-                    f.Vorher = f.Bestaetigt;
-                    f.Bestaetigt = d;
-                    f.Kandidat = null;
+                    // Ein Wert, der schon galt: verlesen oder ein Zwischenbild, kein neuer Split.
+                }
+                else if (f.Kandidat is { } k && Gleich(d, k))
+                {
+                    if (++f.Gesehen >= Noetig)
+                    {
+                        if (f.Bestaetigt is { } alt)
+                        {
+                            f.Frueher.Add(alt);
+                            if (f.Frueher.Count > 6) { f.Frueher.RemoveAt(0); }
+                        }
+                        f.Vorher = f.Bestaetigt;
+                        f.Bestaetigt = d;
+                        f.Kandidat = null;
+                        f.Gesehen = 0;
+                    }
                 }
                 else
                 {
                     f.Kandidat = d;
+                    f.Gesehen = 1;
                 }
-                var farbe = Tendenz.Gleich;
-                if (f.Bestaetigt is { } jetzt && f.Vorher is { } vorher)
-                {
-                    var aenderung = jetzt - vorher;
-                    farbe = aenderung > 0.0005 ? Tendenz.Besser : aenderung < -0.0005 ? Tendenz.Schlechter : Tendenz.Gleich;
-                }
-                // Die Zahl ist immer die gelesene; nur die Farbe wartet auf die Bestaetigung.
-                var zeige = d;
-                raus.Add(((zeige >= 0 ? "+" : "-") + Math.Abs(zeige).ToString("0.00", CultureInfo.InvariantCulture), farbe));
+                raus.Add(Zeige(f, d));
+            }
+            foreach (var (stelle, d) in ohneNamen)
+            {
+                var f = _fahrer.Values.FirstOrDefault(x => !vergeben.Contains(x) && x.Bestaetigt is { } b && Gleich(d, b));
+                if (f is null) { continue; }
+                vergeben.Add(f);
+                raus[stelle] = Zeige(f, d);
             }
             return raus;
+        }
+
+        private static bool Gleich(double a, double b) => Math.Abs(a - b) < 0.0005;
+
+        private static Wert Zeige(Fahrer f, double gelesen)
+        {
+            var farbe = Tendenz.Gleich;
+            var aenderung = string.Empty;
+            if (f.Bestaetigt is { } jetzt && f.Vorher is { } vorher)
+            {
+                // (sein Abstand - meiner) ist gewachsen = zu meinen Gunsten = gruen, "+".
+                var a = Math.Round(jetzt - vorher, 3);
+                farbe = a > 0.0005 ? Tendenz.Besser : a < -0.0005 ? Tendenz.Schlechter : Tendenz.Gleich;
+                aenderung = Zahl(a);
+            }
+            return new Wert(Zahl(f.Bestaetigt ?? gelesen), farbe, aenderung);
         }
 
         private Fahrer Finde(string name, HashSet<Fahrer> vergeben)
@@ -279,6 +328,59 @@ internal static class SplitTrend
         }
     }
 
+    /// <summary>
+    /// DAS RASTER DER LISTE, GEGLAETTET (seit 2026-11-14, Nutzer: "spastet rum, wird gross, passt nicht
+    /// mehr in die Boxen"). Zeilenabstand, Schrifthoehe, Mitte der Zeitspalte und Lage der Zeilen wurden
+    /// je Lesung neu gemessen -- eine schlechte Lesung (zwei Zeilen zu einer verschmolzen, eine Zeile
+    /// fehlt) verschob und vergroesserte die Spalte fuer einen Augenblick. Jetzt gilt der Median der
+    /// letzten sieben Lesungen, und Ausreisser kommen gar nicht erst hinein.
+    /// </summary>
+    internal sealed class Raster
+    {
+        private const int Laenge = 7;
+        private readonly List<float> _abstand = new(), _hoehe = new(), _mitte = new(), _anker = new();
+
+        public void Vergessen()
+        {
+            _abstand.Clear();
+            _hoehe.Clear();
+            _mitte.Clear();
+            _anker.Clear();
+        }
+
+        private static float Median(List<float> l)
+        {
+            var s = l.OrderBy(x => x).ToList();
+            return s[s.Count / 2];
+        }
+
+        private static void Rein(List<float> l, float wert, bool pruefen)
+        {
+            // Ab drei Lesungen: was mehr als ein Drittel vom Median abweicht, ist eine schlechte Lesung.
+            if (pruefen && l.Count >= 3)
+            {
+                var m = Median(l);
+                if (wert > m * 1.33f || wert < m * 0.75f) { return; }
+            }
+            l.Add(wert);
+            if (l.Count > Laenge) { l.RemoveAt(0); }
+        }
+
+        public (float Abstand, float Hoehe, float Mitte, float Anker) Glaetten(float abstand, float hoehe, float mitte, IReadOnlyList<float> zeilen)
+        {
+            Rein(_abstand, abstand, true);
+            Rein(_hoehe, hoehe, true);
+            Rein(_mitte, mitte, true);
+            var a = Median(_abstand);
+            // Die Lage des Rasters: jede Zeile aufs Raster um den bisherigen Anker zurueckgerechnet --
+            // so verschiebt eine fehlende oberste Zeile nichts.
+            var bezug = _anker.Count > 0 ? Median(_anker) : zeilen.Min();
+            var lagen = zeilen.Select(y => y - ((float)Math.Round((y - bezug) / a) * a)).OrderBy(y => y).ToList();
+            Rein(_anker, lagen[lagen.Count / 2], false);
+            return (a, Median(_hoehe), Median(_mitte), Median(_anker));
+        }
+    }
+
     /// <summary>Wo die Liste gesucht wird: oben rechts in der 16:9-Spielflaeche.</summary>
     internal static Rectangle Gebiet(Rectangle flaeche) =>
         new(flaeche.X + (int)(flaeche.Width * 0.66), flaeche.Y + (int)(flaeche.Height * 0.03),
@@ -288,11 +390,15 @@ internal static class SplitTrend
     /// PRUEFEN AN AUFNAHMEN: "--split-trend-check &lt;ordner&gt;" liest jedes f_*.jpg (ein ganzes
     /// Spielbild) wie im Rennen, schreibt split_check.txt und zeichnet die Spalte in Vorschaubilder.
     /// </summary>
-    internal static int Pruefen(string ordner)
+    internal static int Pruefen(string ordner, bool? decken = null, bool? aenderung = null)
     {
         var ocr = new WindowsOcr();
         var verlauf = new Verlauf();
-        var gamertag = OverlaySettings.Load().Gamertag;
+        var raster = new Raster();
+        var einstellungen = OverlaySettings.Load();
+        var gamertag = einstellungen.Gamertag;
+        var mitDecke = decken ?? einstellungen.HudSplitTrendCover;
+        var mitAenderung = aenderung ?? einstellungen.HudSplitTrendChange;
         var log = new System.Text.StringBuilder();
         var aus = Path.Combine(ordner, "pruef");
         Directory.CreateDirectory(aus);
@@ -327,11 +433,15 @@ internal static class SplitTrend
             }
             gelesen++;
             var werte = verlauf.Einordnen(tabelle);
-            var zellen = Zellen(tabelle, werte, new PointF(region.X, region.Y), (float)(1.0 / k));
+            var zellen = Zellen(tabelle, werte, new PointF(region.X, region.Y), (float)(1.0 / k), raster, mitDecke, mitAenderung);
             log.AppendLine($"{name}: {tabelle.Count} Zeilen, {uhr.ElapsedMilliseconds} ms");
+            if (Environment.GetEnvironmentVariable("FHC_SPLIT_OCR") == "1")
+            {
+                log.AppendLine("    OCR: " + string.Join(" | ", ocrZeilen.Select(z => $"{z.Text}@{z.X:0},{z.Y:0}")));
+            }
             for (var i = 0; i < tabelle.Count; i++)
             {
-                log.AppendLine($"    {(tabelle[i].Ich ? "ICH" : "   ")} {tabelle[i].Abstand,8:0.000}  {werte[i].Text,7} {werte[i].Farbe,-10} {tabelle[i].Name}");
+                log.AppendLine($"    {(tabelle[i].Ich ? "ICH" : "   ")} {tabelle[i].Abstand,8:0.000}  {werte[i].Text,7} {werte[i].Farbe,-10} {werte[i].Aenderung,7} {tabelle[i].Name}");
             }
             using var vorschau = new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb);
             using (var g = Graphics.FromImage(vorschau))
@@ -350,10 +460,13 @@ internal static class SplitTrend
     /// <summary>
     /// Die Zellen der Spalte in Koordinaten der Spielflaeche: links an die Zeitspalte der Liste gesetzt,
     /// auf ihr Zeilenraster eingerastet (gleich hoch wie ihre Balken, mit derselben schmalen Fuge) und
-    /// so gross geschrieben wie ihre Zeiten -- an Aufnahmen vom 2026-11-10 abgemessen.
+    /// so gross geschrieben wie ihre Zeiten -- an Aufnahmen vom 2026-11-10 abgemessen: der Balken der
+    /// Zeitspalte ist 2,92 Zeilenabstaende breit und steht mittig um ihre Ziffern.
+    /// <paramref name="decken"/>: die Spalte liegt deckend auf der Zeitspalte des Spiels.
+    /// <paramref name="aenderung"/>: links daneben eine Spalte mit der Veraenderung seit dem vorigen Split.
     /// </summary>
-    internal static List<Zelle> Zellen(IReadOnlyList<Zeile> zeilen, IReadOnlyList<(string Text, Tendenz Farbe)> werte,
-                                      PointF ursprung, float massstab)
+    internal static List<Zelle> Zellen(IReadOnlyList<Zeile> zeilen, IReadOnlyList<Wert> werte, PointF ursprung, float massstab,
+                                      Raster? raster = null, bool decken = false, bool aenderung = false)
     {
         var raus = new List<Zelle>();
         if (zeilen.Count == 0) { return raus; }
@@ -364,21 +477,37 @@ internal static class SplitTrend
         // Der Zeilenabstand: der kleinste wiederkehrende Abstand (fehlt eine Zeile, ist ein Schritt doppelt).
         var abstand = schritte.Count > 0 ? schritte[0] : texthoehe * 1.75f;
         if (schritte.Count > 2) { abstand = schritte.Where(d => d < schritte[0] * 1.5f).Average(); }
+        // Die Mitte der Zeitspalte: die Zeiten stehen mittig in ihrem Balken.
+        var zeitMitte = zeilen.Select(z => (z.Zeit.Left + z.Zeit.Right) / 2 * massstab).OrderBy(x => x).ElementAt(zeilen.Count / 2);
         var anker = sortiert[0];
+        if (raster is not null) { (abstand, texthoehe, zeitMitte, anker) = raster.Glaetten(abstand, texthoehe, zeitMitte, mitten); }
         var fuge = Math.Max(2f, abstand * 0.06f);
         var hoehe = abstand - fuge;
         var schrift = texthoehe * 1.42f;
-        var zeitLinks = zeilen.Min(z => z.Zeit.Left) * massstab;
-        var zeitBreite = zeilen.Max(z => z.Zeit.Width) * massstab;
-        var breite = Math.Max(zeitBreite * 1.15f, schrift * 3.3f);
-        // Der Balken der Zeitspalte beginnt etwas links ihrer Ziffern; die Fuge wie zwischen den Zeilen.
-        var rechts = zeitLinks - (abstand * 0.22f) - fuge;
+        var balken = abstand * 2.92f;
+        var eigene = abstand * 2.1f;
+        // Die rechte Kante der Abstandsspalte: deckend die des Zeitbalkens, sonst links davon mit Fuge.
+        var rechts = decken ? zeitMitte + (balken / 2) : zeitMitte - (balken / 2) - fuge;
+        var breite = decken ? balken : eigene;
+        var ich = zeilen.FirstOrDefault(z => z.Ich);
         for (var i = 0; i < zeilen.Count; i++)
         {
             var n = (float)Math.Round((mitten[i] - anker) / abstand);
-            var mitte = anker + (n * abstand);
-            var box = new RectangleF(ursprung.X + rechts - breite, ursprung.Y + mitte - (hoehe / 2), breite, hoehe);
-            raus.Add(new Zelle(box, werte[i].Text, werte[i].Farbe, schrift));
+            var oben = ursprung.Y + anker + (n * abstand) - (hoehe / 2);
+            var text = werte[i].Text;
+            var farbe = werte[i].Farbe;
+            if (decken && zeilen[i].Ich)
+            {
+                // Meine Zeile: mein Abstand zum Ersten, gelb wie im Spiel (als Erster nichts).
+                farbe = Tendenz.Ich;
+                text = ich is not null && ich.Abstand > 0.0005 ? Zahl(ich.Abstand) : string.Empty;
+            }
+            raus.Add(new Zelle(new RectangleF(ursprung.X + rechts - breite, oben, breite, hoehe), text, farbe, schrift, decken));
+            if (aenderung && !zeilen[i].Ich)
+            {
+                var box = new RectangleF(ursprung.X + rechts - breite - fuge - eigene, oben, eigene, hoehe);
+                raus.Add(new Zelle(box, werte[i].Aenderung, werte[i].Aenderung.Length > 0 ? werte[i].Farbe : Tendenz.Gleich, schrift, decken));
+            }
         }
         return raus;
     }
@@ -423,16 +552,30 @@ internal sealed class SplitTrendHud : LayeredHud
         using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         foreach (var z in zellen)
         {
+            // Deckend (auf der Zeitspalte des Spiels): ganz undurchsichtig, damit dessen Zahlen nicht durchscheinen.
             var farbe = z.Farbe switch
             {
-                SplitTrend.Tendenz.Besser => Color.FromArgb(205, 38, 150, 72),
-                SplitTrend.Tendenz.Schlechter => Color.FromArgb(205, 190, 46, 46),
-                _ => Color.FromArgb(170, 95, 100, 108),
+                SplitTrend.Tendenz.Besser => Color.FromArgb(z.Deckend ? 255 : 205, 38, 150, 72),
+                SplitTrend.Tendenz.Schlechter => Color.FromArgb(z.Deckend ? 255 : 205, 190, 46, 46),
+                SplitTrend.Tendenz.Ich => Color.FromArgb(255, 34, 36, 40),
+                _ => z.Deckend ? Color.FromArgb(255, 52, 56, 62) : Color.FromArgb(170, 95, 100, 108),
             };
             using (var grund = new SolidBrush(farbe)) { g.FillRectangle(grund, z.Box); }
             if (z.Text.Length == 0) { continue; }
-            using var schrift = new Font("Bahnschrift SemiBold", Math.Max(6f, z.Schrift), FontStyle.Regular, GraphicsUnit.Pixel);
-            g.DrawString(z.Text, schrift, Brushes.White, z.Box, format);
+            // Die Zahl passt immer in ihre Zelle: notfalls kleiner, nie groesser als die Zelle.
+            var groesse = Math.Max(6f, Math.Min(z.Schrift, z.Box.Height * 0.9f));
+            var schrift = new Font("Bahnschrift SemiBold", groesse, FontStyle.Regular, GraphicsUnit.Pixel);
+            var breite = g.MeasureString(z.Text, schrift).Width;
+            if (breite > z.Box.Width * 0.94f)
+            {
+                schrift.Dispose();
+                schrift = new Font("Bahnschrift SemiBold", Math.Max(6f, groesse * z.Box.Width * 0.94f / breite), FontStyle.Regular, GraphicsUnit.Pixel);
+            }
+            using (schrift)
+            {
+                var tinte = z.Farbe == SplitTrend.Tendenz.Ich ? Brushes.Yellow : Brushes.White;
+                g.DrawString(z.Text, schrift, tinte, z.Box, format);
+            }
         }
     }
 }

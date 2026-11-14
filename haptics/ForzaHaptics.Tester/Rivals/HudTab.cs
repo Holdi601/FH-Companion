@@ -1368,6 +1368,8 @@ internal sealed class HudPartPanel : Panel
         Schalter(Loc.T("Split trend beside the race positions"), settings.HudSplitTrend, v => _settings.HudSplitTrend = v);
         Rein(Note(Loc.T(
             "A column left of the game's position list: how many seconds each driver is ahead of you (-) or behind you (+), green when that gap moved in your favour since the last split, red when it moved against you, grey when it stayed. It reads the list twice a second and disappears with it.")));
+        Schalter(Loc.T("Split trend covers the game's time column"), settings.HudSplitTrendCover, v => _settings.HudSplitTrendCover = v);
+        Schalter(Loc.T("Extra column: change since the last split"), settings.HudSplitTrendChange, v => _settings.HudSplitTrendChange = v);
 
         // ---- DER EIGENE TACHO (seit 2026-10-18, ab Werk aus) ---------------------------
         Abschnitt(Titel(HudPart.Speedo), HudPart.Speedo);

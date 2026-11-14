@@ -1,0 +1,63 @@
+# -*- coding: utf-8 -*-
+"""Split-Spalte: ueber der Zeitspalte und Aenderung seit dem letzten Split (2026-11-14). 25 Sprachen, nicht von Muttersprachlern geprueft."""
+
+K = {
+    "cover": "Split trend covers the game's time column",
+    "change": "Extra column: change since the last split",
+}
+
+_UEBERSETZT = {
+ "de": {"cover": "Split-Tendenz überdeckt die Zeitspalte des Spiels",
+        "change": "Zusätzliche Spalte: Veränderung seit dem letzten Split"},
+ "fr": {"cover": "La tendance des intermédiaires recouvre la colonne des temps du jeu",
+        "change": "Colonne supplémentaire : évolution depuis le dernier intermédiaire"},
+ "es": {"cover": "La tendencia de parciales cubre la columna de tiempos del juego",
+        "change": "Columna adicional: cambio desde el último parcial"},
+ "it": {"cover": "La tendenza degli intermedi copre la colonna dei tempi del gioco",
+        "change": "Colonna aggiuntiva: variazione dall'ultimo intermedio"},
+ "pt": {"cover": "A tendência dos parciais cobre a coluna de tempos do jogo",
+        "change": "Coluna adicional: variação desde o último parcial"},
+ "nl": {"cover": "Split-trend bedekt de tijdkolom van de game",
+        "change": "Extra kolom: verandering sinds de laatste split"},
+ "pl": {"cover": "Trend międzyczasów zakrywa kolumnę czasów w grze",
+        "change": "Dodatkowa kolumna: zmiana od ostatniego międzyczasu"},
+ "cs": {"cover": "Trend mezičasů překryje sloupec časů ve hře",
+        "change": "Další sloupec: změna od posledního mezičasu"},
+ "da": {"cover": "Split-tendens dækker spillets tidskolonne",
+        "change": "Ekstra kolonne: ændring siden sidste split"},
+ "sv": {"cover": "Splittrend täcker spelets tidskolumn",
+        "change": "Extra kolumn: förändring sedan senaste splitten"},
+ "nb": {"cover": "Split-trend dekker spillets tidskolonne",
+        "change": "Ekstra kolonne: endring siden forrige split"},
+ "fi": {"cover": "Väliaikatrendi peittää pelin aikasarakkeen",
+        "change": "Lisäsarake: muutos edellisestä väliajasta"},
+ "hu": {"cover": "A részidő-tendencia eltakarja a játék időoszlopát",
+        "change": "További oszlop: változás az előző részidő óta"},
+ "ro": {"cover": "Tendința timpilor intermediari acoperă coloana de timpi a jocului",
+        "change": "Coloană suplimentară: schimbarea de la ultimul timp intermediar"},
+ "el": {"cover": "Η τάση ενδιάμεσων καλύπτει τη στήλη χρόνων του παιχνιδιού",
+        "change": "Επιπλέον στήλη: μεταβολή από το προηγούμενο ενδιάμεσο"},
+ "tr": {"cover": "Ara zaman eğilimi oyunun zaman sütununu kaplar",
+        "change": "Ek sütun: son ara zamandan bu yana değişim"},
+ "ru": {"cover": "Тренд отсечек перекрывает столбец времени игры",
+        "change": "Дополнительный столбец: изменение с прошлой отсечки"},
+ "ja": {"cover": "スプリット推移をゲームのタイム列に重ねる",
+        "change": "追加の列：前回のスプリットからの変化"},
+ "ko": {"cover": "스플릿 추세가 게임의 시간 열을 덮음",
+        "change": "추가 열: 지난 스플릿 이후 변화"},
+ "zh-Hans": {"cover": "分段趋势覆盖游戏的时间列",
+             "change": "附加列：自上一个分段以来的变化"},
+ "zh-Hant": {"cover": "分段趨勢覆蓋遊戲的時間欄",
+             "change": "附加欄：自上一個分段以來的變化"},
+ "id": {"cover": "Tren split menutupi kolom waktu game",
+        "change": "Kolom tambahan: perubahan sejak split terakhir"},
+ "ms": {"cover": "Trend split menutup lajur masa permainan",
+        "change": "Lajur tambahan: perubahan sejak split terakhir"},
+ "th": {"cover": "แนวโน้มสปลิตทับคอลัมน์เวลาของเกม",
+        "change": "คอลัมน์เพิ่มเติม: การเปลี่ยนแปลงตั้งแต่สปลิตล่าสุด"},
+ "vi": {"cover": "Xu hướng split che cột thời gian của trò chơi",
+        "change": "Cột bổ sung: thay đổi kể từ split trước"},
+}
+
+ZUSATZ = {code: {K[i]: t for i, t in saetze.items()} for code, saetze in _UEBERSETZT.items()}
+ZUSATZ["zh"] = ZUSATZ["zh-Hans"]

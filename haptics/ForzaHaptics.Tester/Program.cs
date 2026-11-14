@@ -221,7 +221,8 @@ internal static class Program
         if (args.Length >= 2 && string.Equals(args[0], "--split-trend-check", StringComparison.OrdinalIgnoreCase))
         {
             // Die Split-Tendenz an gespeicherten Spielbildern pruefen (Rivals/SplitTrend.cs).
-            Environment.ExitCode = Rivals.SplitTrend.Pruefen(args[1]);
+            // Weitere Woerter: "cover" und "change" schalten die beiden Spalten-Arten fuer die Pruefung ein.
+            Environment.ExitCode = Rivals.SplitTrend.Pruefen(args[1], args.Contains("cover") ? true : null, args.Contains("change") ? true : null);
             return;
         }
         // Headless paths run BEFORE any WinForms setup: this is a GUI-subsystem

@@ -1563,6 +1563,9 @@ internal static class EdgeCaseTest
                 Z(dritter, 100, 70, 70), Z("DritterFahrer", 210, 70, 160), Z("03", 520, 70, 22),
             };
             var a = Rivals.SplitTrend.Lesen(Liste("00:13.423", "+0.948", "+1. 618"), _ => 0.0, "TestFahrer");
+            Soll(Rivals.SplitTrend.AlsZeit("0020.403") is { Sekunden: 20.403, Abstand: false } && Rivals.SplitTrend.AlsZeit("+12.345") is { Sekunden: 12.345 }
+                 && Rivals.SplitTrend.AlsZeit("0221.140") is { Sekunden: 141.14 } && Rivals.SplitTrend.AlsZeit("+0.948") is { Sekunden: 0.948, Abstand: true },
+                 "Split-Tendenz: eine Zeit ohne Doppelpunkt wird falsch gelesen");
             Soll(a is not null && a.Count == 3 && a[1].Ich && a[0].Name == "ErsterFahrer" && Math.Abs(a[0].Abstand) < 1e-9
                  && Math.Abs(a[1].Abstand - 0.948) < 1e-9 && Math.Abs(a[2].Abstand - 1.618) < 1e-9,
                  "Split-Tendenz: die Positionsliste wird falsch gelesen");
@@ -1572,19 +1575,42 @@ internal static class EdgeCaseTest
             Soll(gelb is not null && gelb[1].Ich, "Split-Tendenz: die gelbe Zeile wird nicht als meine erkannt");
             var v = new Rivals.SplitTrend.Verlauf();
             v.Einordnen(a!);
+            v.Einordnen(a!);
             var erster = v.Einordnen(a!);
-            Soll(erster[0].Text == "-0.95" && erster[2].Text == "+0.67" && erster.All(e => e.Farbe == Rivals.SplitTrend.Tendenz.Gleich),
+            Soll(erster[0].Text == "-0.948" && erster[2].Text == "+0.670" && erster.All(e => e.Farbe == Rivals.SplitTrend.Tendenz.Gleich),
                  "Split-Tendenz: der erste Split zeigt falsche Abstaende (" + string.Join(" ", erster.Select(e => e.Text)) + ")");
             var b = Rivals.SplitTrend.Lesen(Liste("00:27.138", "+1.000", "+2.000"), _ => 0.0, "TestFahrer")!;
             var einmal = v.Einordnen(b);
-            Soll(einmal[0].Farbe == Rivals.SplitTrend.Tendenz.Gleich, "Split-Tendenz: eine einzelne Lesung gilt schon als Split");
+            var zweimal = v.Einordnen(b);
+            Soll(einmal[0].Farbe == Rivals.SplitTrend.Tendenz.Gleich && zweimal[0].Farbe == Rivals.SplitTrend.Tendenz.Gleich
+                 && zweimal[0].Text == "-0.948", "Split-Tendenz: weniger als drei Lesungen gelten schon als Split");
             var zweiter = v.Einordnen(b);
-            Soll(zweiter[0].Text == "-1.00" && zweiter[0].Farbe == Rivals.SplitTrend.Tendenz.Schlechter
-                 && zweiter[2].Text == "+1.00" && zweiter[2].Farbe == Rivals.SplitTrend.Tendenz.Besser && zweiter[1].Text.Length == 0,
+            Soll(zweiter[0].Text == "-1.000" && zweiter[0].Farbe == Rivals.SplitTrend.Tendenz.Schlechter && zweiter[0].Aenderung == "-0.052"
+                 && zweiter[2].Text == "+1.000" && zweiter[2].Farbe == Rivals.SplitTrend.Tendenz.Besser && zweiter[2].Aenderung == "+0.330"
+                 && zweiter[1].Text.Length == 0,
                  "Split-Tendenz: die Farben zwischen zwei Splits stimmen nicht");
+            // Ein Ruecksprung auf einen alten Wert (verlesen) ist kein Split -- die Farbe bleibt.
+            v.Einordnen(a!);
+            v.Einordnen(a!);
+            var zurueck = v.Einordnen(a!);
+            Soll(zurueck[0].Farbe == Rivals.SplitTrend.Tendenz.Schlechter && zurueck[0].Text == "-1.000",
+                 "Split-Tendenz: ein alter Wert wird wieder zum Split");
             var zellen = Rivals.SplitTrend.Zellen(b, zweiter, new PointF(1000, 0), 2f);
             Soll(zellen.Count == 3 && zellen.All(z => z.Box.Right < 1000 + 200) && Math.Abs(zellen[1].Box.Top - zellen[0].Box.Bottom) <= zellen[0].Box.Height * 0.1f,
                  "Split-Tendenz: die Spalte steht nicht links an der Liste oder schliesst nicht an");
+            var deckend = Rivals.SplitTrend.Zellen(b, zweiter, new PointF(1000, 0), 2f, null, decken: true, aenderung: true);
+            var zeitMitte = 1000 + (b[0].Zeit.Left + b[0].Zeit.Right);
+            Soll(deckend.Count == 5 && deckend.All(z => z.Deckend) && deckend[0].Box.Left < zeitMitte && deckend[0].Box.Right > zeitMitte
+                 && deckend[1].Box.Right < deckend[0].Box.Left && deckend[1].Text == "-0.052",
+                 "Split-Tendenz: deckend liegt die Spalte nicht auf der Zeitspalte oder die Aenderung fehlt");
+            // Eine verschmolzene Lesung (doppelt so hohe Zeiten) vergroessert die geglaettete Spalte nicht.
+            var raster = new Rivals.SplitTrend.Raster();
+            for (var i = 0; i < 4; i++) { Rivals.SplitTrend.Zellen(b, zweiter, PointF.Empty, 1f, raster); }
+            var normal = Rivals.SplitTrend.Zellen(b, zweiter, PointF.Empty, 1f, raster);
+            var gross = b.Select(z => z with { Zeit = new RectangleF(z.Zeit.X, z.Zeit.Y, z.Zeit.Width, z.Zeit.Height * 2) }).ToList();
+            var geglaettet = Rivals.SplitTrend.Zellen(gross, zweiter, PointF.Empty, 1f, raster);
+            Soll(Math.Abs(geglaettet[0].Schrift - normal[0].Schrift) < 0.01f && Math.Abs(geglaettet[0].Box.Width - normal[0].Box.Width) < 0.01f,
+                 "Split-Tendenz: eine schlechte Lesung vergroessert die Spalte");
         }
         // MITGELIEFERTE DATEN (2026-11-11): was in app/shipped/ anders ist, kommt nach config/ --
         // nie overlay.json, und persoenliche Dateien bleiben unberuehrt.

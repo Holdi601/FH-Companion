@@ -496,6 +496,12 @@ internal sealed class OverlaySettings
     /// Abstand zu jedem Fahrer und ob er seit dem letzten Split zu meinen Gunsten wuchs.
     /// </summary>
     [JsonPropertyName("hud_split_trend")] public bool HudSplitTrend { get; set; }
+
+    /// <summary>Die Split-Spalte deckt die Zeitspalte des Spiels ab, statt links daneben zu stehen (seit 2026-11-14).</summary>
+    [JsonPropertyName("hud_split_trend_cover")] public bool HudSplitTrendCover { get; set; }
+
+    /// <summary>Eine weitere Spalte: wie sich der Abstand seit dem vorigen Split veraendert hat (seit 2026-11-14).</summary>
+    [JsonPropertyName("hud_split_trend_change")] public bool HudSplitTrendChange { get; set; }
     [JsonPropertyName("hud_tyres_x")] public double HudTyresX { get; set; } = 0.985;
     [JsonPropertyName("hud_tyres_y")] public double HudTyresY { get; set; } = 0.50;
     [JsonPropertyName("hud_tyres_align")] public string HudTyresAlign { get; set; } = "right";
@@ -682,7 +688,7 @@ internal sealed class OverlaySettings
         "hud_livemap_scale", "livemap_size", "livemap_car", "livemap_trail",
         "course_shape_smooth", "course_rivals_style", "course_shape_layout",
         "livemap_width", "livemap_smooth",
-        "hud_split_trend", "hud_tyres", "hud_tyres_x", "hud_tyres_y", "hud_tyres_align", "hud_tyres_scale",
+        "hud_split_trend", "hud_split_trend_cover", "hud_split_trend_change", "hud_tyres", "hud_tyres_x", "hud_tyres_y", "hud_tyres_align", "hud_tyres_scale",
         "tyres_fahrenheit",
         // Seit 2026-10-24: Tacho, G-Meter und die Stile gehoeren zur Anordnung.
         "hud_speedo", "hud_speedo_x", "hud_speedo_y", "hud_speedo_align", "hud_speedo_scale", "speedo_design",

@@ -317,6 +317,7 @@ internal sealed class OverlayController : IDisposable
     {
         WindowsOcr? ocr = null;
         var verlauf = new SplitTrend.Verlauf();
+        var raster = new SplitTrend.Raster();
         var gezeigt = false;
         var fehlt = 0;
         while (!_disposed)
@@ -329,6 +330,7 @@ internal sealed class OverlayController : IDisposable
                 {
                     if (gezeigt) { SplitZeigen(null); gezeigt = false; }
                     verlauf.Vergessen();
+                    raster.Vergessen();
                     continue;
                 }
                 ocr ??= new WindowsOcr();
@@ -348,7 +350,8 @@ internal sealed class OverlayController : IDisposable
                 fehlt = 0;
                 var werte = verlauf.Einordnen(tabelle);
                 var ursprung = new PointF(region.X - gebiet.X, region.Y - gebiet.Y);
-                SplitZeigen(SplitTrend.Zellen(tabelle, werte, ursprung, (float)(1.0 / k)));
+                SplitZeigen(SplitTrend.Zellen(tabelle, werte, ursprung, (float)(1.0 / k), raster,
+                                              _settings.HudSplitTrendCover, _settings.HudSplitTrendChange));
                 gezeigt = true;
             }
             catch (Exception)
