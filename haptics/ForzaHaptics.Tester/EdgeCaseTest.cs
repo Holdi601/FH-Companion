@@ -1612,6 +1612,36 @@ internal static class EdgeCaseTest
             Soll(Math.Abs(geglaettet[0].Schrift - normal[0].Schrift) < 0.01f && Math.Abs(geglaettet[0].Box.Width - normal[0].Box.Width) < 0.01f,
                  "Split-Tendenz: eine schlechte Lesung vergroessert die Spalte");
         }
+        // RUNDEN TEILEN (2026-11-14): Runde und Telemetrie ins Zip; beim Entpacken nichts ausserhalb des Ziels.
+        {
+            var wurzel = Path.Combine(Path.GetTempPath(), "fhc-share-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var runde = Path.Combine(wurzel, "laps", "Kurs (course_1)", "A", "Auto (car1)", "1-700", "untagged", "2026-11-14_10-00-00_60.000s.json");
+                Directory.CreateDirectory(Path.GetDirectoryName(runde)!);
+                File.WriteAllText(runde, "{}");
+                File.WriteAllText(runde + Rivals.TelemetryTrack.Suffix, "spur");
+                var zip = Path.Combine(wurzel, "geteilt.zip");
+                var gepackt = Rivals.LapShare.Packen(new[] { runde }, Path.Combine(wurzel, "laps"), zip);
+                using (var a = System.IO.Compression.ZipFile.Open(zip, System.IO.Compression.ZipArchiveMode.Update))
+                {
+                    a.CreateEntry("../../boese.json");
+                    a.CreateEntry("laps/liesmich.exe");
+                }
+                var (zahl, ordner) = Rivals.LapShare.Entpacken(zip, Path.Combine(wurzel, "freunde"));
+                Soll(gepackt == 1 && zahl == 1
+                     && File.Exists(Path.Combine(ordner, "laps", "Kurs (course_1)", "A", "Auto (car1)", "1-700", "untagged", "2026-11-14_10-00-00_60.000s.json" + Rivals.TelemetryTrack.Suffix))
+                     && !File.Exists(Path.Combine(wurzel, "boese.json")) && !Directory.EnumerateFiles(ordner, "*.exe", SearchOption.AllDirectories).Any(),
+                     "Runden teilen: Zip falsch gepackt oder entpackt etwas ausserhalb des Ziels");
+                Soll(Rivals.LapShare.Dateiname(new[] { ("BMW M4 CS '25", "Airfield Trail", 76.5) }, new DateTime(2026, 11, 14))
+                     == "FH laps - BMW M4 CS '25 - Airfield Trail - 1-16.500 - 2026-11-14.zip",
+                     "Runden teilen: Dateiname " + Rivals.LapShare.Dateiname(new[] { ("BMW M4 CS '25", "Airfield Trail", 76.5) }, new DateTime(2026, 11, 14)));
+            }
+            finally
+            {
+                try { Directory.Delete(wurzel, true); } catch (IOException) { }
+            }
+        }
         // MITGELIEFERTE DATEN (2026-11-11): was in app/shipped/ anders ist, kommt nach config/ --
         // nie overlay.json, und persoenliche Dateien bleiben unberuehrt.
         {

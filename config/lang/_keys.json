@@ -200,7 +200,7 @@
   "Rivals/RivalsTab.cs:650"
  ],
  "Apply": [
-  "Rivals/OwnTimesTab.cs:550",
+  "Rivals/OwnTimesTab.cs:621",
   "Rivals/RaceStatsTab.cs:481"
  ],
  "Arc": [
@@ -444,8 +444,8 @@
   "Auction/AuctionTab.cs:141",
   "Rivals/CarCollectionTab.cs:155",
   "Rivals/CarNotesTab.cs:75",
-  "Rivals/OwnTimesTab.cs:335",
-  "Rivals/OwnTimesTab.cs:346",
+  "Rivals/OwnTimesTab.cs:405",
+  "Rivals/OwnTimesTab.cs:416",
   "Rivals/RaceStatsTab.cs:63",
   "Tuning/TunesTab.cs:254",
   "Tuning/TunesTab.cs:298",
@@ -561,8 +561,8 @@
  "Class": [
   "Rivals/CarCollectionTab.cs:156",
   "Rivals/OwnTimesTab.cs:92",
-  "Rivals/OwnTimesTab.cs:336",
-  "Rivals/OwnTimesTab.cs:347",
+  "Rivals/OwnTimesTab.cs:406",
+  "Rivals/OwnTimesTab.cs:417",
   "Rivals/RaceStatsTab.cs:72",
   "Scan/ScanTab.cs:176",
   "Scan/ScanTab.cs:212"
@@ -720,7 +720,7 @@
   "Rivals/HudTab.cs:770",
   "Rivals/HudTab.cs:780",
   "Rivals/OwnTimesTab.cs:106",
-  "Rivals/OwnTimesTab.cs:345",
+  "Rivals/OwnTimesTab.cs:415",
   "Rivals/RaceStatsTab.cs:63"
  ],
  "Course maps on the Event Sign Up screen": [
@@ -736,7 +736,7 @@
   "Rivals/HudTab.cs:1737"
  ],
  "Courses": [
-  "Rivals/OwnTimesTab.cs:338"
+  "Rivals/OwnTimesTab.cs:408"
  ],
  "Creates a hard resistance wall followed by a release/click.": [
   "BlueprintEditor.cs:1128"
@@ -772,7 +772,7 @@
   "Konsole.cs:101"
  ],
  "Date": [
-  "Rivals/OwnTimesTab.cs:354"
+  "Rivals/OwnTimesTab.cs:424"
  ],
  "Default": [
   "Rivals/HudStilDialog.cs:147"
@@ -798,7 +798,7 @@
   "BlueprintEditor.cs:693"
  ],
  "Delete slower laps": [
-  "Rivals/OwnTimesTab.cs:242"
+  "Rivals/OwnTimesTab.cs:312"
  ],
  "Delete slower laps…": [
   "Rivals/OwnTimesTab.cs:191"
@@ -807,7 +807,7 @@
   "Rivals/HudTab.cs:1224"
  ],
  "Deleted: {0} laps. Freed: {1}.": [
-  "Rivals/OwnTimesTab.cs:264"
+  "Rivals/OwnTimesTab.cs:334"
  ],
  "Deleting has to happen in the game -- this app only reads the save.": [
   "Tuning/TunesTab.cs:270"
@@ -1216,7 +1216,7 @@
   "BlueprintEditor.cs:1651"
  ],
  "Gap": [
-  "Rivals/OwnTimesTab.cs:349"
+  "Rivals/OwnTimesTab.cs:419"
  ],
  "Gauge": [
   "Rivals/SpeedoTab.cs:608"
@@ -1462,6 +1462,10 @@
  ],
  "Lap-time overlay and controller haptics for Forza Horizon 6": [
   "Shortcuts.cs:368"
+ ],
+ "Laps with telemetry": [
+  "Rivals/OwnTimesTab.cs:241",
+  "Rivals/OwnTimesTab.cs:263"
  ],
  "Last checked {0:yyyy-MM-dd HH:mm}: {1} tunes are on a car. Tunes saved after that show \"?\".": [
   "Tuning/TunesTab.cs:170"
@@ -1710,7 +1714,7 @@
  ],
  "Mode": [
   "Rivals/OwnTimesTab.cs:108",
-  "Rivals/OwnTimesTab.cs:353",
+  "Rivals/OwnTimesTab.cs:423",
   "Rivals/RaceStatsTab.cs:62",
   "Rivals/RaceStatsTab.cs:141"
  ],
@@ -1954,7 +1958,7 @@
   "Tuning/TunesTab.cs:393"
  ],
  "Nothing to delete: every lap is already the fastest of its car, course and class.": [
-  "Rivals/OwnTimesTab.cs:250"
+  "Rivals/OwnTimesTab.cs:320"
  ],
  "Nothing to pack -- no board was finished.": [
   "scripts/contrib_scan.py:362"
@@ -2055,6 +2059,11 @@
  ],
  "Open My Tuning Setups for a car in the game once: the applied tune is marked grey, and the app then knows which of that car's tunes are on no car.": [
   "Tuning/TunesTab.cs:367"
+ ],
+ "Open a friend's laps…": [
+  "Rivals/OwnTimesTab.cs:198",
+  "Rivals/OwnTimesTab.cs:262",
+  "Rivals/OwnTimesTab.cs:279"
  ],
  "Open arc": [
   "Rivals/SpeedoTab.cs:815"
@@ -2220,7 +2229,7 @@
   "MainForm.cs:1122"
  ],
  "Points": [
-  "Rivals/OwnTimesTab.cs:337"
+  "Rivals/OwnTimesTab.cs:407"
  ],
  "Points — beating the field on every route": [
   "Rivals/RivalsTab.cs:282"
@@ -2671,6 +2680,9 @@
  "Select a node to edit it.": [
   "BlueprintEditor.cs:620"
  ],
+ "Select one or more laps in the list first (Ctrl or Shift for several).": [
+  "Rivals/OwnTimesTab.cs:234"
+ ],
  "Selected: {0}": [
   "MainForm.cs:1815",
   "MainForm.cs:2004"
@@ -2724,6 +2736,12 @@
   "Rivals/GMeterTab.cs:633",
   "Rivals/HudStilDialog.cs:174",
   "Rivals/SpeedoTab.cs:845"
+ ],
+ "Share selected laps…": [
+  "Rivals/OwnTimesTab.cs:195",
+  "Rivals/OwnTimesTab.cs:235",
+  "Rivals/OwnTimesTab.cs:240",
+  "Rivals/OwnTimesTab.cs:254"
  ],
  "Shared colours": [
   "Rivals/HudTab.cs:1503"
@@ -2923,7 +2941,7 @@
   "Rivals/OwnTimesTab.cs:75"
  ],
  "Start": [
-  "Rivals/OwnTimesTab.cs:352"
+  "Rivals/OwnTimesTab.cs:422"
  ],
  "Start Remote Play in the Xbox app or at xbox.com/play. The window may sit behind other windows on a screen, just not minimized.": [
   "Konsole.cs:350"
@@ -3358,7 +3376,7 @@
  ],
  "Time": [
   "Auction/AuctionTab.cs:181",
-  "Rivals/OwnTimesTab.cs:348"
+  "Rivals/OwnTimesTab.cs:418"
  ],
  "Time attack in the free world": [
   "Rivals/HudTab.cs:1586"
@@ -3380,7 +3398,7 @@
   "Rivals/GMeterTab.cs:607"
  ],
  "Total time": [
-  "Rivals/OwnTimesTab.cs:340"
+  "Rivals/OwnTimesTab.cs:410"
  ],
  "Toxic": [
   "Rivals/Farbthemen.cs:114"
@@ -3418,8 +3436,8 @@
  ],
  "Tune": [
   "Rivals/OwnTimesTab.cs:119",
-  "Rivals/OwnTimesTab.cs:341",
-  "Rivals/OwnTimesTab.cs:351",
+  "Rivals/OwnTimesTab.cs:411",
+  "Rivals/OwnTimesTab.cs:421",
   "Tuning/TunesTab.cs:254",
   "Tuning/TunesTab.cs:363"
  ],
@@ -3712,7 +3730,7 @@
   "Disclosure.cs:462"
  ],
  "Wins": [
-  "Rivals/OwnTimesTab.cs:339",
+  "Rivals/OwnTimesTab.cs:409",
   "Rivals/RaceStatsTab.cs:142"
  ],
  "Winter": [
@@ -3802,9 +3820,9 @@
  ],
  "all": [
   "Rivals/OwnTimesTab.cs:111",
-  "Rivals/OwnTimesTab.cs:552",
-  "Rivals/OwnTimesTab.cs:564",
-  "Rivals/OwnTimesTab.cs:594",
+  "Rivals/OwnTimesTab.cs:623",
+  "Rivals/OwnTimesTab.cs:635",
+  "Rivals/OwnTimesTab.cs:665",
   "Rivals/RaceStatsTab.cs:66",
   "Rivals/RaceStatsTab.cs:483",
   "Rivals/RaceStatsTab.cs:503",
@@ -3996,7 +4014,7 @@
  ],
  "flying": [
   "Rivals/OwnTimesTab.cs:147",
-  "Rivals/OwnTimesTab.cs:442"
+  "Rivals/OwnTimesTab.cs:512"
  ],
  "flying lap": [
   "Rivals/OverlayController.cs:4062"
@@ -4021,7 +4039,7 @@
   "Scan/ScanTab.cs:194"
  ],
  "front": [
-  "EdgeCaseTest.cs:3197",
+  "EdgeCaseTest.cs:3230",
   "Rivals/Aufprall.cs:117",
   "Rivals/AufprallDialog.cs:151"
  ],
@@ -4035,7 +4053,7 @@
   "Rivals/OverlayController.cs:2440"
  ],
  "game crashed": [
-  "EdgeCaseTest.cs:1695",
+  "EdgeCaseTest.cs:1728",
   "Scan/ScanTab.cs:423",
   "Scan/ScanTab.cs:722"
  ],
@@ -4345,14 +4363,14 @@
   "Scan/ScanTab.cs:667"
  ],
  "sprint": [
-  "Rivals/OwnTimesTab.cs:443"
+  "Rivals/OwnTimesTab.cs:513"
  ],
  "sprints": [
   "Rivals/OwnTimesTab.cs:155"
  ],
  "standing": [
   "Rivals/OwnTimesTab.cs:147",
-  "Rivals/OwnTimesTab.cs:442"
+  "Rivals/OwnTimesTab.cs:512"
  ],
  "standing lap": [
   "Rivals/OverlayController.cs:4060"
@@ -4368,7 +4386,7 @@
   "Rivals/OwnTimesTab.cs:122"
  ],
  "stopped": [
-  "EdgeCaseTest.cs:1695",
+  "EdgeCaseTest.cs:1728",
   "Rivals/OverlayController.cs:788",
   "Rivals/OverlayController.cs:815",
   "Rivals/RivalsTab.cs:880",
@@ -4582,7 +4600,7 @@
   "Rivals/OverlayController.cs:4003"
  ],
  "{0} car(s) in {1} class(es), scored over {2} course(s). On each course, place 1 earns as many points as cars you drove there, like on the website; standing and flying starts count separately. * = the total includes the slowest time on courses that car did not drive.": [
-  "Rivals/OwnTimesTab.cs:398"
+  "Rivals/OwnTimesTab.cs:468"
  ],
  "{0} cars in your garage are not identified yet -- highlight them in My Cars in the game, or tick them here.": [
   "Rivals/CarCollectionTab.cs:253"
@@ -4597,7 +4615,7 @@
   "Scan/ScanTab.cs:517"
  ],
  "{0} file(s) could not be deleted -- another program may have them open. Try again later.": [
-  "Rivals/OwnTimesTab.cs:267"
+  "Rivals/OwnTimesTab.cs:337"
  ],
  "{0} high (top 15), {1} low (16–25) of {2} Horizon Play race(s)": [
   "Rivals/RaceStatsTab.cs:370"
@@ -4617,8 +4635,14 @@
  "{0} lap(s) beat the leaderboard and wait to be submitted. They are sent once submission is on and the server answers -- checked again against the leaderboard of that day.": [
   "Rivals/RivalsTab.cs:222"
  ],
+ "{0} lap(s) of a friend unpacked to {1}. They stay apart from your own times.": [
+  "Rivals/OwnTimesTab.cs:283"
+ ],
  "{0} lap(s) on {1} course(s), of {2} recorded. Assists, gearbox and valid/invalid are leaderboard facts the telemetry does not send, so they cannot filter your own laps.": [
-  "Rivals/OwnTimesTab.cs:465"
+  "Rivals/OwnTimesTab.cs:536"
+ ],
+ "{0} lap(s) with telemetry saved to {1} -- drag the file into a chat to share it.": [
+  "Rivals/OwnTimesTab.cs:249"
  ],
  "{0} lines of text in the masks": [
   "Rivals/OverlayController.cs:4691"
@@ -4664,7 +4688,7 @@
   "Rivals/RaceStatsTab.cs:341"
  ],
  "{0} slower laps and {1} unfinished runs will be deleted, {2} in total.\n\nKept: your fastest lap per course, PI class and car -- standing and flying starts and each game mode on their own, as your records count them. Race statistics stay complete.\n\nThis cannot be undone.": [
-  "Rivals/OwnTimesTab.cs:254"
+  "Rivals/OwnTimesTab.cs:324"
  ],
  "{0} tunes by {1} tuners.": [
   "Tuning/TunesTab.cs:518"

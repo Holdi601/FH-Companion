@@ -191,6 +191,13 @@ internal sealed class OwnTimesTab : UserControl
         _aufraeumen = Knopf(Loc.T("Delete slower laps…"));
         _aufraeumen.Click += (_, _) => Aufraeumen();
         oben.Controls.Add(_aufraeumen);
+        // TEILEN (seit 2026-11-14): markierte Runden samt Telemetrie als ein Zip; und das Zip eines Freundes oeffnen.
+        var teilen = Knopf(Loc.T("Share selected laps…"));
+        teilen.Click += (_, _) => Teilen();
+        oben.Controls.Add(teilen);
+        var annehmen = Knopf(Loc.T("Open a friend's laps…"));
+        annehmen.Click += (_, _) => Annehmen();
+        oben.Controls.Add(annehmen);
 
         _zahl.Dock = DockStyle.Bottom;
         _zahl.Height = 24;
@@ -202,6 +209,7 @@ internal sealed class OwnTimesTab : UserControl
         _tabelle.Dock = DockStyle.Fill;
         _tabelle.View = View.Details;
         _tabelle.FullRowSelect = true;
+        _tabelle.MultiSelect = true;
         _tabelle.BackColor = Feld;
         _tabelle.ForeColor = Color.WhiteSmoke;
         Spalten();
@@ -218,6 +226,68 @@ internal sealed class OwnTimesTab : UserControl
     }
 
     /// <summary>Den Ordner der Runden im Explorer zeigen.</summary>
+    private void Teilen()
+    {
+        var runden = _tabelle.SelectedItems.Cast<ListViewItem>().Select(i => i.Tag).OfType<OwnTimes.Row>().ToList();
+        if (runden.Count == 0)
+        {
+            MessageBox.Show(this, Loc.T("Select one or more laps in the list first (Ctrl or Shift for several)."),
+                            Loc.T("Share selected laps…"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        using var wahl = new SaveFileDialog
+        {
+            Title = Loc.T("Share selected laps…"),
+            Filter = Loc.T("Laps with telemetry") + " (*.zip)|*.zip",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            FileName = LapShare.Dateiname(runden.Select(r => (r.CarName, KursText(r.Lap), r.Lap.Seconds)).ToList(), DateTime.Now),
+        };
+        if (wahl.ShowDialog(this) != DialogResult.OK) { return; }
+        try
+        {
+            var zahl = LapShare.Packen(runden.Select(r => r.Lap.Path), LapArchive.Root, wahl.FileName);
+            Status(string.Format(Loc.T("{0} lap(s) with telemetry saved to {1} -- drag the file into a chat to share it."), zahl, wahl.FileName));
+            System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + wahl.FileName + "\"")?.Dispose();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            MessageBox.Show(this, e.Message, Loc.T("Share selected laps…"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void Annehmen()
+    {
+        using var wahl = new OpenFileDialog
+        {
+            Title = Loc.T("Open a friend's laps…"),
+            Filter = Loc.T("Laps with telemetry") + " (*.zip)|*.zip",
+            Multiselect = true,
+        };
+        if (wahl.ShowDialog(this) != DialogResult.OK) { return; }
+        var zahl = 0;
+        string? ordner = null;
+        foreach (var datei in wahl.FileNames)
+        {
+            try
+            {
+                var (n, o) = LapShare.Entpacken(datei);
+                zahl += n;
+                ordner = o;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+            {
+                MessageBox.Show(this, e.Message, Loc.T("Open a friend's laps…"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        if (ordner is null) { return; }
+        Status(string.Format(Loc.T("{0} lap(s) of a friend unpacked to {1}. They stay apart from your own times."), zahl,
+                             wahl.FileNames.Length == 1 ? ordner : LapShare.FreundeOrdner));
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(wahl.FileNames.Length == 1 ? ordner : LapShare.FreundeOrdner)
+        {
+            UseShellExecute = true,
+        })?.Dispose();
+    }
+
     private static void OrdnerOeffnen()
     {
         try
@@ -447,6 +517,7 @@ internal sealed class OwnTimesTab : UserControl
             // Die schnellste Runde je Kurs hervorheben -- auf einen Blick, welches
             // Auto dort das eigene Beste ist.
             if (gap < 0.0005) { z.ForeColor = Leit; }
+            z.Tag = r;
             _tabelle.Items.Add(z);
         }
         // Tune, Start und Modus nach Inhalt breit machen: feste Breiten, die fuer
