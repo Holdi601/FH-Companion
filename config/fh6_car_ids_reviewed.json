@@ -1,6 +1,6 @@
 {
  "_": "Car ids decided by review where the game's code name alone did not settle it (scripts/build_car_game_ids.py). Key: list name|model year. id null = not in the game files.",
- "reviewed": "2026-10-04",
+ "reviewed": "2026-11-14",
  "cars": {
   "AMG Transport Dynamics M12S Warthog CST|2554": {
    "id": 2574,
@@ -745,6 +745,48 @@
    "code": "WUL_HongguangS_20",
    "reason": "The only plain Wuling van code (Hongguang S). The FE is 4163, and MiniEV is a different car.",
    "checked": "second review agreed"
+  },
+  "Datsun 240Z #5 Rallye|1972": {
+   "id": 4188,
+   "code": "DAT_5_240ZRallye_72",
+   "reason": "Race number 5 and 240Z Rallye in the code; the plain 240Z is DAT_269_240Z_72.",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
+  },
+  "DeBerti Ford Mustang GT|2018": {
+   "id": 3085,
+   "code": "FOR_DebertiMustang_18",
+   "reason": "DeBerti Mustang, year 18; the F-250 DeBerti is a truck (19).",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
+  },
+  "Ferrari Purosangue|2024": {
+   "id": 3593,
+   "code": "FER_Purosangue_24",
+   "reason": "Model name and year identical in the code.",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
+  },
+  "Ford Mustang GTD|2025": {
+   "id": 4270,
+   "code": "FOR_MustangGTD_25",
+   "reason": "Model name and year identical in the code.",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
+  },
+  "Hillman Imp|1966": {
+   "id": 3084,
+   "code": "SUN_Imp_66",
+   "reason": "Imp '66; Hillman was part of the Rootes group, code uses the Sunbeam prefix.",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
+  },
+  "Nissan 240RS|1983": {
+   "id": 4181,
+   "code": "NIS_00_240RSWRC_83",
+   "reason": "240RS, year 83; the WRC rally version is the only 240RS in the files.",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
+  },
+  "Volkswagen Electric Buzz|2025": {
+   "id": 4282,
+   "code": "VW_IDBuzz_25",
+   "reason": "ID. Buzz is VW's electric bus, year 25; MCL_W1 is a McLaren.",
+   "checked": "reviewed 2026-11-14 against the game's car archives"
   }
  }
 }

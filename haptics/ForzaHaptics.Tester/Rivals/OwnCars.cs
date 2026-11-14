@@ -366,16 +366,16 @@ internal static class OwnCars
     /// <summary>Wie viele eigene Runden ueberhaupt vorliegen.</summary>
     public static int TotalLaps(string? root = null) => Laden(root).Count;
 
-    /// <summary>Eine Zeit lesbar machen: 1:08.09 statt 68.090.</summary>
+    /// <summary>Eine Zeit lesbar machen: 1:08.090 statt 68.090 -- immer drei Nachkommastellen wie im Spiel (seit 2026-11-14).</summary>
     public static string TimeText(double seconds)
     {
         if (seconds < 60)
         {
-            return seconds.ToString("0.00", CultureInfo.InvariantCulture) + "s";
+            return seconds.ToString("0.000", CultureInfo.InvariantCulture) + "s";
         }
         var m = (int)(seconds / 60);
         var s = seconds - (m * 60);
-        return m + ":" + s.ToString("00.00", CultureInfo.InvariantCulture);
+        return m + ":" + s.ToString("00.000", CultureInfo.InvariantCulture);
     }
 
     /// <summary>Die Bedingungen kurz: was hier verglichen werden darf.</summary>

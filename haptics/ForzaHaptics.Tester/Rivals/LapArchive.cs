@@ -788,6 +788,16 @@ internal static class LapArchive
         }
     }
 
+    /// <summary>" - Auto - Strecke" fuer den Dateinamen, soweit bekannt; sonst leer.</summary>
+    internal static string Beschreibung(RecordedLap lap)
+    {
+        static string Kurz(string t, int n) => t.Length <= n ? t : t[..n].TrimEnd();
+        var teile = new List<string>();
+        if (RivalsAdvisor.IsRealCarName(lap.CarName)) { teile.Add(Kurz(Clean(lap.CarName!), 48)); }
+        if (!string.IsNullOrWhiteSpace(lap.Track)) { teile.Add(Kurz(Clean(lap.Track!), 40)); }
+        return teile.Count == 0 ? string.Empty : " - " + string.Join(" - ", teile);
+    }
+
     private static string Clean(string text)
     {
         var schlecht = Path.GetInvalidFileNameChars();
@@ -854,7 +864,12 @@ internal static class LapArchive
                        + (lap.EndedAtFinish ? "_sprint" : string.Empty)
                        // Damit man es dem Dateinamen ansieht: selbst gestoppt, in
                        // der freien Welt, ohne Streckengrenzen.
-                       + (lap.FreeRoam ? "_freeroam" : string.Empty) + ".json";
+                       + (lap.FreeRoam ? "_freeroam" : string.Empty)
+                       // AUTO UND STRECKE IM NAMEN (seit 2026-11-14, Nutzer): eine Datei, die man weitergibt,
+                       // soll sagen, was sie ist. Hinten angehaengt und mit " - " getrennt: alle Leser werten
+                       // nur Datum, Zeit, Sekunden und die Kennzeichen mit "_" aus. Gekuerzt, damit der Pfad
+                       // auch beim Entpacken eines geteilten Archivs unter 260 Zeichen bleibt.
+                       + Beschreibung(lap) + ".json";
             var pfad = Path.Combine(ordner, name);
             File.WriteAllText(pfad, JsonSerializer.Serialize(new ArchivedLap
             {

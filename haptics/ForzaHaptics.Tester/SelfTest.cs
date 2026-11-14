@@ -2513,8 +2513,8 @@ internal static class SelfTest
                     "Die Klassengrenze haelt nicht -- S1 sieht Runden aus B.");
             }
 
-            if (Rivals.OwnCars.TimeText(68.09) != "1:08.09"
-                || Rivals.OwnCars.TimeText(45.5) != "45.50s")
+            if (Rivals.OwnCars.TimeText(68.09) != "1:08.090"
+                || Rivals.OwnCars.TimeText(45.5) != "45.500s")
             {
                 throw new InvalidOperationException(
                     "Die Zeitdarstellung stimmt nicht: "
