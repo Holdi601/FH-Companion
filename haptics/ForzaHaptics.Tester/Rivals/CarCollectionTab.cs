@@ -61,6 +61,7 @@ internal sealed class CarCollectionTab : UserControl
                             Func<CarCollection?>? laden = null, string? besitzPfad = null)
     {
         _laden = laden ?? CarCollection.Laden;
+        _imHintergrund = laden is null;
         _besitzPfad = besitzPfad;
         _besitz = OwnedCars.Laden(besitzPfad);
         _server = server;
@@ -201,19 +202,69 @@ internal sealed class CarCollectionTab : UserControl
     }
 
     /// <summary>Beim Oeffnen des Reiters: Liste laden (einmal), Besitz neu lesen, bei Bedarf beim Server nachfragen.</summary>
+    /// <remarks>
+    /// Seit 2026-11-14: die Liste der Autos laedt im Hintergrund, und hat sich seit dem letzten
+    /// Oeffnen nichts geaendert (Besitzdatei, gefahrene Autos), wird nicht neu gefuellt. Jedes
+    /// Oeffnen kostete vorher rund 3 s, auch ohne jede Aenderung.
+    /// </remarks>
     public void Zeigen()
     {
+        var stand = Stand();
+        if (_geladen && _sammlung is not null && stand == _gezeigterStand) { return; }
         _besitz = OwnedCars.Laden(_besitzPfad);
         _gefahren = Gefahren();
         if (!_geladen)
         {
             _geladen = true;
-            _sammlung = _laden();
-            // Hoechstens alle zwoelf Stunden -- der Server baut sie nur einmal am Tag neu.
-            var alter = DateTimeOffset.UtcNow - (_sammlung?.GebautAm ?? DateTimeOffset.MinValue);
-            if (alter > TimeSpan.FromHours(12)) { VomServer(zeigen: false); }
+            if (_imHintergrund)
+            {
+                _kopf.Text = Loc.T("Loading the car list...");
+                Task.Run(() => _laden()).ContinueWith(t =>
+                {
+                    try
+                    {
+                        BeginInvoke(() =>
+                        {
+                            if (IsDisposed) { return; }
+                            Geladen(t.IsCompletedSuccessfully ? t.Result : null);
+                            Fuellen();
+                            _gezeigterStand = Stand();
+                        });
+                    }
+                    catch (Exception) { }
+                });
+                return;
+            }
+            Geladen(_laden());
         }
         Fuellen();
+        _gezeigterStand = stand;
+    }
+
+    private readonly bool _imHintergrund;
+    private string? _gezeigterStand;
+
+    private void Geladen(CarCollection? sammlung)
+    {
+        _sammlung = sammlung;
+        // Hoechstens alle zwoelf Stunden -- der Server baut sie nur einmal am Tag neu.
+        var alter = DateTimeOffset.UtcNow - (_sammlung?.GebautAm ?? DateTimeOffset.MinValue);
+        if (alter > TimeSpan.FromHours(12)) { VomServer(zeigen: false); }
+    }
+
+    /// <summary>Woran sich zeigt, ob seit dem letzten Fuellen etwas anders ist.</summary>
+    private string Stand()
+    {
+        DateTime besitz;
+        try
+        {
+            var pfad = _besitzPfad ?? OwnedCars.StandardPfad();
+            besitz = File.Exists(pfad) ? File.GetLastWriteTimeUtc(pfad) : DateTime.MinValue;
+        }
+        catch (Exception) { besitz = DateTime.MinValue; }
+        var n = _notizen();
+        var zuletzt = n?.All.Select(e => e.LastSeen ?? string.Empty).DefaultIfEmpty(string.Empty).Max();
+        return $"{besitz.Ticks}|{n?.All.Count}|{zuletzt}";
     }
 
     private HashSet<int> Gefahren()
@@ -339,6 +390,10 @@ internal sealed class CarCollectionTab : UserControl
     private void Abgehakt(ListViewItem z)
     {
         if (_still || z.Tag is not CarCollection.Auto a) { return; }
+        // NICHTS GEAENDERT, NICHTS SPEICHERN (seit 2026-11-14). Beim ersten Zeigen setzt die
+        // Liste die Haken ihrer Zeilen erneut und meldet jeden einzeln -- jede Meldung schrieb
+        // die Besitzdatei, hundertfach, und der Reiter brauchte Sekunden zum Oeffnen.
+        if (_besitz.Besitz(a, _gefahren).Hat == z.Checked) { return; }
         _besitz.Setze(a, z.Checked, _gefahren);
         _besitz.Speichern();
         z.ForeColor = z.Checked ? Color.Gray : Color.WhiteSmoke;

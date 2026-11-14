@@ -347,7 +347,7 @@ internal sealed class OwnedCars
         }
     }
 
-    private static string StandardPfad()
+    internal static string StandardPfad()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         for (var i = 0; i < 8 && dir is not null; i++, dir = dir.Parent)

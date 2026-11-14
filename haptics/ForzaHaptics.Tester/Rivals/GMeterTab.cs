@@ -420,8 +420,11 @@ internal sealed class GMeterTab : UserControl
     {
         _still = true;
         _baukasten.SuspendLayout();
-        foreach (Control c in _baukasten.Controls) { c.Dispose(); }
-        _baukasten.Controls.Clear();
+        // Dispose nimmt das Steuerelement aus der Sammlung -- ein foreach darueber liess jedes
+        // zweite stehen.
+        while (_baukasten.Controls.Count > 0) { _baukasten.Controls[0].Dispose(); }
+        _gruppe = _baukasten;
+        _gruppen = 0;
         var d = _design;
 
         Gruppe(Loc.T("General"));
@@ -497,14 +500,31 @@ internal sealed class GMeterTab : UserControl
         Zeile(Loc.T("Colour theme")).Controls.Add(c);
     }
 
-    private void Gruppe(string titel) =>
-        _baukasten.Controls.Add(new Label { Text = titel, AutoSize = true, Font = new Font("Segoe UI Semibold", 10f), ForeColor = Color.White, Margin = new Padding(3, 12, 3, 4) });
+    /// <summary>Wohin die naechsten Zeilen kommen: der Inhalt der zuletzt begonnenen Gruppe.</summary>
+    private Control _gruppe = null!;
+    private int _gruppen;
+    private static readonly Font GruppenSchrift = new("Segoe UI Semibold", 10f);
+
+    /// <summary>Eine Gruppe beginnen -- mit einer Ueberschrift, die sie auf- und zuklappt (seit 2026-11-14).</summary>
+    private void Gruppe(string titel)
+    {
+        var kopf = new Label { Text = titel, AutoSize = true, Font = GruppenSchrift, ForeColor = Color.White, Margin = new Padding(3, 12, 3, 4) };
+        var inhalt = new FlowLayoutPanel
+        {
+            FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = new Padding(0), Padding = new Padding(0),
+        };
+        _baukasten.Controls.Add(kopf);
+        _baukasten.Controls.Add(inhalt);
+        _ = new Klappe(kopf, inhalt, _settings, "gmeter:" + titel, vorgabeOffen: _gruppen++ == 0);
+        _gruppe = inhalt;
+    }
 
     private FlowLayoutPanel Zeile(string text)
     {
         var z = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 1, 0, 1) };
         z.Controls.Add(new Label { Text = text, AutoSize = false, Width = 150, Height = 24, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.Gainsboro });
-        _baukasten.Controls.Add(z);
+        _gruppe.Controls.Add(z);
         return z;
     }
 
@@ -519,7 +539,7 @@ internal sealed class GMeterTab : UserControl
     {
         var c = new CheckBox { Text = text, Checked = wert, AutoSize = true, ForeColor = Color.Gainsboro, Margin = new Padding(3) };
         c.CheckedChanged += (_, _) => setzen(c.Checked);
-        _baukasten.Controls.Add(c);
+        _gruppe.Controls.Add(c);
     }
 
     private void Zahl(string text, int wert, int min, int max, Action<int> setzen)

@@ -375,18 +375,23 @@ internal sealed class RivalsTab : UserControl
         // session, and for checking the panels without a hand on the mouse.
         // Und ebenso, wenn es beim letzten Beenden lief (OverlayRunning) -- sonst ist es
         // nach jedem Update aus.
-        if (Environment.GetCommandLineArgs()
-                .Contains("--overlay", StringComparer.OrdinalIgnoreCase)
-            || _settings.OverlayRunning)
+        // Bis 2026-11-14 hing das an HandleCreated DIESES Reiters -- und das kommt erst, wenn
+        // der Reiter einmal angezeigt wird. Wer die App oeffnete und gleich ins Spiel ging,
+        // hatte kein Overlay. Jetzt ruft das Hauptfenster WieZuletztStarten beim ersten Zeigen.
+    }
+
+    /// <summary>
+    /// Das Overlay starten, wenn es beim letzten Beenden lief oder --overlay gegeben ist --
+    /// vom Hauptfenster beim ersten Zeigen, ohne dass dieser Reiter je geoeffnet wurde.
+    /// </summary>
+    public void WieZuletztStarten()
+    {
+        if (!Environment.GetCommandLineArgs().Contains("--overlay", StringComparer.OrdinalIgnoreCase)
+            && !_settings.OverlayRunning)
         {
-            HandleCreated += (_, _) => BeginInvoke(() =>
-            {
-                if (Controller is not { Running: true })
-                {
-                    Toggle();
-                }
-            });
+            return;
         }
+        if (Controller is not { Running: true }) { Toggle(); }
     }
 
     // ------------------------------------------------------------------ //
@@ -474,12 +479,12 @@ internal sealed class RivalsTab : UserControl
         Controller?.Stop();
         Controller?.Dispose();
         Controller = null;
-        if (wasRunning && _advisor is not null)
-        {
-            Controller = Create();
-            _host?.EnsureTelemetryStarted();
-            Controller.Start();
-        }
+        // IMMER neu anlegen, nicht nur wenn das Overlay lief (seit 2026-11-14). Ueber den
+        // Controller laufen Telemetrie, Rundenaufzeichnung und Delta-Streifen. Kam beim Start
+        // ein neuer Datensatz vom Server, blieb er sonst weg, und das HUD zeigte nichts --
+        // bis die Vorschau im Reiter "Lap delta HUD" ihn nebenbei wieder anlegte.
+        EnsureController();
+        if (wasRunning) { Controller?.Start(); }
         UpdateStatus();
     }
 

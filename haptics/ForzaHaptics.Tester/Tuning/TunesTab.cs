@@ -135,11 +135,48 @@ internal sealed partial class TunesTab : UserControl
     }
 
     /// <summary>Neu von der Platte lesen -- beim Oeffnen des Reiters.</summary>
-    public void Neu()
+    /// <remarks>
+    /// IM HINTERGRUND (seit 2026-11-14): das Lesen der Spielstand-Container hielt das Fenster
+    /// beim ersten Oeffnen bis zu 20 s fest. <paramref name="sofort"/> fuer Vorschau und Werkzeuge.
+    /// </remarks>
+    public void Neu(bool sofort = false)
     {
-        _root = TuneStorage.FindRoot();
-        _tunes = TuneStorage.Read(_root).OrderBy(t => t.SavedAt).ToList();
-        _nutzung = TuneStorage.LoadUsage();
+        if (sofort)
+        {
+            var root = TuneStorage.FindRoot();
+            Uebernehmen(root, TuneStorage.Read(root).OrderBy(t => t.SavedAt).ToList(), TuneStorage.LoadUsage());
+            return;
+        }
+        if (_liest) { return; }
+        _liest = true;
+        if (_tunes.Count == 0) { _summe.Text = Loc.T("Reading the tunes from the game's save..."); }
+        Task.Run(() =>
+        {
+            var root = TuneStorage.FindRoot();
+            return (root, TuneStorage.Read(root).OrderBy(t => t.SavedAt).ToList(), TuneStorage.LoadUsage());
+        }).ContinueWith(t =>
+        {
+            try
+            {
+                BeginInvoke(() =>
+                {
+                    _liest = false;
+                    if (IsDisposed || !t.IsCompletedSuccessfully) { return; }
+                    var (root, tunes, nutzung) = t.Result;
+                    Uebernehmen(root, tunes, nutzung);
+                });
+            }
+            catch (Exception) { _liest = false; }
+        });
+    }
+
+    private bool _liest;
+
+    private void Uebernehmen(string? root, List<StoredTune> tunes, TuneStorage.Usage? nutzung)
+    {
+        _root = root;
+        _tunes = tunes;
+        _nutzung = nutzung;
         if (_tunes.Count > 0 && _von.Tag is null)
         {
             // Beim ersten Oeffnen den ganzen Bestand vorschlagen.

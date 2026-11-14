@@ -168,6 +168,11 @@ internal sealed class RaceStatsTab : UserControl
     /// <summary>Beim Oeffnen: die Rennen laden, aeltere aus dem Rundenbestand im Hintergrund nachbauen.</summary>
     public void Reload()
     {
+        // NICHTS NEUES, NICHTS NEU BAUEN (seit 2026-11-14): jedes Oeffnen las races.jsonl und
+        // baute alle Kacheln neu, rund 1,2 s -- auch wenn seit dem letzten Mal kein Rennen kam.
+        var stempel = Stempel();
+        if (stempel == _gelesen && _nachbau is null && _rennen.Count > 0) { return; }
+        _gelesen = stempel;
         var live = RaceLog.LoadLive();
         var ids = new HashSet<string>(live.Select(r => r.Id), StringComparer.Ordinal);
         _kategorien.Clear();
@@ -204,6 +209,17 @@ internal sealed class RaceStatsTab : UserControl
     }
 
     private List<RaceRecord> _alt = new();
+    private string? _gelesen;
+
+    private static string Stempel()
+    {
+        try
+        {
+            var f = new FileInfo(RaceLog.LivePath);
+            return f.Exists ? $"{f.Length}|{f.LastWriteTimeUtc.Ticks}" : "-";
+        }
+        catch (Exception) { return Guid.NewGuid().ToString(); }
+    }
     private readonly Dictionary<string, string?> _kategorien = new(StringComparer.Ordinal);
 
     private void Zurueck(Action a)

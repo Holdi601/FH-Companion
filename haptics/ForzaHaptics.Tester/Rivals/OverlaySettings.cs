@@ -502,6 +502,8 @@ internal sealed class OverlaySettings
 
     /// <summary>Eine weitere Spalte: wie sich der Abstand seit dem vorigen Split veraendert hat (seit 2026-11-14).</summary>
     [JsonPropertyName("hud_split_trend_change")] public bool HudSplitTrendChange { get; set; }
+    /// <summary>Welche Abschnitte der Einstellungsseiten auf- oder zugeklappt sind (Klappe).</summary>
+    [JsonPropertyName("ui_open")] public Dictionary<string, bool> UiOpen { get; set; } = new();
     [JsonPropertyName("hud_tyres_x")] public double HudTyresX { get; set; } = 0.985;
     [JsonPropertyName("hud_tyres_y")] public double HudTyresY { get; set; } = 0.50;
     [JsonPropertyName("hud_tyres_align")] public string HudTyresAlign { get; set; } = "right";

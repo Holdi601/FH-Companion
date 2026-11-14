@@ -993,7 +993,7 @@ internal sealed class OverlayController : IDisposable
     // ------------------------------------------------------------------ //
 
     private readonly LapRecorder _recorder = new();
-    private readonly LapLibrary _laps = new();
+    private readonly LapLibrary _laps = LapLibrary.Standard;
     private DeltaHud? _hud;
     private RecordedLap? _reference;
     private int _referenceForLength = -1;

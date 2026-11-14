@@ -210,6 +210,11 @@ internal sealed class OwnTimesTab : UserControl
         _tabelle.View = View.Details;
         _tabelle.FullRowSelect = true;
         _tabelle.MultiSelect = true;
+        // VIRTUELL (seit 2026-11-14): die Liste fragt nur nach den Zeilen, die sie gerade
+        // zeigt. Mit 3.263 Runden kostete das Einreihen aller Zeilen 6 s je Oeffnen.
+        _tabelle.VirtualMode = true;
+        _tabelle.RetrieveVirtualItem += (_, e) =>
+            e.Item = e.ItemIndex >= 0 && e.ItemIndex < _eintraege.Length ? _eintraege[e.ItemIndex] : new ListViewItem(string.Empty);
         _tabelle.BackColor = Feld;
         _tabelle.ForeColor = Color.WhiteSmoke;
         Spalten();
@@ -228,7 +233,8 @@ internal sealed class OwnTimesTab : UserControl
     /// <summary>Den Ordner der Runden im Explorer zeigen.</summary>
     private void Teilen()
     {
-        var runden = _tabelle.SelectedItems.Cast<ListViewItem>().Select(i => i.Tag).OfType<OwnTimes.Row>().ToList();
+        var runden = _tabelle.SelectedIndices.Cast<int>().Where(i => i < _eintraege.Length)
+                             .Select(i => _eintraege[i].Tag).OfType<OwnTimes.Row>().ToList();
         if (runden.Count == 0)
         {
             MessageBox.Show(this, Loc.T("Select one or more laps in the list first (Ctrl or Shift for several)."),
@@ -367,11 +373,39 @@ internal sealed class OwnTimesTab : UserControl
     internal void ShowView(int ansicht) => _ansicht.SelectedIndex = Math.Clamp(ansicht, 0, 2);
 
     /// <summary>Beim Oeffnen des Reiters neu einlesen.</summary>
-    public void Reload()
+    /// <remarks>
+    /// IM HINTERGRUND (seit 2026-11-14): beim ersten Oeffnen liest das jede Rundendatei an
+    /// (Modus am Dateiende) -- bei 3.263 Runden rund 10 s, in denen das Fenster stand.
+    /// <paramref name="sofort"/> fuer die Vorschau, die ein fertiges Bild braucht.
+    /// </remarks>
+    public void Reload(bool sofort = false)
     {
-        _laps = OwnTimes.All();
-        Anwenden();
+        if (sofort)
+        {
+            _laps = OwnTimes.All();
+            Anwenden();
+            return;
+        }
+        if (_laedt) { return; }
+        _laedt = true;
+        if (_laps.Count == 0) { Status(Loc.T("Loading your laps...")); }
+        Task.Run(() => OwnTimes.All()).ContinueWith(t =>
+        {
+            try
+            {
+                BeginInvoke(() =>
+                {
+                    _laedt = false;
+                    if (IsDisposed || !t.IsCompletedSuccessfully) { return; }
+                    _laps = t.Result;
+                    Anwenden();
+                });
+            }
+            catch (Exception) { _laedt = false; }
+        });
     }
+
+    private bool _laedt;
 
     private void Umschalten(HashSet<string> menge, string wert, bool an)
     {
@@ -393,11 +427,22 @@ internal sealed class OwnTimesTab : UserControl
         Zeichnen();
     }
 
+    /// <summary>Was die virtuelle Liste gerade zeigt.</summary>
+    private ListViewItem[] _eintraege = Array.Empty<ListViewItem>();
+
+    private void Einreihen(ListViewItem[] zeilen)
+    {
+        _tabelle.SelectedIndices.Clear();
+        _eintraege = zeilen;
+        _tabelle.VirtualListSize = zeilen.Length;
+        _tabelle.Invalidate();
+    }
+
     /// <summary>Die Spalten der gewaehlten Ansicht.</summary>
     private void Spalten()
     {
         _tabelle.BeginUpdate();
-        _tabelle.Items.Clear();
+        Einreihen(Array.Empty<ListViewItem>());
         _tabelle.Columns.Clear();
         if (Wertung)
         {
@@ -445,8 +490,7 @@ internal sealed class OwnTimesTab : UserControl
         };
         if (_sortAb) { sortiert = sortiert.Reverse(); }
 
-        _tabelle.BeginUpdate();
-        _tabelle.Items.Clear();
+        var neu = new List<ListViewItem>();
         foreach (var s in sortiert)
         {
             var z = new ListViewItem(s.Place.ToString());
@@ -460,8 +504,10 @@ internal sealed class OwnTimesTab : UserControl
             z.SubItems.Add(OwnTimes.TimeText(s.TotalSeconds) + (s.Inherited > 0 ? " *" : string.Empty));
             z.SubItems.Add(OwnTimes.TuneText(s.Tune));
             if (s.Place == 1) { z.ForeColor = Leit; }
-            _tabelle.Items.Add(z);
+            neu.Add(z);
         }
+        _tabelle.BeginUpdate();
+        Einreihen(neu.ToArray());
         _tabelle.EndUpdate();
 
         Status(string.Format(
@@ -496,8 +542,7 @@ internal sealed class OwnTimesTab : UserControl
         };
         if (_sortAb) { sortiert = sortiert.Reverse(); }
 
-        _tabelle.BeginUpdate();
-        _tabelle.Items.Clear();
+        var neu = new List<ListViewItem>();
         foreach (var r in sortiert)
         {
             var gap = r.Lap.Seconds - r.BestOnCourse;
@@ -518,16 +563,23 @@ internal sealed class OwnTimesTab : UserControl
             // Auto dort das eigene Beste ist.
             if (gap < 0.0005) { z.ForeColor = Leit; }
             z.Tag = r;
-            _tabelle.Items.Add(z);
+            neu.Add(z);
         }
+        _tabelle.BeginUpdate();
+        Einreihen(neu.ToArray());
         // Tune, Start und Modus nach Inhalt breit machen: feste Breiten, die fuer
         // Englisch reichten, schnitten "stehend · Sprint" auf Japanisch ab.
         // Nie schmaler als die Ueberschrift.
         foreach (var i in new[] { 6, 7, 8 })
         {
-            var kopf = TextRenderer.MeasureText(_tabelle.Columns[i].Text, _tabelle.Font).Width + 16;
-            _tabelle.AutoResizeColumn(i, ColumnHeaderAutoResizeStyle.ColumnContent);
-            if (_tabelle.Columns[i].Width < kopf) { _tabelle.Columns[i].Width = kopf; }
+            // Selbst gemessen: eine virtuelle Liste kennt ihren Inhalt nicht. Je Text einmal --
+            // in diesen Spalten wiederholen sich wenige Werte.
+            var breit = TextRenderer.MeasureText(_tabelle.Columns[i].Text, _tabelle.Font).Width + 16;
+            foreach (var t in neu.Select(z => z.SubItems[i].Text).Distinct())
+            {
+                breit = Math.Max(breit, TextRenderer.MeasureText(t, _tabelle.Font).Width + 14);
+            }
+            _tabelle.Columns[i].Width = breit;
         }
         _tabelle.EndUpdate();
 

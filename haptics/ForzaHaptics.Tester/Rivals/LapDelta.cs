@@ -1577,14 +1577,45 @@ internal sealed class LapLibrary
     private readonly string _path;
     private readonly List<RecordedLap> _laps = new();
 
+    /// <summary>
+    /// Der eigene Bestand -- EINER je Programmlauf (seit 2026-11-14).
+    /// </summary>
+    /// <remarks>
+    /// Jeder neue Datensatz ersetzt den Overlay-Controller, und jeder Controller las den
+    /// Bestand neu: 508 MB JSON, rund 5 s auf dem Fenster-Faden, beim Start bis zu zweimal.
+    /// Jetzt teilen sich alle Controller diesen einen, und er laedt im Hintergrund.
+    /// </remarks>
+    public static LapLibrary Standard => _standard.Value;
+    private static readonly Lazy<LapLibrary> _standard = new(() => new LapLibrary());
+
+    /// <summary>Fertig geladen? Wer vorher fragt, wartet (siehe <see cref="Warten"/>).</summary>
+    private readonly Task _geladen;
+
     public LapLibrary(string? path = null)
     {
         _path = path ?? DefaultPath;
-        Load();
-        if (path is null) { EinmalNachfuellen(); }
+        if (path is null)
+        {
+            // IM HINTERGRUND: das Hauptfenster soll nicht auf 500 MB warten. Wer die Runden
+            // vor dem Ende braucht (erste Runde gleich nach dem Start), wartet in Warten().
+            _geladen = Task.Run(() => { Load(); EinmalNachfuellen(); });
+        }
+        else
+        {
+            Load();
+            _geladen = Task.CompletedTask;
+        }
     }
 
-    public IReadOnlyList<RecordedLap> Laps => _laps;
+    private void Warten()
+    {
+        try { _geladen.Wait(); } catch (Exception) { }
+    }
+
+    public IReadOnlyList<RecordedLap> Laps
+    {
+        get { Warten(); return _laps; }
+    }
 
     public void Load()
     {
@@ -1592,8 +1623,13 @@ internal sealed class LapLibrary
         try
         {
             if (!File.Exists(_path)) { return; }
-            var gelesen = JsonSerializer.Deserialize<List<RecordedLap>>(
-                File.ReadAllText(_path));
+            // Aus dem Strom, nicht ueber File.ReadAllText: das legte die ganze Datei noch
+            // einmal als Text in den Speicher (bei 508 MB rund 1 GB UTF-16 dazu).
+            List<RecordedLap>? gelesen;
+            using (var strom = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20))
+            {
+                gelesen = JsonSerializer.Deserialize<List<RecordedLap>>(strom);
+            }
             if (gelesen is not null) { _laps.AddRange(gelesen); }
             foreach (var lap in _laps) { InferStandingStart(lap); }
         }
@@ -1604,13 +1640,69 @@ internal sealed class LapLibrary
         }
     }
 
+    private readonly object _schreibSperre = new();
+    private RecordedLap[]? _wartend;
+    private Task _schreiben = Task.CompletedTask;
+    private bool _schreibt;
+
+    /// <summary>
+    /// Speichern. Beim eigenen Bestand im Hintergrund (seit 2026-11-14): das Schreiben von
+    /// 500 MB hielt jedes Rundenende auf. Kommen zwei Runden schnell nacheinander, wird nur
+    /// der neueste Stand geschrieben.
+    /// </summary>
     public void Save()
+    {
+        var kopie = _laps.ToArray();
+        if (!ReferenceEquals(this, _standard.IsValueCreated ? _standard.Value : null))
+        {
+            Schreiben(kopie);
+            return;
+        }
+        lock (_schreibSperre)
+        {
+            _wartend = kopie;
+            // Ein laufender Schreiber nimmt den neuen Stand selbst mit.
+            if (_schreibt) { return; }
+            _schreibt = true;
+            _schreiben = Task.Run(() =>
+            {
+                while (true)
+                {
+                    RecordedLap[]? stand;
+                    lock (_schreibSperre)
+                    {
+                        stand = _wartend;
+                        _wartend = null;
+                        if (stand is null) { _schreibt = false; return; }
+                    }
+                    Schreiben(stand);
+                }
+            });
+        }
+    }
+
+    /// <summary>Beim Beenden: ein laufendes Speichern des eigenen Bestands abwarten (hoechstens 30 s).</summary>
+    public static void BeimBeenden()
+    {
+        if (_standard.IsValueCreated) { _standard.Value.Abwarten(30_000); }
+    }
+
+    /// <summary>Ein laufendes Speichern abwarten -- beim Beenden.</summary>
+    public void Abwarten(int ms)
+    {
+        try { _schreiben.Wait(ms); } catch (Exception) { }
+    }
+
+    private void Schreiben(RecordedLap[] runden)
     {
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
             var temp = _path + ".part";
-            File.WriteAllText(temp, JsonSerializer.Serialize(_laps, Format));
+            using (var strom = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+            {
+                JsonSerializer.Serialize(strom, runden, Format);
+            }
             File.Move(temp, _path, overwrite: true);
         }
         catch (Exception)
@@ -1647,7 +1739,11 @@ internal sealed class LapLibrary
     /// </remarks>
     public const float MaxPlausibleMetresPerSecond = 125f;
 
-    public bool Add(RecordedLap lap) => Aufnehmen(lap, speichern: true);
+    public bool Add(RecordedLap lap)
+    {
+        Warten();
+        return Aufnehmen(lap, speichern: true);
+    }
 
     private bool Aufnehmen(RecordedLap lap, bool speichern)
     {
@@ -1831,6 +1927,7 @@ internal sealed class LapLibrary
                                   bool standingStart = false,
                                   bool freeRoam = false)
     {
+        Warten();
         var muster = new RecordedLap
         {
             LengthMetres = lengthMetres, StartX = startX, StartZ = startZ,

@@ -959,6 +959,9 @@ internal sealed class HudPartPanel : Panel
     private readonly Dictionary<HudPart, Label> _koepfe = new();
     private readonly Dictionary<HudPart, FlowLayoutPanel> _farben = new();
     private readonly Dictionary<HudPart, (ComboBox Anker, TrackBar Groesse)> _lage = new();
+    /// <summary>Jeder Abschnitt klappt (seit 2026-11-14); die der Stuecke einzeln erreichbar.</summary>
+    private readonly List<Klappe> _klappen = new();
+    private readonly Dictionary<HudPart, Klappe> _klappeVon = new();
     private HudPart _part = HudPart.Delta;
     private bool _quiet;
 
@@ -1017,15 +1020,32 @@ internal sealed class HudPartPanel : Panel
             var kopf = Head(titel);
             kopf.Margin = new Padding(0, 10, 0, 4);
             a.Controls.Add(kopf);
+            // DER INHALT IN EIGENEM BEHAELTER, damit er sich zuklappen laesst, ohne dass
+            // Knoepfe, die aus eigenem Grund verborgen sind, beim Aufklappen erscheinen.
+            var inhalt = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(0),
+                Margin = new Padding(0),
+            };
+            a.Controls.Add(inhalt);
+            // Zu Beginn offen: die Anordnungen (erster Abschnitt) und das Delta.
+            var klappe = new Klappe(kopf, inhalt, _settings, "hud:" + (teil?.ToString() ?? titel),
+                                    vorgabeOffen: _klappen.Count == 0 || teil == HudPart.Delta);
+            _klappen.Add(klappe);
             if (teil is { } t)
             {
                 _abschnitte[t] = a;
                 _koepfe[t] = kopf;
+                _klappeVon[t] = klappe;
                 // Ein Klick irgendwo in den Abschnitt waehlt das Stueck nicht -- das
                 // bleibt der Vorschau vorbehalten; hier wird nur eingestellt.
             }
             _spalten.Controls.Add(a);
-            ziel = a;
+            ziel = inhalt;
             return a;
         }
         CheckBox Schalter(string text, bool an, Action<bool> setzen)
@@ -1214,6 +1234,7 @@ internal sealed class HudPartPanel : Panel
                 MessageBox.Show(this, string.Format(Loc.T("No layout called \"{0}\"."), name), Loc.T("Load layout"));
                 return;
             }
+            BuildColours();
             Select(_part);
             Changed?.Invoke();
         }));
@@ -1602,6 +1623,9 @@ internal sealed class HudPartPanel : Panel
 
         BuildColours();
         Controls.Add(_spalten);
+        var leiste = Klappe.Leiste(() => _klappen, Auswahlfarbe, () => _spalten.Ordne());
+        leiste.Dock = DockStyle.Top;
+        Controls.Add(leiste);
     }
 
     /// <summary>
@@ -1674,9 +1698,10 @@ internal sealed class HudPartPanel : Panel
         _part = part;
         _quiet = true;
         RefreshPlacements();
-        // Nach dem Laden einer Anordnung stimmen sonst die Farbknoepfe nicht mehr
-        // mit dem ueberein, was gezeichnet wird.
-        BuildColours();
+        // Die Farbknoepfe baut nur noch das Laden einer Anordnung neu (BuildColours dort).
+        // Bis 2026-11-14 geschah das bei JEDEM Klick in die Vorschau: 1,2 bis 2,1 s, und
+        // die alten Knoepfe blieben als 66 Fenster-Handles je Klick zurueck.
+        if (springen && _klappeVon.TryGetValue(part, out var klappe)) { klappe.Offen = true; }
         foreach (var (teil, abschnitt) in _abschnitte)
         {
             var an = teil == part;
@@ -1695,8 +1720,11 @@ internal sealed class HudPartPanel : Panel
 
     private void BuildColours()
     {
-        foreach (var f in _farben.Values) { f.Controls.Clear(); }
-        _allgemeineFarben.Controls.Clear();
+        // Freigeben, nicht nur abhaengen: Controls.Clear liess die Fenster der alten Knoepfe stehen.
+        foreach (var f in _farben.Values.Append(_allgemeineFarben))
+        {
+            while (f.Controls.Count > 0) { f.Controls[0].Dispose(); }
+        }
 
         var delta = _farben[HudPart.Delta];
         Add(delta, Loc.T("Ahead of the reference"), () => _settings.HudColorAhead,
@@ -1951,14 +1979,29 @@ internal sealed class AbschnittSpalten : Panel
     protected override void OnControlAdded(ControlEventArgs e)
     {
         base.OnControlAdded(e);
-        if (e.Control is { } c) { c.SizeChanged += (_, _) => Ordne(); }
-        Ordne();
+        if (e.Control is { } c) { c.SizeChanged += (_, _) => Spaeter(); }
+        Spaeter();
     }
 
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        Ordne();
+        Spaeter();
+    }
+
+    private bool _bestellt;
+
+    /// <summary>
+    /// EINMAL ordnen, wenn die Groessen feststehen (seit 2026-11-14). Beim ersten Zeigen aendern
+    /// Hunderte Knoepfe ihre Groesse, und jede Aenderung ordnete alle Abschnitte neu -- mit
+    /// allen Abschnitten offen dauerte das erste Oeffnen des Reiters 6 s.
+    /// </summary>
+    private void Spaeter()
+    {
+        if (!IsHandleCreated) { Ordne(); return; }
+        if (_bestellt) { return; }
+        _bestellt = true;
+        BeginInvoke(() => { _bestellt = false; Ordne(); });
     }
 
     public void Ordne()

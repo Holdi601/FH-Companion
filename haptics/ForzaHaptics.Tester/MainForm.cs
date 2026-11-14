@@ -577,6 +577,7 @@ internal sealed class MainForm : Form, ITelemetryHost
         Shown += (_, _) =>
         {
             if (_rivals.Settings.RecordingWindow) { _rivals.OeffneAufnahmefenster(); }
+            if (!NurVorschau) { _rivals.WieZuletztStarten(); }
         };
         // Wird die Stufe im Rennen per Taste gewechselt, muss der Reiter das zeigen --
         // sonst schreibt die naechste Aenderung hier die alte Stufe zurueck.

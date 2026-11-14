@@ -746,7 +746,7 @@ internal static class Program
             form.Controls.Add(reiter);
             form.Show();
             if (reiter is Rivals.CarCollectionTab sammlung) { sammlung.Zeigen(); }
-            if (reiter is Tuning.TunesTab tunes) { tunes.Neu(); }
+            if (reiter is Tuning.TunesTab tunes) { tunes.Neu(sofort: true); }
             if (reiter is Rivals.RaceStatsTab rennen) { rennen.Reload(); }
             for (var i = 0; i < 30; i++) { Application.DoEvents(); Thread.Sleep(50); }
             form.Vergroessern(VorschauForm.Faktor(args));
@@ -773,7 +773,7 @@ internal static class Program
             var tab = new Rivals.OwnTimesTab(() => rat);
             form.Controls.Add(tab);
             form.Show();
-            tab.Reload();
+            tab.Reload(sofort: true);
             // "--mytimes-preview de points" / "... en time": die Wertung statt der Runden.
             var ansicht = mp + 2 < args.Length ? args[mp + 2].ToLowerInvariant() : "";
             if (ansicht == "points") { tab.ShowView(1); }
@@ -1678,6 +1678,11 @@ internal static class Program
         // DAS PANEL ALS BILD. Eine Aenderung an der Darstellung laesst sich sonst
         // nur mit laufendem Spiel beurteilen -- und genau dort faellt zu spaet auf,
         // dass ein langer Autoname in die Zahlenspalte laeuft.
+        if (args.Contains("--ui-timing", StringComparer.OrdinalIgnoreCase))
+        {
+            UiTiming.Run();
+            return;
+        }
         if (args.Contains("--main-preview", StringComparer.OrdinalIgnoreCase))
         {
             // "--main-preview <out.png> [tab=<Reitername>] [w=1400] [h=900]": das Hauptfenster
@@ -2471,6 +2476,8 @@ internal static class Program
                 catch (Exception) { }
             });
             Application.Run(fenster);
+            // Ein Speichern des Rundenbestands kann noch laufen (im Hintergrund seit 2026-11-14).
+            Rivals.LapLibrary.BeimBeenden();
         }
         finally
         {
